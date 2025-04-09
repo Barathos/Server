@@ -4154,7 +4154,8 @@ const std::vector<EQ::skills::SkillType> Client::GetAvailableAutoSkills() const
 		EQ::skills::SkillFlyingKick,
 		EQ::skills::SkillRoundKick,
 		EQ::skills::SkillKick,
-		EQ::skills::SkillFrenzy
+		EQ::skills::SkillFrenzy,
+		EQ::skills::SkillTaunt
 	};
 }
 

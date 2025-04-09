@@ -549,8 +549,18 @@ bool Client::Process() {
 		if ((AutoFireEnabled() || AutoAttackEnabled()) && auto_attack_target != nullptr && may_use_attacks && attack_autoskill_timer.Check() && !auto_attack_target->IsClient()) {
 			for (const auto skill : GetAvailableAutoSkills()) {
 				if (GetAutoSkillStatus(skill)) {
+					if (skill == EQ::skills::SkillTaunt) {
+						if (p_timers.Expired(&database, pTimerTaunt, false) && GetTarget() && GetTarget()->GetHateTop()->GetID() != GetID()) {
+							EQApplicationPacket* outapp = new EQApplicationPacket(OP_Taunt);
+							QueuePacket(outapp);
+							safe_delete(outapp);
+						}
+						continue;
+					}
+
 					SetEntityVariable("auto_skill", "enabled");
 					DoClassAttacks(auto_attack_target, skill, false);
+					DeleteEntityVariable("auto_skill");
 				}
 			}
 		}
