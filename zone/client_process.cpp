@@ -550,11 +550,26 @@ bool Client::Process() {
 			for (const auto skill : GetAvailableAutoSkills()) {
 				if (GetAutoSkillStatus(skill)) {
 					if (skill == EQ::skills::SkillTaunt) {
-						if (p_timers.Expired(&database, pTimerTaunt, false) && GetTarget() && GetTarget()->GetHateTop()->GetID() != GetID()) {
+						if (!p_timers.Expired(&database, pTimerTaunt, false)) {
+							continue;
+						}
+
+						auto target = GetTarget();
+						if (!target) {
+							continue;
+						}
+
+						auto hate_top = target->GetHateTop();
+						if (!hate_top) {
+							continue;
+						}
+
+						if (hate_top->GetID() != GetID()) {
 							EQApplicationPacket* outapp = new EQApplicationPacket(OP_Taunt);
 							QueuePacket(outapp);
 							safe_delete(outapp);
 						}
+
 						continue;
 					}
 
