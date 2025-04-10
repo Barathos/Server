@@ -400,6 +400,31 @@ inline void LoadZoneVariables(Zone *z, const std::string &variables)
 	}
 }
 
+bool Zone::LoadZoneVariablesState()
+{
+	auto spawn_states = ZoneStateSpawnsRepository::GetWhere(
+		database,
+		fmt::format(
+			"zone_id = {} AND instance_id = {} AND is_zone = 1 ORDER BY spawn2_id",
+			zoneid,
+			zone->GetInstanceID()
+		)
+	);
+
+	if (spawn_states.empty()) {
+		return false;
+	}
+
+	for (auto &s: spawn_states) {
+		if (s.is_zone) {
+			LoadZoneVariables(zone, s.entity_variables);
+			return true;
+		}
+	}
+
+	return false;
+}
+
 bool Zone::LoadZoneState(
 	std::unordered_map<uint32, uint32> spawn_times,
 	std::vector<Spawn2DisabledRepository::Spawn2Disabled> disabled_spawns
@@ -408,22 +433,18 @@ bool Zone::LoadZoneState(
 	auto spawn_states = ZoneStateSpawnsRepository::GetWhere(
 		database,
 		fmt::format(
-			"zone_id = {} AND instance_id = {} ORDER BY spawn2_id",
+			"zone_id = {} AND instance_id = {} AND is_zone = 0 ORDER BY spawn2_id",
 			zoneid,
 			zone->GetInstanceID()
 		)
 	);
 
 	if (spawn_states.empty()) {
-		// return early here.
+		LogInfo("No zone state spawns found for zone [{}] instance [{}]", GetShortName(), zone->GetInstanceID());
 		return false;
 	}
 
-	LogInfo("Loading zone state spawns for zone [{}] spawns [{}]", GetShortName(), spawn_states.size());
-
-	if (spawn_states.empty()) {
-		return false;
-	}
+	LogInfo("Loading zone state spawns for zone [{}] instance [{}] spawns [{}]", GetShortName(), zone->GetInstanceID(), spawn_states.size());
 
 	if (!IsZoneStateValid(spawn_states)) {
 		LogZoneState("Invalid zone state data for zone [{}]", GetShortName());
@@ -437,15 +458,6 @@ bool Zone::LoadZoneState(
 	// we have to load grids first otherwise setting grid/wp will not work
 	zone->initgrids_timer.Trigger();
 	zone->Process();
-
-	// load zone variables first
-	int count = 0;
-	for (auto &s: spawn_states) {
-		if (s.is_zone) {
-			LoadZoneVariables(zone, s.entity_variables);
-			break;
-		}
-	}
 
 	// load base spawn2 data for spawn locations
 	std::vector<std::string> spawn2_ids;
@@ -528,8 +540,6 @@ bool Zone::LoadZoneState(
 			new_spawn->SetResumedFromZoneSuspend(true);
 			new_spawn->SetEntityVariables(GetVariablesDeserialized(s.entity_variables));
 		}
-
-		count++;
 
 		spawn2_list.Insert(new_spawn);
 		new_spawn->Process();

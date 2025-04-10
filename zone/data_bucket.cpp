@@ -2,6 +2,7 @@
 #include "client.h"
 #include "zonedb.h"
 #include "mob.h"
+#include "client.h"
 #include "worldserver.h"
 #include <ctime>
 #include <cctype>

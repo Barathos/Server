@@ -134,42 +134,91 @@ void EQ::Net::TCPConnection::Read(const char *data, size_t count)
 	}
 }
 
-void EQ::Net::TCPConnection::Write(const char *data, size_t count)
-{
-	if (!m_socket) {
+void EQ::Net::TCPConnection::Write(const char* data, size_t count) {
+	if (!m_socket || !data || count == 0) {
+		std::cerr << "TCPConnection::Write - Invalid socket or data\n";
 		return;
 	}
 
-	struct WriteBaton
-	{
-		TCPConnection *connection;
-		char *buffer;
-	};
-
-	WriteBaton *baton = new WriteBaton;
-	baton->connection = this;
-	baton->buffer = new char[count];
-
-	uv_write_t *write_req = new uv_write_t;
-	memset(write_req, 0, sizeof(uv_write_t));
-	write_req->data = baton;
-	uv_buf_t send_buffers[1];
-
-	memcpy(baton->buffer, data, count);
-	send_buffers[0] = uv_buf_init(baton->buffer, count);
-
-	uv_write(write_req, (uv_stream_t*)m_socket, send_buffers, 1, [](uv_write_t* req, int status) {
-		WriteBaton *baton = (WriteBaton*)req->data;
-		delete[] baton->buffer;
-		delete req;
-
-		if (status < 0) {
-			baton->connection->Disconnect();
+	if (count <= TCP_BUFFER_SIZE) {
+		// Fast path: use pooled request with embedded buffer
+		auto req_opt = tcp_write_pool.acquire();
+		if (!req_opt) {
+			std::cerr << "TCPConnection::Write - Out of write requests\n";
+			return;
 		}
 
-		delete baton;
-	});
+		TCPWriteReq* write_req = *req_opt;
+
+		// Fill buffer and set context
+		memcpy(write_req->buffer.data(), data, count);
+		write_req->connection = this;
+		write_req->magic = 0xC0FFEE;
+
+		uv_buf_t buf = uv_buf_init(write_req->buffer.data(), static_cast<unsigned int>(count));
+
+		int result = uv_write(
+			&write_req->req,
+			reinterpret_cast<uv_stream_t*>(m_socket),
+			&buf,
+			1,
+			[](uv_write_t* req, int status) {
+				auto* full_req = reinterpret_cast<TCPWriteReq*>(req);
+				if (full_req->magic != 0xC0FFEE) {
+					std::cerr << "uv_write callback - invalid magic, skipping release\n";
+					return;
+				}
+
+				tcp_write_pool.release(full_req);
+
+				if (status < 0 && full_req->connection) {
+					std::cerr << "uv_write failed: " << uv_strerror(status) << std::endl;
+					full_req->connection->Disconnect();
+				}
+			}
+		);
+
+		if (result < 0) {
+			std::cerr << "uv_write() failed immediately: " << uv_strerror(result) << std::endl;
+			tcp_write_pool.release(write_req);
+		}
+
+	} else {
+		// Slow path: allocate heap buffer for large write
+		LogNetTCP("[TCPConnection] Large write of [{}] bytes, using heap buffer", count);
+
+		char* heap_buffer = new char[count];
+		memcpy(heap_buffer, data, count);
+
+		uv_write_t* write_req = new uv_write_t;
+		write_req->data = heap_buffer;
+
+		uv_buf_t buf = uv_buf_init(heap_buffer, static_cast<unsigned int>(count));
+
+		int result = uv_write(
+			write_req,
+			reinterpret_cast<uv_stream_t*>(m_socket),
+			&buf,
+			1,
+			[](uv_write_t* req, int status) {
+				char* data = static_cast<char*>(req->data);
+				delete[] data;
+				delete req;
+
+				if (status < 0) {
+					std::cerr << "uv_write (large) failed: " << uv_strerror(status) << std::endl;
+				}
+			}
+		);
+
+		if (result < 0) {
+			std::cerr << "uv_write() (large) failed immediately: " << uv_strerror(result) << std::endl;
+			delete[] heap_buffer;
+			delete write_req;
+		}
+	}
 }
+
 
 std::string EQ::Net::TCPConnection::LocalIP() const
 {
