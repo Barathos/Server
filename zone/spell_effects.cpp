@@ -1403,7 +1403,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 #ifdef SPELL_EFFECT_SPAM
 				snprintf(effect_desc, _EDLEN, "Melee Absorb Rune: %+i", effect_value);
 #endif
-				if (buffslot > -1) {
+				if (effect_value > 0 && buffslot > -1) {
 					int bonus_value = caster->GetExtraSpellAmt(spell_id, caster->GetSharedHealAmount(), effect_value);
 					if (IsBardSong(spell_id) && bonus_value > 0) {
 						bonus_value = 0;
