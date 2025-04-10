@@ -13992,12 +13992,14 @@ void Client::DoPetBagResync(int class_id) {
 				}
 			}
 
-			if (!pet->GetEquipmentMaterial(EQ::textures::weaponPrimary)) {
-				pet->SendWearChange(EQ::textures::weaponPrimary);
+			if (IsPlayerRace(pet->GetRace())) {
+				for (int i = EQ::textures::textureBegin; i < EQ::textures::weaponPrimary; i++) {
+					pet->SendWearChange(i);
+				}
 			}
-			if (!pet->GetEquipmentMaterial(EQ::textures::weaponSecondary)) {
-				pet->SendWearChange(EQ::textures::weaponSecondary);
-			}
+
+			pet->SendWearChange(EQ::textures::weaponPrimary);
+			pet->SendWearChange(EQ::textures::weaponSecondary);
 
 			pet_npc->SetAttackTimer();
 		}
