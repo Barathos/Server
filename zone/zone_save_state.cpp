@@ -41,18 +41,6 @@ inline void LoadLootStateData(Zone *zone, NPC *npc, const std::string &loot_data
 		return;
 	}
 
-	// in the event that should never happen, we roll loot from the NPC's table
-	if (loot_data.empty()) {
-		LogZoneState("No loot state data found for NPC [{}], re-rolling", npc->GetNPCTypeID());
-		npc->ClearLootItems();
-		npc->AddLootTable();
-		if (npc->DropsGlobalLoot()) {
-			npc->CheckGlobalLootTables();
-		}
-
-		return;
-	}
-
 	if (!Strings::IsValidJson(loot_data)) {
 		LogZoneState("Invalid JSON data for NPC [{}]", npc->GetNPCTypeID());
 		return;
@@ -80,12 +68,6 @@ inline void LoadLootStateData(Zone *zone, NPC *npc, const std::string &loot_data
 	for (auto &e: l.entries) {
 		const auto *db_item = database.GetItem(e.item_id);
 		if (!db_item) {
-			continue;
-		}
-
-		if (RuleB(Custom, DoItemUpgrades)) {
-			// Just give up
-			npc->AddItemFixed(e.item_id, e.charges);
 			continue;
 		}
 
