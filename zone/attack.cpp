@@ -5722,7 +5722,7 @@ void Mob::TryCriticalHit(Mob *defender, DamageHitInfo &hit, ExtraAttackOptions *
     // Fake 'Devastating Frenzy' being a real AA
     if (GetLevel() >= 51 && hit.skill == EQ::skills::SkillFrenzy) {
         // Scale the crit chance by defender's HP ratio
-        crit_chance_percent = crit_chance_percent * defender->GetHPRatio() / 100;
+        crit_chance_percent += crit_chance_percent * (100 - defender->GetHPRatio()) / 100;
     }
 
     // Determine if we crit based on the calculated chance
