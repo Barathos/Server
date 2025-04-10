@@ -9658,7 +9658,7 @@ FACTION_VALUE Client::_GetFactionLevel(uint32 char_id, uint32 npc_id, uint32 pla
 		return FACTION_INDIFFERENTLY;
 	if (IsInvisible(tnpc))
 		return FACTION_INDIFFERENTLY;
-	if (tnpc && tnpc->GetOwnerID() != 0) // pets con amiably to owner and indiff to rest
+	if (tnpc && tnpc->GetOwner() && tnpc->GetOwner()->IsClient()) // pets con amiably to owner and indiff to rest
 	{
 		if (char_id == tnpc->GetOwner()->CastToClient()->CharacterID())
 			return FACTION_AMIABLY;
