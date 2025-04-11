@@ -3304,38 +3304,22 @@ void Mob::AddToHateList(Mob* other, int64 hate /*= 0*/, int64 damage /*= 0*/, bo
 		return;
 	}
 
+	if (other->GetSpecialAbility(SpecialAbility::BeingAggroImmunity)) {
+		if (other->IsPetOwnerClient()) {
+			auto owner = other->GetOwner();
+			if (owner && !CheckAggro(owner)) {
+				AddToHateList(owner, 1, 1, iYellForHelp, bFrenzy, iBuffTic, spell_id, pet_command);
+			}
+		}
+		return;
+	}
+
 	if (IsValidSpell(spell_id) && IsNoDetrimentalSpellAggroSpell(spell_id)) {
 		return;
 	}
 
 	if (other == myowner) {
 		return;
-	}
-
-	if (other->GetOwner()) {
-		auto other_owner = other->GetOwner();
-		if (other->GetSpecialAbility(SpecialAbility::BeingAggroImmunity)) {
-			if (other_owner->GetFeigned() || other_owner->HasAnInvisibilityEffect()) {
-				other->SetSpecialAbility(SpecialAbility::BeingAggroImmunity, 0);
-			} else {
-				// Add Token Hate to Owner
-				AddToHateList(other_owner, 1, 1, iYellForHelp, bFrenzy, iBuffTic, spell_id, pet_command);
-
-				int num_pets = other_owner->GetAllPets().size();
-				if (num_pets > 1) {
-					int split_amt = hate / (num_pets - 1);
-					for (const auto pet : other_owner->GetAllPets()) {
-						if (!pet->GetSpecialAbility(SpecialAbility::BeingAggroImmunity) && pet != other) {
-							AddToHateList(pet, split_amt, split_amt, iYellForHelp, bFrenzy, iBuffTic, spell_id, pet_command);
-						}
-					}
-				}
-			}
-		} else {
-			if (!other->GetSpecialAbility(SpecialAbility::AllowedToTank) && (!other_owner->GetFeigned() && !other_owner->HasAnInvisibilityEffect())) {
-				other->SetSpecialAbility(SpecialAbility::BeingAggroImmunity, 1);
-			}
-		}
 	}
 
 	if (GetSpecialAbility(SpecialAbility::TunnelVision)) {

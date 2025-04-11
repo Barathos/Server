@@ -785,7 +785,7 @@ int HateList::AreaRampage(Mob *caster, Mob *target, int count, ExtraAttackOption
 		if (h->entity_on_hatelist && h->entity_on_hatelist != caster && h->entity_on_hatelist != target &&
 			caster->CombatRange(h->entity_on_hatelist, 1.0, true, opts)) {
 
-			if (RuleB(Custom, ConditionalPetRampageImmunity) && h->entity_on_hatelist->GetOwner() && h->entity_on_hatelist->GetOwner()->IsClient() && h->entity_on_hatelist->GetSpecialAbility(SpecialAbility::BeingAggroImmunity)) {
+			if (RuleB(Custom, ConditionalPetRampageImmunity) && h->entity_on_hatelist->IsPetOwnerClient() && h->entity_on_hatelist->CastToNPC()->IsTaunting()) {
 				continue;
 			}
 

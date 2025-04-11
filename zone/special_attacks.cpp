@@ -2187,9 +2187,11 @@ void NPC::DoClassAttacks(Mob *target) {
 		target->AddToHateList(this, 250, 250);
 		for (const auto & ent : entity_list.GetNPCList()) {
 			auto mob = ent.second;
-			if (mob && mob->IsOnHatelist(GetOwner()) && mob->GetTarget() && mob->GetTarget()->GetID() == GetOwner()->GetID()) {
+			if (mob && mob->IsOnHatelist(GetOwner())
+			    && mob->GetTarget() && mob->GetTarget()->GetID() == GetOwner()->GetID()
+				&& DistanceSquared(GetPosition(), mob->GetPosition()) <= (RuleI(Pets, PetTauntRange) * RuleI(Pets, PetTauntRange))) {
 				mob->AddToHateList(this, 100, 100);
-				Taunt(mob, true);
+				Taunt(mob, false);
 			}
 		}
 	}
