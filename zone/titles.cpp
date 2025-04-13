@@ -140,14 +140,8 @@ std::vector<TitlesRepository::Titles> TitleManager::GetEligibleTitles(Client* c)
 			continue;
 		}
 
-		if (!RuleB(Custom, MulticlassingEnabled)) {
-			if (t.class_ >= Class::None && c->GetBaseClass() != t.class_) {
-				continue;
-			}
-		} else {
-			if (GetPlayerClassBit(t.class_) & c->GetClassesBits()) {
-				continue;
-			}
+		if (t.class_ >= Class::None && !c->HasClass(t.class_)) {
+			continue;
 		}
 
 		if (t.min_aa_points >= 0 && c->GetSpentAA() < t.min_aa_points) {
