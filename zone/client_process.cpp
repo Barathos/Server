@@ -641,6 +641,8 @@ bool Client::Process() {
 				SendArmorAppearance();
 				SetWeaponAppearance();
 
+				SendAlternateCurrencyValues();
+
 				for (auto client : entity_list.GetClientList()) {
 					if (client.second->GetAttackMode() == AttackMode::RANGED) {
 						client.second->SetWeaponAppearance();

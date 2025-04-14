@@ -79,6 +79,7 @@ extern volatile bool RunLoops;
 #include "../common/repositories/tradeskill_recipe_repository.h"
 #include "../common/repositories/account_kill_counts_repository.h"
 #include "../common/repositories/character_pet_name_repository.h"
+#include "../common/repositories/account_alt_currency_repository.h"
 #include "../common/events/player_events.h"
 #include "../common/events/player_event_logs.h"
 #include "dialogue_window.h"
@@ -8819,7 +8820,11 @@ void Client::SetAlternateCurrencyValue(uint32 currency_id, uint32 new_amount)
 	}
 
 	alternate_currency[currency_id] = new_amount;
-	database.UpdateAltCurrencyValue(CharacterID(), currency_id, new_amount);
+	if (RuleB(Custom, EnableAccountAltCurrency)) {
+		database.UpdateAccountAltCurrencyValue(AccountID(), currency_id, new_amount);
+	} else {
+		database.UpdateAltCurrencyValue(CharacterID(), currency_id, new_amount);
+	}
 	SendAlternateCurrencyValue(currency_id);
 
 	QuestEventID event_id = is_gain ? EVENT_ALT_CURRENCY_GAIN : EVENT_ALT_CURRENCY_LOSS;
@@ -8846,25 +8851,10 @@ bool Client::RemoveAlternateCurrencyValue(uint32 currency_id, uint32 amount)
 		return false;
 	}
 
-	const uint32 new_amount = (current_amount - amount);
-
-	alternate_currency[currency_id] = new_amount;
-	database.UpdateAltCurrencyValue(CharacterID(), currency_id, new_amount);
-	SendAlternateCurrencyValue(currency_id);
-
-	if (parse->PlayerHasQuestSub(EVENT_ALT_CURRENCY_LOSS)) {
-		const std::string &export_string = fmt::format(
-			"{} {} {}",
-			currency_id,
-			amount,
-			new_amount
-		);
-
-		parse->EventPlayer(EVENT_ALT_CURRENCY_LOSS, this, export_string, 0);
-	}
-
+	SetAlternateCurrencyValue(currency_id, current_amount - amount);
 	return true;
 }
+
 
 int Client::AddAlternateCurrencyValue(uint32 currency_id, int amount, bool is_scripted)
 {
@@ -8873,7 +8863,7 @@ int Client::AddAlternateCurrencyValue(uint32 currency_id, int amount, bool is_sc
 	}
 
 	if (!amount) {
-		return 0;
+		return alternate_currency[currency_id];
 	}
 
 	if (!alternate_currency_loaded) {
@@ -8881,39 +8871,16 @@ int Client::AddAlternateCurrencyValue(uint32 currency_id, int amount, bool is_sc
 		return 0;
 	}
 
-	int new_value = 0;
-	auto iter = alternate_currency.find(currency_id);
-	if (iter == alternate_currency.end()) {
-		new_value = amount;
-	} else {
-		new_value = (*iter).second + amount;
-	}
-
+	const int current_value = alternate_currency[currency_id];
+	int new_value = current_value + amount;
 	if (new_value < 0) {
 		new_value = 0;
-		alternate_currency[currency_id] = 0;
-		database.UpdateAltCurrencyValue(CharacterID(), currency_id, 0);
-	} else {
-		alternate_currency[currency_id] = new_value;
-		database.UpdateAltCurrencyValue(CharacterID(), currency_id, new_value);
 	}
 
-	SendAlternateCurrencyValue(currency_id);
-
-	QuestEventID event_id = amount > 0 ? EVENT_ALT_CURRENCY_GAIN : EVENT_ALT_CURRENCY_LOSS;
-	if (parse->PlayerHasQuestSub(event_id)) {
-		const std::string &export_string = fmt::format(
-			"{} {} {}",
-			currency_id,
-			std::abs(amount),
-			new_value
-		);
-
-		parse->EventPlayer(event_id, this, export_string, 0);
-	}
-
+	SetAlternateCurrencyValue(currency_id, static_cast<uint32>(new_value));
 	return new_value;
 }
+
 
 void Client::SendAlternateCurrencyValues()
 {

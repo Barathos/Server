@@ -871,7 +871,11 @@ void Client::CompleteConnect()
 
 	SendRewards();
 	SendAltCurrencies();
-	database.LoadAltCurrencyValues(CharacterID(), alternate_currency);
+	if (RuleB(Custom, EnableAccountAltCurrency)) {
+		database.LoadAccountAltCurrencyValues(AccountID(), alternate_currency);
+	} else {
+		database.LoadAltCurrencyValues(CharacterID(), alternate_currency);
+	}
 	SendAlternateCurrencyValues();
 	alternate_currency_loaded = true;
 	ProcessAlternateCurrencyQueue();
@@ -2805,6 +2809,23 @@ void Client::Handle_OP_AltCurrencyReclaim(const EQApplicationPacket *app)
 
 	if (!item_id) {
 		return;
+	}
+
+	// Alternate mode: if there's an item on cursor and reclaim_flag == 1
+	if (reclaim->reclaim_flag == 1) {
+		const EQ::ItemInstance* cursor_item = GetInv().GetItem(EQ::invslot::slotCursor);
+		if (cursor_item) {
+			uint32 cursor_item_id = cursor_item->GetItem()->ID;
+
+			// Attempt to find currency_id based on item_id
+			for (const auto& cur : zone->AlternateCurrencies) {
+				if (cur.item_id == cursor_item_id) {
+					reclaim->currency_id = cur.id;
+					item_id = cur.item_id; // override item_id too
+					break;
+				}
+			}
+		}
 	}
 
 	if (IsTrader()) {

@@ -35,6 +35,7 @@
 #include "../common/repositories/character_alternate_abilities_repository.h"
 #include "../common/repositories/character_auras_repository.h"
 #include "../common/repositories/character_alt_currency_repository.h"
+#include "../common/repositories/account_alt_currency_repository.h"
 #include "../common/repositories/character_item_recast_repository.h"
 #include "../common/repositories/account_repository.h"
 #include "../common/repositories/respawn_times_repository.h"
@@ -2901,6 +2902,36 @@ void ZoneDatabase::UpdateAltCurrencyValue(uint32 char_id, uint32 currency_id, ui
 	e.amount      = value;
 
 	CharacterAltCurrencyRepository::ReplaceOne(*this, e);
+}
+
+void ZoneDatabase::LoadAccountAltCurrencyValues(uint32 account_id, std::map<uint32, uint32> &currency)
+{
+	const auto& l = AccountAltCurrencyRepository::GetWhere(
+		*this,
+		fmt::format(
+			"`account_id` = {}",
+			account_id
+		)
+	);
+
+	if (l.empty()) {
+		return;
+	}
+
+	for (const auto& e : l) {
+		currency[e.currency_id] = e.amount;
+	}
+}
+
+void ZoneDatabase::UpdateAccountAltCurrencyValue(uint32 account_id, uint32 currency_id, uint32 value)
+{
+	auto e = AccountAltCurrencyRepository::NewEntity();
+
+	e.account_id  = account_id;
+	e.currency_id = currency_id;
+	e.amount      = value;
+
+	AccountAltCurrencyRepository::ReplaceOne(*this, e);
 }
 
 void ZoneDatabase::SaveBuffs(Client *client)
