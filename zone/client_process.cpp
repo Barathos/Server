@@ -633,6 +633,10 @@ bool Client::Process() {
 			DoEnduranceRegen();
 			BuffProcess();
 
+			if (auto_attack) {
+				ResetAFKTimer();
+			}
+
 			if (m_initial_wc.Check(false)) {
 				SendArmorAppearance();
 				SetWeaponAppearance();
