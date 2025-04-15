@@ -162,7 +162,11 @@ void Mob::TemporaryPets(uint16 spell_id, Mob *targ, const char *name_override, u
 		//removing this prevents the pet from attacking
 		if (HasOwner()) {
 			swarm_pet_npc->GetSwarmInfo()->owner_id = GetOwnerID();
-		} else {
+		}
+		if (IsNPC() && CastToNPC()->GetSwarmInfo()) {
+			swarm_pet_npc->GetSwarmInfo()->owner_id = CastToNPC()->GetSwarmInfo()->owner_id;
+		}
+		else {
 			swarm_pet_npc->GetSwarmInfo()->owner_id = GetID();
 		}
 
