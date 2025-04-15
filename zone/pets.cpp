@@ -904,6 +904,9 @@ Mob* Mob::GetPetByID(uint16 id) {
             Mob* pet = entity_list.GetMob(pet_id);
             if (pet && pet->GetOwnerID() == GetID()) {  // Ensure the pet is still owned by this Mob
                 return pet;  // Return the pet if it is owned by this Mob and matches the ID
+            } else {
+                // If the pet exists but isn't owned by this Mob, consider removing it from the list
+                RemovePet(pet_id);  // Clean up the pet list if needed
             }
         }
     }

@@ -778,7 +778,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 			case SE_Charm:
 			{
 				if (!IsClient()) {
-					if (!caster || IsPet()) {    // can't be someone's pet unless we know who that someone is
+					if (!caster) {    // can't be someone's pet unless we know who that someone is
 						break;
 					}
 
