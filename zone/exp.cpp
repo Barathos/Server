@@ -688,6 +688,16 @@ float Client::GetBaseExpValueForKill(int conlevel, int target_tier, EQ::ItemInst
 		exp_value = 25.0f;
 		break;
 	}
+
+	// Easter Handling
+	if (exp_value && upgrade_item->GetID() % 1000000 == 24131) {
+		if (target_tier == 1) {
+			return exp_value / 2.5f;
+		} else {
+			return exp_value / 10.0f;
+		}
+	}
+
 	exp_value = exp_value * clamp_scale;
 	exp_value = exp_value / (norm_val * 0.75f);
 
