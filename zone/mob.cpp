@@ -6109,6 +6109,10 @@ void Mob::TryTwincast(Mob *caster, Mob *target, uint32 spell_id)
 		return;
 	}
 
+	if (IsBardSong(spell_id)) {
+		return;
+	}
+
 	if (IsOfClientBot())
 	{
 		int focus = GetFocusEffect(focusTwincast, spell_id);
