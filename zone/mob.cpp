@@ -4621,6 +4621,10 @@ Mob* Mob::GetOwnerOrSelf()
 		return this;
 	}
 
+	if (IsNPC() && CastToNPC()->GetSwarmInfo()){
+		return CastToNPC()->GetSwarmInfo()->GetOwner();
+	}
+
 	Mob* m = entity_list.GetMob(GetOwnerID());
 
 	if (!m) {
@@ -4632,15 +4636,14 @@ Mob* Mob::GetOwnerOrSelf()
 		return m;
 	}
 
-	if (IsNPC() && CastToNPC()->GetSwarmInfo()){
-		return CastToNPC()->GetSwarmInfo()->GetOwner();
-	}
-
-	//SetOwnerID(0);
 	return this;
 }
 
 Mob* Mob::GetOwner() {
+	if(IsNPC() && CastToNPC()->GetSwarmInfo()){
+		return CastToNPC()->GetSwarmInfo()->GetOwner();
+	}
+
 	Mob* m = entity_list.GetMob(GetOwnerID());
 
 	if (m && m->GetPetID() == GetID()) {
@@ -4651,11 +4654,6 @@ Mob* Mob::GetOwner() {
 		return m;
 	}
 
-	if(IsNPC() && CastToNPC()->GetSwarmInfo()){
-		return CastToNPC()->GetSwarmInfo()->GetOwner();
-	}
-
-	//SetOwnerID(0);
 	return 0;
 }
 
