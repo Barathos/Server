@@ -71,9 +71,15 @@ inline void LoadLootStateData(Zone *zone, NPC *npc, const std::string &loot_data
 			continue;
 		}
 
+		if (RuleB(Custom, DoItemUpgrades)) {
+			// Just give up
+			npc->AddItemFixed(e.item_id, e.charges);
+			continue;
+		}
+
 		// dynamically added via AddItem
 		if (e.lootdrop_id == 0) {
-			npc->AddItem(e.item_id, e.charges, true);
+			npc->AddItemFixed(e.item_id, e.charges, true);
 			continue;
 		}
 
