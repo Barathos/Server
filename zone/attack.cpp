@@ -5701,100 +5701,75 @@ void Mob::TryCriticalHit(Mob *defender, DamageHitInfo &hit, ExtraAttackOptions *
 	int crit_chance_percent = GetBaseCriticalHitChance(hit.skill);
 
 	// If we have a chance to crit
-	if (crit_chance_percent > 0) {
-
-    // Fake 'Devastating Frenzy' being a real AA
-    if (GetLevel() >= 51 && hit.skill == EQ::skills::SkillFrenzy) {
-        // Scale the crit chance by defender's HP ratio
-        crit_chance_percent += crit_chance_percent * (100 - defender->GetHPRatio()) / 100;
-    }
+	if (crit_chance_percent <= 0) {
+		return;
+	}
 
     // Determine if we crit based on the calculated chance
     int roll = zone->random.Int(1, 100);
 
+	// Fake 'Devastating Frenzy' being a real AA
+	if (GetLevel() >= 51 && hit.skill == EQ::skills::SkillFrenzy) {
+		roll *= (defender->GetHPRatio() / 100);
+	}
+
     // check if we crited
-    if (roll <= crit_chance_percent) {
-        // Critical hit success code goes here
-			// step 1: check for finishing blow
-			if (TryFinishingBlow(defender, hit.damage_done)) {
-				return;
-			}
+    if (roll > crit_chance_percent) {
+		return;
+	}
 
-			// step 2: calculate damage
-			hit.damage_done = std::max(hit.damage_done, hit.base_damage) + 5;
-			int og_damage = hit.damage_done;
-			int crit_mod = 170 + GetCritDmgMod(hit.skill);
+	// Critical hit success code goes here
+	// step 1: check for finishing blow
+	if (TryFinishingBlow(defender, hit.damage_done)) {
+		return;
+	}
 
-			if (crit_mod < 100) {
-				crit_mod = 100;
-			}
+	// step 2: calculate damage
+	hit.damage_done = std::max(hit.damage_done, hit.base_damage) + 5;
+	int og_damage = hit.damage_done;
+	int crit_mod = 170 + GetCritDmgMod(hit.skill);
 
-			hit.damage_done = hit.damage_done * crit_mod / 100;
+	if (crit_mod < 100) {
+		crit_mod = 100;
+	}
 
-			if (RuleR(Custom, DevastatingFrenzyDamageMultiplier) > 0 &&
-				HasClass(Class::Berserker) &&
-				GetLevel() >= 50 && // Replace this for correct check for Decap AA
-				hit.skill == EQ::skills::SkillFrenzy) {
+	hit.damage_done = hit.damage_done * crit_mod / 100;
 
-				int target_hp_ratio = defender->GetHPRatio();
+	if (RuleR(Custom, DevastatingFrenzyDamageMultiplier) > 0 &&
+		HasClass(Class::Berserker) &&
+		GetLevel() >= 50 && // Replace this for correct check for Decap AA
+		hit.skill == EQ::skills::SkillFrenzy) {
 
-				uint64 scale = RuleR(Custom, DevastatingFrenzyDamageMultiplier) * ((100 - target_hp_ratio) / 20);
+		int target_hp_ratio = defender->GetHPRatio();
 
-				hit.damage_done = hit.damage_done + (hit.damage_done * scale);
-				hit.min_damage  = hit.min_damage  + (hit.min_damage + scale);
+		uint64 scale = RuleR(Custom, DevastatingFrenzyDamageMultiplier) * ((100 - target_hp_ratio) / 20);
 
-				entity_list.FilteredMessageClose(this,
-													false,
-													RuleI(Range, CriticalDamage),
-													Chat::MeleeCrit,
-													FilterMeleeCrits,
-													"%s lands a Cleaving Blow! (%i)",
-													GetCleanName(),
-													hit.damage_done + hit.min_damage);
-				return;
-			}
+		hit.damage_done = hit.damage_done + (hit.damage_done * scale);
+		hit.min_damage  = hit.min_damage  + (hit.min_damage + scale);
 
-			// step 3: check deadly strike
-			if ((HasClass(Class::Rogue)) && hit.skill == EQ::skills::SkillThrowing) {
-				if (BehindMob(defender, GetX(), GetY())) {
-					int chance = GetLevel() * 12;
-					if (zone->random.Int(1, 1000) < chance) {
-						// step 3a: check assassinate
-						int assassinate_damage = TryAssassinate(defender, hit.skill); // I don't think this is right
-						if (assassinate_damage) {
-							hit.damage_done = assassinate_damage;
-							return;
-						}
-						hit.damage_done = hit.damage_done * 200 / 100;
+		entity_list.FilteredMessageClose(this,
+											false,
+											RuleI(Range, CriticalDamage),
+											Chat::MeleeCrit,
+											FilterMeleeCrits,
+											"%s lands a Cleaving Blow! (%i)",
+											GetCleanName(),
+											hit.damage_done + hit.min_damage);
+		return;
+	}
 
-						entity_list.FilteredMessageCloseString(
-							this, /* Sender */
-							false, /* Skip Sender */
-							RuleI(Range, CriticalDamage),
-							Chat::MeleeCrit, /* Type: 301 */
-							FilterMeleeCrits, /* FilterType: 12 */
-							DEADLY_STRIKE, /* MessageFormat: %1 scores a Deadly Strike!(%2) */
-							0,
-							GetCleanName(), /* Message1 */
-							itoa(hit.damage_done + hit.min_damage) /* Message2 */
-						);
-						return;
-					}
+	// step 3: check deadly strike
+	if ((HasClass(Class::Rogue)) && hit.skill == EQ::skills::SkillThrowing) {
+		if (BehindMob(defender, GetX(), GetY())) {
+			int chance = GetLevel() * 12;
+			if (zone->random.Int(1, 1000) < chance) {
+				// step 3a: check assassinate
+				int assassinate_damage = TryAssassinate(defender, hit.skill); // I don't think this is right
+				if (assassinate_damage) {
+					hit.damage_done = assassinate_damage;
+					return;
 				}
-			}
-
-			// step 4: check crips
-			// this SPA was reused on live ...
-			bool berserk = spellbonuses.BerserkSPA || itembonuses.BerserkSPA || aabonuses.BerserkSPA;
-			if (!berserk) {
-				if (zone->random.Roll(GetCrippBlowChance())) {
-					berserk = true;
-				}
-			}
-
-			if (IsBerserk() || berserk) {
-				hit.damage_done += og_damage * 119 / 100;
-				LogCombat("Crip damage [{}]", hit.damage_done);
+				hit.damage_done = hit.damage_done * 200 / 100;
 
 				entity_list.FilteredMessageCloseString(
 					this, /* Sender */
@@ -5802,43 +5777,70 @@ void Mob::TryCriticalHit(Mob *defender, DamageHitInfo &hit, ExtraAttackOptions *
 					RuleI(Range, CriticalDamage),
 					Chat::MeleeCrit, /* Type: 301 */
 					FilterMeleeCrits, /* FilterType: 12 */
-					CRIPPLING_BLOW, /* MessageFormat: %1 lands a Crippling Blow!(%2) */
+					DEADLY_STRIKE, /* MessageFormat: %1 scores a Deadly Strike!(%2) */
 					0,
 					GetCleanName(), /* Message1 */
 					itoa(hit.damage_done + hit.min_damage) /* Message2 */
 				);
-
-				// Crippling blows also have a chance to stun
-				// Kayen: Crippling Blow would cause a chance to interrupt for npcs < 55, with a
-				// staggers message.
-				if (defender->GetLevel() <= 55 && !defender->GetSpecialAbility(SpecialAbility::StunImmunity)) {
-					entity_list.MessageCloseString(
-						defender,
-						true,
-						RuleI(Range, Emote),
-						Chat::Emote,
-						STAGGERS,
-						GetName()
-					);
-					defender->Stun(RuleI(Combat, StunDuration));
-				}
 				return;
 			}
-
-			/* Normal Critical hit message */
-			entity_list.FilteredMessageCloseString(
-				this, /* Sender */
-				false, /* Skip Sender */
-				RuleI(Range, CriticalDamage),
-				Chat::MeleeCrit, /* Type: 301 */
-				FilterMeleeCrits, /* FilterType: 12 */
-				CRITICAL_HIT, /* MessageFormat: %1 scores a critical hit! (%2) */
-				0,
-				GetCleanName(), /* Message1 */
-				itoa(hit.damage_done + hit.min_damage) /* Message2 */
-			);
 		}
 	}
+
+	// step 4: check crips
+	// this SPA was reused on live ...
+	bool berserk = spellbonuses.BerserkSPA || itembonuses.BerserkSPA || aabonuses.BerserkSPA;
+	if (!berserk) {
+		if (zone->random.Roll(GetCrippBlowChance())) {
+			berserk = true;
+		}
+	}
+
+	if (IsBerserk() || berserk) {
+		hit.damage_done += og_damage * 119 / 100;
+		LogCombat("Crip damage [{}]", hit.damage_done);
+
+		entity_list.FilteredMessageCloseString(
+			this, /* Sender */
+			false, /* Skip Sender */
+			RuleI(Range, CriticalDamage),
+			Chat::MeleeCrit, /* Type: 301 */
+			FilterMeleeCrits, /* FilterType: 12 */
+			CRIPPLING_BLOW, /* MessageFormat: %1 lands a Crippling Blow!(%2) */
+			0,
+			GetCleanName(), /* Message1 */
+			itoa(hit.damage_done + hit.min_damage) /* Message2 */
+		);
+
+		// Crippling blows also have a chance to stun
+		// Kayen: Crippling Blow would cause a chance to interrupt for npcs < 55, with a
+		// staggers message.
+		if (defender->GetLevel() <= 55 && !defender->GetSpecialAbility(SpecialAbility::StunImmunity)) {
+			entity_list.MessageCloseString(
+				defender,
+				true,
+				RuleI(Range, Emote),
+				Chat::Emote,
+				STAGGERS,
+				GetName()
+			);
+			defender->Stun(RuleI(Combat, StunDuration));
+		}
+		return;
+	}
+
+	/* Normal Critical hit message */
+	entity_list.FilteredMessageCloseString(
+		this, /* Sender */
+		false, /* Skip Sender */
+		RuleI(Range, CriticalDamage),
+		Chat::MeleeCrit, /* Type: 301 */
+		FilterMeleeCrits, /* FilterType: 12 */
+		CRITICAL_HIT, /* MessageFormat: %1 scores a critical hit! (%2) */
+		0,
+		GetCleanName(), /* Message1 */
+		itoa(hit.damage_done + hit.min_damage) /* Message2 */
+	);
 }
 
 bool Mob::TryFinishingBlow(Mob *defender, int64 &damage)
