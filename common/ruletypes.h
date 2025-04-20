@@ -1276,6 +1276,7 @@ RULE_BOOL(Custom,	AlternateMobFDBehavior,					true, "Enable to cause mob FD effe
 RULE_BOOL(Custom,   DisableClearInstanceTimers, false , "BREAK GLASS IN EMERGENCY")
 
 RULE_BOOL(Custom,   EnableAccountAltCurrency, false, "Enable account-based alternate currency.")
+RULE_INT(Custom,  	AAConsumeBaseValue, 				50, "Base value for AA consumption")
 
 // Seasonal
 RULE_INT(Custom,  	EnableSeasonalCharacters, 				0, "Set to Seasonal ID to track for current Seasonal characters, 0 to disable.")

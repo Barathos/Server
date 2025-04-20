@@ -1383,6 +1383,11 @@ bool Perl_Client_ConsumeItemOnCursor(Client* self)
 	return self->ConsumeItemOnCursor();
 }
 
+bool Perl_Client_ConsumeUnspentAA(Client* self)
+{
+	return self->ConsumeUnspentAA();
+}
+
 bool Perl_Client_GrantAlternateAdvancementAbility(Client* self, int aa_id, int points) // @categories Alternative Advancement
 {
 	return self->GrantAlternateAdvancementAbility(aa_id, points);
@@ -3583,6 +3588,7 @@ void perl_register_client()
 	package.add("ClearZoneFlag", &Perl_Client_ClearZoneFlag);
 	package.add("Connected", &Perl_Client_Connected);
 	package.add("ConsumeItemOnCursor", &Perl_Client_ConsumeItemOnCursor);
+	package.add("ConsumeUnspentAA", &Perl_Client_ConsumeUnspentAA);
 	package.add("CountAugmentEquippedByID", &Perl_Client_CountAugmentEquippedByID);
 	package.add("CountItem", &Perl_Client_CountItem);
 	package.add("CountItemEquippedByID", &Perl_Client_CountItemEquippedByID);

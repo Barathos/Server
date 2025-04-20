@@ -520,6 +520,66 @@ void Client::CalculateExp(uint64 in_add_exp, uint64 &add_exp, uint64 &add_aaxp, 
 	add_exp = GetEXP() + add_exp;
 }
 
+bool Client::ConsumeUnspentAA() {
+	auto pow_item = m_inv.GetItem(EQ::invslot::slotPowerSource);
+
+	if (!pow_item) {
+		Message(Chat::SpellFailure, "You must have a Power Source equipped to infuse it with AA points.");
+		return false;
+	}
+
+	if (m_pp.aapoints == 0) {
+		Message(Chat::SpellFailure, "You have no unspent AA points to consume.");
+		return false;
+	}
+
+	int base_value = RuleI(Custom, AAConsumeBaseValue);
+	if (base_value <= 0) {
+		Message(Chat::Red, "Server rule 'Custom:AAConsumeBaseValue' is not configured correctly.");
+		return false;
+	}
+
+	int pow_item_tier = pow_item->GetItemTier();
+	float current_exp = Strings::ToFloat(pow_item->GetCustomData("Exp"), 0.0f);
+
+	// Determine experience gain per AA based on tier
+	float exp_per_aa = 0.0f;
+	switch (pow_item_tier) {
+		case 0: exp_per_aa = 33.33f / static_cast<float>(base_value); break;
+		case 1: exp_per_aa = 6.65f / static_cast<float>(base_value);  break;
+		default:
+			Message(Chat::SpellFailure, "This item cannot benefit from AA infusion.");
+			return false;
+	}
+
+	float added_exp = m_pp.aapoints * exp_per_aa;
+	float new_exp = current_exp + added_exp;
+
+	if (new_exp > 100.0f) {
+		new_exp = 100.0f;
+	}
+
+	uint32 used_aa = static_cast<uint32>(std::ceil((new_exp - current_exp) / exp_per_aa));
+	if (used_aa > m_pp.aapoints)
+		used_aa = m_pp.aapoints;
+
+	m_pp.aapoints -= used_aa;
+	SendAlternateAdvancementStats();
+
+	pow_item->SetCustomData("Exp", fmt::to_string(new_exp));
+	database.UpdateInventorySlot(CharacterID(), pow_item, EQ::invslot::slotPowerSource);
+
+	if (AddItemExperience(pow_item, ConsiderColor::Green)) {
+		return true;
+	}
+
+	// Refund if failed
+	m_pp.aapoints += used_aa;
+	SendAlternateAdvancementStats();
+	Message(Chat::Red, "Your AA infusion failed. No points were consumed.");
+	return false;
+}
+
 bool Client::ConsumeItemOnCursor() {
 	auto pow_item = m_inv.GetItem(EQ::invslot::slotPowerSource);
 	auto cur_item = m_inv.GetCursorItem();
