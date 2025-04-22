@@ -106,6 +106,7 @@ namespace DatabaseSchema {
 			"account_flags",
 			"account_rewards",
 			"account_kill_counts",
+			"account_alt_currency",
 			"adventure_details",
 			"adventure_stats",
 			"buyer",
