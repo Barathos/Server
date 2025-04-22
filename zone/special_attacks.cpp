@@ -518,7 +518,7 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk, bool is_riposte
 			return;
 		}
 		if (ca_atk->m_skill == EQ::skills::SkillThrowing) {
-			//SetAttackTimer(); // I don't think this is needed, ranged attack timer is handled already, and this allows for clicking the button faster than the serverside timer if the client is lying
+			SetAttackTimer();
 			ThrowingAttack(GetTarget());
 			if (CheckDoubleRangedAttack() || (RuleB(Custom, DoubleAttackSkillRanged) && CanThisClassDoubleAttack() && CheckDoubleAttack())) {
 				ThrowingAttack(GetTarget(), true);
@@ -533,7 +533,7 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk, bool is_riposte
 
 		// ranged attack (archery)
 		if (ca_atk->m_skill == EQ::skills::SkillArchery) {
-			//SetAttackTimer(); // I don't think this is needed, ranged attack timer is handled already, and this allows for clicking the button faster than the serverside timer if the client is lying
+			SetAttackTimer();
 			RangedAttack(GetTarget());
 			if (CheckDoubleRangedAttack() || (RuleB(Custom, DoubleAttackSkillRanged) && CanThisClassDoubleAttack() && CheckDoubleAttack())) {
 				RangedAttack(GetTarget(), true);
