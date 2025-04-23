@@ -147,7 +147,7 @@ void ClientList::GetCLEIP(uint32 in_ip) {
 			} else {
 				if (
 					RuleI(World, MaxClientsPerIP) > 0 &&
-					count > RuleI(World, MaxClientsPerIP)
+					count >= RuleI(World, MaxClientsPerIP)
 				) { // If the number of connections exceeds the lower limit
 					if (RuleB(World, MaxClientsSetByStatus)) { // If MaxClientsSetByStatus is set to True, override other IP Limit Rules
 						LogClientLogin(
@@ -187,7 +187,7 @@ void ClientList::GetCLEIP(uint32 in_ip) {
 						}
 					} else if (
 						RuleI(World, AddMaxClientsPerIP) > 0 &&
-						count > RuleI(World, AddMaxClientsPerIP)
+						count >= RuleI(World, AddMaxClientsPerIP)
 					) { // else they are eligible for the higher limit, but if they exceed that
 						if (RuleB(World, IPLimitDisconnectAll)) {
 							LogClientLogin("Disconnect: All Accounts on IP [{}]", ip_string);
