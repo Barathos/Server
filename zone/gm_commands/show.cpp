@@ -50,6 +50,7 @@
 #include "show/zone_points.cpp"
 #include "show/zone_status.cpp"
 #include "show/zone_variables.cpp"
+#include "show/exemptions.cpp"
 
 void command_show(Client *c, const Seperator *sep)
 {
@@ -112,6 +113,7 @@ void command_show(Client *c, const Seperator *sep)
 		Cmd{.cmd = "zone_points", .u = "zone_points", .fn = ShowZonePoints, .a = {"#showzonepoints"}},
 		Cmd{.cmd = "zone_status", .u = "zone_status", .fn = ShowZoneStatus, .a = {"#zonestatus"}},
 		Cmd{.cmd = "zone_variables", .u = "zone_variables", .fn = ShowZoneVariables},
+		Cmd{.cmd = "exempt", .u = "exempt", .fn = ShowExemptions},
 	};
 
 	// Check for arguments
