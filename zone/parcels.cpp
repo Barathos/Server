@@ -433,6 +433,8 @@ void Client::DoParcelSend(const Parcel_Struct *parcel_in)
 
 			if (!inst->IsDroppable(true)) {
 				Message(Chat::Yellow, "Unable to send a parcel that is NO-DROP or contains a NO-DROP item.");
+				SendParcelAck();
+				DoParcelCancel();
 				return;
 			}
 
