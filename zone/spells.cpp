@@ -4999,6 +4999,14 @@ bool Mob::SpellOnTarget(
 		spelltar->CastToClient()->SendBulkStatsUpdate();
 	}
 
+	if (IsClient() && IsDamageSpell(spell_id)) {
+		for (auto pet : GetAllPets()) {
+			if (pet && pet->IsNPC() && pet->IsPetAssisting()) {
+				pet->CastToNPC()->DoPetCommandAssistOnTarget(spelltar);
+			}
+		}
+	}
+
 	return true;
 }
 

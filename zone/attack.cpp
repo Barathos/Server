@@ -3246,6 +3246,23 @@ void Mob::AddToHateList(Mob* other, int64 hate /*= 0*/, int64 damage /*= 0*/, bo
 	Mob* targetmob = GetTarget();
 	bool on_hatelist = CheckAggro(other);
 
+	/* THJ Custom Behavior */
+	if (hate && other->IsClient()) {
+		bool aggro_reassigned = false;
+		for (auto pet : other->GetAllPets()) {
+			if (pet && pet->IsEngaged() && pet->CastToNPC()->IsTaunting()) {
+				AddToHateList(pet, hate, damage, iYellForHelp, bFrenzy, iBuffTic, spell_id, pet_command);
+				aggro_reassigned = true;
+				LogDebug("Assigned [{}] hate to [{}] because they are taunting.", hate, pet->GetCleanName());
+			}
+		}
+
+		if (aggro_reassigned) {
+			hate *= 0.50;
+			LogDebug("Reduced hate to [{}] because it was reassigned to a pet.", hate);
+		}
+	}
+
 	// Dont add to pet's rampage list unless its currently attacking something or was issued to via a pet command
 	if(!IsPet() || wasengaged || pet_command) {
 		AddRampage(other);

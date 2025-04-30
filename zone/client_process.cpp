@@ -506,6 +506,12 @@ bool Client::Process() {
 					entity_list.AEAttack(this, 40);
 				}
 			}
+
+			for (auto pet : GetAllPets()) {
+				if (pet && pet->IsNPC() && pet->IsPetAssisting()) {
+					pet->CastToNPC()->DoPetCommandAssistOnTarget(auto_attack_target);
+				}
+			}
 		}
 
 		if (HasClass(Class::Warrior) || HasClass(Class::Berserker)) {

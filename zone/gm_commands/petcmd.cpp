@@ -6,7 +6,7 @@ void command_petcmd(Client *c, const Seperator *sep) {
         return;
     }
 
-    const std::string usage = "Usage: #petcmd [attack, qattack, follow, guard, sit, stop, taunt (on\\off), hold (on\\off), ghold (on\\off), spellhold (on\\off), focus (on\\off), back, regroup (on\\off), health, leader, feign, leave] [all, mag, bst, nec, enc, shm, dru, brd, shd]. Verbs do not need to be applied in any specific order.";
+    const std::string usage = "Usage: #petcmd [attack, qattack, follow, guard, sit, stop, taunt (on\\off), hold (on\\off), ghold (on\\off), spellhold (on\\off), focus (on\\off), back, regroup (on\\off), assist (on\\off), health, leader, feign, leave] [all, mag, bst, nec, enc, shm, dru, brd, shd]. Verbs do not need to be applied in any specific order.";
 
     // Safely build a vector of args
     std::vector<std::string> args;
@@ -58,7 +58,7 @@ void command_petcmd(Client *c, const Seperator *sep) {
         {"stop", PET_STOP}, {"freeze", PET_STOP},
         {"back", PET_BACKOFF}, {"backoff", PET_BACKOFF},
         {"leave", PET_GETLOST}, {"dismiss", PET_GETLOST}, {"getlost", PET_GETLOST},
-        {"health", PET_HEALTHREPORT}, {"healthreport", PET_HEALTHREPORT}, {"hp", PET_HEALTHREPORT},
+        {"health", PET_HEALTHREPORT}, {"healthreport", PET_HEALTHREPORT}, {"hp", PET_HEALTHREPORT}, {"stats", PET_HEALTHREPORT}, {"inventory", PET_HEALTHREPORT}, {"inv", PET_HEALTHREPORT},
         {"leader", PET_LEADER}, {"master", PET_LEADER},
         {"feign", PET_FEIGN}, {"fd", PET_FEIGN}, {"playdead", PET_FEIGN}
     };
@@ -77,12 +77,46 @@ void command_petcmd(Client *c, const Seperator *sep) {
         {"spellhold", {PET_SPELLHOLD, PET_SPELLHOLD_ON, PET_SPELLHOLD_OFF}},
         {"nocast", {PET_SPELLHOLD, PET_SPELLHOLD_ON, PET_SPELLHOLD_OFF}},
         {"focus", {PET_FOCUS, PET_FOCUS_ON, PET_FOCUS_OFF}},
-        {"regroup", {PET_REGROUP, PET_REGROUP_ON, PET_REGROUP_OFF}}
+        {"regroup", {PET_REGROUP, PET_REGROUP_ON, PET_REGROUP_OFF}},
+        {"assist", {CUSTOM_PET_ASSIST, CUSTOM_PET_ASSIST_ON, CUSTOM_PET_ASSIST_OFF}},
+        {"assistme", {CUSTOM_PET_ASSIST, CUSTOM_PET_ASSIST_ON, CUSTOM_PET_ASSIST_OFF}}
     };
 
-    // Process each argument
-    for (size_t i = 0; i < args.size(); ++i) {
-        const std::string& arg = Strings::ToLower(args[i]);
+	// Define multi-word commands and their corresponding codes
+	std::map<std::pair<std::string, std::string>, int> multi_word_commands = {
+		{{"follow", "me"}, PET_FOLLOWME},
+		{{"guard", "here"}, PET_GUARDHERE},
+		{{"get", "lost"}, PET_GETLOST},
+		{{"assist", "me"}, CUSTOM_PET_ASSIST},
+		{{"back", "off"}, PET_BACKOFF},
+		{{"health", "report"}, PET_HEALTHREPORT},
+		{{"play", "dead"}, PET_FEIGN}
+	};
+
+	// Process multi-word commands first
+	std::vector<bool> arg_processed(args.size(), false);
+	for (size_t i = 0; i < args.size() - 1; ++i) {
+		if (arg_processed[i]) continue;
+
+		std::string first_word = Strings::ToLower(args[i]);
+		std::string second_word = Strings::ToLower(args[i+1]);
+
+		auto it = multi_word_commands.find({first_word, second_word});
+		if (it != multi_word_commands.end()) {
+			command_codes.push_back(it->second);
+			arg_processed[i] = true;
+			arg_processed[i+1] = true;
+		}
+	}
+
+	// Process each remaining argument
+	for (size_t i = 0; i < args.size(); ++i) {
+		// Skip already processed arguments
+		if (arg_processed[i]) {
+			continue;
+		}
+
+		const std::string& arg = Strings::ToLower(args[i]);
 
         // Check if it's "all"
         if (arg == "all") {

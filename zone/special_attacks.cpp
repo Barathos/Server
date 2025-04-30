@@ -2173,28 +2173,40 @@ void NPC::DoClassAttacks(Mob *target) {
 		knightattack_timer.Start(knightreuse);
 	}
 
-	//general stuff, for all classes....
-	//only gets used when their primary ability get used too
+	// General taunt behavior for all classes.
+	// Only executes when the pet's primary ability is also used.
 	if (
 		IsTaunting() &&
 		HasOwner() &&
+		target &&
 		target->IsNPC() &&
 		taunt_time &&
 		type_of_pet &&
 		type_of_pet != petTargetLock &&
-		DistanceSquared(GetPosition(), target->GetPosition()) <= (RuleI(Pets, PetTauntRange) * RuleI(Pets, PetTauntRange))
+		DistanceSquared(GetPosition(), target->GetPosition()) <=
+			RuleI(Pets, PetTauntRange) * RuleI(Pets, PetTauntRange)
 	) {
-		if (GetOwner() && GetOwner()->IsClient())
-		SayString(GetOwner()->CastToClient(), Chat::PetResponse, PET_TAUNTING);
+		if (GetOwner() && GetOwner()->IsClient()) {
+			SayString(GetOwner()->CastToClient(), Chat::PetResponse, PET_TAUNTING);
+		}
+
+		// Attempt to taunt the main target.
 		Taunt(target->CastToNPC(), true);
 		target->AddToHateList(this, 250, 250);
-		for (const auto & ent : entity_list.GetNPCList()) {
+
+		// Check nearby NPCs attacking the owner and taunt them as well.
+		for (const auto& ent : entity_list.GetNPCList()) {
 			auto mob = ent.second;
-			if (mob && mob->IsOnHatelist(GetOwner())
-			    && mob->GetTarget() && mob->GetTarget()->GetID() == GetOwner()->GetID()
-				&& DistanceSquared(GetPosition(), mob->GetPosition()) <= (RuleI(Pets, PetTauntRange) * RuleI(Pets, PetTauntRange))) {
-				mob->AddToHateList(this, 100, 100);
-				Taunt(mob, false);
+			if (
+				mob &&
+				mob->IsOnHatelist(GetOwner()) &&
+				mob->GetTarget() &&
+				mob->GetTarget()->GetID() == GetOwner()->GetID() &&
+				DistanceSquared(GetPosition(), mob->GetPosition()) <=
+					RuleI(Pets, PetTauntRange) * RuleI(Pets, PetTauntRange)
+			) {
+				Taunt(mob, true);
+				mob->AddToHateList(this, 250, 250);
 			}
 		}
 	}

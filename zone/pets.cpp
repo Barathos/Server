@@ -300,6 +300,8 @@ void Mob::MakePoweredPet(uint16 spell_id, const char* pettype, int16 petpower,
 		LogDebug("Size was overwritten to: [{}]", in_size);
 	}
 
+	npc->m_pet_power = record.petpower;
+
 	npc->SetOwnerID(GetID());
 	entity_list.AddNPC(npc, true, true);
 	AddPet(npc);
@@ -578,32 +580,203 @@ std::string Mob::GenerateBeastlordPetName() {
 }
 
 std::string Mob::GenerateShamanPetName() {
-    static const std::vector<std::string> prefixes = {
-        "Spirit", "Ethereal", "Ghost", "Ancestor", "Shadow", "Phantom", "Mystic", "Spectral",
-        "Echo", "Soul", "Wraith", "Haunted", "Silent", "Wisdom", "Moon", "Pale", "Frost", "Dusk"
+    // Primary elements - broader range while maintaining spirit/wolf theme
+    static const std::vector<std::string> primaryElements = {
+        // Spectral qualities
+        "Astral", "Celestial", "Void", "Dream", "Twilight", "Ethereal", "Phantom", "Spectral",
+        "Ghost", "Spirit", "Umbral", "Shadow", "Moonlit", "Starlit", "Nightborn", "Soulbound",
+        "Ancestor", "Primal", "Ancient", "Forgotten", "Eternal", "Timeless", "Arcane", "Mystic",
+
+        // Elemental qualities
+        "Winter", "Frost", "Storm", "Thunder", "Mountain", "Tundra", "Forest", "Highland",
+        "Mist", "Dusk", "Dawn", "Ember", "Crystal", "Aurora", "Cosmic", "Infernal",
+
+        // Wolf/beast qualities
+        "Feral", "Wild", "Savage", "Untamed", "Fierce", "Loyal", "Alpha", "Lone",
+        "Grim", "Silent", "Stalking", "Hunting", "Nomad", "Roaming", "Primal", "Raging"
     };
 
-    static const std::vector<std::string> middles = {
-        "Howl", "Fang", "Hunter", "Paw", "Prowler", "Alpha", "Wolf", "Pack", "Shade",
-        "Walker", "Guardian", "Sentinel", "Stalker", "Bound", "Claw", "Spirit", "Hound", "Watcher"
+    // Secondary elements - broader set that still makes sense for spirits/wolves
+    static const std::vector<std::string> secondaryElements = {
+        // Wolf descriptors
+        "Wolf", "Lupine", "Howler", "Hunter", "Stalker", "Prowler", "Ravager", "Tracker",
+        "Fang", "Claw", "Maw", "Howl", "Rage", "Fury", "Watcher", "Guardian",
+        "Protector", "Defender", "Sentinel", "Scout", "Guide", "Companion", "Alpha", "Pack",
+
+        // Spirit descriptors
+        "Whisper", "Echo", "Vision", "Omen", "Harbinger", "Messenger", "Spirit", "Specter",
+        "Shade", "Wraith", "Apparition", "Revenant", "Wanderer", "Seeker", "Walker", "Seer",
+
+        // General mystical/powerful descriptors
+        "Force", "Power", "Essence", "Presence", "Aspect", "Form", "Warden", "Keeper",
+        "Blessing", "Vengeance", "Wisdom", "Memory", "Caller", "Voice", "Visage", "Omen"
     };
 
-    static const std::vector<std::string> suffixes = {
-        "", "of Echoes", "of Shadows", "of the Moon", "of Frost", "of Ancestors", "of Night",
-        "of Silence", "of Whispers", "of Spirits", "of the Hunt", "of Warding", "of the Pack",
-        "of the Alpha", "of Wisdom", "of the Ether", "of Dusk", "of Winter"
+    // Titles - includes longer options
+    static const std::vector<std::string> titles = {
+        // Simple suffixes
+        "Walker", "Hunter", "Seeker", "Caller", "Warden", "Keeper", "Binder",
+        "Stalker", "Watcher", "Guardian", "Prowler", "Omen", "Echo", "Vision",
+
+        // "of" phrases
+        "of_Shadows", "of_Spirits", "of_Twilight", "of_Dawn", "of_Dusk",
+        "of_Winter", "of_Night", "of_Stars", "of_Storms", "of_Frost",
+        "of_Thunder", "of_Earth", "of_Mist", "of_Ember", "of_Souls",
+
+        // Longer titles - will retain these since we'll drop the prefix if needed
+        "of_the_Beyond", "of_the_Void", "of_the_Wild", "of_the_Pack",
+        "of_the_Hunt", "of_the_Mountains", "of_the_Forest", "of_the_Moon",
+        "of_the_Stars", "of_Lost_Souls", "of_Forgotten_Paths", "of_Ancient_Wisdom"
     };
 
-    const std::string& prefix = prefixes[zone->random.Roll0(prefixes.size())];
-    const std::string& middle = middles[zone->random.Roll0(middles.size())];
-    const std::string& suffix = suffixes[zone->random.Roll0(suffixes.size())];
+    // Function to check if a combination is valid
+    auto isCompatible = [](const std::string& primary, const std::string& secondary) -> bool {
+        // This simplified approach checks for obviously bad combinations
 
-    std::string name = prefix + " " + middle;
-    if (!suffix.empty()) {
-        name += " " + suffix;
+        // Some obviously bad combinations to filter out
+        static const std::unordered_map<std::string, std::vector<std::string>> badPairs = {
+            {"Hunger", {"Seer", "Guardian", "Vision"}},
+            {"Stargazer", {"Hunger", "Rage", "Fury"}},
+            {"Mist", {"Infernal", "Ember", "Rage"}},
+            {"Rage", {"Seeker", "Wisdom", "Vision"}},
+            {"Fury", {"Seer", "Vision", "Whisper"}},
+            {"Silent", {"Howler", "Howl", "Rage"}}
+            // Add more bad combinations as needed
+        };
+
+        // Check if this specific pair is in our bad pairs list
+        auto it = badPairs.find(primary);
+        if (it != badPairs.end()) {
+            const auto& incompatibleSecondaries = it->second;
+            if (std::find(incompatibleSecondaries.begin(), incompatibleSecondaries.end(), secondary)
+                != incompatibleSecondaries.end()) {
+                return false;
+            }
+        }
+
+        // Default to allowing combinations unless explicitly forbidden
+        return true;
+    };
+
+    // Function to check for redundant root words in a name
+    auto hasRedundantTerms = [](const std::string& name) -> bool {
+        // List of root words to check for redundancy
+        static const std::vector<std::string> rootWords = {
+            "Winter", "Frost", "Spirit", "Ghost", "Shadow", "Umbral", "Shade", "Moon",
+            "Star", "Void", "Astral", "Cosmic", "Twilight", "Ancestor", "Dream", "Night",
+            "Soul", "Storm", "Thunder", "Forest", "Mountain", "Pack", "Alpha", "Wild",
+            "Howl", "Hunt", "Ethereal", "Phantom", "Spectral", "Specter", "Wraith"
+        };
+
+        for (const auto& root : rootWords) {
+            // Count occurrences of the root word in the name
+            int count = 0;
+            size_t pos = 0;
+            std::string nameLower = name;
+            std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(), ::tolower);
+            std::string rootLower = root;
+            std::transform(rootLower.begin(), rootLower.end(), rootLower.begin(), ::tolower);
+
+            while ((pos = nameLower.find(rootLower, pos)) != std::string::npos) {
+                // Check if this is a complete word match or just part of another word
+                bool isCompleteWord = true;
+
+                // If not at the beginning, check character before
+                if (pos > 0 && isalpha(nameLower[pos-1])) {
+                    isCompleteWord = false;
+                }
+
+                // If not at the end, check character after
+                size_t endPos = pos + rootLower.length();
+                if (endPos < nameLower.length() && isalpha(nameLower[endPos])) {
+                    isCompleteWord = false;
+                }
+
+                if (isCompleteWord) {
+                    count++;
+                }
+
+                pos += rootLower.length();
+            }
+
+            // If the same root appears multiple times, it's redundant
+            if (count > 1) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    // Function to count words in a name (by counting underscores + 1)
+    auto countWords = [](const std::string& name) -> int {
+        int count = 1; // Start with 1 for the first word
+        for (char c : name) {
+            if (c == '_') {
+                count++;
+            }
+        }
+        return count;
+    };
+
+    // Generate final name with checks for compatibility, redundancy, and word count
+    std::string finalName;
+    int attempts = 0;
+    const int MAX_ATTEMPTS = 10;
+
+    do {
+        // Select primary and secondary elements
+        const std::string& primary = primaryElements[zone->random.Roll0(primaryElements.size())];
+
+        // Select a compatible secondary element
+        std::string secondary;
+        int secondaryAttempts = 0;
+        const int MAX_SECONDARY_ATTEMPTS = 5;
+
+        do {
+            secondary = secondaryElements[zone->random.Roll0(secondaryElements.size())];
+            secondaryAttempts++;
+        } while (!isCompatible(primary, secondary) && secondaryAttempts < MAX_SECONDARY_ATTEMPTS);
+
+        // Basic name is primary + secondary
+        std::string name = primary + "_" + secondary;
+
+        // Optional title with 40% chance
+        if (zone->random.Roll0(10) >= 6) {
+            const std::string& title = titles[zone->random.Roll0(titles.size())];
+
+            // Add title
+            name += "_" + title;
+        }
+
+        finalName = name;
+        attempts++;
+    } while ((hasRedundantTerms(finalName) || countWords(finalName) > 4) && attempts < MAX_ATTEMPTS);
+
+    // If we still have too many words after max attempts,
+    // DROP THE PREFIX (primary element) as you requested
+    if (countWords(finalName) > 4) {
+        // Find the position of the first underscore
+        size_t firstUnderscore = finalName.find('_');
+
+        if (firstUnderscore != std::string::npos) {
+            // Remove everything before the first underscore (including it)
+            finalName = finalName.substr(firstUnderscore + 1);
+        }
     }
 
-    return name;
+    // If we couldn't generate a non-redundant name, simplify to two parts
+    if (hasRedundantTerms(finalName)) {
+        // Reset to just secondary + title (drop the prefix)
+        size_t firstUnderscore = finalName.find('_');
+
+        if (firstUnderscore != std::string::npos) {
+            // If we have a prefix, remove it
+            finalName = finalName.substr(firstUnderscore + 1);
+        }
+    }
+
+    return finalName;
 }
 
 std::string Mob::GenerateEnchanterPetName() {

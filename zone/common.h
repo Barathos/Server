@@ -82,6 +82,10 @@ namespace Archetype {
 #define PET_REGROUP_OFF		33	// 0x21 - /pet regroup off, turns off regroup
 #define PET_MAXCOMMANDS		PET_REGROUP_OFF + 1
 
+#define CUSTOM_PET_ASSIST     PET_MAXCOMMANDS + 1 // Custom command for /pet assist
+#define CUSTOM_PET_ASSIST_ON  PET_MAXCOMMANDS + 2
+#define CUSTOM_PET_ASSIST_OFF PET_MAXCOMMANDS + 3
+
 // can change the state of these buttons with a packet
 #define PET_BUTTON_SIT			0
 #define PET_BUTTON_STOP			1

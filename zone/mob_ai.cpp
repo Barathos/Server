@@ -2157,7 +2157,7 @@ bool Mob::Rampage(ExtraAttackOptions *opts)
 				continue;
 			}
 
-			if (RuleB(Custom, ConditionalPetRampageImmunity) && m_target->IsPetOwnerClient() && m_target->CastToNPC()->IsTaunting()) {
+			if (RuleB(Custom, ConditionalPetRampageImmunity) && m_target->IsPetOwnerClient() && !m_target->CastToNPC()->IsTaunting()) {
 				continue;
 			}
 
@@ -2192,7 +2192,7 @@ bool Mob::Rampage(ExtraAttackOptions *opts)
 						continue;
 					}
 
-					if (RuleB(Custom, ConditionalPetRampageImmunity) && m_target->IsPetOwnerClient() && m_target->CastToNPC()->IsTaunting()) {
+					if (RuleB(Custom, ConditionalPetRampageImmunity) && m_target->IsPetOwnerClient() && !m_target->CastToNPC()->IsTaunting()) {
 						continue;
 					}
 
