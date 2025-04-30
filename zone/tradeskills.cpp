@@ -20,6 +20,7 @@
 #include "../common/events/player_event_logs.h"
 
 #include <list>
+#include <algorithm>
 
 #ifndef WIN32
 #include <netinet/in.h>	//for htonl
@@ -1347,15 +1348,17 @@ void Client::CheckIncreaseTradeskill(int16 bonusstat, int16 stat_modifier, float
 		return;	//not allowed to go higher.
 	uint16 maxskill = MaxSkill(tradeskill);
 
+	float min_skill_up_chance = RuleR(Character, TradeskillUpMinChance);
+	min_skill_up_chance = std::max(min_skill_up_chance, 2.5f);
 	float chance_stage2 = 0;
 
 	//A successfull combine doubles the stage1 chance for an skillup
 	//Some tradeskill are harder than others. See above for more.
 	float chance_stage1 = (bonusstat - stat_modifier) / (skillup_modifier * success_modifier);
+	chance_stage1 = std::max(min_skill_up_chance, chance_stage1);
 
-	//In stage2 the only thing that matters is your current unmodified skill.
-	//If you want to customize here you probbably need to implement your own
-	//formula instead of tweaking the below one.
+	//In stage2 the only thing that matters is your current unmodified skill
+    //and the Character:TradeskillUpMinChance rule.
 	if (chance_stage1 > zone->random.Real(0, 99)) {
 		if (current_raw_skill < 15) {
 			//Always succeed
@@ -1367,6 +1370,7 @@ void Client::CheckIncreaseTradeskill(int16 bonusstat, int16 stat_modifier, float
 			//At skill 175, your chance of success falls linearly from 12.5% to 2.5% at skill 300.
 			chance_stage2 = 12.5 - (.08 * (current_raw_skill - 175));
 		}
+		chance_stage2 = std::max(min_skill_up_chance, chance_stage2);
 	}
 
 	if (chance_stage2 > zone->random.Real(0, 99)) {
