@@ -6682,11 +6682,11 @@ void Mob::TryTriggerOnCastFocusEffect(focusType type, uint16 spell_id, bool chec
 	}
 
 	auto is_allowed = [check_whitelist, white_list](std::string type, uint32 spell_id) -> bool {
-		if(!check_whitelist) {
+		if (!check_whitelist) {
 			return true;
 		}
 
-		for(int i = 0; i < white_list.size(); i++) {
+		for (int i = 0; i < white_list.size(); i++) {
 			if(white_list[i].first == type && white_list[i].second == spell_id) {
 				return true;
 			}
@@ -6708,15 +6708,14 @@ void Mob::TryTriggerOnCastFocusEffect(focusType type, uint16 spell_id, bool chec
 			temp_item = ins->GetItem();
 			if (temp_item && temp_item->Focus.Effect > 0 && IsValidSpell(temp_item->Focus.Effect)) {
 				focus_spell_id = temp_item->Focus.Effect;
-				if (!IsEffectInSpell(focus_spell_id, SE_TriggerOnCast)) {
-					continue;
+				if (IsEffectInSpell(focus_spell_id, SE_TriggerOnCast)) {
+					proc_spellid = CalcFocusEffect(type, focus_spell_id, spell_id);
 				}
 
-				if(!is_allowed("spell", focus_spell_id)) {
-					continue;
+				if (!is_allowed("spell", focus_spell_id)) {
+					proc_spellid = 0;
 				}
 
-				proc_spellid = CalcFocusEffect(type, focus_spell_id, spell_id);
 				if (proc_spellid) {
 					TryTriggerOnCastProc(focus_spell_id, spell_id, proc_spellid);
 				}
@@ -6728,16 +6727,14 @@ void Mob::TryTriggerOnCastFocusEffect(focusType type, uint16 spell_id, bool chec
 					const EQ::ItemData *temp_item_aug = aug->GetItem();
 					if (temp_item_aug && temp_item_aug->Focus.Effect > 0 && IsValidSpell(temp_item_aug->Focus.Effect)) {
 						focus_spell_id = temp_item_aug->Focus.Effect;
-
-						if (!IsEffectInSpell(focus_spell_id, SE_TriggerOnCast)) {
-							continue;
+						if (IsEffectInSpell(focus_spell_id, SE_TriggerOnCast)) {
+							proc_spellid = CalcFocusEffect(type, focus_spell_id, spell_id);
 						}
 
-						if(!is_allowed("spell", focus_spell_id)) {
-							continue;
+						if (!is_allowed("spell", focus_spell_id)) {
+							proc_spellid = 0;
 						}
 
-						proc_spellid = CalcFocusEffect(type, focus_spell_id, spell_id);
 						if (proc_spellid) {
 							TryTriggerOnCastProc(focus_spell_id, spell_id, proc_spellid);
 						}
