@@ -1322,6 +1322,14 @@ void Client::PurchaseAlternateAdvancementRank(int rank_id) {
 	FinishAlternateAdvancementPurchase(rank, false, true);
 }
 
+void Client::PurchaseAllAlternateAdvancementRanks(int starting_rank_id) {
+	AA::Rank* rank = zone->GetAlternateAdvancementRank(starting_rank_id);
+	while (rank) {
+		PurchaseAlternateAdvancementRank(rank->id);
+		rank = rank->next;
+	}
+}
+
 bool Client::GrantAlternateAdvancementAbility(int aa_id, int points, bool ignore_cost) {
 	bool ret = false;
 	for(int i = 1; i <= points; ++i) {

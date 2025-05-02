@@ -1970,6 +1970,9 @@ void Client::Handle_OP_AAAction(const EQApplicationPacket *app)
 	else if (action->action == aaActionBuy) {
 		PurchaseAlternateAdvancementRank(action->ability);
 	}
+	else if (action->action == aaActionBuyAll) {
+		PurchaseAllAlternateAdvancementRanks(action->ability);
+	}
 	else if (action->action == aaActionDisableEXP) { //Turn Off AA Exp
 		if (m_epp.perAA > 0) {
 			MessageString(Chat::White, AA_OFF);

@@ -1112,6 +1112,7 @@ public:
 	void SendAlternateAdvancementTable();
 	void SendAlternateAdvancementStats();
 	void PurchaseAlternateAdvancementRank(int rank_id);
+	void PurchaseAllAlternateAdvancementRanks(int starting_rank_id);
 	bool GrantAlternateAdvancementAbility(int aa_id, int points, bool ignore_cost = false);
 	void IncrementAlternateAdvancementRank(int rank_id);
 	void ActivateAlternateAdvancementAbility(int rank_id, int target_id);

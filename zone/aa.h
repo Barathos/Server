@@ -1522,7 +1522,8 @@ enum {	//values of AA_Action.action
 	aaActionActivate = 0,
 	aaActionSetEXP = 1,
 	aaActionDisableEXP = 2,
-	aaActionBuy = 3
+	aaActionBuy = 3,
+	aaActionBuyAll = 4
 };
 
 namespace AACategory {
