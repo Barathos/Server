@@ -2975,23 +2975,26 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 
 			case SE_ManaBurn:
 			{
-				int32 max_mana = spell.base_value[i];
-				int ratio = spell.limit_value[i];
-				int64 dmg = 0;
+                int32 base_value = spell.base_value[i];
+				int   damage_per_mana = spell.limit_value[i];
 
-				if (caster){
-					if (caster->GetMana() <= max_mana){
-							dmg = ratio*caster->GetMana()/10;
+                if (caster) {
+					double  percent_mana_consumed = static_cast<double>(base_value) / 10000.0;
+					int32_t mana_to_consume       = static_cast<int64>(caster->GetMaxMana() * percent_mana_consumed + 0.5);
+
+					if (caster->GetMana() <= mana_to_consume){
+							mana_to_consume = caster->GetMana();
 							caster->SetMana(0);
+					} else {
+						caster->SetMana(caster->GetMana() - mana_to_consume);
 					}
 
-					else {
-						dmg = ratio*max_mana/10;
-						caster->SetMana(caster->GetMana() - max_mana);
-						TryTriggerOnCastRequirement();
-					}
+					TryTriggerOnCastRequirement();
 
-					if(IsDetrimentalSpell(spell_id)) {
+					int64 dmg = mana_to_consume * damage_per_mana;
+
+					if (IsDetrimentalSpell(spell_id)) {
+						dmg = caster->GetActSpellDamage(spell_id, dmg, this);
 						dmg = -dmg;
 						Damage(caster, dmg, spell_id, spell.skill, false, buffslot, false);
 					} else {
