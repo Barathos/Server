@@ -2573,6 +2573,16 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 		}
 	}
 
+	if (IsEffectInSpell(spell_id, SE_ManaBurn) && IsDetrimentalSpell(spell_id)) {
+		auto target_buff_spell_ids = target->GetBuffSpellIDs();
+		for (auto target_buff_spell_id : target_buff_spell_ids) {
+			if (IsValidSpell(target_buff_spell_id) && IsEffectInSpell(target_buff_spell_id, SE_ManaBurn)) {
+				Message(Chat::SpellFailure, "You cannot activate a Mana Burn effect on a target that is already affected by a Mana Burn.");
+				return false;
+			}
+		}
+	}
+
 	//Death Touch targets the pet owner instead of the pet when said pet is tanking.
 	if ((RuleB(Spells, CazicTouchTargetsPetOwner) && spell_target && spell_target->HasOwner()) && !spell_target->IsBot() && (spell_id == SPELL_CAZIC_TOUCH || spell_id == SPELL_TOUCH_OF_VINITRAS)) {
 		Mob* owner = spell_target->GetOwner();
