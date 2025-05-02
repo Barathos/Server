@@ -13670,6 +13670,11 @@ void Client::Handle_OP_ShopPlayerBuy(const EQApplicationPacket *app)
 	DumpPacket(app);
 #endif
 
+	// Add debug logging for raw packet inspection
+	LogDebug("ShopPlayerBuy Packet: npcid={}, playerid={}, itemslot={}, unknown12={}, quantity={}, price={}",
+		mp->npcid, mp->playerid, mp->itemslot, mp->unknown12, mp->quantity, mp->price);
+
+
 	int merchantid;
 	bool tmpmer_used = false;
 	Mob* tmp = entity_list.GetMob(mp->npcid);
@@ -13720,7 +13725,8 @@ void Client::Handle_OP_ShopPlayerBuy(const EQApplicationPacket *app)
 
 	item = database.GetItem(item_id);
 
-	if (!item) {
+	if (!item || (mp->playerid != GetID() && item->ID != mp->playerid)) {
+		LogDebug("Item ID mismatch in OP_ShopPlayerBuy: item_id [{}] unknown12 [{}]", item_id, mp->playerid);
 		//error finding item, client didnt get the update packet for whatever reason, roleplay a tad
 		MessageString(Chat::White, ALREADY_SOLD);
 		entity_list.SendMerchantInventory(tmp, mp->itemslot, true);
@@ -13749,7 +13755,7 @@ void Client::Handle_OP_ShopPlayerBuy(const EQApplicationPacket *app)
 	auto outapp = new EQApplicationPacket(OP_ShopPlayerBuy, sizeof(Merchant_Sell_Struct));
 	Merchant_Sell_Struct* mpo = (Merchant_Sell_Struct*)outapp->pBuffer;
 	mpo->quantity = mp->quantity;
-	mpo->playerid = mp->playerid;
+	mpo->playerid = GetID();
 	mpo->npcid = mp->npcid;
 	mpo->itemslot = mp->itemslot;
 

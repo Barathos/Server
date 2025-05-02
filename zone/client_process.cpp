@@ -1017,6 +1017,9 @@ void Client::BulkSendMerchantInventory(int merchant_id, int npcid) {
 	const EQ::ItemData *item = nullptr;
 	auto merchant_list = zone->merchanttable[merchant_id];
 	auto npc = entity_list.GetMobByNpcTypeID(npcid);
+
+	bool skipped_item = false; // work around a client bug, if the server truncates the list, we must not use temporary list for this merchant.
+
 	if (merchant_list.empty()) {
 		zone->LoadNewMerchantData(merchant_id);
 		merchant_list = zone->merchanttable[merchant_id];
@@ -1044,27 +1047,33 @@ void Client::BulkSendMerchantInventory(int merchant_id, int npcid) {
 
 			auto b = DataBucket::GetData(k);
 			if (b.value.empty()) {
+				skipped_item = true;
 				continue;
 			}
 
 			if (!zone->CompareDataBucket(ml.bucket_comparison, bucket_value, b.value)) {
+				skipped_item = true;
 				continue;
 			}
 		}
 
 		if (ml.probability != 100 && zone->random.Int(1, 100) > ml.probability) {
+			skipped_item = true;
 			continue;
 		}
 
 		if (GetLevel() < ml.level_required) {
+			skipped_item = true;
 			continue;
 		}
 
 		if (!(ml.classes_required & GetClassesBits())) {
+			skipped_item = true;
 			continue;
 		}
 
 		if (!EQ::ValueWithin(Admin(), static_cast<int16>(ml.min_status), static_cast<int16>(ml.max_status))) {
+			skipped_item = true;
 			continue;
 		}
 
@@ -1076,6 +1085,7 @@ void Client::BulkSendMerchantInventory(int merchant_id, int npcid) {
 		);
 
 		if (faction_level < ml.faction_required) {
+			skipped_item = true;
 			continue;
 		}
 
@@ -1125,7 +1135,7 @@ void Client::BulkSendMerchantInventory(int merchant_id, int npcid) {
 		}
 	}
 
-	if (!(IsSeasonal() || IsHardcore())) {
+	if (!(IsSeasonal() || IsHardcore() || skipped_item)) {
 		auto temporary_merchant_list_two = zone->tmpmerchanttable[npcid];
 		temporary_merchant_list.clear();
 		for (auto ml : temporary_merchant_list_two) {
