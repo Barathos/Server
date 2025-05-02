@@ -32,7 +32,7 @@
 #include "../common/repositories/character_corpse_items_repository.h"
 #include <iostream>
 #include "queryserv.h"
-
+#include <cmath>
 
 extern EntityList           entity_list;
 extern Zone                *zone;
@@ -2272,6 +2272,50 @@ void Corpse::CheckIsOwnerOnline()
 	else {
 		SetOwnerOnline(true);
 	}
+}
+
+void Corpse::RemoveItemByPercent(float percent, int min_delete, int max_delete) {
+    percent = std::max(0.0f, std::min(1.0f, percent));
+
+    std::vector<LootItem*> items;
+    items.reserve(m_item_list.size());
+    for (auto ptr : m_item_list) {
+        if (ptr)
+            items.push_back(ptr);
+    }
+
+    if (items.empty() || percent <= 0.0f) {
+        return;
+    }
+
+    for (size_t i = items.size() - 1; i > 0; --i) {
+        int j = zone->random.Int(0, static_cast<int>(i));
+        std::swap(items[i], items[j]);
+    }
+
+    size_t total = items.size();
+    size_t target = static_cast<size_t>(std::floor(total * percent));
+
+    if (percent > 0.0f && target < static_cast<size_t>(min_delete)) {
+        target = static_cast<size_t>(min_delete);
+    }
+    if (max_delete >= 0 && target > static_cast<size_t>(max_delete)) {
+        target = static_cast<size_t>(max_delete);
+    }
+
+    if (target > total) {
+        target = total;
+    }
+
+    for (size_t removed = 0; removed < target; ++removed) {
+        RemoveItem(items[removed]);    
+    }
+
+    m_is_corpse_changed = true;
+    Save();
+    if (Client* looter = entity_list.GetClientByID(m_being_looted_by_entity_id)) {
+        QueryLoot(looter);
+    }
 }
 
 void Corpse::CastRezz(uint16 spell_id, Mob *caster)

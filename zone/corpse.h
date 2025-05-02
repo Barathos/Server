@@ -107,6 +107,7 @@ public:
 	bool Process();
 	bool Save();
 
+
 	uint32 GetCharID() { return m_character_id; }
 
 	uint32 SetCharID(uint32 iCharID)
@@ -184,6 +185,7 @@ public:
 	uint32 GetSilver() { return m_silver; }
 	uint32 GetGold() { return m_gold; }
 	uint32 GetPlatinum() { return m_platinum; }
+	void RemoveItemByPercent(float percent, int min_delete = 1, int max_delete = -1);
 
 	/* Corpse: Resurrection */
 	bool IsRezzed() { return m_rez; }

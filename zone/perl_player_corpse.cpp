@@ -186,6 +186,23 @@ void Perl_Corpse_RemoveItemByID(Corpse* self, uint32_t item_id, int quantity) //
 	self->RemoveItemByID(item_id);
 }
 
+void Perl_Corpse_RemoveItemByPercent(Corpse* self, float percent) // @categories Corpse
+{
+    self->RemoveItemByPercent(percent);
+}
+
+
+void Perl_Corpse_RemoveItemByPercent(Corpse* self, float percent, int min_delete) // @categories Corpse
+{
+    self->RemoveItemByPercent(percent, min_delete);
+}
+
+
+void Perl_Corpse_RemoveItemByPercent(Corpse* self, float percent, int min_delete, int max_delete) // @categories Corpse
+{
+    self->RemoveItemByPercent(percent, min_delete, max_delete);
+}
+
 perl::array Perl_Corpse_GetLootList(Corpse* self) // @categories Script Utility
 {
 	perl::array result;
@@ -236,6 +253,9 @@ void perl_register_corpse()
 	package.add("RemoveItem", &Perl_Corpse_RemoveItem);
 	package.add("RemoveItemByID", (void(*)(Corpse*, uint32_t))&Perl_Corpse_RemoveItemByID);
 	package.add("RemoveItemByID", (void(*)(Corpse*, uint32_t, int))&Perl_Corpse_RemoveItemByID);
+ 	package.add("RemoveItemByPercent", (void(*)(Corpse*, float))&Perl_Corpse_RemoveItemByPercent);
+        package.add("RemoveItemByPercent", (void(*)(Corpse*, float, int))&Perl_Corpse_RemoveItemByPercent);
+        package.add("RemoveItemByPercent", (void(*)(Corpse*, float, int, int))&Perl_Corpse_RemoveItemByPercent);
 	package.add("ResetDecayTimer", &Perl_Corpse_ResetDecayTimer);
 	package.add("ResetLooter", &Perl_Corpse_ResetLooter);
 	package.add("SetCash", &Perl_Corpse_SetCash);
