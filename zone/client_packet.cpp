@@ -2763,7 +2763,9 @@ void Client::Handle_OP_AltCurrencyPurchase(const EQApplicationPacket *app)
 				cost
 			);
 
-			parse->EventPlayer(EVENT_ALT_CURRENCY_MERCHANT_BUY, this, export_string, 0);
+			if (parse->EventPlayer(EVENT_ALT_CURRENCY_MERCHANT_BUY, this, export_string, 0)) {
+				return;
+			}
 		}
 
 		uint64 current_balance = AddAlternateCurrencyValue(alt_cur_id, -((int) cost));
