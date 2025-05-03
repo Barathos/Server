@@ -469,33 +469,16 @@ void Object::HandleCombine(Client* user, const NewCombine_Struct* in_combine, Ob
 						return;
 					}
 
-					int cost = user->GetItemStatValue(new_item) * 1000 * RuleI(Custom, CombineCostMultiplier);
-
 					linker.SetItemData(first_item->GetItem());
 					auto cur_itm_lnk = linker.GenerateLink();
 
 					linker.SetItemData(new_item);
 					auto new_itm_lnk = linker.GenerateLink();
 
-					if (RuleB(Custom, UseCustomUnattuneCombine)) {
-						if (!user->TakeMoneyFromPP(cost, true)) {
-							user->Message(Chat::Yellow, fmt::format("You do not have enough money to combine your set of [{}].", cur_itm_lnk).c_str());
-							return;
-						}
-
-						user->Message(Chat::Yellow, fmt::format("You spend {}pp to combine your set of [{}] into one [{}].", Strings::Commify(cost/1000), cur_itm_lnk, new_itm_lnk).c_str());
-					}
-
 					user->SummonItem(new_item->ID, new_item->MaxCharges);
+					container->Clear();
+					user->DeleteItemInInventory(in_combine->container_slot, 0, true);
 
-					if (RuleB(Custom, UseCustomUnattuneCombine)) {
-						for (int i = 0; i < 4; ++i) {
-							user->DeleteItemInInventory(EQ::InventoryProfile::CalcSlotId(in_combine->container_slot,i), 0, true);
-						}
-					} else {
-						container->Clear();
-						user->DeleteItemInInventory(in_combine->container_slot, 0, true);
-					}
 
 					auto outapp = new EQApplicationPacket(OP_TradeSkillCombine, 0);
 					user->QueuePacket(outapp);
@@ -503,6 +486,79 @@ void Object::HandleCombine(Client* user, const NewCombine_Struct* in_combine, Ob
 					return;
 				}
 			}
+		}
+	}
+
+	if (container->GetItem() && container->GetItem()->ID == 24150) {
+		int base_id = 0;
+		bool all_same_type = true;
+		int total_tier1_equivalents = 0;
+
+		for (int i = 0; i < 16; ++i) {
+			auto item = container->GetItem(i);
+			if (!item) continue;
+
+			int item_id = item->GetID();
+			int item_base_id = item_id % 1000000;
+
+			int item_tier = 1;
+			if (item_id > 2000000) {
+				user->Message(Chat::Red, "You cannot combine Legendary items. Only normal and Enchanted items are allowed.");
+				return;
+			} else if (item_id > 1000000) {
+				item_tier = 2;
+			}
+
+			if (total_tier1_equivalents == 0) {
+				base_id = item_base_id;
+			} else if (item_base_id != base_id) {
+				all_same_type = false;
+				user->Message(Chat::Red, "All items must be of the same type to combine.");
+				return;
+			}
+
+			if (item->IsAugmentable()) {
+				for(int aug_index = EQ::invaug::SOCKET_BEGIN; aug_index < EQ::invaug::SOCKET_END; ++aug_index) {
+					if (item->GetAugmentItemID(aug_index) != 0) {
+						all_same_type = false;
+						user->Message(Chat::Red, "You must remove augments from all component items before you can attempt this combine.");
+						return;
+					}
+				}
+			}
+
+			total_tier1_equivalents += (item_tier == 2) ? 4 : 1;
+		}
+
+		if (base_id && total_tier1_equivalents == 16 && all_same_type) {
+			int new_item_id = base_id + 2000000;
+			auto new_item = database.GetItem(new_item_id);
+
+			if (new_item) {
+				if (user->CheckLoreConflict(new_item)) {
+					user->Message(Chat::Red, "This combine would result in a disallowed LORE item. Aborting...");
+					return;
+				}
+
+				user->SummonItem(new_item->ID, new_item->MaxCharges);
+
+				container->Clear();
+				user->DeleteItemInInventory(in_combine->container_slot, 0, true);
+
+				auto outapp = new EQApplicationPacket(OP_TradeSkillCombine, 0);
+				user->QueuePacket(outapp);
+				safe_delete(outapp);
+				return;
+			} else {
+				user->Message(Chat::Red, "Failed to create the new item. This combination may not be valid.");
+				return;
+			}
+		} else if (total_tier1_equivalents < 16) {
+			user->Message(Chat::Yellow, fmt::format("You need more items. Current equivalent count: {}/16", total_tier1_equivalents).c_str());
+			return;
+		} else if (total_tier1_equivalents > 16) {
+			user->Message(Chat::Yellow, fmt::format("You have too many items. Current equivalent count: {}/16", total_tier1_equivalents).c_str());
+			return;
 		}
 	}
 
