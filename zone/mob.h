@@ -1121,6 +1121,7 @@ public:
 	Mob* GetPetByID(uint16 id);
 	void ConfigurePetWindow(Mob* focused_pet);
 	bool IsPetAllowed(uint16 spell_id);
+	bool IsMyPet(Mob* mob) const;
 
 	virtual Mob* GetOwner();
 	virtual Mob* GetOwnerOrSelf();

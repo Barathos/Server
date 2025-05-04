@@ -1261,6 +1261,27 @@ bool Mob::SetPet(uint16 pet_id, uint8 idx) {
     return true;  // Return true to indicate the pet was successfully set
 }
 
+// Check if the given mob is a pet of this mob
+bool Mob::IsMyPet(Mob* mob) const {
+    if (!mob) {
+        return false;  // Return false if the provided Mob pointer is null
+    }
+
+    // Check if the mob's owner ID matches this mob's ID
+    if (mob->GetOwnerID() != GetID()) {
+        return false;  // Not owned by this mob
+    }
+
+    // Verify the mob's ID is in our pet list
+    for (auto pet_id : petids) {
+        if (pet_id == mob->GetID()) {
+            return true;  // Found in the pet list
+        }
+    }
+
+    return false;  // Not found in the pet list
+}
+
 void NPC::GetPetState(SpellBuff_Struct *pet_buffs, uint32 *items, char *name) {
 	//save the pet name
 	strn0cpy(name, GetName(), 64);

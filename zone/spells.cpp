@@ -145,8 +145,12 @@ void NPC::SpellProcess()
 uint16 Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id) {
 	if (IsClient() && RuleB(Spells, UseSpellImpliedTargeting)) {
 		// Shortcut Pet-Only spells, these only have one potential valid target
-		if (spells[spell_id].target_type == ST_Pet || spells[spell_id].target_type == ST_SummonedPet) {
+		if ((spells[spell_id].target_type == ST_Pet || spells[spell_id].target_type == ST_SummonedPet)) {
 			ValidatePetList();
+
+			if (IsEffectInSpell(spell_id, SE_Illusion) && GetTarget()) {
+				return GetTarget()->GetID();
+			}
 
 			if (GetAllPets().size() > 0) {
 				for (const auto pet : GetAllPets()) {
@@ -2755,8 +2759,12 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 			}
 
 			if (spells[spell_id].target_type == ST_Pet || spells[spell_id].target_type == ST_SummonedPet) {
-				for (const auto& pet : CastToClient()->GetAllPets()) {
-					SpellOnTarget(spell_id, pet, -1, true, resist_adjust, true, level_override);
+				if (spell_target && GetTarget() == spell_target && IsEffectInSpell(spell_id, SE_Illusion) && IsMyPet(spell_target)) {
+					SpellOnTarget(spell_id, spell_target, -1, true, resist_adjust, true, level_override);
+				} else {
+					for (const auto& pet : CastToClient()->GetAllPets()) {
+						SpellOnTarget(spell_id, pet, -1, true, resist_adjust, true, level_override);
+					}
 				}
 			} else {
 				if(spell_target == nullptr) {
