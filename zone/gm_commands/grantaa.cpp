@@ -29,4 +29,10 @@ void command_grantaa(Client *c, const Seperator *sep)
 			skip_grant_only ? "except for grant only AAs" : ""
 		).c_str()
 	);
+
+	zone->SendDiscordMessage("monitor", fmt::format(
+		"{} used #grantaa on {}.",
+		c->GetName(),
+		c->GetTargetDescription(t)
+	));
 }

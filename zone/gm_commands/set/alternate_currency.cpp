@@ -40,4 +40,12 @@ void SetAlternateCurrency(Client *c, const Seperator *sep)
 			database.CreateItemLink(currency_item_id)
 		).c_str()
 	);
+
+	zone->SendDiscordMessage("monitor", fmt::format(
+		"{} used #set alternate_currency on {} to award {} of currency ID {}.",
+		c->GetName(),
+		c->GetTargetDescription(t),
+		Strings::Commify(currency_amount),
+		currency_id
+	));
 }

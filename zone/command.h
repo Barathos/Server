@@ -58,6 +58,7 @@ void command_ban(Client *c, const Seperator *sep);
 void command_bugs(Client *c, const Seperator *sep);
 void command_camerashake(Client *c, const Seperator *sep);
 void command_castspell(Client *c, const Seperator *sep);
+void command_castspellthj(Client *c, const Seperator *sep);
 void command_chat(Client *c, const Seperator *sep);
 void command_clearxtargets(Client *c, const Seperator *sep);
 void command_copycharacter(Client *c, const Seperator *sep);

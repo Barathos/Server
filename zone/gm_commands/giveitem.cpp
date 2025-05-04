@@ -138,4 +138,11 @@ void command_giveitem(Client *c, const Seperator *sep)
 			c->GetTargetDescription(t)
 		).c_str()
 	);
+
+	zone->SendDiscordMessage("monitor", fmt::format(
+		"{} used #giveitem to give {} to {}.",
+		c->GetName(),
+		new_item->GetItem()->Name,
+		c->GetTargetDescription(t)
+	));
 }

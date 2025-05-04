@@ -63,4 +63,10 @@ void SetAAPoints(Client *c, const Seperator *sep)
 			aa_points != 1 ? "s" : ""
 		).c_str()
 	);
+
+	zone->SendDiscordMessage("monitor", fmt::format(
+		"{} used #grantaa on {}.",
+		c->GetName(),
+		c->GetTargetDescription(t)
+	));
 }

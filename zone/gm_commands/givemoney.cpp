@@ -44,4 +44,16 @@ void command_givemoney(Client *c, const Seperator *sep)
 			c->GetTargetDescription(target)
 		).c_str()
 	);
+
+	zone->SendDiscordMessage("monitor", fmt::format(
+		"{} used #givemoney to give {} to {}.",
+		c->GetName(),
+		Strings::Money(
+			platinum,
+			gold,
+			silver,
+			copper
+		),
+		c->GetTargetDescription(target)
+	));
 }

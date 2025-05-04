@@ -6485,6 +6485,28 @@ int Client::FindSpellBookSlotBySpellID(uint16 spellid) {
 	return -1;	//default
 }
 
+int Client::FindSpellBookSlotBySpellName(std::string spellname) {
+    std::transform(spellname.begin(), spellname.end(), spellname.begin(),
+                   [](unsigned char c){ return std::tolower(c); });
+
+    for(int i = 0; i < EQ::spells::SPELLBOOK_SIZE; i++) {
+        if (!IsValidSpell(m_pp.spell_book[i])) {
+            continue;
+        }
+
+        auto spell = spells[m_pp.spell_book[i]];
+        std::string spell_name_lower = spell.name;
+        std::transform(spell_name_lower.begin(), spell_name_lower.end(),
+                      spell_name_lower.begin(),
+                      [](unsigned char c){ return std::tolower(c); });
+
+        if(spell_name_lower == spellname)
+            return i;
+    }
+
+    return -1;  //default
+}
+
 uint32 Client::GetHighestScribedSpellinSpellGroup(uint32 spell_group)
 {
 	//Typical live spells follow 1/5/10 rank value for actual ranks 1/2/3, but this can technically be set as anything.
