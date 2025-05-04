@@ -7828,6 +7828,17 @@ void Client::SuspendMinion(int value)
 
 			CurrentPet->ApplyGlobalBuffs();
 
+			auto pet_buffs = CurrentPet->GetBuffs();
+			for (int slot_id = 0; slot_id < CurrentPet->GetMaxBuffSlots(); slot_id++) {
+				if (!IsValidSpell(pet_buffs[slot_id].spellid)) {
+					continue;
+				}
+
+				if (IsEffectInSpell(pet_buffs[slot_id].spellid, SE_Illusion)) {
+					CurrentPet->ApplySpellBuff(pet_buffs[slot_id].spellid);
+				}
+			}
+
 			memset(&m_suspendedminion, 0, sizeof(PetInfo));
 		}
 	};

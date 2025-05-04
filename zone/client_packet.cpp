@@ -1789,6 +1789,17 @@ void Client::Handle_Connect_OP_ZoneEntry(const EQApplicationPacket *app)
 
 					DoPetBagResync(pet->GetPetOriginClass());
 					pet->ApplyGlobalBuffs();
+
+					auto pet_buffs = pet->GetBuffs();
+					for (int slot_id = 0; slot_id < pet->GetMaxBuffSlots(); slot_id++) {
+						if (!IsValidSpell(pet_buffs[slot_id].spellid)) {
+							continue;
+						}
+
+						if (IsEffectInSpell(pet_buffs[slot_id].spellid, SE_Illusion)) {
+							pet->ApplySpellBuff(pet_buffs[slot_id].spellid);
+						}
+					}
 				}
 
 				// Reset the pet info's SpellID to indicate it has been handled
