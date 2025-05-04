@@ -7835,7 +7835,9 @@ void Client::SuspendMinion(int value)
 				}
 
 				if (IsEffectInSpell(pet_buffs[slot_id].spellid, SE_Illusion)) {
-					CurrentPet->ApplySpellBuff(pet_buffs[slot_id].spellid);
+					int buff_id = pet_buffs[slot_id].spellid;
+					CurrentPet->BuffFadeBySlot(slot_id);
+					CurrentPet->ApplySpellBuff(buff_id);
 				}
 			}
 

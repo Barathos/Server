@@ -1797,7 +1797,9 @@ void Client::Handle_Connect_OP_ZoneEntry(const EQApplicationPacket *app)
 						}
 
 						if (IsEffectInSpell(pet_buffs[slot_id].spellid, SE_Illusion)) {
-							pet->ApplySpellBuff(pet_buffs[slot_id].spellid);
+							int buff_id = pet_buffs[slot_id].spellid;
+							pet->BuffFadeBySlot(slot_id);
+							pet->ApplySpellBuff(buff_id);
 						}
 					}
 				}
