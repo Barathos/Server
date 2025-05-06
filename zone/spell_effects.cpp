@@ -6985,6 +6985,10 @@ int64 Mob::GetFocusEffect(focusType type, uint16 spell_id, Mob *caster, bool fro
 	int64 realTotal2 = 0;
 	int64 realTotal3 = 0;
 
+	if (IsBardSong(spell_id)) {
+		return 0;
+	}
+
 	bool rand_effectiveness = false;
 
 	//Improved Healing, Damage & Mana Reduction are handled differently in that some are random percentages
