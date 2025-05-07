@@ -4411,7 +4411,7 @@ void Client::Handle_OP_Camp(const EQApplicationPacket *app)
 	if (IsLFP())
 		worldserver.StopLFP(CharacterID());
 
-	if (GetGM())
+	if (GetGM() || zone->GetZoneID() == Zones::BAZAAR)
 	{
 		if (RuleB(Character, EnableHackedFastCampForGM))
 		{
