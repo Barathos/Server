@@ -1279,6 +1279,8 @@ RULE_BOOL(Custom,   DisableClearInstanceTimers, false , "BREAK GLASS IN EMERGENC
 RULE_BOOL(Custom,   EnableAccountAltCurrency, false, "Enable account-based alternate currency.")
 RULE_INT(Custom,  	AAConsumeBaseValue, 				50, "Base value for AA consumption")
 
+RULE_REAL(Custom, ScaleAutoAttackByHStr, 0.0f, "Scale auto attack damage by this value. 0.0 to disable.")
+
 // Seasonal
 RULE_INT(Custom,  	EnableSeasonalCharacters, 				0, "Set to Seasonal ID to track for current Seasonal characters, 0 to disable.")
 

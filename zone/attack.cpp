@@ -1745,6 +1745,10 @@ bool Mob::Attack(Mob* other, int Hand, bool bRiposte, bool IsStrikethrough, bool
 		}
 	}
 
+	if (RuleR(Custom, ScaleAutoAttackByHStr)) {
+		my_hit.damage_done += my_hit.damage_done * (RuleR(Custom, ScaleAutoAttackByHStr) * GetHeroicSTR() / 100.0);
+	}
+
 	///////////////////////////////////////////////////////////
 	////// Send Attack Damage
 	///////////////////////////////////////////////////////////
