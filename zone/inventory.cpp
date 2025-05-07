@@ -3540,7 +3540,7 @@ int64_t Client::GetStatEntryValue(StatEntry label)
 		case statSpellCastTime02: {
 			int spellId = m_pp.mem_spells[1];
 			int castTime = spells[spellId].cast_time;
-			if (IsValidSpell(spellId) {
+			if (IsValidSpell(spellId)) {
 				castTime = GetActSpellCasttime(spellId, spells[spellId].cast_time, true);
 			}
 			return castTime;
