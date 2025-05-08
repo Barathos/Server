@@ -4411,22 +4411,22 @@ void Client::Handle_OP_Camp(const EQApplicationPacket *app)
 	if (IsLFP())
 		worldserver.StopLFP(CharacterID());
 
-	if (GetGM())
-	{
-		if (RuleB(Character, EnableHackedFastCampForGM))
-		{
-			camp_timer.Start(100, true);
-		}
-		else {
-			OnDisconnect(true);
-		}
-
-		return;
-	}
-
 	if ((zone->GetZoneID() == Zones::BAZAAR || zone->GetZoneID() == Zones::ECOMMONS) && !GetRestTimer()) {
 		camp_timer.Start(100, true);
 	} else {
+		if (GetGM())
+		{
+			if (RuleB(Character, EnableHackedFastCampForGM))
+			{
+				camp_timer.Start(100, true);
+			}
+			else {
+				OnDisconnect(true);
+			}
+
+			return;
+		}
+
 		camp_timer.Start(29000, true);
 	}
 
