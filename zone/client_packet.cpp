@@ -4411,7 +4411,7 @@ void Client::Handle_OP_Camp(const EQApplicationPacket *app)
 	if (IsLFP())
 		worldserver.StopLFP(CharacterID());
 
-	if (GetGM() || !GetRestTimer())
+	if (GetGM())
 	{
 		if (RuleB(Character, EnableHackedFastCampForGM))
 		{
@@ -4424,7 +4424,11 @@ void Client::Handle_OP_Camp(const EQApplicationPacket *app)
 		return;
 	}
 
-	camp_timer.Start(29000, true);
+	if (!GetRestTimer()) {
+		camp_timer.Start(29000, true);
+	} else {
+		camp_timer.Start(100, true);
+	}
 
 	if (RuleB(Bots, Enabled)) {
 		bot_camp_timer.Start((RuleI(Bots, CampTimer) * 1000), true);
