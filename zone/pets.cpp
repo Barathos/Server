@@ -1362,8 +1362,8 @@ void NPC::SetPetState(SpellBuff_Struct *pet_buffs, uint32 *items) {
 						AddRangedProc(GetProcID(buffs[j1].spellid, x1), 100 + spells[buffs[j1].spellid].limit_value[x1], buffs[j1].spellid, GetSpellProcLimitTimer(buffs[j1].spellid, ProcType::RANGED_PROC));
 						break;
 					case SE_Charm:
-					//case SE_Rune:
-					//case SE_NegateAttacks:
+					case SE_Rune:
+					case SE_NegateAttacks:
 					//case SE_Illusion:
 						buffs[j1].spellid = SPELL_UNKNOWN;
 						pet_buffs[j1].spellid = SPELLBOOK_UNKNOWN;
