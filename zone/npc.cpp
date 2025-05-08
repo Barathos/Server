@@ -576,10 +576,10 @@ void NPC::SetTarget(Mob* mob) {
     // Handle taunting and pet assistance
     if (owner && IsTaunting()) {
         for (auto pet : owner->GetAllPets()) {
-            LogDebug("1 Attempting to assist pet %s", pet->GetName());
+            LogDebug("1 Attempting to assist pet {}", pet->GetName());
             if (pet == this) { continue; }
-            LogDebug("2 Attempting to assist pet %s", pet->GetName());
-            if (pet && pet->IsNPC() && pet->IsPetAssisting()) {
+            LogDebug("2 Attempting to assist pet {}", pet->GetName());
+            if (pet && pet->IsNPC() && pet->IsPetAssisting() && !pet->CastToNPC()->IsTaunting()) {
                 pet->CastToNPC()->DoPetCommandAssistOnTarget(mob);
             }
         }
