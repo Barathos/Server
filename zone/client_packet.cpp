@@ -4424,10 +4424,10 @@ void Client::Handle_OP_Camp(const EQApplicationPacket *app)
 		return;
 	}
 
-	if (!GetRestTimer()) {
-		camp_timer.Start(29000, true);
-	} else {
+	if ((zone->GetZoneID() == Zones::BAZAAR || zone->GetZoneID() == Zones::ECOMMONS) && !GetRestTimer()) {
 		camp_timer.Start(100, true);
+	} else {
+		camp_timer.Start(29000, true);
 	}
 
 	if (RuleB(Bots, Enabled)) {
