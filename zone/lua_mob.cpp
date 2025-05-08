@@ -2269,6 +2269,9 @@ bool Lua_Mob::HasOwner() {
 
 bool Lua_Mob::IsPet() {
 	Lua_Safe_Call_Bool();
+	if (!self || !entity_list.GetMob(self->GetID())) {
+		return false;
+	}
 	return self->IsPet();
 }
 
@@ -3259,6 +3262,9 @@ bool Lua_Mob::IsPetOwnerBot()
 bool Lua_Mob::IsPetOwnerClient()
 {
 	Lua_Safe_Call_Bool();
+	if (!self || !entity_list.GetMob(self->GetID())) {
+		return false;
+	}
 	return self->IsPetOwnerClient();
 }
 
@@ -3908,7 +3914,7 @@ luabind::scope lua_register_mob() {
 	.def("IsPausedTimer", &Lua_Mob::IsPausedTimer)
 	.def("IsPet", (bool(Lua_Mob::*)(void))&Lua_Mob::IsPet)
 	.def("IsPetOwnerBot", &Lua_Mob::IsPetOwnerBot)
-	.def("IsPetOwnerClient", &Lua_Mob::IsPetOwnerClient)	
+	.def("IsPetOwnerClient", &Lua_Mob::IsPetOwnerClient)
 	.def("IsPetOwnerNPC", &Lua_Mob::IsPetOwnerNPC)
 	.def("IsPetOwnerOfClientBot", &Lua_Mob::IsPetOwnerOfClientBot)
 	.def("IsPureMeleeClass", &Lua_Mob::IsPureMeleeClass)
