@@ -1880,6 +1880,7 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 			}
 		}
 
+		LogDebug("Trying TriggerOnCast, triggered by spell [{}]", spell_id);
 		TryTriggerOnCastFocusEffect(focusTriggerOnCast, spell_id, false);
 
 	} else {

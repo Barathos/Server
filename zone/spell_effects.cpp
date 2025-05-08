@@ -6713,6 +6713,8 @@ void Mob::TryTriggerOnCastFocusEffect(focusType type, uint16 spell_id, bool chec
 				focus_spell_id = temp_item->Focus.Effect;
 				if (IsEffectInSpell(focus_spell_id, SE_TriggerOnCast)) {
 					proc_spellid = CalcFocusEffect(type, focus_spell_id, spell_id);
+				} else {
+					proc_spellid = 0;
 				}
 
 				if (!is_allowed("spell", focus_spell_id)) {
@@ -6732,6 +6734,8 @@ void Mob::TryTriggerOnCastFocusEffect(focusType type, uint16 spell_id, bool chec
 						focus_spell_id = temp_item_aug->Focus.Effect;
 						if (IsEffectInSpell(focus_spell_id, SE_TriggerOnCast)) {
 							proc_spellid = CalcFocusEffect(type, focus_spell_id, spell_id);
+						} else {
+							proc_spellid = 0;
 						}
 
 						if (!is_allowed("spell", focus_spell_id)) {
