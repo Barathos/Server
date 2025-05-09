@@ -8740,7 +8740,7 @@ void Client::Doppelganger(uint16 spell_id, Mob *target, const char *name_overrid
 			}
 
 			if (spell_type && spell) {
-				swarm_pet_npc->AddSpellToNPCList(0, spell, spell_type, -1, recast_time, 0, 0, 0);
+				swarm_pet_npc->AddSpellToNPCList(0, spell, spell_type, -1, -1, 0, 0, 0);
 			}
 		}
 
@@ -8754,6 +8754,7 @@ void Client::Doppelganger(uint16 spell_id, Mob *target, const char *name_overrid
 		entity_list.AddNPC(swarm_pet_npc);
 
 		swarm_pet_npc->CalcBonuses();
+		swarm_pet_npc->SetHP(swarm_pet_npc->GetMaxHP());
 
 		summon_count--;
 	}

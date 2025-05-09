@@ -36,33 +36,25 @@ int Mob::GetBaseSkillDamage(EQ::skills::SkillType skill, Mob *target)
 {
 	int base = EQ::skills::GetBaseDamage(skill);
 	auto skill_level = GetSkill(skill);
+	bool is_client_or_client_pet = IsClient() || (IsPetOwnerClient() && IsNPC());
+
 	switch (skill) {
 		case EQ::skills::SkillDragonPunch:
 		case EQ::skills::SkillEagleStrike:
 		case EQ::skills::SkillTigerClaw:
-			if (skill_level >= 25) {
-				base++;
-			}
-
-			if (skill_level >= 75) {
-				base++;
-			}
-
-			if (skill_level >= 125) {
-				base++;
-			}
-
-			if (skill_level >= 175) {
-				base++;
-			}
+			// Skill threshold bonuses
+			if (skill_level >= 25)  base++;
+			if (skill_level >= 75)  base++;
+			if (skill_level >= 125) base++;
+			if (skill_level >= 175) base++;
 
 			if (RuleB(Character, ItemExtraSkillDamageCalcAsPercent) && GetSkillDmgAmt(skill) > 0) {
 				base *= std::abs(GetSkillDmgAmt(skill) / 100);
 			}
-
 			return base;
+
 		case EQ::skills::SkillFrenzy:
-			if (IsClient() && CastToClient()->GetInv().GetItem(EQ::invslot::slotPrimary)) {
+			if (is_client_or_client_pet && GetInv().GetItem(EQ::invslot::slotPrimary)) {
 				if (GetLevel() > 15) {
 					base += GetLevel() - 15;
 				}
@@ -71,29 +63,23 @@ int Mob::GetBaseSkillDamage(EQ::skills::SkillType skill, Mob *target)
 					base = 23;
 				}
 
-				if (GetLevel() > 50) {
-					base += 2;
-				}
-
-				if (GetLevel() > 54) {
-					base++;
-				}
-
-				if (GetLevel() > 59) {
-					base++;
-				}
+				// Level-based bonuses
+				if (GetLevel() > 50) base += 2;
+				if (GetLevel() > 54) base++;
+				if (GetLevel() > 59) base++;
 			}
 
 			if (RuleB(Character, ItemExtraSkillDamageCalcAsPercent) && GetSkillDmgAmt(skill) > 0) {
 				base *= std::abs(GetSkillDmgAmt(skill) / 100);
 			}
-
 			return base;
+
 		case EQ::skills::SkillFlyingKick: {
 			float skill_bonus = skill_level / 9.0f;
-			float ac_bonus    = 0.0f;
-			if (IsClient()) {
-				auto inst = CastToClient()->GetInv().GetItem(EQ::invslot::slotFeet);
+			float ac_bonus = 0.0f;
+
+			if (is_client_or_client_pet) {
+				auto inst = GetInv().GetItem(EQ::invslot::slotFeet);
 				if (inst) {
 					ac_bonus = inst->GetItemArmorClass(true) / 25.0f;
 				}
@@ -106,47 +92,44 @@ int Mob::GetBaseSkillDamage(EQ::skills::SkillType skill, Mob *target)
 			if (RuleB(Character, ItemExtraSkillDamageCalcAsPercent) && GetSkillDmgAmt(skill) > 0) {
 				return static_cast<int>(ac_bonus + skill_bonus) * std::abs(GetSkillDmgAmt(skill) / 100);
 			}
-
 			return static_cast<int>(ac_bonus + skill_bonus);
 		}
+
 		case EQ::skills::SkillKick:
 		case EQ::skills::SkillRoundKick: {
-			// there is some base *= 4 case in here?
 			float skill_bonus = skill_level / 10.0f;
-			float ac_bonus    = 0.0f;
-			if (IsClient()) {
-				auto inst = CastToClient()->GetInv().GetItem(EQ::invslot::slotFeet);
+			float ac_bonus = 0.0f;
+
+			if (is_client_or_client_pet) {
+				auto inst = GetInv().GetItem(EQ::invslot::slotFeet);
 				if (inst) {
 					ac_bonus = inst->GetItemArmorClass(true) / 25.0f;
 				}
 			}
 
-			if (skill_level >= 75) {
-				base++;
-			}
-
-			if (skill_level >= 175) {
-				base++;
-			}
+			// Skill threshold bonuses
+			if (skill_level >= 75)  base++;
+			if (skill_level >= 175) base++;
 
 			if (RuleB(Character, ItemExtraSkillDamageCalcAsPercent) && GetSkillDmgAmt(skill) > 0) {
 				return static_cast<int>(ac_bonus + skill_bonus) * std::abs(GetSkillDmgAmt(skill) / 100);
 			}
-
 			return static_cast<int>(ac_bonus + skill_bonus);
 		}
+
 		case EQ::skills::SkillBash: {
-			float                  skill_bonus = skill_level / 10.0f;
-			float                  ac_bonus    = 0.0f;
-			const EQ::ItemInstance *inst       = nullptr;
-			if (IsClient()) {
+			float skill_bonus = skill_level / 10.0f;
+			float ac_bonus = 0.0f;
+			const EQ::ItemInstance *inst = nullptr;
+
+			if (is_client_or_client_pet) {
 				if (HasShieldEquipped()) {
-					inst = CastToClient()->GetInv().GetItem(EQ::invslot::slotSecondary);
+					inst = GetInv().GetItem(EQ::invslot::slotSecondary);
 				} else if (HasTwoHanderEquipped()) {
 					if (RuleB(Combat, BashTwoHanderUseShoulderAC)) {
-						inst = CastToClient()->GetInv().GetItem(EQ::invslot::slotShoulders);
+						inst = GetInv().GetItem(EQ::invslot::slotShoulders);
 					} else {
-						inst = CastToClient()->GetInv().GetItem(EQ::invslot::slotPrimary);
+						inst = GetInv().GetItem(EQ::invslot::slotPrimary);
 					}
 				}
 			}
@@ -164,15 +147,15 @@ int Mob::GetBaseSkillDamage(EQ::skills::SkillType skill, Mob *target)
 			if (RuleB(Character, ItemExtraSkillDamageCalcAsPercent) && GetSkillDmgAmt(skill) > 0) {
 				return static_cast<int>(ac_bonus + skill_bonus) * std::abs(GetSkillDmgAmt(skill) / 100);
 			}
-
 			return static_cast<int>(ac_bonus + skill_bonus);
 		}
+
 		case EQ::skills::SkillBackstab: {
 			float skill_bonus = static_cast<float>(skill_level) * 0.02f;
-			base              = 3; // There seems to be a base 3 for NPCs or some how BS w/o weapon?
-			// until we get a better inv system for NPCs they get nerfed!
-			if (IsClient()) {
-				auto *inst = CastToClient()->GetInv().GetItem(EQ::invslot::slotPrimary);
+			base = 3; // Base value for backstab
+
+			if (is_client_or_client_pet) {
+				auto *inst = GetInv().GetItem(EQ::invslot::slotPrimary);
 				if (inst && inst->GetItem()) {
 					if (RuleB(Custom, AdditiveBackstabDamage)) {
 						base = inst->GetItemWeaponDamage(true) + inst->GetItemBackstabDamage(true);
@@ -195,23 +178,21 @@ int Mob::GetBaseSkillDamage(EQ::skills::SkillType skill, Mob *target)
 						}
 					}
 				}
-			} else if (IsNPC()) {
+			}
+			else if (IsNPC()) {
 				auto *npc = CastToNPC();
 				base = round((npc->GetMaxDMG() - npc->GetMinDMG()) / RuleR(NPC, NPCBackstabMod));
-				// parses show relatively low BS mods from lots of NPCs, so either their BS skill is super low
-				// or their mod is divided again, this is probably not the right mod, but it's better
-				skill_bonus /= 3.0f;
+				skill_bonus /= 3.0f; // Reduce skill bonus for NPCs
 			}
 
 			if (RuleB(Character, ItemExtraSkillDamageCalcAsPercent) && GetSkillDmgAmt(skill) > 0) {
 				return static_cast<int>(static_cast<float>(base) * (skill_bonus + 2.0f)) * std::abs(GetSkillDmgAmt(skill) / 100);
 			}
-
 			return static_cast<int>(static_cast<float>(base) * (skill_bonus + 2.0f));
 		}
-		default: {
+
+		default:
 			return 0;
-		}
 	}
 }
 
@@ -1091,7 +1072,20 @@ void Mob::RogueBackstab(Mob* other, bool min_damage, int ReuseTime)
 				base_damage *= RuleR(Custom, NonDaggerBackstabMultiplier1H);
 			}
 		}
-	} else if (!GetWeaponDamage(other, (const EQ::ItemData*)nullptr)){
+	}
+	else if (IsPetOwnerClient()) {
+		auto weapon = GetInv().GetItem(EQ::invslot::slotPrimary);
+		if (weapon) {
+			base_damage = GetBaseSkillDamage(EQ::skills::SkillBackstab, other);
+			if (weapon->GetItem()->ItemType != EQ::item::ItemType1HPiercing) {
+				base_damage *= RuleR(Custom, NonDaggerBackstabMultiplier1H);
+			}
+		}
+		else {
+			base_damage = GetBaseSkillDamage(EQ::skills::SkillBackstab, other);
+		}
+	}
+	else if (!GetWeaponDamage(other, (const EQ::ItemData*)nullptr)){
 		return;
 	}
 
@@ -2143,6 +2137,8 @@ void NPC::DoClassAttacks(Mob *target) {
 	bool ca_time = classattack_timer.Check(false);
 	bool ka_time = knightattack_timer.Check(false);
 
+	uint16 class_bitmask = Strings::ToUnsignedInt(GetEntityVariable("class_bitmask"), GetPlayerClassBit(GetClass()));
+
 	const EQ::ItemData* boots = database.GetItem(equipment[EQ::invslot::slotFeet]);
 
 	//only check attack allowed if we are going to do something
@@ -2152,22 +2148,18 @@ void NPC::DoClassAttacks(Mob *target) {
 	if(ka_time){
 		int knightreuse = 1000; //lets give it a small cooldown actually.
 
-		switch(GetClass()){
-			case Class::ShadowKnight: case Class::ShadowKnightGM:{
-				if (CastSpell(SPELL_NPC_HARM_TOUCH, target->GetID())) {
-					knightreuse = HarmTouchReuseTime * 1000;
-					}
-				break;
+		if(HasClass(Class::ShadowKnight, class_bitmask) || GetClass() == Class::ShadowKnightGM){
+			if (CastSpell(SPELL_NPC_HARM_TOUCH, target->GetID())) {
+				knightreuse = HarmTouchReuseTime * 1000;
 			}
-			case Class::Paladin: case Class::PaladinGM:{
-				if(GetHPRatio() < 20) {
-					if (CastSpell(SPELL_LAY_ON_HANDS, GetID())) {
-						knightreuse = LayOnHandsReuseTime * 1000;
-					}
-				} else {
-					knightreuse = 2000; //Check again in two seconds.
+		}
+		else if(HasClass(Class::Paladin, class_bitmask) || GetClass() == Class::PaladinGM){
+			if(GetHPRatio() < 20) {
+				if (CastSpell(SPELL_LAY_ON_HANDS, GetID())) {
+					knightreuse = LayOnHandsReuseTime * 1000;
 				}
-				break;
+			} else {
+				knightreuse = 2000; //Check again in two seconds.
 			}
 		}
 		knightattack_timer.Start(knightreuse);
@@ -2221,97 +2213,40 @@ void NPC::DoClassAttacks(Mob *target) {
 	int reuse = TauntReuseTime * 1000;	//make this very long since if they dont use it once, they prolly never will
 	bool did_attack = false;
 	//class specific stuff...
-	switch(GetClass()) {
-		case Class::Rogue: case Class::RogueGM:
-			if(level >= 10) {
-				reuse = BackstabReuseTime * 1000;
-				TryBackstab(target, reuse);
-				did_attack = true;
-			}
-			break;
-		case Class::Monk: case Class::MonkGM: {
-			uint8 satype = EQ::skills::SkillKick;
-			if (level > 29) { satype = EQ::skills::SkillFlyingKick; }
-			else if (level > 24) { satype = EQ::skills::SkillDragonPunch; }
-			else if (level > 19) { satype = EQ::skills::SkillEagleStrike; }
-			else if (level > 9) { satype = EQ::skills::SkillTigerClaw; }
-			else if (level > 4) { satype = EQ::skills::SkillRoundKick; }
-			reuse = MonkSpecialAttack(target, satype);
-
-			reuse *= 1000;
+	if(HasClass(Class::Rogue, class_bitmask) || GetClass() == Class::RogueGM) {
+		if(level >= 10) {
+			reuse = BackstabReuseTime * 1000;
+			TryBackstab(target, reuse);
 			did_attack = true;
-			break;
 		}
-		case Class::Warrior: case Class::WarriorGM:{
-			if(level >= RuleI(Combat, NPCBashKickLevel)){
-				if(zone->random.Roll(75)) { //tested on live, warrior mobs both kick and bash, kick about 75% of the time, casting doesn't seem to make a difference.
-					DoAnim(animKick, 0, false);
-					int64 dmg = GetBaseSkillDamage(EQ::skills::SkillKick);
+	}
+	else if(HasClass(Class::Monk, class_bitmask) || GetClass() == Class::MonkGM) {
+		uint8 satype = EQ::skills::SkillKick;
+		if (level > 29) { satype = EQ::skills::SkillFlyingKick; }
+		else if (level > 24) { satype = EQ::skills::SkillDragonPunch; }
+		else if (level > 19) { satype = EQ::skills::SkillEagleStrike; }
+		else if (level > 9) { satype = EQ::skills::SkillTigerClaw; }
+		else if (level > 4) { satype = EQ::skills::SkillRoundKick; }
+		reuse = MonkSpecialAttack(target, satype);
 
-					if (GetWeaponDamage(target, boots) <= 0) {
-						dmg = DMG_INVULNERABLE;
-					}
-
-					reuse = (KickReuseTime + 3) * 1000;
-					DoSpecialAttackDamage(target, EQ::skills::SkillKick, dmg, GetMinDamage(), -1, reuse);
-					did_attack = true;
-				}
-				else {
-					DoAnim(animTailRake, 0, false);
-					int64 dmg = GetBaseSkillDamage(EQ::skills::SkillBash);
-
-					if (GetWeaponDamage(target, (const EQ::ItemData*)nullptr) <= 0)
-						dmg = DMG_INVULNERABLE;
-
-					reuse = (BashReuseTime + 3) * 1000;
-					DoSpecialAttackDamage(target, EQ::skills::SkillBash, dmg, GetMinDamage(), -1, reuse);
-					did_attack = true;
-				}
-			}
-			break;
-		}
-		case Class::Berserker: case Class::BerserkerGM:{
-			int AtkRounds = 1;
-			int32 max_dmg = GetBaseSkillDamage(EQ::skills::SkillFrenzy);
-			DoAnim(anim2HSlashing, 0, false);
-
-			if (HasClass(Class::Berserker)) {
-				int chance = GetLevel() * 2 + GetSkill(EQ::skills::SkillFrenzy);
-				if (zone->random.Roll0(450) < chance)
-					AtkRounds++;
-				if (zone->random.Roll0(450) < chance)
-					AtkRounds++;
-			}
-
-			while (AtkRounds > 0) {
-				if (GetTarget())
-					DoSpecialAttackDamage(GetTarget(), EQ::skills::SkillFrenzy, max_dmg, GetMinDamage(), -1, reuse);
-				AtkRounds--;
-			}
-
-			did_attack = true;
-			break;
-		}
-		case Class::Ranger: case Class::RangerGM:
-		case Class::Beastlord: case Class::BeastlordGM: {
-			//kick
-			if(level >= RuleI(Combat, NPCBashKickLevel)){
+		reuse *= 1000;
+		did_attack = true;
+	}
+	else if(HasClass(Class::Warrior, class_bitmask) || GetClass() == Class::WarriorGM) {
+		if(level >= RuleI(Combat, NPCBashKickLevel)){
+			if(zone->random.Roll(75)) { //tested on live, warrior mobs both kick and bash, kick about 75% of the time, casting doesn't seem to make a difference.
 				DoAnim(animKick, 0, false);
 				int64 dmg = GetBaseSkillDamage(EQ::skills::SkillKick);
 
-				if (GetWeaponDamage(target, boots) <= 0)
+				if (GetWeaponDamage(target, boots) <= 0) {
 					dmg = DMG_INVULNERABLE;
+				}
 
 				reuse = (KickReuseTime + 3) * 1000;
 				DoSpecialAttackDamage(target, EQ::skills::SkillKick, dmg, GetMinDamage(), -1, reuse);
 				did_attack = true;
 			}
-			break;
-		}
-		case Class::Cleric: case Class::ClericGM: //clerics can bash too.
-		case Class::ShadowKnight: case Class::ShadowKnightGM:
-		case Class::Paladin: case Class::PaladinGM:{
-			if(level >= RuleI(Combat, NPCBashKickLevel)){
+			else {
 				DoAnim(animTailRake, 0, false);
 				int64 dmg = GetBaseSkillDamage(EQ::skills::SkillBash);
 
@@ -2322,7 +2257,57 @@ void NPC::DoClassAttacks(Mob *target) {
 				DoSpecialAttackDamage(target, EQ::skills::SkillBash, dmg, GetMinDamage(), -1, reuse);
 				did_attack = true;
 			}
-			break;
+		}
+	}
+	else if(HasClass(Class::Berserker, class_bitmask) || GetClass() == Class::BerserkerGM) {
+		int AtkRounds = 1;
+		int32 max_dmg = GetBaseSkillDamage(EQ::skills::SkillFrenzy);
+		DoAnim(anim2HSlashing, 0, false);
+
+		if (HasClass(Class::Berserker, class_bitmask)) {
+			int chance = GetLevel() * 2 + GetSkill(EQ::skills::SkillFrenzy);
+			if (zone->random.Roll0(450) < chance)
+				AtkRounds++;
+			if (zone->random.Roll0(450) < chance)
+				AtkRounds++;
+		}
+
+		while (AtkRounds > 0) {
+			if (GetTarget())
+				DoSpecialAttackDamage(GetTarget(), EQ::skills::SkillFrenzy, max_dmg, GetMinDamage(), -1, reuse);
+			AtkRounds--;
+		}
+
+		did_attack = true;
+	}
+	else if(HasClass(Class::Ranger, class_bitmask) || GetClass() == Class::RangerGM ||
+		HasClass(Class::Beastlord, class_bitmask) || GetClass() == Class::BeastlordGM) {
+		//kick
+		if(level >= RuleI(Combat, NPCBashKickLevel)){
+			DoAnim(animKick, 0, false);
+			int64 dmg = GetBaseSkillDamage(EQ::skills::SkillKick);
+
+			if (GetWeaponDamage(target, boots) <= 0)
+				dmg = DMG_INVULNERABLE;
+
+			reuse = (KickReuseTime + 3) * 1000;
+			DoSpecialAttackDamage(target, EQ::skills::SkillKick, dmg, GetMinDamage(), -1, reuse);
+			did_attack = true;
+		}
+	}
+	else if(HasClass(Class::Cleric, class_bitmask) || GetClass() == Class::ClericGM || //clerics can bash too.
+		HasClass(Class::ShadowKnight, class_bitmask) || GetClass() == Class::ShadowKnightGM ||
+		HasClass(Class::Paladin, class_bitmask) || GetClass() == Class::PaladinGM) {
+		if(level >= RuleI(Combat, NPCBashKickLevel)){
+			DoAnim(animTailRake, 0, false);
+			int64 dmg = GetBaseSkillDamage(EQ::skills::SkillBash);
+
+			if (GetWeaponDamage(target, (const EQ::ItemData*)nullptr) <= 0)
+				dmg = DMG_INVULNERABLE;
+
+			reuse = (BashReuseTime + 3) * 1000;
+			DoSpecialAttackDamage(target, EQ::skills::SkillBash, dmg, GetMinDamage(), -1, reuse);
+			did_attack = true;
 		}
 	}
 

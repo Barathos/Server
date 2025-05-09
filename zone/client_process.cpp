@@ -702,14 +702,24 @@ bool Client::Process() {
 				}
 			}
 
-			SendBulkStatsUpdate();
 			if (RuleB(Custom, ServerAuthStats) && InZone() && !CAuthorized) {
 				if (CUnauth_tics > 1) {
 					if (GetZoneID() != Zones::BAZAAR) {
 						if (CUnauth_tics >= 11) {
 							zone->SendDiscordMessage("admin", fmt::format("Moving [{}] to Bazaar. Unauthorized Client.", GetCleanName()));
 							const auto safe = zone_store.GetZoneSafeCoordinates(Zones::BAZAAR);
-							MovePC(Zones::BAZAAR, safe.x, safe.y, safe.z, safe.w, 0, ZoneToSafeCoords);
+							auto zone_mode = ZoneSolicited;
+
+							MovePC(
+								Zones::BAZAAR,
+								safe.x,
+								safe.y,
+								safe.z,
+								0.0f,
+								0,
+								zone_mode
+							);
+
 							return false;
 						}
 
@@ -722,6 +732,8 @@ bool Client::Process() {
 				}
 				CUnauth_tics++;
 			}
+
+			SendBulkStatsUpdate();
 		}
 	}
 
