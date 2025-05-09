@@ -1391,7 +1391,7 @@ void Mob::FillSpawnStruct(NewSpawn_Struct* ns, Mob* ForWho)
 	ns->spawn.IsMercenary = IsMerc() ? 1 : 0;
 	ns->spawn.targetable_with_hotkey = no_target_hotkey ? 0 : 1; // opposite logic!
 	ns->spawn.untargetable = IsTargetable();
-	
+
 	ns->spawn.petOwnerId	= ownerid;
 
 	ns->spawn.haircolor = haircolor;
@@ -6250,6 +6250,13 @@ int32 Mob::GetSkillDmgTaken(const EQ::skills::SkillType skill_used, ExtraAttackO
 
 	if(skilldmg_mod < -100)
 		skilldmg_mod = -100;
+
+	if (skill_used == EQ::skills::SkillArchery) {
+		LogDebug(
+			"Mob::GetSkillDmgTaken: Archery skill damage modifier: {}",
+			skilldmg_mod
+		);
+	}
 
 	return skilldmg_mod;
 }
