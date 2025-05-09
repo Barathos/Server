@@ -4287,6 +4287,7 @@ void Mob::DoBuffTic(const Buffs_Struct &buff, int slot, Mob *caster)
 					BuffFadeBySlot(slot);
 				}
 			}
+			break;
 		}
 
 		case SE_Mez: {
@@ -4300,6 +4301,7 @@ void Mob::DoBuffTic(const Buffs_Struct &buff, int slot, Mob *caster)
 					BuffFadeBySlot(slot);
 				}
 			}
+			break;
 		}
 
 		case SE_Charm: {
