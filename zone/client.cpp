@@ -8644,17 +8644,6 @@ void Client::Doppelganger(uint16 spell_id, Mob *target, const char *name_overrid
 		// Do aggro enhancements
 		swarm_pet_npc->SetSpecialAbility(SpecialAbility::AllowedToTank, 1);
 
-		/*
-		swarm_pet_npc->TempName(fmt::format("{}`s_{}_Doppelganger", GetCleanName(),
-												([](int count) {
-													constexpr const char* ordinals[] = {"First", "Second", "Third", "Fourth", "Fifth",
-																						"Sixth", "Seventh", "Eighth", "Ninth", "Tenth"};
-													return ordinals[std::min(count, 9)];
-												})(summon_count-1)
-											).c_str());
-		*/
-
-
 		// Give Client's Buffs to the pet
 		//auto buffs = GetBuffs();
 		for (int buff_idx = 0; buff_idx < GetMaxTotalSlots(); buff_idx++) {
@@ -8719,6 +8708,7 @@ void Client::Doppelganger(uint16 spell_id, Mob *target, const char *name_overrid
 			}
 
 			int spell_type = 0;
+			int recast_time = (spells[spell].recast_time + spells[spell].recovery_time) / 1000;
 
 			if (IsDamageSpell(spell)) {
 				spell_type = SpellType_Nuke;
@@ -8738,6 +8728,7 @@ void Client::Doppelganger(uint16 spell_id, Mob *target, const char *name_overrid
 
 			if (IsEffectInSpell(spell, SE_CurrentHP) && spells[spell].buff_duration > 0) {
 				spell_type = SpellType_DOT;
+				recast_time = -1;
 			}
 
 			if (!spell_type && IsEffectInSpell(SE_MovementSpeed, spell)) {
@@ -8749,7 +8740,7 @@ void Client::Doppelganger(uint16 spell_id, Mob *target, const char *name_overrid
 			}
 
 			if (spell_type && spell) {
-				swarm_pet_npc->AddSpellToNPCList(0, spell, spell_type, -1, (spells[spell].recast_time + spells[spell].recovery_time) / 1000, 0, 0, 0);
+				swarm_pet_npc->AddSpellToNPCList(0, spell, spell_type, -1, recast_time, 0, 0, 0);
 			}
 		}
 
