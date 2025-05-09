@@ -1397,6 +1397,7 @@ void Mob::InterruptSpell(uint16 message, uint16 color, uint16 spellid)
 	}
 
 	ZeroCastingVars();	// resets all the state keeping stuff
+	DeleteEntityVariable(fmt::format("SpellGemHint_%d", spellid));
 
 	LogSpells("Spell [{}] has been interrupted", spellid);
 

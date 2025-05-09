@@ -6792,6 +6792,8 @@ void Mob::CommonOutgoingHitSuccess(Mob* defender, DamageHitInfo &hit, ExtraAttac
 
 	int pct_damage_reduction = defender->GetSkillDmgTaken(hit.skill, opts) + defender->GetPositionalDmgTaken(this);
 
+	LogDebug("Before Damage Reduction: {} After Damage Reduction: {}",
+		hit.damage_done, hit.damage_done + (hit.damage_done * pct_damage_reduction / 100));
 	hit.damage_done += (hit.damage_done * pct_damage_reduction / 100) + defender->GetPositionalDmgTakenAmt(this);
 
 	if (defender->GetShielderID() || defender->spellbonuses.ShieldTargetSpa[SBIndex::SHIELD_TARGET_MITIGATION_PERCENT]) {
