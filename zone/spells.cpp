@@ -6710,6 +6710,10 @@ bool Mob::IsCombatProc(uint16 spell_id) {
 		return false;
 	}
 
+	if (GetEntityVariable("ProcHint") == "true") {
+		return true;
+	}
+
 	if (!IsValidSpell(spell_id)) {
 		return(false);
 	}
