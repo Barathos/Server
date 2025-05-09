@@ -494,7 +494,7 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk, bool is_riposte
 	// These two are not subject to the combat ability timer, as they
 	// allready do their checking in conjunction with the attack timer
 	// throwing weapons
-	if (ca_atk->m_atk == EQ::invslot::slotRange) {
+	if (ca_atk->m_atk == EQ::invslot::slotRange && ranged_timer.Check(false)) {
 		if (GetAttackMode() == AttackMode::RANGED) {
 			return;
 		}
