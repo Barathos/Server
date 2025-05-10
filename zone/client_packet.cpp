@@ -5422,8 +5422,7 @@ void Client::Handle_OP_Consider(const EQApplicationPacket *app)
 	QueuePacket(outapp);
 	// only wanted to check raid target once
 	// and need con to still be around so, do it here!
-	if (t->IsRaidTarget()) {
-		uint32 color = 0;
+	uint32 color = 0;
 		switch (con->level) {
 			case ConsiderColor::Green:
 				color = 2;
@@ -5449,6 +5448,7 @@ void Client::Handle_OP_Consider(const EQApplicationPacket *app)
 				break;
 		}
 
+	if (t->IsRaidTarget()) {
 		if (ClientVersion() <= EQ::versions::ClientVersion::Titanium) {
 			if (color == 6)	{
 				color = 2;
@@ -5456,6 +5456,18 @@ void Client::Handle_OP_Consider(const EQApplicationPacket *app)
 		}
 
 		SendColoredText(color, std::string("This creature would take an army to defeat!"));
+	}
+
+	if (t->GetSpecialAbility(SpecialAbility::CharmImmunity)) {
+		SendColoredText(color, std::string("Something about this creature's gaze tells you it cannot be swayed by enchantments!"));
+	}
+
+	if (t->GetSpecialAbility(SpecialAbility::SlowImmunity)) {
+		SendColoredText(color, std::string("This being moves with supernatural grace that defies any attempt to hinder its speed!"));
+	}
+
+	if (t->GetSpecialAbility(SpecialAbility::MesmerizeImmunity)) {
+		SendColoredText(color, std::string("This creature's will is unbreakable - mesmerizing magic would have no effect!"));
 	}
 
 	// this could be done better, but this is only called when you con so w/e
