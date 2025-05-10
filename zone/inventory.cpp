@@ -3659,7 +3659,7 @@ int64_t Client::GetStatEntryValue(StatEntry label)
 			return (GetSharedSpellCritDmgIncrease() + GetSharedSpellCritDmgIncNoStack());
 		}
 		case statHealCritRate: {
-			return GetSharedCriticalHealChance();
+			return GetSharedCriticalHealChance() + 200;
 		}
 		case statHoTCritRate: {
 			return GetSharedCriticalHealOverTime();
