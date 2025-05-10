@@ -3985,7 +3985,13 @@ int Mob::AddBuff(Mob *caster, uint16 spell_id, int duration, int32 level_overrid
 				if (IsCharmSpell(spell_id)) {
 					SetEntityVariable("preserve_inventory", "true");
 				}
+
+				if (buffs[*cur].spellid == spell_id) {
+					SetEntityVariable("suppress_wornoff", "true");
+				}
 				BuffFadeBySlot(*cur, false);
+				DeleteEntityVariable("suppress_wornoff");
+
 			}
 
 			// if we hadn't found a free slot before, or if this is earlier

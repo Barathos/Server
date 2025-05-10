@@ -4187,6 +4187,8 @@ void Mob::DoBuffTic(const Buffs_Struct &buff, int slot, Mob *caster)
 				caster->ResourceTap(-effect_value, buff.spellid);
 				effect_value = -effect_value;
 				Damage(caster, effect_value, buff.spellid, spell.skill, false, i, true);
+
+				caster->TrySympatheticProc(this, buff.spellid);
 			} else if (effect_value > 0) {
 				// Regen spell...
 				// handled with bonuses
@@ -4986,7 +4988,7 @@ void Mob::BuffFadeBySlot(int slot, bool iRecalcBonuses)
 
 	// notify caster (or their master) of buff that it's worn off
 	Mob *p = entity_list.GetMob(buffs[slot].casterid);
-	if (p && p != this && !IsBardSong(buffs[slot].spellid))
+	if (!EntityVariableExists("suppress_wornoff") && p && p != this && !IsBardSong(buffs[slot].spellid))
 	{
 		Mob *notify = p;
 		if(p->IsPet())
@@ -6954,6 +6956,8 @@ uint16 Mob::GetSympatheticFocusEffect(focusType type, uint16 spell_id) {
 			if (SympatheticProcList.size() > MAX_SYMPATHETIC_PROCS) {
 				break;
 			}
+
+			LogDebug("Check");
 
 			auto ability_rank = zone->GetAlternateAdvancementAbilityAndRank(aa.first, aa.second.first);
 			auto ability = ability_rank.first;
