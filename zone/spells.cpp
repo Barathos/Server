@@ -1651,7 +1651,7 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 
 			// as you get farther from your casting location,
 			// it gets squarely harder to regain concentration
-			if(GetX() != GetSpellX() || GetY() != GetSpellY())
+			if((GetX() != GetSpellX() || GetY() != GetSpellY()) && channelchance < 100)
 			{
 				d_x = std::abs(std::abs(GetX()) - std::abs(GetSpellX()));
 				d_y = std::abs(std::abs(GetY()) - std::abs(GetSpellY()));
