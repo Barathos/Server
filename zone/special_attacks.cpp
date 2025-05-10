@@ -1367,7 +1367,7 @@ void Mob::DoArcheryAttackDmg(Mob *other, const EQ::ItemInstance *RangeWeapon, co
 
 		DamageHitInfo my_hit {};
 		my_hit.base_damage = MaxDmg;
-		my_hit.min_damage = GetWeaponDamageBonus(RangeWeapon->GetItem(), false);
+		my_hit.min_damage = RangeWeapon ? GetWeaponDamageBonus(RangeWeapon->GetItem(), false) : 0;
 		my_hit.damage_done = 1;
 
 		my_hit.skill = EQ::skills::SkillArchery;
