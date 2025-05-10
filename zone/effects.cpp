@@ -451,10 +451,65 @@ int64 Mob::GetActDoTDamage(uint16 spell_id, int64 value, Mob* target, bool from_
 		ratio += GetSharedDotCritDmgIncrease();
 
 		value = value * ratio / 100;
+
+		// Generate flavorful message based on resist type
+		std::string crit_message;
+		std::string self_message;
+
+		switch(spells[spell_id].resist_type) {
+			case RESIST_FIRE:
+				crit_message = fmt::format("{}'s fiery affliction consumes {} with devastating intensity! ({}) ({})",
+										 GetCleanName(), target->GetCleanName(), std::abs(value), spells[spell_id].name);
+				self_message = fmt::format("Your fiery affliction rages out of control upon {}! ({}) ({})",
+										 target->GetCleanName(), std::abs(value), spells[spell_id].name);
+				break;
+
+			case RESIST_COLD:
+				crit_message = fmt::format("{}'s freezing affliction bites deep into {}, chilling to the bone! ({}) ({})",
+										 GetCleanName(), target->GetCleanName(), std::abs(value), spells[spell_id].name);
+				self_message = fmt::format("Your freezing affliction penetrates deep into {}! ({}) ({})",
+										 target->GetCleanName(), std::abs(value), spells[spell_id].name);
+				break;
+
+			case RESIST_POISON:
+				crit_message = fmt::format("{}'s toxic affliction courses through {}'s veins with lethal potency! ({}) ({})",
+										 GetCleanName(), target->GetCleanName(), std::abs(value), spells[spell_id].name);
+				self_message = fmt::format("Your toxic affliction reaches critical toxicity in {}! ({}) ({})",
+										 target->GetCleanName(), std::abs(value), spells[spell_id].name);
+				break;
+
+			case RESIST_DISEASE:
+				crit_message = fmt::format("{}'s vile affliction ravages {} with virulent force! ({}) ({})",
+										 GetCleanName(), target->GetCleanName(), std::abs(value), spells[spell_id].name);
+				self_message = fmt::format("Your vile affliction ravages {} with exceptional virulence! ({}) ({})",
+										 target->GetCleanName(), std::abs(value), spells[spell_id].name);
+				break;
+
+			case RESIST_MAGIC:
+			default:
+				crit_message = fmt::format("{}'s arcane affliction tears through {} with exceptional power! ({}) ({})",
+										 GetCleanName(), target->GetCleanName(), std::abs(value), spells[spell_id].name);
+				self_message = fmt::format("Your arcane affliction tears through {} with critical force! ({}) ({})",
+										 target->GetCleanName(), std::abs(value), spells[spell_id].name);
+				break;
+		}
+
+		entity_list.FilteredMessageClose(
+			this,
+			true,
+			RuleI(Range, SpellMessages),
+			Chat::SpellCrit,
+			FilterSpellCrits,
+			crit_message.c_str()
+		);
+
+		if (IsClient()) {
+			Message(Chat::SpellCrit, self_message.c_str());
+		}
 	}
 
 	return value;
- }
+}
 
 int64 Mob::GetExtraSpellAmt(uint16 spell_id, int64 extra_spell_amt, int64 base_spell_dmg)
 {
