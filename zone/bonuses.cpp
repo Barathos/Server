@@ -827,6 +827,11 @@ void Mob::ApplyAABonuses(const AA::Rank &rank, StatBonuses *newbon)
 			newbon->ResistSpellChance += base_value;
 			break;
 		case SE_CriticalHealChance:
+			if (rank.base_ability->id == 214) { // Theft of Life
+				LogDebug("Adding CriticalLifetap [{}]", base_value);
+				newbon->CriticalLifeTapChance += base_value;
+				break;
+			}
 			newbon->CriticalHealChance += base_value;
 			break;
 		case SE_CriticalHealOverTime:

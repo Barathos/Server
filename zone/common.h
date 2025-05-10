@@ -413,6 +413,7 @@ struct StatBonuses {
 	int32	SpellCritDmgIncNoStack;				// increase
 	int32	DotCritDmgIncrease;					//i
 	int32	CriticalHealChance;					//i
+	int32   CriticalLifeTapChance;
 	int32	CriticalHealOverTime;				//i
 	int32	CriticalDoTChance;					//i
 	int32	CrippBlowChance;					//

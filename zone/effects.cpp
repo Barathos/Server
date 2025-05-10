@@ -368,7 +368,6 @@ int64 Mob::GetActReflectedSpellDamage(uint16 spell_id, int64 value, int effectiv
 }
 
 int64 Mob::GetActDoTDamage(uint16 spell_id, int64 value, Mob* target, bool from_buff_tic) {
-
 	if (target == nullptr)
 		return value;
 
@@ -380,7 +379,9 @@ int64 Mob::GetActDoTDamage(uint16 spell_id, int64 value, Mob* target, bool from_
 		}
 	}
 
-	if (RuleB(Spells, AllowExtraDmgSkill) && RuleB(Character, ItemExtraSkillDamageCalcAsPercent) && GetSkillDmgAmt(spells[spell_id].skill) > 0) {
+	if (RuleB(Spells, AllowExtraDmgSkill) &&
+		RuleB(Character, ItemExtraSkillDamageCalcAsPercent) &&
+		GetSkillDmgAmt(spells[spell_id].skill) > 0) {
 		value *= std::abs(GetSkillDmgAmt(spells[spell_id].skill) / 100);
 	}
 
@@ -395,107 +396,65 @@ int64 Mob::GetActDoTDamage(uint16 spell_id, int64 value, Mob* target, bool from_
 	if (spells[spell_id].override_crit_chance > 0 && chance > spells[spell_id].override_crit_chance)
 		chance = spells[spell_id].override_crit_chance;
 
-	if (!spells[spell_id].good_effect && chance > 0 && (zone->random.Roll(chance))) {
-		int64 ratio = 200;
-		ratio += GetSharedDotCritDmgIncrease();
-		value = base_value*ratio/100;
-		value += int64(base_value*GetFocusEffect(focusImprovedDamage, spell_id, nullptr, from_buff_tic)/100)*ratio/100;
-		value += int64(base_value*GetFocusEffect(focusImprovedDamage2, spell_id, nullptr, from_buff_tic)/100)*ratio/100;
-		value += int64(base_value*GetFocusEffect(focusFcDamagePctCrit, spell_id, nullptr, from_buff_tic)/100)*ratio/100;
-		value += int64(base_value*GetFocusEffect(focusFcAmplifyMod, spell_id, nullptr, from_buff_tic) / 100)*ratio/100;
-		value += int64(base_value*target->GetVulnerability(this, spell_id, 0, from_buff_tic)/100)*ratio/100;
-		extra_dmg = target->GetFcDamageAmtIncoming(this, spell_id, from_buff_tic) +
-					int64(GetFocusEffect(focusFcDamageAmtCrit, spell_id, nullptr, from_buff_tic)*ratio/100) +
-					GetFocusEffect(focusFcDamageAmt, spell_id, nullptr, from_buff_tic) +
-					GetFocusEffect(focusFcDamageAmt2, spell_id, nullptr, from_buff_tic) +
-					GetFocusEffect(focusFcAmplifyAmt, spell_id, nullptr, from_buff_tic);
+	int64 percent_mod = 100;
+	percent_mod += GetFocusEffect(focusImprovedDamage, spell_id, nullptr, from_buff_tic);
+	percent_mod += GetFocusEffect(focusImprovedDamage2, spell_id, nullptr, from_buff_tic);
+	percent_mod += GetFocusEffect(focusFcDamagePctCrit, spell_id, nullptr, from_buff_tic);
+	percent_mod += GetFocusEffect(focusFcAmplifyMod, spell_id, nullptr, from_buff_tic);
+	percent_mod += target->GetVulnerability(this, spell_id, 0, from_buff_tic);
 
-		if (RuleB(Spells, DOTsScaleWithSpellDmg)) {
-			if (
-				RuleB(Spells, IgnoreSpellDmgLvlRestriction) &&
-				!spells[spell_id].no_heal_damage_item_mod &&
-				GetSharedSpellDamage()
-			) {
-				extra_dmg += GetExtraSpellAmt(spell_id, GetSharedSpellDamage(), base_value)*ratio/100;
-			}
-			else if (
-				!spells[spell_id].no_heal_damage_item_mod &&
-				GetSharedSpellDamage() &&
-				GetSpellLevelForCaster(spell_id) >= GetLevel() - 5
-			) {
-				extra_dmg += GetExtraSpellAmt(spell_id, GetSharedSpellDamage(), base_value)*ratio/100;
-			}
+	value = base_value * percent_mod / 100;
+
+	extra_dmg = target->GetFcDamageAmtIncoming(this, spell_id, from_buff_tic) +
+				GetFocusEffect(focusFcDamageAmtCrit, spell_id, nullptr, from_buff_tic) +
+				GetFocusEffect(focusFcDamageAmt, spell_id, nullptr, from_buff_tic) +
+				GetFocusEffect(focusFcDamageAmt2, spell_id, nullptr, from_buff_tic) +
+				GetFocusEffect(focusFcAmplifyAmt, spell_id, nullptr, from_buff_tic);
+
+	if (RuleB(Spells, DOTsScaleWithSpellDmg)) {
+		if (RuleB(Spells, IgnoreSpellDmgLvlRestriction) &&
+			!spells[spell_id].no_heal_damage_item_mod &&
+			GetSharedSpellDamage()) {
+			extra_dmg += GetExtraSpellAmt(spell_id, GetSharedSpellDamage(), base_value);
 		}
+		else if (!spells[spell_id].no_heal_damage_item_mod &&
+				 GetSharedSpellDamage() &&
+				 GetSpellLevelForCaster(spell_id) >= GetLevel() - 5) {
+			extra_dmg += GetExtraSpellAmt(spell_id, GetSharedSpellDamage(), base_value);
+		}
+	}
 
-		if (RuleB(Spells, AllowExtraDmgSkill) && !RuleB(Character, ItemExtraSkillDamageCalcAsPercent)) {
-			extra_dmg += GetSkillDmgAmt(spells[spell_id].skill) * ratio / 100;
+	if (RuleB(Spells, AllowExtraDmgSkill) && !RuleB(Character, ItemExtraSkillDamageCalcAsPercent)) {
+		extra_dmg += GetSkillDmgAmt(spells[spell_id].skill);
+	}
+
+	if (extra_dmg) {
+		if (RuleI(Spells, DOTsScaleWithSpellDmgPerTickPercent) > 0) {
+			const int value = RuleI(Spells, DOTsScaleWithSpellDmgPerTickPercent);
+			if (value != 0) {
+				extra_dmg = (extra_dmg * value) / 100;
+			}
 		}
 
 		if (RuleB(Spells, DOTBonusDamageSplitOverDuration)) {
-			if (extra_dmg) {
-				const int duration = CalcBuffDuration(this, target, spell_id);
-				if (duration > 0) {
-					extra_dmg /= duration;
-				}
+			const int duration = CalcBuffDuration(this, target, spell_id);
+			if (duration > 0) {
+				extra_dmg /= duration;
 			}
 		}
-
-		value -= extra_dmg;
 	}
-	else {
 
-		value = base_value;
-		value += base_value*GetFocusEffect(focusImprovedDamage, spell_id, nullptr, from_buff_tic)/100;
-		value += base_value*GetFocusEffect(focusImprovedDamage2, spell_id, nullptr, from_buff_tic)/100;
-		value += base_value*GetFocusEffect(focusFcDamagePctCrit, spell_id, nullptr, from_buff_tic)/100;
-		value += base_value*GetFocusEffect(focusFcAmplifyMod, spell_id, nullptr, from_buff_tic)/100;
-		value += base_value*target->GetVulnerability(this, spell_id, 0, from_buff_tic)/100;
-		extra_dmg = target->GetFcDamageAmtIncoming(this, spell_id, from_buff_tic) +
-					GetFocusEffect(focusFcDamageAmtCrit, spell_id, nullptr, from_buff_tic) +
-					GetFocusEffect(focusFcDamageAmt, spell_id, nullptr, from_buff_tic) +
-					GetFocusEffect(focusFcDamageAmt2, spell_id, nullptr, from_buff_tic) +
-					GetFocusEffect(focusFcAmplifyAmt, spell_id, nullptr, from_buff_tic);
+	value -= extra_dmg;
 
-		if (RuleB(Spells, DOTsScaleWithSpellDmg)) {
-			if (
-				RuleB(Spells, IgnoreSpellDmgLvlRestriction) &&
-				!spells[spell_id].no_heal_damage_item_mod && GetSharedSpellDamage()
-			) {
-				extra_dmg += GetExtraSpellAmt(spell_id, GetSharedSpellDamage(), base_value);
-			}
-			else if (
-				!spells[spell_id].no_heal_damage_item_mod && GetSharedSpellDamage() &&
-				GetSpellLevelForCaster(spell_id) >= GetLevel() - 5
-			) {
-				extra_dmg += GetExtraSpellAmt(spell_id, GetSharedSpellDamage(), base_value);
-			}
-		}
+	if (!spells[spell_id].good_effect && chance > 0 && (zone->random.Roll(chance))) {
+		int64 ratio = 200;
+		ratio += GetSharedDotCritDmgIncrease();
 
-		if (RuleB(Spells, AllowExtraDmgSkill) && !RuleB(Character, ItemExtraSkillDamageCalcAsPercent)) {
-			extra_dmg += GetSkillDmgAmt(spells[spell_id].skill);
-		}
-
-		if (extra_dmg) {
-			if (RuleI(Spells, DOTsScaleWithSpellDmgPerTickPercent) > 0) {
-				const int value = RuleI(Spells, DOTsScaleWithSpellDmgPerTickPercent);
-				if (value != 0) {
-					extra_dmg = (extra_dmg * value) / 100;
-				}
-			}
-
-			if (RuleB(Spells, DOTBonusDamageSplitOverDuration)) {
-				const int duration = CalcBuffDuration(this, target, spell_id);
-				if (duration > 0) {
-					extra_dmg /= duration;
-				}
-			}
-		}
-
-		value -= extra_dmg;
+		value = value * ratio / 100;
 	}
 
 	return value;
-}
+ }
 
 int64 Mob::GetExtraSpellAmt(uint16 spell_id, int64 extra_spell_amt, int64 base_spell_dmg)
 {
@@ -575,6 +534,10 @@ int64 Mob::GetActSpellHealing(uint16 spell_id, int64 value, Mob* target, bool fr
 
 	if (spells[spell_id].buff_duration < 1) {
 		critical_chance += GetSharedCriticalHealChance();
+
+		if (lifetap) {
+			critical_chance += aabonuses.CriticalLifeTapChance + spellbonuses.CriticalLifeTapChance;
+		}
 
 		if (spellbonuses.CriticalHealDecay) {
 			critical_chance += GetDecayEffectValue(spell_id, SE_CriticalHealDecay);
