@@ -86,6 +86,24 @@ void Perl_NPC_RemoveItem(NPC* self, uint32 item_id, uint16 quantity, uint16 slot
 	self->RemoveItem(item_id, quantity, slot_id);
 }
 
+void Perl_NPC_RemoveItemByPercent(NPC* self, float percent) // @categories Inventory and Items
+{
+    self->RemoveItemByPercent(percent);
+}
+
+
+void Perl_NPC_RemoveItemByPercent(NPC* self, float percent, int min_delete) // @categories Inventory and Items 
+{
+    self->RemoveItemByPercent(percent, min_delete);
+}
+
+
+void Perl_NPC_RemoveItemByPercent(NPC* self, float percent, int min_delete, int max_delete) // @categories Inventory and Items  
+{
+    self->RemoveItemByPercent(percent, min_delete, max_delete);
+}
+
+
 void Perl_NPC_ClearLootItems(NPC* self) // @categories Inventory and Items
 {
 	self->ClearLootItems();
@@ -1011,6 +1029,9 @@ void perl_register_npc()
 	package.add("RemoveItem", (void(*)(NPC*, uint32))&Perl_NPC_RemoveItem);
 	package.add("RemoveItem", (void(*)(NPC*, uint32, uint16))&Perl_NPC_RemoveItem);
 	package.add("RemoveItem", (void(*)(NPC*, uint32, uint16, uint16))&Perl_NPC_RemoveItem);
+ 	package.add("RemoveItemByPercent", (void(*)(NPC*, float))&Perl_NPC_RemoveItemByPercent);
+        package.add("RemoveItemByPercent", (void(*)(NPC*, float, int))&Perl_NPC_RemoveItemByPercent);
+        package.add("RemoveItemByPercent", (void(*)(NPC*, float, int, int))&Perl_NPC_RemoveItemByPercent);
 	package.add("RemoveMeleeProc", &Perl_NPC_RemoveMeleeProc);
 	package.add("RemoveRangedProc", &Perl_NPC_RemoveRangedProc);
 	package.add("ResumeWandering", &Perl_NPC_ResumeWandering);

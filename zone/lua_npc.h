@@ -46,6 +46,9 @@ public:
 	void RemoveItem(int item_id);
 	void RemoveItem(int item_id, int quantity);
 	void RemoveItem(int item_id, int quantity, int slot);
+	void RemoveItemByPercent(float percent, int min_delete = 1, int max_delete = -1);
+        void RemoveItemByPercent(float percent, int min_delete = 1);
+        void RemoveItemByPercent(float percent);
 	void ClearLootItems();
 	void AddLootCash(uint32 copper, uint32 silver, uint32 gold, uint32 platinum);
 	void RemoveLootCash();

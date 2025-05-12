@@ -90,6 +90,21 @@ void Lua_NPC::RemoveItem(int item_id, int quantity, int slot) {
 	self->RemoveItem(item_id, quantity, slot);
 }
 
+void Lua_NPC::RemoveItemByPercent(float percent) {
+    Lua_Safe_Call_Void();
+    self->RemoveItemByPercent(percent, /*min=*/1, /*max=*/-1);
+}
+
+void Lua_NPC::RemoveItemByPercent(float percent, int min_delete) {
+    Lua_Safe_Call_Void();
+    self->RemoveItemByPercent(percent, min_delete, /*max=*/-1);
+}
+
+void Lua_NPC::RemoveItemByPercent(float percent, int min_delete, int max_delete) {
+    Lua_Safe_Call_Void();
+    self->RemoveItemByPercent(percent, min_delete, max_delete);
+}
+
 void Lua_NPC::ClearLootItems() {
 	Lua_Safe_Call_Void();
 	self->ClearLootItems();
@@ -1066,6 +1081,9 @@ luabind::scope lua_register_npc() {
 	.def("RemoveItem", (void(Lua_NPC::*)(int))&Lua_NPC::RemoveItem)
 	.def("RemoveItem", (void(Lua_NPC::*)(int,int))&Lua_NPC::RemoveItem)
 	.def("RemoveItem", (void(Lua_NPC::*)(int,int,int))&Lua_NPC::RemoveItem)
+        .def("RemoveItemByPercent", (void(Lua_NPC::*)(float))&Lua_NPC::RemoveItemByPercent)
+        .def("RemoveItemByPercent", (void(Lua_NPC::*)(float, int))&Lua_NPC::RemoveItemByPercent)
+        .def("RemoveItemByPercent", (void(Lua_NPC::*)(float, int, int))&Lua_NPC::RemoveItemByPercent)
 	.def("ResumeWandering", (void(Lua_NPC::*)(void))&Lua_NPC::ResumeWandering)
 	.def("ReturnHandinItems", (void(Lua_NPC::*)(Lua_Client))&Lua_NPC::ReturnHandinItems)
 	.def("SaveGuardSpot", (void(Lua_NPC::*)(void))&Lua_NPC::SaveGuardSpot)

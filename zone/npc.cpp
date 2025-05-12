@@ -55,6 +55,7 @@
 #include <stdio.h>
 #include <string>
 #include <utility>
+#include <cmath>
 
 #ifdef _WINDOWS
 #define snprintf	_snprintf
@@ -1728,6 +1729,51 @@ uint32 NPC::GetMaxDamage(uint8 tlevel)
 	return dmg;
 }
 
+void NPC::RemoveItemByPercent(float percent, int min_delete, int max_delete) {
+    percent = std::max(0.0f, std::min(1.0f, percent));
+
+    std::vector<LootItem*> items;
+    items.reserve(m_loot_items.size());
+    for (LootItem* ptr : m_loot_items) {
+        if (ptr && ptr->item_id)
+            items.push_back(ptr);
+    }
+
+    if (items.empty() || percent <= 0.0f)
+        return;
+
+    for (size_t i = items.size() - 1; i > 0; --i) {
+        int j = zone->random.Int(0, static_cast<int>(i));
+        std::swap(items[i], items[j]);
+    }
+
+    size_t total  = items.size();
+    size_t target = static_cast<size_t>(std::floor(total * percent));
+    if (percent > 0.0f && target < static_cast<size_t>(min_delete))
+        target = static_cast<size_t>(min_delete);
+    if (max_delete >= 0 && target > static_cast<size_t>(max_delete))
+        target = static_cast<size_t>(max_delete);
+    if (target > total)
+        target = total;
+
+    size_t removed = 0;
+    for (auto ptr : items) {
+        if (removed >= target)
+            break;
+
+        uint32_t item_id = ptr->item_id;
+
+        for (auto cur = m_loot_items.begin(); cur != m_loot_items.end(); ++cur) {
+            LootItem* citem = *cur;
+            if (citem->item_id == item_id) {
+                RemoveItem(item_id);
+                ++removed;
+                break;
+            }
+        }
+    }
+}
+
 void NPC::PickPocket(Client* thief)
 {
 	thief->CheckIncreaseSkill(EQ::skills::SkillPickPockets, nullptr, 5);
@@ -1772,6 +1818,7 @@ void NPC::PickPocket(Client* thief)
 
 			loot_selection.emplace_back(std::make_pair(item_test, ((item_test->Stackable) ? (1) : (item_iter->charges))));
 		}
+
 		if (loot_selection.empty()) {
 			steal_item = false;
 			break;
