@@ -8646,10 +8646,18 @@ void Client::Doppelganger(uint16 spell_id, Mob *target, const char *name_overrid
 
 		// Give Client's Buffs to the pet
 		//auto buffs = GetBuffs();
+		int MinTicDuration    = RuleI(Custom, DoppelBuffMinDuration);
+
 		for (int buff_idx = 0; buff_idx < GetMaxTotalSlots(); buff_idx++) {
-			if (!IsValidSpell(buffs[buff_idx].spellid) || spells[buffs[buff_idx].spellid].short_buff_box) {
+//			if (!IsValidSpell(buffs[buff_idx].spellid) || spells[buffs[buff_idx].spellid].short_buff_box) {
+			if (!IsValidSpell(buffs[buff_idx].spellid)) {
 				continue;
 			}
+			int16 ticsLeft = buffs[buff_idx].ticsremaining;
+			if (ticsLeft < MinTicDuration) {
+				continue;
+			}
+
 			swarm_pet_npc->ApplySpellBuff(buffs[buff_idx].spellid, buffs[buff_idx].ticsremaining);
 		}
 
