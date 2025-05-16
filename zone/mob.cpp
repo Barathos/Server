@@ -6423,10 +6423,10 @@ void Mob::TrySympatheticProc(Mob* target, uint32 spell_id)
 		target = new_target;
 	}
 
-	const uint16 focus_trigger = GetSympatheticSpellProcID(focus_spell);
+	uint16 focus_trigger = GetSympatheticSpellProcID(focus_spell);
 
 	if (!IsValidSpell(focus_trigger)) {
-		return;
+		focus_trigger = focus_spell; // This should only happen for AA Symp Procs.
 	}
 
 	if (IsBeneficialSpell(spell_id)) {

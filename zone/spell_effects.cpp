@@ -6957,8 +6957,6 @@ uint16 Mob::GetSympatheticFocusEffect(focusType type, uint16 spell_id) {
 				break;
 			}
 
-			LogDebug("Check");
-
 			auto ability_rank = zone->GetAlternateAdvancementAbilityAndRank(aa.first, aa.second.first);
 			auto ability = ability_rank.first;
 			auto rank = ability_rank.second;
