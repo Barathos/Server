@@ -920,6 +920,9 @@ void NPC::Depop(bool start_spawn_timer) {
 	if (emoteid) {
 		DoNPCEmote(EQ::constants::EmoteEventTypes::OnDespawn, emoteid);
 	}
+	
+        entity_list.RemoveFromTargets(this, true);
+        hate_list.RemoveEntFromHateList(this);
 
 	parse->EventBotMercNPC(EVENT_DESPAWN, this, nullptr);
 
