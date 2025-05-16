@@ -205,6 +205,7 @@ void command_zone_shard(Client *c, const Seperator *sep);
 void command_zone_shard_new(Client *c, const Seperator *sep);
 void command_zonebootup(Client *c, const Seperator *sep);
 void command_zoneshutdown(Client *c, const Seperator *sep);
+void command_zonevariable(Client *c, const Seperator *sep);
 void command_zsave(Client *c, const Seperator *sep);
 void command_disable_seasonal(Client *c, const Seperator *sep);
 void command_seasoninfo(Client *c, const Seperator *sep);

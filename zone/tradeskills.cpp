@@ -19,6 +19,7 @@
 #include "../common/global_define.h"
 #include "../common/events/player_event_logs.h"
 
+#include <algorithm>
 #include <list>
 #include <algorithm>
 
@@ -1406,6 +1407,7 @@ void Client::CheckIncreaseTradeskill(int16 bonusstat, int16 stat_modifier, float
 
 	float min_skill_up_chance = RuleR(Character, TradeskillUpMinChance);
 	min_skill_up_chance = std::max(min_skill_up_chance, 2.5f);
+
 	float chance_stage2 = 0;
 
 	//A successfull combine doubles the stage1 chance for an skillup
@@ -1414,7 +1416,7 @@ void Client::CheckIncreaseTradeskill(int16 bonusstat, int16 stat_modifier, float
 	chance_stage1 = std::max(min_skill_up_chance, chance_stage1);
 
 	//In stage2 the only thing that matters is your current unmodified skill
-    //and the Character:TradeskillUpMinChance rule.
+	//and the Character:TradeskillUpMinChance rule.
 	if (chance_stage1 > zone->random.Real(0, 99)) {
 		if (current_raw_skill < 15) {
 			//Always succeed

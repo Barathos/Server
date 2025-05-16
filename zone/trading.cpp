@@ -1351,12 +1351,12 @@ void Client::BuyTraderItem(TraderBuy_Struct *tbs, Client *Trader, const EQApplic
 		return;
 	}
 
-	auto in                          = (TraderBuy_Struct *) app->pBuffer;
-	auto outapp                      = std::make_unique<EQApplicationPacket>(OP_Trader, sizeof(TraderBuy_Struct));
-	auto outtbs                      = (TraderBuy_Struct *) outapp->pBuffer;
-	outtbs->item_id                  = tbs->item_id;
+	auto outapp     = std::make_unique<EQApplicationPacket>(OP_Trader, static_cast<uint32>(sizeof(TraderBuy_Struct)));
+	auto outtbs     = (TraderBuy_Struct *) outapp->pBuffer;
+	outtbs->item_id = tbs->item_id;
+
 	const EQ::ItemInstance *buy_item = nullptr;
-	uint32 item_id                   = 0;
+	uint32                  item_id  = 0;
 
 	if (ClientVersion() >= EQ::versions::ClientVersion::RoF) {
 		tbs->item_id = Strings::ToUnsignedBigInt(tbs->serial_number);
@@ -1557,15 +1557,15 @@ void Client::BuyTraderItem(TraderBuy_Struct *tbs, Client *Trader, const EQApplic
 
 void Client::SendBazaarWelcome()
 {
-	const auto results = TraderRepository::GetWelcomeData(database);
-	auto       outapp  = std::make_unique<EQApplicationPacket>(OP_BazaarSearch, sizeof(BazaarWelcome_Struct));
-	auto       data    = (BazaarWelcome_Struct *) outapp->pBuffer;
+	const auto          results = TraderRepository::GetWelcomeData(database);
+	EQApplicationPacket outapp(OP_BazaarSearch, static_cast<uint32>(sizeof(BazaarWelcome_Struct)));
+	auto                data = (BazaarWelcome_Struct *) outapp.pBuffer;
 
-	data->action  = BazaarWelcome;
-	data->traders = results.count_of_traders;
-	data->items   = results.count_of_items;
+	data->action             = BazaarWelcome;
+	data->traders            = results.count_of_traders;
+	data->items              = results.count_of_items;
 
-	QueuePacket(outapp.get());
+	QueuePacket(&outapp);
 }
 
 void Client::SendBarterWelcome()
@@ -1798,7 +1798,10 @@ void Client::SendBuyerResults(BarterSearchRequest_Struct& bsr)
 
 		{ ar(results); }
 
-		auto packet = std::make_unique<EQApplicationPacket>(OP_BuyerItems, ss.str().length() + sizeof(BuyerGeneric_Struct));
+		auto packet = std::make_unique<EQApplicationPacket>(
+			OP_BuyerItems,
+			static_cast<uint32>(ss.str().length()) + static_cast<uint32>(sizeof(BuyerGeneric_Struct))
+		);
 		auto emu    = (BuyerGeneric_Struct *) packet->pBuffer;
 
 		emu->action = Barter_BuyerSearch;
@@ -1851,7 +1854,10 @@ void Client::ShowBuyLines(const EQApplicationPacket *app)
 
 			{ ar(l); }
 
-			auto packet = std::make_unique<EQApplicationPacket>(OP_BuyerItems, ss.str().length() + sizeof(BuyerGeneric_Struct));
+			auto packet = std::make_unique<EQApplicationPacket>(
+				OP_BuyerItems,
+				static_cast<uint32>(ss.str().length()) + static_cast<uint32>(sizeof(BuyerGeneric_Struct))
+			);
 			auto emu    = (BuyerGeneric_Struct *) packet->pBuffer;
 
 			emu->action = Barter_BuyerInspectBegin;
@@ -2080,7 +2086,7 @@ void Client::SellToBuyer(const EQApplicationPacket *app)
 
 				auto server_packet = std::make_unique<ServerPacket>(
 					ServerOP_BuyerMessaging,
-					sizeof(BuyerMessaging_Struct)
+					static_cast<uint32>(sizeof(BuyerMessaging_Struct))
 				);
 
 				auto data = (BuyerMessaging_Struct *) server_packet->pBuffer;
@@ -2132,7 +2138,10 @@ void Client::SendBuyerPacket(Client* Buyer) {
 
 void Client::ToggleBuyerMode(bool status)
 {
-	auto outapp = std::make_unique<EQApplicationPacket>(OP_Barter, sizeof(BuyerSetAppearance_Struct));
+	auto outapp = std::make_unique<EQApplicationPacket>(
+		OP_Barter,
+		static_cast<uint32>(sizeof(BuyerSetAppearance_Struct))
+	);
 	auto data   = (BuyerSetAppearance_Struct *) outapp->pBuffer;
 
 	data->action    = Barter_BuyerAppearance;
@@ -2328,8 +2337,7 @@ void Client::ModifyBuyLine(const EQApplicationPacket *app)
 
 			auto packet = std::make_unique<EQApplicationPacket>(
 				OP_BuyerItems,
-				ss_customer.str().length() +
-				sizeof(BuyerGeneric_Struct)
+				static_cast<uint32>(ss_customer.str().length()) + static_cast<uint32>(sizeof(BuyerGeneric_Struct))
 			);
 			auto emu    = (BuyerGeneric_Struct *) packet->pBuffer;
 
@@ -2822,7 +2830,10 @@ void Client::DoBazaarInspect(BazaarInspect_Struct &in)
 
 void Client::SendBazaarDeliveryCosts()
 {
-	auto outapp = std::make_unique<EQApplicationPacket>(OP_BazaarSearch, sizeof(BazaarDeliveryCost_Struct));
+	auto outapp = std::make_unique<EQApplicationPacket>(
+		OP_BazaarSearch,
+		static_cast<uint32>(sizeof(BazaarDeliveryCost_Struct))
+	);
 	auto data   = (BazaarDeliveryCost_Struct *) outapp->pBuffer;
 	auto zones_list = Strings::Split(RuleS(Bazaar, ParcelDeliveryCostExemptZones), ",");
 
@@ -3104,7 +3115,9 @@ void Client::BuyTraderItemOutsideBazaar(TraderBuy_Struct *tbs, const EQApplicati
 		BazaarAuditTrail(tbs->seller_name, GetName(), buy_item->GetItem()->Name, tbs->quantity, tbs->price, 0);
 	}
 
-	auto out_server = std::make_unique<ServerPacket>(ServerOP_BazaarPurchase, sizeof(BazaarPurchaseMessaging_Struct));
+	auto out_server = std::make_unique<ServerPacket>(
+		ServerOP_BazaarPurchase, static_cast<uint32>(sizeof(BazaarPurchaseMessaging_Struct))
+	);
 	auto out_data   = (BazaarPurchaseMessaging_Struct *) out_server->pBuffer;
 
 	out_data->trader_buy_struct       = *tbs;
@@ -3292,7 +3305,7 @@ void Client::SendBuyerGreeting(uint32 buyer_id)
 
 void Client::SendSellerBrowsing(const std::string &browser)
 {
-	auto outapp = std::make_unique<EQApplicationPacket>(OP_Barter, sizeof(BuyerBrowsing_Struct));
+	auto outapp = std::make_unique<EQApplicationPacket>(OP_Barter, static_cast<uint32>(sizeof(BuyerBrowsing_Struct)));
 	auto eq     = (BuyerBrowsing_Struct *) outapp->pBuffer;
 
 	eq->action = Barter_SellerBrowsing;
@@ -3490,7 +3503,7 @@ void Client::SendWindowUpdatesToSellerAndBuyer(BuyerLineSellItem_Struct &blsi)
 	if (blsi.item_quantity - blsi.seller_quantity <= 0) {
 		auto outapp = std::make_unique<EQApplicationPacket>(
 			OP_BuyerItems,
-			sizeof(BuyerRemoveItemFromMerchantWindow_Struct)
+			static_cast<uint32>(sizeof(BuyerRemoveItemFromMerchantWindow_Struct))
 		);
 		auto data   = (BuyerRemoveItemFromMerchantWindow_Struct *) outapp->pBuffer;
 
@@ -3580,7 +3593,7 @@ void Client::SendBuyerToBarterWindow(Client *buyer, uint32 action)
 {
 	auto server_packet = std::make_unique<ServerPacket>(
 		ServerOP_BuyerMessaging,
-		sizeof(BuyerMessaging_Struct)
+		static_cast<uint32>(sizeof(BuyerMessaging_Struct))
 	);
 	auto data          = (BuyerMessaging_Struct *) server_packet->pBuffer;
 
@@ -3601,7 +3614,10 @@ void Client::SendBulkBazaarBuyers()
 		return;
 	}
 
-	auto outapp = std::make_unique<EQApplicationPacket>(OP_Barter, sizeof(BuyerAddBuyertoBarterWindow_Struct));
+	auto outapp = std::make_unique<EQApplicationPacket>(
+		OP_Barter,
+		static_cast<uint32>(sizeof(BuyerAddBuyertoBarterWindow_Struct))
+	);
 	auto emu    = (BuyerAddBuyertoBarterWindow_Struct *) outapp->pBuffer;
 
 	for (auto const &b: results) {
@@ -3844,11 +3860,11 @@ bool Client::ValidateBuyLineItems(std::map<uint32, BuylineItemDetails_Struct> &i
 
 int64 Client::ValidateBuyLineCost(std::map<uint32, BuylineItemDetails_Struct> &item_map)
 {
-	int64 proposed_total_cost = std::accumulate(
+	uint64 proposed_total_cost = std::accumulate(
 		item_map.cbegin(),
 		item_map.cend(),
-		0,
-		[](auto prev_sum, const std::pair<uint32, BuylineItemDetails_Struct> &x) {
+		static_cast<uint64>(0),
+		[](uint64 prev_sum, const std::pair<uint32, BuylineItemDetails_Struct> &x) {
 			return prev_sum + x.second.item_cost;
 		}
 	);
