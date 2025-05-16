@@ -15,33 +15,103 @@ CREATE TABLE `new_table`  (
 )",
 		.content_schema_update = false,
 	},
-// Used for testing
-//	ManifestEntry{
-//		.version = 9229,
-//		.description = "new_database_check_test",
-//		.check = "SHOW TABLES LIKE 'new_table'",
-//		.condition = "empty",
-//		.match = "",
-//		.sql = R"(
-//CREATE TABLE `new_table`  (
-//  `id` int NOT NULL AUTO_INCREMENT,
-//  PRIMARY KEY (`id`)
-//);
-//CREATE TABLE `new_table1`  (
-//  `id` int NOT NULL AUTO_INCREMENT,
-//  PRIMARY KEY (`id`)
-//);
-//CREATE TABLE `new_table2`  (
-//  `id` int NOT NULL AUTO_INCREMENT,
-//  PRIMARY KEY (`id`)
-//);
-//CREATE TABLE `new_table3`  (
-//  `id` int NOT NULL AUTO_INCREMENT,
-//  PRIMARY KEY (`id`)
-//);
-//)",
-//	}
 
+	// Content schema tables
+	ManifestEntry{
+		.version = 2,
+		.description = "2025_05_16_thj_waypoints_content_tables",
+		.check = "SHOW TABLES LIKE 'thj_waypoints_categories'",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+CREATE TABLE thj_waypoints_categories (
+    id INT PRIMARY KEY,
+    name VARCHAR(32) NOT NULL UNIQUE
+);
+
+CREATE TABLE thj_waypoints (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    shortname VARCHAR(32) UNIQUE NOT NULL,
+    long_name VARCHAR(64) NOT NULL,
+    category INT NOT NULL,
+    x FLOAT NOT NULL,
+    y FLOAT NOT NULL,
+    z FLOAT NOT NULL,
+    heading FLOAT NOT NULL,
+    INDEX idx_thj_waypoints_shortname (shortname),
+    INDEX idx_thj_waypoints_category (category)
+);
+
+CREATE TABLE thj_waypoints_default (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    waypoint_id INT NOT NULL,
+    race_id INT NOT NULL DEFAULT 0,
+    class_mask INT UNSIGNED NOT NULL DEFAULT 65535,
+    min_level INT NOT NULL DEFAULT 1,
+    max_level INT NOT NULL DEFAULT 255,
+    UNIQUE KEY unique_default_waypoint (waypoint_id, race_id, class_mask, min_level),
+    INDEX idx_thj_waypoints_default_race (race_id),
+    INDEX idx_thj_waypoints_default_class (class_mask),
+    INDEX idx_thj_waypoints_default_level (min_level, max_level)
+);
+)",
+		.content_schema_update = true,
+	},
+
+	// PEQ schema tables
+	ManifestEntry{
+		.version = 3,
+		.description = "2025_05_16_thj_waypoints_peq_tables",
+		.check = "SHOW TABLES LIKE 'thj_waypoints_character'",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+CREATE TABLE thj_waypoints_character (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    character_id BIGINT UNSIGNED NOT NULL,
+    waypoint_id INT NOT NULL,
+    unlock_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_character_waypoint (character_id, waypoint_id),
+    INDEX idx_thj_waypoints_character_id (character_id)
+);
+
+CREATE TABLE thj_waypoints_account (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    account_id BIGINT UNSIGNED NOT NULL,
+    waypoint_id INT NOT NULL,
+    unlock_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_account_waypoint (account_id, waypoint_id),
+    INDEX idx_thj_waypoints_account_id (account_id)
+);
+)",
+		.content_schema_update = false,
+	},
+	// Used for testing
+	//	ManifestEntry{
+	//		.version = 9229,
+	//		.description = "new_database_check_test",
+	//		.check = "SHOW TABLES LIKE 'new_table'",
+	//		.condition = "empty",
+	//		.match = "",
+	//		.sql = R"(
+	// CREATE TABLE `new_table`  (
+	//  `id` int NOT NULL AUTO_INCREMENT,
+	//  PRIMARY KEY (`id`)
+	//);
+	// CREATE TABLE `new_table1`  (
+	//  `id` int NOT NULL AUTO_INCREMENT,
+	//  PRIMARY KEY (`id`)
+	//);
+	// CREATE TABLE `new_table2`  (
+	//  `id` int NOT NULL AUTO_INCREMENT,
+	//  PRIMARY KEY (`id`)
+	//);
+	// CREATE TABLE `new_table3`  (
+	//  `id` int NOT NULL AUTO_INCREMENT,
+	//  PRIMARY KEY (`id`)
+	//);
+	//)",
+	//	}
 };
 
 // see struct definitions for what each field does

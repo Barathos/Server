@@ -922,6 +922,16 @@
         OutF(LogSys, Logs::Detail, Logs::NetTCP, __FILE__, __func__, __LINE__, message, ##__VA_ARGS__);\
 } while (0)
 
+#define LogWaypoints(message, ...) do {\
+    if (LogSys.IsLogEnabled(Logs::General, Logs::Waypoints))\
+        OutF(LogSys, Logs::General, Logs::Waypoints, __FILE__, __func__, __LINE__, message, ##__VA_ARGS__);\
+} while (0)
+
+#define LogWaypointsDetail(message, ...) do {\
+    if (LogSys.IsLogEnabled(Logs::Detail, Logs::Waypoints))\
+        OutF(LogSys, Logs::Detail, Logs::Waypoints, __FILE__, __func__, __LINE__, message, ##__VA_ARGS__);\
+} while (0)
+
 #define Log(debug_level, log_category, message, ...) do {\
     if (LogSys.IsLogEnabled(debug_level, log_category))\
         LogSys.Out(debug_level, log_category, __FILE__, __func__, __LINE__, message, ##__VA_ARGS__);\

@@ -76,6 +76,7 @@ namespace EQ
 #include "../common/repositories/buyer_buy_lines_repository.h"
 #include "../common/repositories/character_evolving_items_repository.h"
 #include "../common/repositories/player_titlesets_repository.h"
+#include "../common/repositories/thj_waypoints_repository.h"
 
 #include "bot_structs.h"
 
@@ -952,6 +953,31 @@ public:
 	uint64 GetAllMoney();
 	uint32 GetMoney(uint8 type, uint8 subtype);
 	int GetAccountAge();
+
+private:
+	std::vector<ThjWaypointsRepository::ThjWaypoints> m_unlocked_waypoints = { };
+	int m_expanded_waypoints = -1;
+	int m_group_feature_state = -1;
+	int m_auto_transport_state = -1;
+
+public:
+	std::vector<ThjWaypointsRepository::ThjWaypoints>& GetUnlockedWaypoints(bool force_reload = false);
+	bool IsWaypointUnlocked(int32 waypoint_id);
+	bool IsWaypointUnlocked(std::string waypoint_shortname);
+	const ThjWaypointsRepository::ThjWaypoints* GetWaypoint(int waypoint_id);
+	bool UnlockWaypoint(int32 waypoint_id);
+	bool UnlockWaypoint(std::string waypoint_shortname);
+	void SendWaypointList(bool force = true);
+	bool AllowAccountWaypoints();
+	bool CheckWaypointGroupFeature();
+	void EnableWaypointGroupFeature();
+	void TransportToWaypoint(uint32 waypoint_id);
+	bool GetWaypointGroupFeatureState();
+	void SetWaypointGroupFeatureState(bool val);
+	bool GetWaypointAutoTransportState();
+	void SetWaypointAutoTransportState(bool val);
+	void PromptWaypointTransport(uint32 zoneID, uint32 instance_id, float x, float y, float z, float heading);
+	void WaypointTransport(uint32 zoneID, uint32 instance_id, float x, float y, float z, float heading, ZoneMode zm);
 
 	void SendPath(Mob* target);
 

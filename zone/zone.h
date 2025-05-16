@@ -50,6 +50,7 @@
 #include "../common/repositories/zone_state_spawns_repository.h"
 #include "../common/repositories/spawn2_disabled_repository.h"
 #include "../common/repositories/player_titlesets_repository.h"
+#include "../common/repositories/thj_waypoints_repository.h"
 
 struct EXPModifier
 {
@@ -352,6 +353,11 @@ public:
 
 	bool CompareDataBucket(uint8 comparison_type, const std::string& bucket, const std::string& value);
 
+	// Waypoints
+	std::vector<ThjWaypointsRepository::ThjWaypoints>& GetAllWaypoints(bool force_reload = true);
+	const ThjWaypointsRepository::ThjWaypoints* WaypointGetSpawn(std::string zone_shortname);
+	bool SpawnWaypointNPC();
+
 	WaterMap *watermap;
 	ZonePoint *GetClosestZonePoint(const glm::vec3 &location, uint32 to, Client *client, float max_distance = 40000.0f);
 	ZonePoint *GetClosestZonePointWithoutZone(float x, float y, float z, Client *client, float max_distance = 40000.0f);
@@ -557,6 +563,9 @@ private:
 
 	// Base Data
 	std::vector<BaseDataRepository::BaseData> m_base_data = { };
+
+	// Waypoints
+	std::vector<ThjWaypointsRepository::ThjWaypoints> m_all_waypoints = { };
 
 	uint32_t m_zone_server_id = 0;
 };

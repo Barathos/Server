@@ -331,6 +331,7 @@
 	void Handle_OP_ResetAA(const EQApplicationPacket *app);
 	void Handle_OP_MovementHistoryList(const EQApplicationPacket* app);
 	void Handle_OP_UnderWorld(const EQApplicationPacket* app);
+	void Handle_OP_WaypointRequest(const EQApplicationPacket *app);
 
 	// shared tasks
 	void Handle_OP_SharedTaskRemovePlayer(const EQApplicationPacket *app);

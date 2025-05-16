@@ -631,4 +631,6 @@ N(OP_ServerAuthStats),
 N(OP_CAuth),
 N(OP_SkillTimers),
 N(OP_CustomDiscTimer),
+N(OP_WaypointList),
+N(OP_WaypointRequest),
 // mail and chat opcodes located in ../mail_oplist.h

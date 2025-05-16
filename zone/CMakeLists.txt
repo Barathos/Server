@@ -155,6 +155,7 @@ SET(zone_sources
     task_manager.cpp
     tasks.cpp
     titles.cpp
+    thj_waypoints.cpp
     tradeskills.cpp
     trading.cpp
     trap.cpp

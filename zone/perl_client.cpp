@@ -49,6 +49,47 @@ void Perl_Client_WorldKick(Client* self) // @categories Script Utility
 	self->WorldKick();
 }
 
+void Perl_Client_SendWaypointList(Client* self)
+{
+	if (self) {
+		self->SendWaypointList();
+	}
+}
+
+bool Perl_Client_UnlockWaypoint(Client* self, std::string waypoint_shortname)
+{
+	if (self) {
+		return self->UnlockWaypoint(waypoint_shortname);
+	}
+
+	return false;
+}
+
+bool Perl_Client_IsWaypointUnlocked(Client* self, std::string waypoint_shortname)
+{
+	if (self) {
+		return self->IsWaypointUnlocked(waypoint_shortname);
+	}
+
+	return false;
+}
+
+bool Perl_Client_CheckWaypointGroupFeature(Client* self)
+{
+	if (self) {
+		return self->CheckWaypointGroupFeature();
+	}
+
+	return false;
+}
+
+void Perl_Client_EnableWaypointGroupFeature(Client* self)
+{
+	if (self) {
+		self->EnableWaypointGroupFeature();
+	}
+}
+
 void Perl_Client_SendToGuildHall(Client* self) // @categories Script Utility, Guild
 {
 	self->SendToGuildHall();
@@ -4133,6 +4174,11 @@ void perl_register_client()
 	package.add("UpdateWho", (void(*)(Client*, uint8))&Perl_Client_UpdateWho);
 	package.add("UseDiscipline", &Perl_Client_UseDiscipline);
 	package.add("UseAugmentContainer", &Perl_Client_UseAugmentContainer);
+	package.add("SendWaypointList", (void(*)(Client*))&Perl_Client_SendWaypointList);
+	package.add("UnlockWaypoint", (bool(*)(Client*, std::string))&Perl_Client_UnlockWaypoint);
+	package.add("IsWaypointUnlocked", (bool(*)(Client*, std::string))&Perl_Client_IsWaypointUnlocked);
+	package.add("CheckWaypointGroupFeature", (bool(*)(Client*))&Perl_Client_CheckWaypointGroupFeature);
+	package.add("EnableWaypointGroupFeature", (void(*)(Client*))&Perl_Client_EnableWaypointGroupFeature);
 	package.add("WorldKick", &Perl_Client_WorldKick);
 	package.add("IsSeasonal", (int(*)(Client*))&Perl_Client_IsSeasonal);
 	package.add("IsHardcore", (int(*)(Client*))&Perl_Client_IsHardcore);

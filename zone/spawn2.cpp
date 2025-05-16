@@ -562,6 +562,8 @@ bool ZoneDatabase::PopulateZoneSpawnList(uint32 zoneid, LinkedList<Spawn2*> &spa
 		return true;
 	}
 
+	zone->SpawnWaypointNPC();
+
 	// normal spawn2 loading
 	for (auto &s: spawns) {
 		uint32 spawn_time_left = 0;

@@ -60,6 +60,31 @@ bool Lua_Client::IsLD() {
 	return self->IsLD();
 }
 
+void Lua_Client::SendWaypointList() {
+	Lua_Safe_Call_Void();
+	self->SendWaypointList();
+}
+
+bool Lua_Client::UnlockWaypoint(std::string waypoint_shortname) {
+	Lua_Safe_Call_Bool();
+	return self->UnlockWaypoint(waypoint_shortname);
+}
+
+bool Lua_Client::IsWaypointUnlocked(std::string waypoint_shortname) {
+	Lua_Safe_Call_Bool();
+	return self->IsWaypointUnlocked(waypoint_shortname);
+}
+
+bool Lua_Client::CheckWaypointGroupFeature() {
+	Lua_Safe_Call_Bool();
+	return self->CheckWaypointGroupFeature();
+}
+
+void Lua_Client::EnableWaypointGroupFeature() {
+	Lua_Safe_Call_Void();
+	self->EnableWaypointGroupFeature();
+}
+
 void Lua_Client::WorldKick() {
 	Lua_Safe_Call_Void();
 	self->WorldKick();
