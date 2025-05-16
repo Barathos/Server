@@ -3149,6 +3149,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 				if (caster) {
 					effect_value = spells[spell_id].limit_value[i];
 					int64 amt = std::abs(caster->GetMaxHP() * effect_value / 1000);
+					amt = caster->GetActDoTDamage(spell_id, amt, this);
 
 					if (effect_value < 0) {
 						Damage(caster, amt, spell_id, spell.skill, false, buffslot, false);
@@ -4189,6 +4190,7 @@ void Mob::DoBuffTic(const Buffs_Struct &buff, int slot, Mob *caster)
 				Damage(caster, effect_value, buff.spellid, spell.skill, false, i, true);
 
 				caster->TrySympatheticProc(this, buff.spellid);
+
 			} else if (effect_value > 0) {
 				// Regen spell...
 				// handled with bonuses
@@ -4205,9 +4207,28 @@ void Mob::DoBuffTic(const Buffs_Struct &buff, int slot, Mob *caster)
 			// healing aggro would go here; removed for now
 			break;
 		}
-
 		case SE_CurrentEndurance: {
 			// Handled with bonuses
+			break;
+		}
+
+		case SE_Health_Transfer:
+		{
+			if (caster)
+			{
+				effect_value = spells[buff.spellid].limit_value[i];
+				int64 amt = std::abs(caster->GetMaxHP() * effect_value / 1000);
+				amt = caster->GetActDoTDamage(buff.spellid, amt, this);
+
+				if (effect_value < 0)
+				{
+					Damage(caster, amt, buff.spellid, spell.skill, false, i, true);
+				}
+				else
+				{
+					HealDamage(amt, caster, buff.spellid);
+				}
+			}
 			break;
 		}
 
