@@ -2610,6 +2610,7 @@ bool NPC::Death(Mob* killer_mob, int64 damage, uint16 spell, EQ::skills::SkillTy
 	auto* killer = GetHateDamageTop(this);
 
 	entity_list.RemoveFromTargets(this, true);
+	hate_list.RemoveEntFromHateList(this);
 
 	if (p_depop) {
 		return false;
