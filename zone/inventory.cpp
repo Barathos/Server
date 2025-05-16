@@ -3659,7 +3659,7 @@ int64_t Client::GetStatEntryValue(StatEntry label)
 			return (GetSharedSpellCritDmgIncrease() + GetSharedSpellCritDmgIncNoStack());
 		}
 		case statHealCritRate: {
-			return GetSharedCriticalHealChance() + 200;
+			return GetSharedCriticalHealChance() + 100;
 		}
 		case statHoTCritRate: {
 			return GetSharedCriticalHealOverTime();
@@ -3668,7 +3668,7 @@ int64_t Client::GetStatEntryValue(StatEntry label)
 			return GetSharedCriticalDoTChance();
 		}
 		case statDoTCritRatio: {
-			return GetSharedDotCritDmgIncrease();
+			return GetSharedDotCritDmgIncrease() + 100;
 		}
 		case statMeleeCritRate: {
 			return GetBaseCriticalHitChance(EQ::skills::HIGHEST_SKILL);
