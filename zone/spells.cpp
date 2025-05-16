@@ -2583,7 +2583,7 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 		auto target_buff_spell_ids = spell_target->GetBuffSpellIDs();
 		for (auto target_buff_spell_id : target_buff_spell_ids) {
 			if (IsValidSpell(target_buff_spell_id) && IsEffectInSpell(target_buff_spell_id, SE_ManaBurn)) {
-				Message(Chat::SpellFailure, "You cannot activate a Mana Burn effect on a target that is already affected by a Mana Burn.");
+				Message(Chat::SpellFailure, "You cannot activate a Mana Burn or Life Burn effect on a target that is already affected by a Mana Burn or Life Burn.");
 				return false;
 			}
 		}
