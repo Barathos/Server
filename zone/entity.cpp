@@ -1568,14 +1568,6 @@ void EntityList::RemoveFromTargetsFadingMemories(Mob *spell_target, bool RemoveF
 			continue;
 		}
 
-		if (RemoveFromXTargets && spell_target) {
-			if (mob->IsClient() && (spell_target->CheckAggro(mob) || spell_target->IsOnFeignMemory(mob))) {
-				mob->CastToClient()->RemoveXTarget(spell_target, false);
-			} else if (spell_target->IsClient() && (mob->CheckAggro(spell_target) || mob->IsOnFeignMemory(spell_target))) {
-				spell_target->CastToClient()->RemoveXTarget(mob, false);
-			}
-		}
-
 		mob->RemoveFromHateList(spell_target);
 		mob->RemoveFromRampageList(spell_target);
 	}
