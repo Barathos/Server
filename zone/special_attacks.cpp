@@ -479,7 +479,7 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk, bool is_riposte
 
 	// Check to see if actually have skill
 	if (!MaxSkill(static_cast<EQ::skills::SkillType>(ca_atk->m_skill)) && !bypass_skill_check) {
-		LogDebug("INVALID SKILL USAGE");
+		LogDebug("INVALID SKILL USAGE: [{}] tried to use skill [{}]", GetCleanName(), ca_atk->m_skill);
 		return;
 	}
 
@@ -1951,7 +1951,7 @@ void Mob::DoThrowingAttackDmg(Mob *other, const EQ::ItemInstance *RangeWeapon, c
 		WDmg += WDmg * focus / 100;
 	}
 
-	int TotalDmg = 0;
+	int64 TotalDmg = 0;
 
 	if (WDmg > 0) {
 		DamageHitInfo my_hit {};
@@ -1975,6 +1975,10 @@ void Mob::DoThrowingAttackDmg(Mob *other, const EQ::ItemInstance *RangeWeapon, c
 
 	if (IsClient() && !CastToClient()->GetFeigned()) {
 		other->AddToHateList(this, WDmg, 0);
+	}
+
+	if (TotalDmg < (WDmg + GetHeroicSTR() + GetHeroicDEX())) {
+		TotalDmg = (WDmg + GetHeroicSTR() + GetHeroicDEX());
 	}
 
 	MeleeLifeTap(TotalDmg);

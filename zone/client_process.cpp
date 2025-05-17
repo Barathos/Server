@@ -553,7 +553,8 @@ bool Client::Process() {
 		}
 
 		if ((AutoFireEnabled() || AutoAttackEnabled()) && auto_attack_target != nullptr && may_use_attacks && attack_autoskill_timer.Check() && !auto_attack_target->IsClient()) {
-			for (const auto skill : GetAvailableAutoSkills()) {
+			for (const auto skill : GetAutoSkillsList())
+			{
 				if (GetAutoSkillStatus(skill)) {
 					if (skill == EQ::skills::SkillTaunt) {
 						if (!p_timers.Expired(&database, pTimerTaunt, false)) {

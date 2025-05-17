@@ -6672,6 +6672,16 @@ void Mob::CommonOutgoingHitSuccess(Mob* defender, DamageHitInfo &hit, ExtraAttac
 
 		//Scale Factor for Archery Damage Tuning
 		hit.damage_done *= RuleR(Combat, ArcheryBaseDamageBonus);
+
+		if (IsClient())
+		{
+			int min = GetHeroicDEX();
+			if (hit.damage_done < min)
+			{
+				LogDebug("hit clamped to [{}] from [{}]", min, hit.damage_done);
+				hit.damage_done = min;
+			}
+		}
 	}
 
 	int extra_mincap = 0;
@@ -6780,6 +6790,7 @@ void Mob::CommonOutgoingHitSuccess(Mob* defender, DamageHitInfo &hit, ExtraAttac
 			hit.damage_done -= hit.damage_done * defender->spellbonuses.ShieldTargetSpa[SBIndex::SHIELD_TARGET_MITIGATION_PERCENT] / 100;
 		}
 	}
+
 	ReportCriticalHit(hit);
 	CheckNumHitsRemaining(NumHit::OutgoingHitSuccess);
 }
