@@ -8774,10 +8774,14 @@ void Client::Doppelganger(uint16 spell_id, Mob *target, const char *name_overrid
 				spell_type = SpellType_Dispel;
 			}
 
+			if (spells[spell].buff_duration > 0) {
+				recast_time = 999;
+			}
+
 			if (spell_type && spell)
 			{
 				int priority = memmed_spells.size() - i;
-				swarm_pet_npc->AddSpellToNPCList(priority, spell, spell_type, -1, recast_time, 0, 0, 0);
+				swarm_pet_npc->AddSpellToNPCList(0, spell, spell_type, -1, recast_time, 0, 0, 0);
 			}
 		}
 
