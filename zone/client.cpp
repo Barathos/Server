@@ -3574,7 +3574,7 @@ bool Client::ChangeFirstName(const std::string in_firstname, const std::string g
 bool Client::ChangeFirstName(const std::string in_firstname)
 {
 	// check duplicate name
-	bool used_name = database.IsNameUsed(in_firstname) || database.IsPetNameUsed(in_firstname);
+	bool used_name = database.IsNameUsedByPlayerOrBot(in_firstname) || database.IsNameUsedByPet(in_firstname);
 	if (used_name || !database.CheckNameFilter(in_firstname, false)) {
 		return false;
 	}
@@ -6182,7 +6182,7 @@ std::string Client::GetPetVanityName(int class_id) {
 			default:
 				new_name = fmt::format("{}'s Pet", GetCleanName());
 		}
-	} while (database.IsNameUsed(new_name));
+	} while (database.IsNameUsedByPlayerOrBot(new_name));
 
 	SetPetVanityName(new_name, class_id);
 	return new_name;
@@ -6332,7 +6332,7 @@ bool Client::ChangePetName(std::string new_name) {
         }
     }
 
-    if (!database.CheckNameFilter(new_name) || database.IsNameUsed(new_name)) {
+    if (!database.CheckNameFilter(new_name) || database.IsNameUsedByPlayerOrBot(new_name)) {
         return false;
     }
 

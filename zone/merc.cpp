@@ -4196,7 +4196,7 @@ const char* Merc::GetRandomName(){
 			//name must begin with an upper-case letter.
 			valid = false;
 		}
-		else if (!database.IsNameUsed(rndname)) {
+		else if (!database.IsNameUsedByPlayerOrBot(rndname)) {
 			valid = true;
 		}
 		else {

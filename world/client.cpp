@@ -621,7 +621,7 @@ bool Client::HandleNameApprovalPacket(const EQApplicationPacket *app)
 	}
 
 	if (is_valid) { /* Still not invalid, let's see if it's taken */
-		is_valid = database.ReserveName(GetAccountID(), char_name);
+		is_valid = database.ReserveName(GetAccountID(), char_name, content_db);
 	}
 
 	auto outapp = new EQApplicationPacket(OP_ApproveName, 1);

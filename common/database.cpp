@@ -284,7 +284,7 @@ bool Database::SetAccountStatus(const std::string& account_name, int16 status)
 	return AccountRepository::UpdateOne(*this, e);
 }
 
-bool Database::ReserveName(uint32 account_id, const std::string& name)
+bool Database::ReserveName(uint32 account_id, const std::string& name, Database& content_db)
 {
 	const std::string& where_filter = fmt::format(
 		"`name` = '{}'",
@@ -307,7 +307,7 @@ bool Database::ReserveName(uint32 account_id, const std::string& name)
 		return false;
 	}
 
-	const auto& n = NpcTypesRepository::GetWhere(*this, where_filter);
+	const auto &n = NpcTypesRepository::GetWhere(content_db, where_filter);
 
 	if (!n.empty()) {
 		LogInfo("Account [{}] requested name [{}] but name is already taken by an NPC", account_id, name);
@@ -986,7 +986,7 @@ bool Database::UpdateNameByID(const int character_id, const std::string& new_nam
 	return CharacterDataRepository::UpdateOne(*this, e);
 }
 
-bool Database::IsNameUsed(const std::string& name)
+bool Database::IsNameUsedByPlayerOrBot(const std::string& name)
 {
 	if (RuleB(Bots, Enabled)) {
 		const auto& bot_data = BotDataRepository::GetWhere(
@@ -1014,7 +1014,7 @@ bool Database::IsNameUsed(const std::string& name)
 }
 
 // Players cannot have the same name as a pet vanity name, or memory corruption occurs.
-bool Database::IsPetNameUsed(const std::string& name)
+bool Database::IsNameUsedByPet(const std::string& name)
 {
 	const auto& pet_name_data = CharacterPetNameRepository::GetWhere(
 		*this,
@@ -1025,6 +1025,17 @@ bool Database::IsPetNameUsed(const std::string& name)
 	);
 
 	return !pet_name_data.empty();
+}
+
+bool Database::IsNameUsedByNPC(const std::string &name)
+{
+	const auto &npc_data = NpcTypesRepository::GetWhere(
+		*this,
+		fmt::format(
+			"`name` = '{}'",
+			Strings::Escape(name)));
+
+	return !npc_data.empty();
 }
 
 uint32 Database::GetServerType()

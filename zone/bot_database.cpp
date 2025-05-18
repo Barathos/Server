@@ -188,7 +188,7 @@ bool BotDatabase::QueryNameAvailability(const std::string& bot_name, bool& avail
 		bot_name.empty() ||
 		bot_name.size() > 60 ||
 		!database.CheckNameFilter(bot_name) ||
-		database.IsNameUsed(bot_name)
+		database.IsNameUsedByPlayerOrBot(bot_name)
 	) {
 		return false;
 	}
@@ -248,7 +248,7 @@ bool BotDatabase::LoadBotsList(const uint32 owner_id, std::list<BotsAvailableLis
 							SELECT `account_id` FROM `character_data` WHERE `id` = {}
 						)
 					)
-					AND 
+					AND
 					`name` NOT LIKE '%-deleted-%'
 				),
 				owner_id
@@ -2206,7 +2206,7 @@ bool BotDatabase::LoadBotSettings(Mob* m)
 	else {
 		query = fmt::format("`bot_id` = {} AND `stance` = {}", mob_id, stance_id);
 	}
-	
+
 	if (stance_id == Stance::Passive) {
 		LogBotSettings("{} is currently set to {} [#{}]. No saving or loading required.", m->GetCleanName(), Stance::GetName(Stance::Passive), Stance::Passive);
 		return true;
@@ -2258,7 +2258,7 @@ bool BotDatabase::SaveBotSettings(Mob* m)
 	if (!m->IsOfClientBot()) {
 		return false;
 	}
-	
+
 	uint32 bot_id = (m->IsBot() ? m->CastToBot()->GetBotID() : 0);
 	uint32 character_id = (m->IsClient() ? m->CastToClient()->CharacterID() : 0);
 	uint8 stance_id = (m->IsBot() ? m->CastToBot()->GetBotStance() : 0);
@@ -2269,10 +2269,10 @@ bool BotDatabase::SaveBotSettings(Mob* m)
 	}
 
 	std::string query = "";
-	
+
 	if (m->IsClient()) {
 		query = fmt::format("`character_id` = {} AND `stance` = {}", character_id, stance_id);
-	} 
+	}
 	else {
 		query = fmt::format("`bot_id` = {} AND `stance` = {}", bot_id, stance_id);
 	}

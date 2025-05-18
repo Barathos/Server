@@ -100,7 +100,7 @@ public:
 	bool DeleteCharacter(const std::string& name);
 	bool MoveCharacterToZone(const std::string& name, uint32 zone_id);
 	bool MoveCharacterToZone(uint32 character_id, uint32 zone_id);
-	bool ReserveName(uint32 account_id, const std::string& name);
+	bool ReserveName(uint32 account_id, const std::string& name, Database& content_db);
 	bool SaveCharacterCreate(uint32 character_id, uint32 account_id, PlayerProfile_Struct* pp);
 	bool UpdateName(const std::string& old_name, const std::string& new_name);
 	bool UpdateNameByID(const int character_id, const std::string& new_name);
@@ -116,8 +116,9 @@ public:
 	bool CheckBannedIPs(const std::string& login_ip); //Check incoming connection against banned IP table.
 	bool CheckGMIPs(const std::string& login_ip, uint32 account_id);
 	bool CheckNameFilter(const std::string& name, bool surname = false);
-	bool IsNameUsed(const std::string& name);
-	bool IsPetNameUsed(const std::string& name);
+	bool IsNameUsedByPlayerOrBot(const std::string& name);
+	bool IsNameUsedByPet(const std::string& name);
+	bool IsNameUsedByNPC(const std::string& name);
 
 	uint32 GetAccountIDByChar(const std::string& name, uint32* character_id = 0);
 	uint32 GetAccountIDByChar(uint32 character_id);
