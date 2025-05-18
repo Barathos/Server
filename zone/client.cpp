@@ -8609,9 +8609,24 @@ void Client::Doppelganger(uint16 spell_id, Mob *target, const char *name_overrid
 		glm::vec2(8, 8), glm::vec2(-8, 8), glm::vec2(8, -8), glm::vec2(-8, -8)
 	};
 
+	static const std::vector<std::string> eq_ordinals = {
+		"Azia", "Beza", "Caza", "Dena", "Ena", "Faza", "Geza", "Heza", "Iza", "Jaza",
+		"Kaza", "Laza", "Maza", "Naza", "Oza", "Paza", "Qaza", "Raza", "Saza", "Taza",
+		"Uza", "Vaza", "Waza", "Xaza", "Yaza", "Zaza"};
+
 	while(summon_count > 0) {
 		auto npc_type_copy = new NPCType;
 		memcpy(npc_type_copy, made_npc, sizeof(NPCType));
+
+		if (pet.count > 1)
+		{
+			int suffix_index = pet_count - summon_count;
+			std::string suffix = (suffix_index < eq_ordinals.size()) ? eq_ordinals[suffix_index] : std::to_string(suffix_index + 1);
+
+			std::string indexed_name = fmt::format("{}_{}", name_override, suffix);
+			strncpy(npc_type_copy->name, indexed_name.c_str(), sizeof(npc_type_copy->name) - 1);
+			npc_type_copy->name[sizeof(npc_type_copy->name) - 1] = '\0';
+		}
 
 		NPC* swarm_pet_npc = new NPC(
 				npc_type_copy,
@@ -8709,46 +8724,60 @@ void Client::Doppelganger(uint16 spell_id, Mob *target, const char *name_overrid
 		swarm_pet_npc->SetEntityVariable("class_bitmask", std::to_string(GetClassesBits()));
 
 		auto memmed_spells = GetMemmedSpells();
-		for (int i = 0; i < memmed_spells.size(); i++) {
+		for (int i = memmed_spells.size() - 1; i >= 0; i--)
+		{
 			int spell = memmed_spells[i];
-			if (!IsValidSpell(spell) || IsBeneficialSpell(spell) || !spells[spell].aoe_range < 1 || !spells[spell].aoe_max_targets < 1) {
+			if (!IsValidSpell(spell))
+			{
+				continue;
+			}
+
+			if (IsBeneficialSpell(spell))
+			{
+				continue;
+			}
+
+			if (spells[spell].aoe_range > 1 || spells[spell].aoe_max_targets > 1)
+			{
 				continue;
 			}
 
 			int spell_type = 0;
 			int recast_time = (spells[spell].recast_time + spells[spell].recovery_time) / 1000;
 
-			if (IsDamageSpell(spell)) {
+			if (IsDamageSpell(spell))
+			{
 				spell_type = SpellType_Nuke;
 			}
-
-			if (IsLifetapSpell(spell)) {
+			if (IsLifetapSpell(spell))
+			{
 				spell_type = SpellType_Lifetap;
 			}
-
-			if (IsSlowSpell(spell)) {
+			if (IsSlowSpell(spell))
+			{
 				spell_type = SpellType_Slow;
 			}
-
-			if (IsDebuffSpell(spell)) {
+			if (IsDebuffSpell(spell))
+			{
 				spell_type = SpellType_Debuff;
 			}
-
-			if (IsEffectInSpell(spell, SE_CurrentHP) && spells[spell].buff_duration > 0) {
+			if (IsEffectInSpell(spell, SE_CurrentHP) && spells[spell].buff_duration > 0)
+			{
 				spell_type = SpellType_DOT;
-				recast_time = -1;
 			}
-
-			if (!spell_type && IsEffectInSpell(SE_MovementSpeed, spell)) {
+			if (!spell_type && IsEffectInSpell(SE_MovementSpeed, spell))
+			{
 				spell_type = SpellType_Snare;
 			}
-
-			if (IsEffectInSpell(SE_CancelMagic, spell)) {
+			if (IsEffectInSpell(SE_CancelMagic, spell))
+			{
 				spell_type = SpellType_Dispel;
 			}
 
-			if (spell_type && spell) {
-				swarm_pet_npc->AddSpellToNPCList(0, spell, spell_type, -1, -1, 0, 0, 0);
+			if (spell_type && spell)
+			{
+				int priority = memmed_spells.size() - i;
+				swarm_pet_npc->AddSpellToNPCList(priority, spell, spell_type, -1, recast_time, 0, 0, 0);
 			}
 		}
 
