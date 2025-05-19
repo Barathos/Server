@@ -1541,7 +1541,6 @@ void Mob::DoAttack(Mob *other, DamageHitInfo &hit, ExtraAttackOptions *opts, boo
 			LogCombat("Attack missed. Damage set to 0");
 			hit.damage_done = 0;
 		}
-
 		parse->EventBotMerc(EVENT_USE_SKILL, this, nullptr,
 			[&]() {
 				return fmt::format(
@@ -1762,7 +1761,7 @@ bool Mob::Attack(Mob* other, int Hand, bool bRiposte, bool IsStrikethrough, bool
 	MeleeLifeTap(my_hit.damage_done);
 
 	CommonBreakInvisibleFromCombat();
-
+	ReportCriticalHit(my_hit);
 	if (GetTarget()) {
 		TriggerDefensiveProcs(other, Hand, true, my_hit.damage_done);
 	}
@@ -6791,7 +6790,6 @@ void Mob::CommonOutgoingHitSuccess(Mob* defender, DamageHitInfo &hit, ExtraAttac
 		}
 	}
 
-	ReportCriticalHit(hit);
 	CheckNumHitsRemaining(NumHit::OutgoingHitSuccess);
 }
 
