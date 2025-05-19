@@ -3445,7 +3445,7 @@ perl::array Perl_Mob_GetBuffs(Mob* self)
 
 	const auto &buffs = self->GetBuffs();
 
-	for (int slot_id = 0; slot_id < self->GetMaxBuffSlots(); slot_id++) {
+	for (int slot_id = 0; slot_id < (self->GetMaxBuffSlots() + self->GetMaxSongSlots()); slot_id++) {
 		result.push_back(&buffs[slot_id]);
 	}
 

@@ -8723,6 +8723,7 @@ void Client::Doppelganger(uint16 spell_id, Mob *target, const char *name_overrid
 
 		swarm_pet_npc->SetEntityVariable("class_bitmask", std::to_string(GetClassesBits()));
 
+		/*
 		auto memmed_spells = GetMemmedSpells();
 		for (int i = memmed_spells.size() - 1; i >= 0; i--)
 		{
@@ -8789,6 +8790,7 @@ void Client::Doppelganger(uint16 spell_id, Mob *target, const char *name_overrid
 				swarm_pet_npc->RemoveSpellFromNPCList(spell);
 			}
 		}
+		*/
 
 		// Create the NPC
 		entity_list.AddNPC(swarm_pet_npc);
