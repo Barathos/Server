@@ -1208,7 +1208,6 @@ RULE_REAL(Custom,	PetPlacementDistance ,					7.0,  	"Adjust pet formation positi
 RULE_REAL(Custom, 	NonDaggerBackstabMultiplier1H, 			0.75, 	"Multiple Backstabs conducted with not-1hp by this amount")
 RULE_REAL(Custom, 	NonDaggerBackstabMultiplier2H,			0.50, 	"Multiple Backstabs conducted with not-1hp 2h weapon by this amount")
 RULE_BOOL(Custom, 	MonkSkillAttacksAreH2HForProcs, 		true, 	"Read the name")
-RULE_INT(Custom,        DoppelBuffMinDuration,                           150,   "Minimum number of tics remaining on buffs Doppels can copy")
 
 // Item Upgrades
 RULE_BOOL(Custom, 	DoItemUpgrades, 						true, "Retribution item upgrades")
@@ -1275,13 +1274,10 @@ RULE_BOOL(Custom, 	DisablePetGroupSpells,					false, "Enable to force group spel
 RULE_BOOL(Custom,   ConditionalPetRampageImmunity, 			false, "Enable to make pets which are not taunting immune to rampage")
 RULE_BOOL(Custom, 	DontInterruptHealsByMelee, 				false, "Enable to prevent direct heal spells from being interrupted by melee attacks")
 RULE_BOOL(Custom,	AlternateMobFDBehavior,					true, "Enable to cause mob FD effects to randomly pick a new target")
-
-RULE_BOOL(Custom,   DisableClearInstanceTimers, false , "BREAK GLASS IN EMERGENCY")
-
-RULE_BOOL(Custom,   EnableAccountAltCurrency, false, "Enable account-based alternate currency.")
-RULE_INT(Custom,  	AAConsumeBaseValue, 				50, "Base value for AA consumption")
-
-RULE_REAL(Custom, ScaleAutoAttackByHStr, 0.0f, "Scale auto attack damage by this value. 0.0 to disable.")
+RULE_BOOL(Custom,   EnableAccountAltCurrency, 				false, "Enable account-based alternate currency.")
+RULE_INT(Custom,  	AAConsumeBaseValue, 					50, "Base value for AA consumption")
+RULE_REAL(Custom, 	ScaleAutoAttackByHStr, 					0.0f, "Scale auto attack damage by this value. 0.0 to disable.")
+RULE_STRING(Custom, DoppelgangerBuffBacklist, "21773,30736", "Comma-seperated list of spells to never transfer to Doppelganger")
 
 // Seasonal
 RULE_INT(Custom,  	EnableSeasonalCharacters, 				0, "Set to Seasonal ID to track for current Seasonal characters, 0 to disable.")

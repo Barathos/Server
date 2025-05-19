@@ -8660,16 +8660,27 @@ void Client::Doppelganger(uint16 spell_id, Mob *target, const char *name_overrid
 		swarm_pet_npc->SetSpecialAbility(SpecialAbility::AllowedToTank, 1);
 
 		// Give Client's Buffs to the pet
-		//auto buffs = GetBuffs();
-		int MinTicDuration    = RuleI(Custom, DoppelBuffMinDuration);
+		std::vector<std::string> buff_blacklist = Strings::Split(RuleS(Custom, DoppelgangerBuffBacklist), ",");
 
-		for (int buff_idx = 0; buff_idx < GetMaxTotalSlots(); buff_idx++) {
-//			if (!IsValidSpell(buffs[buff_idx].spellid) || spells[buffs[buff_idx].spellid].short_buff_box) {
-			if (!IsValidSpell(buffs[buff_idx].spellid)) {
+		for (int buff_idx = 0; buff_idx < GetMaxTotalSlots(); buff_idx++)
+		{
+			if (!IsValidSpell(buffs[buff_idx].spellid))
+			{
 				continue;
 			}
-			int16 ticsLeft = buffs[buff_idx].ticsremaining;
-			if (ticsLeft < MinTicDuration) {
+
+			bool blacklisted = false;
+			for (const auto &blacklisted_spell : buff_blacklist)
+			{
+				if (Strings::ToInt(blacklisted_spell) == buffs[buff_idx].spellid)
+				{
+					blacklisted = true;
+					break;
+				}
+			}
+
+			if (blacklisted)
+			{
 				continue;
 			}
 
@@ -8723,7 +8734,7 @@ void Client::Doppelganger(uint16 spell_id, Mob *target, const char *name_overrid
 
 		swarm_pet_npc->SetEntityVariable("class_bitmask", std::to_string(GetClassesBits()));
 
-		/*
+		/* Moved this functionality to scripts.
 		auto memmed_spells = GetMemmedSpells();
 		for (int i = memmed_spells.size() - 1; i >= 0; i--)
 		{
