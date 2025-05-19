@@ -6781,6 +6781,13 @@ void Mob::TrySpellOnKill(uint8 level, uint16 spell_id)
 		}
 	}
 
+	if (IsPetOwnerClient()) {
+		auto owner = GetOwner();
+		if (owner) {
+			owner->TrySpellOnKill(level, spell_id);
+		}
+	}
+
 	if (!aabonuses.SpellOnKill[0] && !itembonuses.SpellOnKill[0] && !spellbonuses.SpellOnKill[0])
 		return;
 

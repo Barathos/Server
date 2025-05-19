@@ -1386,7 +1386,7 @@ void EntityList::AESpell(
 			continue;
 		}
 
-		if (spells[spell_id].target_type == ST_TargetAENoPlayersPets && current_mob->IsPetOwnerOfClientBot()) {
+		if (spells[spell_id].target_type == ST_TargetAENoPlayersPets && (current_mob->IsPetOwnerOfClientBot() || current_mob->IsClient())) {
 			continue;
 		}
 
