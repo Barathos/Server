@@ -1765,6 +1765,7 @@ protected:
 	Timer hp_regen_per_second_timer;
 	Timer tic_timer;
 	Timer mana_timer;
+	Timer fast_tic_timer;
 	int32 dw_same_delay;
 
 	Timer focusproclimit_timer[MAX_FOCUS_PROC_LIMIT_TIMERS];	//SPA 511

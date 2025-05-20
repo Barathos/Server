@@ -3056,6 +3056,7 @@ void ZoneDatabase::LoadBuffs(Client *client)
 		buffs[e.slot_id].virus_spread_time = 0;
 		buffs[e.slot_id].UpdateClient      = false;
 		buffs[e.slot_id].instrument_mod    = e.instrument_mod;
+		buffs[e.slot_id].InitExpirationTimer();
 	}
 
 	// We load up to the most our client supports

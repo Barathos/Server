@@ -4035,9 +4035,14 @@ int Mob::AddBuff(Mob *caster, uint16 spell_id, int duration, int32 level_overrid
 	buffs[emptyslot].instrument_mod = caster ? caster->GetInstrumentMod(spell_id) : 10;
 	buffs[emptyslot].ticsinitial = duration;
 
-	if (level_override > 0 || buffs[emptyslot].hit_number > 0) {
+	buffs[emptyslot].InitExpirationTimer();
+
+	if (level_override > 0 || buffs[emptyslot].hit_number > 0)
+	{
 		buffs[emptyslot].UpdateClient = true;
-	} else {
+	}
+	else
+	{
 		if (buffs[emptyslot].ticsremaining > (1 + CalcBuffDuration_formula(caster_level, spells[spell_id].buff_duration_formula, spells[spell_id].buff_duration)))
 			buffs[emptyslot].UpdateClient = true;
 	}

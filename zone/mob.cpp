@@ -110,6 +110,7 @@ Mob::Mob(
 	hp_regen_per_second_timer(1000),
 	m_z_clip_check_timer(1000),
 	tic_timer(6000),
+	fast_tic_timer(500),
 	mana_timer(2000),
 	spellend_timer(0),
 	rewind_timer(30000),

@@ -3,6 +3,7 @@
 
 #include "../common/types.h"
 #include "../common/spdat.h"
+#include "../common/timer.h"
 
 #include <cereal/cereal.hpp>
 
@@ -279,6 +280,15 @@ struct Buffs_Struct {
 	bool	client; //True if the caster is a client
 	bool	UpdateClient;
 	uint32	ticsinitial;
+
+	Timer expiration_timer;
+
+	void InitExpirationTimer()
+	{
+		uint32 duration_ms = (ticsremaining + 1) * 6000;
+		expiration_timer.SetTimer(duration_ms);
+		expiration_timer.Start();
+	}
 
 	// cereal
 	template<class Archive>
