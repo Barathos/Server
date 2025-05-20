@@ -1177,6 +1177,7 @@ void Mob::AI_Process() {
 
 				//try main hand first
 				if (attack_timer.Check()) {
+			       		m_has_riposted = false;
 					DoMainHandAttackRounds(target);
 					TriggerDefensiveProcs(target, EQ::invslot::slotPrimary, false);
 

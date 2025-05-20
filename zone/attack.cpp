@@ -509,8 +509,12 @@ bool Mob::AvoidDamage(Mob *other, DamageHitInfo &hit)
 			CastToClient()->CheckIncreaseSkill(EQ::skills::SkillRiposte, other, -10);
 		// check auto discs ... I guess aa/items too :P
 		if (spellbonuses.RiposteChance == 10000 || aabonuses.RiposteChance == 10000 || itembonuses.RiposteChance == 10000) {
-			hit.damage_done = DMG_RIPOSTED;
-			return true;
+		       	hit.damage_done = DMG_PARRIED;
+		       	if (!other->m_has_riposted) {
+			       	other->m_has_riposted = true;
+			       	hit.damage_done = DMG_RIPOSTED;
+		       	}
+		       	return true;
 		}
 		int chance = GetSkill(EQ::skills::SkillRiposte) + 100;
 		chance += (chance * (aabonuses.RiposteChance + spellbonuses.RiposteChance + itembonuses.RiposteChance)) / 100;

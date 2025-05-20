@@ -2007,6 +2007,8 @@ private:
 	std::shared_ptr<HealRotation> m_target_of_heal_rotation;
 	bool m_manual_follow;
 	bool m_destroying;
+	bool m_has_riposted = false;
+
 
 	void SetHeroicStrBonuses(StatBonuses* n);
 	void SetHeroicStaBonuses(StatBonuses* n);
