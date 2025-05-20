@@ -1178,8 +1178,6 @@ bool Client::Save(uint8 iCommitNow) {
 		database.botdb.SaveBotSettings(this);
 	}
 
-	database.TransactionCommit();
-
 	LogInfo("Save for [{}] took [{}]", GetCleanName(), timer.elapsed());
 
 	return true;
