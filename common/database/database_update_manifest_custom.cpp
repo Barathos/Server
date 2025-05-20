@@ -86,6 +86,95 @@ CREATE TABLE thj_waypoints_account (
 )",
 		.content_schema_update = false,
 	},
+
+	ManifestEntry{
+		.version = 4,
+		.description = "2025_05_20_thj_zone_npc_update_range",
+		.check = "SHOW COLUMNS FROM `zone` LIKE 'npc_update_range'",
+		.condition = "empty",
+		.match = "",
+		.content_schema_update = true,
+		.sql = R"(
+ALTER TABLE `zone` ADD COLUMN `npc_update_range` int(11) NOT NULL DEFAULT 600 AFTER `npc_max_aggro_dist`;
+)",
+	},
+
+	ManifestEntry{
+		.version = 5,
+		.description = "2025_05_20_thj_zone_max_movement_range",
+		.check = "SHOW COLUMNS FROM `zone` LIKE 'max_movement_update_range'",
+		.condition = "empty",
+		.match = "",
+		.content_schema_update = true,
+		.sql = R"(
+ALTER TABLE `zone` ADD COLUMN `max_movement_update_range` int(11) NOT NULL DEFAULT 600 AFTER `npc_update_range`;
+)",
+	},
+
+	ManifestEntry{
+		.version = 6,
+		.description = "2025_05_20_thj_global_buffs",
+		.check = "SHOW TABLES LIKE 'global_buffs'",
+		.condition = "empty",
+		.match = "",
+		.content_schema_update = false,
+		.sql = R"(
+create table global_buffs(spell_id int(11) primary key, duration int(11));
+)",
+	},
+
+	ManifestEntry{
+		.version = 7,
+		.description = "2025_05_20_thj_account_kill_counts",
+		.check = "SHOW TABLES LIKE 'account_kill_counts'",
+		.condition = "empty",
+		.match = "",
+		.content_schema_update = false,
+		.sql = R"(
+create table account_kill_counts(account_id int(11) primary key, race_id int(11), count int(11));
+)",
+	},
+
+	ManifestEntry{
+		.version = 8,
+		.description = "2025_05_20_thj_character_pet_class_id",
+		.check = "SHOW COLUMNS FROM `character_pet_name` LIKE 'class_id'",
+		.condition = "empty",
+		.match = "",
+		.content_schema_update = false,
+		.sql = R"(
+alter table `character_pet_name` add column `class_id` tinyint(11) not null default -1;
+)",
+	},
+
+	ManifestEntry{
+		.version = 9,
+		.description = "2025_05_20_thj_account_alt_currency",
+		.check = "SHOW TABLES LIKE 'account_alt_currency'",
+		.condition = "empty",
+		.match = "",
+		.content_schema_update = false,
+		.sql = R"(
+CREATE TABLE `account_alt_currency` (
+  `account_id` int(10) unsigned NOT NULL,
+  `currency_id` int(10) unsigned NOT NULL,
+  `amount` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`account_id`, `currency_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+INSERT INTO account_alt_currency (account_id, currency_id, amount)
+SELECT
+  cd.account_id,
+  cac.currency_id,
+  SUM(cac.amount) AS amount
+FROM character_alt_currency cac
+JOIN character_data cd ON cd.id = cac.char_id
+GROUP BY cd.account_id, cac.currency_id
+ON DUPLICATE KEY UPDATE
+  amount = VALUES(amount);
+)",
+	},
+
 	// Used for testing
 	//	ManifestEntry{
 	//		.version = 9229,
