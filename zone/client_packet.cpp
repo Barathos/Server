@@ -1847,6 +1847,16 @@ void Client::Handle_Connect_OP_ZoneEntry(const EQApplicationPacket *app)
 		ConfigurePetWindow(GetPet(0));
 	}
 
+	uint32 max_slots = GetMaxBuffSlots();
+	for (int i = 0; i < BUFF_COUNT; i++) {
+		if (IsValidSpell(buffs[i].spellid)) {
+			// Cause familiars to spawn
+			if (IsEffectInSpell(m_pp.buffs[i].spellid, SE_Familiar)) {
+				MakeFamiliar(m_pp.buffs[i].spellid);
+			}
+		}
+	}
+
 	/* Moved here so it's after where we load the pet data. */
 	if (!aabonuses.ZoneSuspendMinion && !spellbonuses.ZoneSuspendMinion && !itembonuses.ZoneSuspendMinion) {
 		memset(&m_suspendedminion, 0, sizeof(PetInfo));

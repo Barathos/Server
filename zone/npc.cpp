@@ -920,7 +920,7 @@ void NPC::Depop(bool start_spawn_timer) {
 	if (emoteid) {
 		DoNPCEmote(EQ::constants::EmoteEventTypes::OnDespawn, emoteid);
 	}
-	
+
         entity_list.RemoveFromTargets(this, true);
         hate_list.RemoveEntFromHateList(this);
 
@@ -2333,9 +2333,22 @@ void NPC::PetOnSpawn(NewSpawn_Struct* ns)
 		if (
 			!IsCharmed() &&
 			swarm_owner->IsClient() &&
-			RuleB(Pets, ClientPetsUseOwnerNameInLastName)
+			RuleB(Pets, ClientPetsUseOwnerNameInLastName) &&
+			!GetSwarmInfo()->m_familiar
 		) {
 			const auto& tmp_lastname = fmt::format("{}'s Minion", swarm_owner->GetName());
+			if (tmp_lastname.size() < sizeof(ns->spawn.lastName)) {
+				strn0cpy(ns->spawn.lastName, tmp_lastname.c_str(), sizeof(ns->spawn.lastName));
+			}
+		}
+
+		if (
+			!IsCharmed() &&
+			swarm_owner->IsClient() &&
+			RuleB(Pets, ClientPetsUseOwnerNameInLastName) &&
+			GetSwarmInfo()->m_familiar
+		) {
+			const auto& tmp_lastname = fmt::format("{}'s Familiar", swarm_owner->GetName());
 			if (tmp_lastname.size() < sizeof(ns->spawn.lastName)) {
 				strn0cpy(ns->spawn.lastName, tmp_lastname.c_str(), sizeof(ns->spawn.lastName));
 			}

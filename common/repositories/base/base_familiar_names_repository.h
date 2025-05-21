@@ -9,41 +9,41 @@
  * @docs https://docs.eqemu.io/developer/repositories
  */
 
-#ifndef EQEMU_BASE_CHARACTER_PET_NAME_REPOSITORY_H
-#define EQEMU_BASE_CHARACTER_PET_NAME_REPOSITORY_H
+#ifndef EQEMU_BASE_FAMILIAR_NAMES_REPOSITORY_H
+#define EQEMU_BASE_FAMILIAR_NAMES_REPOSITORY_H
 
 #include "../../database.h"
 #include "../../strings.h"
 #include <ctime>
 
-class BaseCharacterPetNameRepository {
+class BaseFamiliarNamesRepository {
 public:
-	struct CharacterPetName {
-		int32_t     character_id;
-		std::string name;
-		int32_t     class_id;
+	struct FamiliarNames {
+		int32_t     spell_id;
+		std::string name_list;
+		int32_t     size_mod;
 	};
 
 	static std::string PrimaryKey()
 	{
-		return std::string("character_id");
+		return std::string("spell_id");
 	}
 
 	static std::vector<std::string> Columns()
 	{
 		return {
-			"character_id",
-			"name",
-			"class_id",
+			"spell_id",
+			"name_list",
+			"size_mod",
 		};
 	}
 
 	static std::vector<std::string> SelectColumns()
 	{
 		return {
-			"character_id",
-			"name",
-			"class_id",
+			"spell_id",
+			"name_list",
+			"size_mod",
 		};
 	}
 
@@ -59,7 +59,7 @@ public:
 
 	static std::string TableName()
 	{
-		return std::string("character_pet_name");
+		return std::string("familiar_names");
 	}
 
 	static std::string BaseSelect()
@@ -80,34 +80,34 @@ public:
 		);
 	}
 
-	static CharacterPetName NewEntity()
+	static FamiliarNames NewEntity()
 	{
-		CharacterPetName e{};
+		FamiliarNames e{};
 
-		e.character_id = 0;
-		e.name         = "";
-		e.class_id     = -1;
+		e.spell_id  = 0;
+		e.name_list = "";
+		e.size_mod  = -1;
 
 		return e;
 	}
 
-	static CharacterPetName GetCharacterPetName(
-		const std::vector<CharacterPetName> &character_pet_names,
-		int character_pet_name_id
+	static FamiliarNames GetFamiliarNames(
+		const std::vector<FamiliarNames> &familiar_namess,
+		int familiar_names_id
 	)
 	{
-		for (auto &character_pet_name : character_pet_names) {
-			if (character_pet_name.character_id == character_pet_name_id) {
-				return character_pet_name;
+		for (auto &familiar_names : familiar_namess) {
+			if (familiar_names.spell_id == familiar_names_id) {
+				return familiar_names;
 			}
 		}
 
 		return NewEntity();
 	}
 
-	static CharacterPetName FindOne(
+	static FamiliarNames FindOne(
 		Database& db,
-		int character_pet_name_id
+		int familiar_names_id
 	)
 	{
 		auto results = db.QueryDatabase(
@@ -115,17 +115,17 @@ public:
 				"{} WHERE {} = {} LIMIT 1",
 				BaseSelect(),
 				PrimaryKey(),
-				character_pet_name_id
+				familiar_names_id
 			)
 		);
 
 		auto row = results.begin();
 		if (results.RowCount() == 1) {
-			CharacterPetName e{};
+			FamiliarNames e{};
 
-			e.character_id = row[0] ? static_cast<int32_t>(atoi(row[0])) : 0;
-			e.name         = row[1] ? row[1] : "";
-			e.class_id     = row[2] ? static_cast<int32_t>(atoi(row[2])) : -1;
+			e.spell_id  = row[0] ? static_cast<int32_t>(atoi(row[0])) : 0;
+			e.name_list = row[1] ? row[1] : "";
+			e.size_mod  = row[2] ? static_cast<int32_t>(atoi(row[2])) : -1;
 
 			return e;
 		}
@@ -135,7 +135,7 @@ public:
 
 	static int DeleteOne(
 		Database& db,
-		int character_pet_name_id
+		int familiar_names_id
 	)
 	{
 		auto results = db.QueryDatabase(
@@ -143,7 +143,7 @@ public:
 				"DELETE FROM {} WHERE {} = {}",
 				TableName(),
 				PrimaryKey(),
-				character_pet_name_id
+				familiar_names_id
 			)
 		);
 
@@ -152,16 +152,16 @@ public:
 
 	static int UpdateOne(
 		Database& db,
-		const CharacterPetName &e
+		const FamiliarNames &e
 	)
 	{
 		std::vector<std::string> v;
 
 		auto columns = Columns();
 
-		v.push_back(columns[0] + " = " + std::to_string(e.character_id));
-		v.push_back(columns[1] + " = '" + Strings::Escape(e.name) + "'");
-		v.push_back(columns[2] + " = " + std::to_string(e.class_id));
+		v.push_back(columns[0] + " = " + std::to_string(e.spell_id));
+		v.push_back(columns[1] + " = '" + Strings::Escape(e.name_list) + "'");
+		v.push_back(columns[2] + " = " + std::to_string(e.size_mod));
 
 		auto results = db.QueryDatabase(
 			fmt::format(
@@ -169,23 +169,23 @@ public:
 				TableName(),
 				Strings::Implode(", ", v),
 				PrimaryKey(),
-				e.character_id
+				e.spell_id
 			)
 		);
 
 		return (results.Success() ? results.RowsAffected() : 0);
 	}
 
-	static CharacterPetName InsertOne(
+	static FamiliarNames InsertOne(
 		Database& db,
-		CharacterPetName e
+		FamiliarNames e
 	)
 	{
 		std::vector<std::string> v;
 
-		v.push_back(std::to_string(e.character_id));
-		v.push_back("'" + Strings::Escape(e.name) + "'");
-		v.push_back(std::to_string(e.class_id));
+		v.push_back(std::to_string(e.spell_id));
+		v.push_back("'" + Strings::Escape(e.name_list) + "'");
+		v.push_back(std::to_string(e.size_mod));
 
 		auto results = db.QueryDatabase(
 			fmt::format(
@@ -196,7 +196,7 @@ public:
 		);
 
 		if (results.Success()) {
-			e.character_id = results.LastInsertedID();
+			e.spell_id = results.LastInsertedID();
 			return e;
 		}
 
@@ -207,7 +207,7 @@ public:
 
 	static int InsertMany(
 		Database& db,
-		const std::vector<CharacterPetName> &entries
+		const std::vector<FamiliarNames> &entries
 	)
 	{
 		std::vector<std::string> insert_chunks;
@@ -215,9 +215,9 @@ public:
 		for (auto &e: entries) {
 			std::vector<std::string> v;
 
-			v.push_back(std::to_string(e.character_id));
-			v.push_back("'" + Strings::Escape(e.name) + "'");
-			v.push_back(std::to_string(e.class_id));
+			v.push_back(std::to_string(e.spell_id));
+			v.push_back("'" + Strings::Escape(e.name_list) + "'");
+			v.push_back(std::to_string(e.size_mod));
 
 			insert_chunks.push_back("(" + Strings::Implode(",", v) + ")");
 		}
@@ -235,9 +235,9 @@ public:
 		return (results.Success() ? results.RowsAffected() : 0);
 	}
 
-	static std::vector<CharacterPetName> All(Database& db)
+	static std::vector<FamiliarNames> All(Database& db)
 	{
-		std::vector<CharacterPetName> all_entries;
+		std::vector<FamiliarNames> all_entries;
 
 		auto results = db.QueryDatabase(
 			fmt::format(
@@ -249,11 +249,11 @@ public:
 		all_entries.reserve(results.RowCount());
 
 		for (auto row = results.begin(); row != results.end(); ++row) {
-			CharacterPetName e{};
+			FamiliarNames e{};
 
-			e.character_id = row[0] ? static_cast<int32_t>(atoi(row[0])) : 0;
-			e.name         = row[1] ? row[1] : "";
-			e.class_id     = row[2] ? static_cast<int32_t>(atoi(row[2])) : -1;
+			e.spell_id  = row[0] ? static_cast<int32_t>(atoi(row[0])) : 0;
+			e.name_list = row[1] ? row[1] : "";
+			e.size_mod  = row[2] ? static_cast<int32_t>(atoi(row[2])) : -1;
 
 			all_entries.push_back(e);
 		}
@@ -261,9 +261,9 @@ public:
 		return all_entries;
 	}
 
-	static std::vector<CharacterPetName> GetWhere(Database& db, const std::string &where_filter)
+	static std::vector<FamiliarNames> GetWhere(Database& db, const std::string &where_filter)
 	{
-		std::vector<CharacterPetName> all_entries;
+		std::vector<FamiliarNames> all_entries;
 
 		auto results = db.QueryDatabase(
 			fmt::format(
@@ -276,11 +276,11 @@ public:
 		all_entries.reserve(results.RowCount());
 
 		for (auto row = results.begin(); row != results.end(); ++row) {
-			CharacterPetName e{};
+			FamiliarNames e{};
 
-			e.character_id = row[0] ? static_cast<int32_t>(atoi(row[0])) : 0;
-			e.name         = row[1] ? row[1] : "";
-			e.class_id     = row[2] ? static_cast<int32_t>(atoi(row[2])) : -1;
+			e.spell_id  = row[0] ? static_cast<int32_t>(atoi(row[0])) : 0;
+			e.name_list = row[1] ? row[1] : "";
+			e.size_mod  = row[2] ? static_cast<int32_t>(atoi(row[2])) : -1;
 
 			all_entries.push_back(e);
 		}
@@ -350,14 +350,14 @@ public:
 
 	static int ReplaceOne(
 		Database& db,
-		const CharacterPetName &e
+		const FamiliarNames &e
 	)
 	{
 		std::vector<std::string> v;
 
-		v.push_back(std::to_string(e.character_id));
-		v.push_back("'" + Strings::Escape(e.name) + "'");
-		v.push_back(std::to_string(e.class_id));
+		v.push_back(std::to_string(e.spell_id));
+		v.push_back("'" + Strings::Escape(e.name_list) + "'");
+		v.push_back(std::to_string(e.size_mod));
 
 		auto results = db.QueryDatabase(
 			fmt::format(
@@ -372,7 +372,7 @@ public:
 
 	static int ReplaceMany(
 		Database& db,
-		const std::vector<CharacterPetName> &entries
+		const std::vector<FamiliarNames> &entries
 	)
 	{
 		std::vector<std::string> insert_chunks;
@@ -380,9 +380,9 @@ public:
 		for (auto &e: entries) {
 			std::vector<std::string> v;
 
-			v.push_back(std::to_string(e.character_id));
-			v.push_back("'" + Strings::Escape(e.name) + "'");
-			v.push_back(std::to_string(e.class_id));
+			v.push_back(std::to_string(e.spell_id));
+			v.push_back("'" + Strings::Escape(e.name_list) + "'");
+			v.push_back(std::to_string(e.size_mod));
 
 			insert_chunks.push_back("(" + Strings::Implode(",", v) + ")");
 		}
@@ -401,4 +401,4 @@ public:
 	}
 };
 
-#endif //EQEMU_BASE_CHARACTER_PET_NAME_REPOSITORY_H
+#endif //EQEMU_BASE_FAMILIAR_NAMES_REPOSITORY_H

@@ -23,6 +23,7 @@
 #include "../common/repositories/pets_repository.h"
 #include "../common/repositories/pets_beastlord_data_repository.h"
 #include "../common/repositories/character_pet_name_repository.h"
+#include "../common/repositories/familiar_names_repository.h"
 
 #include "entity.h"
 #include "client.h"
@@ -78,6 +79,195 @@ void Mob::GetRandPetName(char *name)
 	temp += fourth;
 
 	strn0cpy(name, temp.c_str(), 64);
+}
+
+uint8 Mob::GetClassForFamiliar(uint16 spell_id)
+{
+	if (!IsClient())
+	{
+		return Class::Warrior;
+	}
+
+	for (uint8 class_id = Class::Warrior; class_id <= Class::Berserker; class_id++)
+	{
+		if (GetSpellLevel(spell_id, class_id) != UINT8_MAX)
+		{
+			return class_id;
+		}
+	}
+
+	return UINT8_MAX;
+}
+
+NPC *Mob::GetFamiliar(uint16 spell_id)
+{
+	if (!IsClient())
+	{
+		return nullptr;
+	}
+
+	int act_power = 0;
+	PetRecord record;
+
+	if (!content_db.GetPoweredPetEntry(spells[spell_id].teleport_zone, act_power, &record))
+	{
+		LogError("Unknown familiar pet spell id: {}, check pets table", spell_id);
+		return nullptr;
+	}
+
+	auto npc_type = content_db.LoadNPCTypesData(record.npc_type);
+	if (!npc_type)
+	{
+		LogError("Unknown npc type for familiar pet spell id: [{}]", spell_id);
+		return nullptr;
+	}
+
+	uint8 familiar_class_id = GetClassForFamiliar(spell_id);
+
+	for (auto npc : entity_list.GetNPCList())
+	{
+		if (npc.second->npctype_id != npc_type->npc_id)
+		{
+			continue;
+		}
+
+		if (!npc.second->GetSwarmInfo() || npc.second->GetSwarmInfo()->owner_id != GetID())
+		{
+			continue;
+		}
+
+		uint16 pet_spell_id = npc.second->GetPetSpellID();
+		uint8 pet_class_id = GetClassForFamiliar(pet_spell_id);
+
+		if (pet_class_id == familiar_class_id)
+		{
+			LogDebug("Found a familiar!");
+			return npc.second;
+		}
+	}
+
+	LogDebug("Did not find a familiar");
+	return nullptr;
+}
+
+bool Mob::CheckFamiliarConflict(uint16 spell_id) {
+	return (GetFamiliar(spell_id));
+}
+
+void Mob::DismissFamiliar(uint16 spell_id) {
+	NPC* familiar = GetFamiliar(spell_id);
+	if (familiar) {
+		familiar->Depop();
+	}
+}
+
+void Mob::MakeFamiliar(uint16 spell_id) {
+	if (!IsClient()) {
+		return; // Only supported clients for this
+	}
+
+
+	if (CheckFamiliarConflict(spell_id)) {
+		return;
+	}
+
+	int act_power = 0;
+	PetRecord record;
+
+	if (!content_db.GetPoweredPetEntry(spells[spell_id].teleport_zone, act_power, &record)) {
+		LogError("Unknown familiar pet spell id: {}, check pets table", spell_id);
+		Message(Chat::Red, "Unable to find data for pet %s", spells[spell_id].teleport_zone);
+		return;
+	}
+
+	// Ripped from swarm pets, keeping the location array so we can support multi later if we want
+	static const glm::vec2 locations[MAX_SWARM_PETS] = {
+		glm::vec2(5, 5), glm::vec2(-5, 5), glm::vec2(5, -5), glm::vec2(-5, -5),
+		glm::vec2(10, 10), glm::vec2(-10, 10), glm::vec2(10, -10), glm::vec2(-10, -10),
+		glm::vec2(8, 8), glm::vec2(-8, 8), glm::vec2(8, -8), glm::vec2(-8, -8)
+	};
+
+	auto npc_type = content_db.LoadNPCTypesData(record.npc_type);
+	if (!npc_type) {
+		LogError("Unknown npc type for familiar pet spell id: [{}]", spell_id);
+		Message(0, "Unable to find pet!");
+		return;
+	}
+
+	NPC* f = new NPC(
+		npc_type,
+		0,
+		GetPosition() + glm::vec4(locations[0], 0.0f, 0.0f),
+		GravityBehavior::Ground
+	);
+
+	std::string petname = std::string(GetCleanName()) + "`s_Familiar";
+
+	if (IsClient()) {
+		auto vanity_name = CharacterPetNameRepository::GetPetName(database, CastToClient()->CharacterID(), spell_id, petname);
+		int size_mod = 0;
+		if (vanity_name.empty() || vanity_name == petname) {
+			auto info = FamiliarNamesRepository::GetRandomFamiliarInfo(content_db, spell_id, petname);
+
+			vanity_name = info.name_list;
+			size_mod    = info.size_mod;
+
+			if (vanity_name != petname) {
+				CharacterPetNameRepository::SetPetName(database, CastToClient()->CharacterID(), spell_id, vanity_name);
+			}
+		} else {
+			size_mod = FamiliarNamesRepository::GetFamiliarSizeMod(content_db, spell_id);
+		}
+
+		strn0cpy(f->name, vanity_name.c_str(), sizeof(f->name));
+		f->size += size_mod;
+	}
+
+	f->SetFollowID(GetID());
+
+	if (!f->GetSwarmInfo()) {
+		auto nSI = new SwarmPet;
+		f->SetSwarmInfo(nSI);
+		f->GetSwarmInfo()->duration = new Timer(INT32_MAX);
+	}
+	else {
+		f->GetSwarmInfo()->duration->Start(INT32_MAX);
+	}
+
+	f->StartSwarmTimer(INT32_MAX);
+	f->GetSwarmInfo()->m_familiar = true;
+	f->SetPetSpellID(spell_id);
+
+	//removing this prevents the pet from attacking
+	f->GetSwarmInfo()->owner_id = GetUltimateOwner()->GetID();
+
+	// Immunities
+	f->SetSpecialAbility(SpecialAbility::SlowImmunity, 1);
+	f->SetSpecialAbility(SpecialAbility::CharmImmunity, 1);
+	f->SetSpecialAbility(SpecialAbility::SnareImmunity, 1);
+	f->SetSpecialAbility(SpecialAbility::DispellImmunity, 1);
+	f->SetSpecialAbility(SpecialAbility::MeleeImmunity, 1);
+	f->SetSpecialAbility(SpecialAbility::MagicImmunity, 1);
+	f->SetSpecialAbility(SpecialAbility::FleeingImmunity, 1);
+	f->SetSpecialAbility(SpecialAbility::MeleeImmunityExceptBane, 1);
+	f->SetSpecialAbility(SpecialAbility::MeleeImmunityExceptMagical, 1);
+	f->SetSpecialAbility(SpecialAbility::AggroImmunity, 1);
+	f->SetSpecialAbility(SpecialAbility::BeingAggroImmunity, 1);
+	f->SetSpecialAbility(SpecialAbility::CastingFromRangeImmunity, 1);
+	f->SetSpecialAbility(SpecialAbility::HarmFromClientImmunity, 1);
+	f->SetSpecialAbility(SpecialAbility::RangedAttackImmunity, 1);
+	f->SetSpecialAbility(SpecialAbility::ClientDamageImmunity, 1);
+	f->SetSpecialAbility(SpecialAbility::NPCDamageImmunity, 1);
+	f->SetSpecialAbility(SpecialAbility::ClientAggroImmunity, 1);
+	f->SetSpecialAbility(SpecialAbility::NPCAggroImmunity, 1);
+	f->SetSpecialAbility(SpecialAbility::MemoryFadeImmunity, 1);
+	f->SetSpecialAbility(SpecialAbility::OpenImmunity, 1);
+	f->SetSpecialAbility(SpecialAbility::AssassinateImmunity, 1);
+	f->SetSpecialAbility(SpecialAbility::HeadshotImmunity, 1);
+	f->SetSpecialAbility(SpecialAbility::BotAggroImmunity, 1);
+	f->SetSpecialAbility(SpecialAbility::BotDamageImmunity, 1);
+
+	entity_list.AddNPC(f, true, true);
 }
 
 void Mob::MakePet(uint16 spell_id, const char* pettype, const char *petname) {

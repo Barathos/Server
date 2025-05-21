@@ -3323,6 +3323,18 @@ int Mob::CheckStackConflict(uint16 spellid1, int caster_level1, uint16 spellid2,
 		}
 	}
 
+	// Also I don't want to figure this out correctly
+	if (IsEffectInSpell(spellid1, SE_Familiar) && IsEffectInSpell(spellid2, SE_Familiar)) {
+		if (spellid1 == spellid2) {
+			return -1;
+		}
+		if (GetClassForFamiliar(spellid1) == GetClassForFamiliar(spellid2)) {
+			return 1;
+		}
+
+		return 0;
+	}
+
 	if (RuleB(Custom, BypassMulticlassStackConflict)) {
 		auto check_class_overlap = [&](int spellid1, int spellid2) -> bool {
 			if (spellid1 == spellid2) {

@@ -93,10 +93,10 @@ CREATE TABLE thj_waypoints_account (
 		.check = "SHOW COLUMNS FROM `zone` LIKE 'npc_update_range'",
 		.condition = "empty",
 		.match = "",
-		.content_schema_update = true,
 		.sql = R"(
 ALTER TABLE `zone` ADD COLUMN `npc_update_range` int(11) NOT NULL DEFAULT 600 AFTER `npc_max_aggro_dist`;
 )",
+		.content_schema_update = true,
 	},
 
 	ManifestEntry{
@@ -105,10 +105,10 @@ ALTER TABLE `zone` ADD COLUMN `npc_update_range` int(11) NOT NULL DEFAULT 600 AF
 		.check = "SHOW COLUMNS FROM `zone` LIKE 'max_movement_update_range'",
 		.condition = "empty",
 		.match = "",
-		.content_schema_update = true,
 		.sql = R"(
 ALTER TABLE `zone` ADD COLUMN `max_movement_update_range` int(11) NOT NULL DEFAULT 600 AFTER `npc_update_range`;
 )",
+		.content_schema_update = true,
 	},
 
 	ManifestEntry{
@@ -117,10 +117,10 @@ ALTER TABLE `zone` ADD COLUMN `max_movement_update_range` int(11) NOT NULL DEFAU
 		.check = "SHOW TABLES LIKE 'global_buffs'",
 		.condition = "empty",
 		.match = "",
-		.content_schema_update = false,
 		.sql = R"(
 create table global_buffs(spell_id int(11) primary key, duration int(11));
 )",
+		.content_schema_update = false,
 	},
 
 	ManifestEntry{
@@ -129,10 +129,10 @@ create table global_buffs(spell_id int(11) primary key, duration int(11));
 		.check = "SHOW TABLES LIKE 'account_kill_counts'",
 		.condition = "empty",
 		.match = "",
-		.content_schema_update = false,
 		.sql = R"(
 create table account_kill_counts(account_id int(11) primary key, race_id int(11), count int(11));
 )",
+		.content_schema_update = false,
 	},
 
 	ManifestEntry{
@@ -141,10 +141,13 @@ create table account_kill_counts(account_id int(11) primary key, race_id int(11)
 		.check = "SHOW COLUMNS FROM `character_pet_name` LIKE 'class_id'",
 		.condition = "empty",
 		.match = "",
-		.content_schema_update = false,
 		.sql = R"(
-alter table `character_pet_name` add column `class_id` tinyint(11) not null default -1;
-)",
+	ALTER TABLE `character_pet_name`
+		DROP PRIMARY KEY,
+		ADD COLUMN `class_id` TINYINT(11) NOT NULL DEFAULT -1,
+		ADD PRIMARY KEY (`character_id`, `class_id`);
+	)",
+		.content_schema_update = false,
 	},
 
 	ManifestEntry{
@@ -153,7 +156,6 @@ alter table `character_pet_name` add column `class_id` tinyint(11) not null defa
 		.check = "SHOW TABLES LIKE 'account_alt_currency'",
 		.condition = "empty",
 		.match = "",
-		.content_schema_update = false,
 		.sql = R"(
 CREATE TABLE `account_alt_currency` (
   `account_id` int(10) unsigned NOT NULL,
@@ -173,6 +175,39 @@ GROUP BY cd.account_id, cac.currency_id
 ON DUPLICATE KEY UPDATE
   amount = VALUES(amount);
 )",
+		.content_schema_update = false,
+	},
+
+	// New familiar_names table
+	ManifestEntry{
+		.version = 10,
+		.description = "2025_05_20_familiar_names_table",
+		.check = "SHOW TABLES LIKE 'familiar_names'",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+	CREATE TABLE `familiar_names` (
+	  `spell_id` int(10) NOT NULL,
+	  `name_list` text NOT NULL,
+	  `size_mod` int(10) NOT NULL DEFAULT -1,
+	  PRIMARY KEY (`spell_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+	)",
+		.content_schema_update = true,
+	},
+
+	// Alter character_pet_name to change class_id from TINYINT to INT
+	ManifestEntry{
+		.version = 11,
+		.description = "2025_05_20_modify_character_pet_name_class_id",
+		.check = "SHOW COLUMNS FROM `character_pet_name` WHERE `Field` = 'class_id' AND `Type` LIKE 'tinyint%'",
+		.condition = "not_empty",
+		.match = "",
+		.sql = R"(
+			ALTER TABLE `character_pet_name`
+			MODIFY COLUMN `class_id` INT NOT NULL DEFAULT 0
+			)",
+		.content_schema_update = false,
 	},
 
 	// Used for testing

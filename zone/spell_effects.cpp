@@ -2424,7 +2424,15 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 				break;
 			}
 
+			case SE_Familiar:
+			{
+				if (!caster) {
+					break;
+				}
 
+				caster->MakeFamiliar(spell_id);
+				break;
+			}
 			case SE_TemporaryPets: //Dook- swarms and wards:
 			{
 				if (!caster)
@@ -4713,15 +4721,7 @@ void Mob::BuffFadeBySlot(int slot, bool iRecalcBonuses)
 
 			case SE_Familiar:
 			{
-				/*
-				Mob *mypet = GetPet();
-				if (mypet && mypet->IsFamiliar()) {
-					if(mypet->IsNPC()) {
-						RemovePet(mypet);
-						mypet->CastToNPC()->Depop();
-					}
-				}
-				*/
+				DismissFamiliar(buffs[slot].spellid);
 				break;
 			}
 

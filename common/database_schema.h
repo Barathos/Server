@@ -213,6 +213,7 @@ namespace DatabaseSchema {
 			"faction_base_data",
 			"faction_list",
 			"faction_list_mod",
+			"familiar_names",
 			"fishing",
 			"forage",
 			"global_loot",

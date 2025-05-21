@@ -1534,38 +1534,109 @@ void Mob::AI_Process() {
 					SetFollowDistance(100);
 					SetFollowCanRun(true);
 				}
-				else {
+				else
+				{
+					if (IsNPC() && CastToNPC()->GetSwarmOwner() && IsEffectInSpell(CastToNPC()->GetPetSpellID(), SE_Familiar)) {
+						Mob *owner = entity_list.GetMob(CastToNPC()->GetSwarmOwner());
+						if (owner) {
+							uint16 pet_id = GetID();
+							glm::vec4 owner_position = owner->GetPosition();
+							float owner_heading = owner->GetHeading();
 
-					float distance        = DistanceSquared(m_Position, follow->GetPosition());
-					int   follow_distance = GetFollowDistance();
+							std::vector<uint16> familiar_ids;
 
-					/**
-					 * Default follow distance is 100
-					 */
-					if (distance >= follow_distance) {
-						bool running = false;
-						// maybe we want the NPC to only walk doing follow logic
-						if (GetFollowCanRun() && distance >= follow_distance + 150) {
-							running = true;
+							for (auto &npc : entity_list.GetNPCList()) {
+								if (npc.second->GetSwarmOwner() == owner->GetID() && IsEffectInSpell(npc.second->GetPetSpellID(), SE_Familiar)) {
+									familiar_ids.push_back(npc.second->GetID());
+								}
+							}
+
+							std::sort(familiar_ids.begin(), familiar_ids.end());
+
+							int familiar_index = 0;
+							int total_familiars = familiar_ids.size();
+
+							for (size_t i = 0; i < familiar_ids.size(); i++) {
+								if (familiar_ids[i] == pet_id)
+								{
+									familiar_index = i;
+									break;
+								}
+							}
+
+							float heading_radians = (owner_heading / 512.0f) * 2.0f * M_PI;
+
+							float base_distance = 5;
+							if (base_distance <= 0) {
+								base_distance = 5.0f;
+							}
+
+							float distance_increment = 1;
+							if (distance_increment <= 0) {
+								distance_increment = 1.5f;
+							}
+
+							float distance = base_distance + (familiar_index * distance_increment);
+
+							float max_angle_offset = M_PI / 6.0f;
+
+							float angle_offset = 0.0f;
+							if (total_familiars > 1) {
+								angle_offset = max_angle_offset * (2.0f * ((float)familiar_index / (total_familiars - 1)) - 1.0f);
+							}
+
+							float final_angle = heading_radians + M_PI + angle_offset;
+
+							glm::vec4 target_position;
+							target_position.x = owner_position.x + distance * sin(final_angle);
+							target_position.y = owner_position.y + distance * cos(final_angle);
+							target_position.z = owner_position.z;
+							target_position.w = owner_position.w;
+
+							float xy_distance = DistanceSquared(GetPosition(), target_position);
+							float z_distance = owner_position.z - GetPosition().z;
+
+							if (xy_distance >= 0.1 || z_distance > 100) {
+								bool running = false;
+
+								if (xy_distance >= 1225) {
+									running = true;
+								}
+
+								if (xy_distance >= 202500 || z_distance > 100) {
+									Teleport(target_position);
+								} else {
+									running ? RunTo(target_position.x, target_position.y, target_position.z) : WalkTo(target_position.x, target_position.y, target_position.z);
+								}
+							} else {
+								moved = false;
+								StopNavigation();
+							}
 						}
+					} else {
+						float distance = DistanceSquared(m_Position, follow->GetPosition());
+						int follow_distance = GetFollowDistance();
 
-						auto &Goal = follow->GetPosition();
+						if (distance >= follow_distance) {
+							bool running = false;
+							if (GetFollowCanRun() && distance >= follow_distance + 150)	{
+								running = true;
+							}
 
-						if (running) {
-							RunTo(Goal.x, Goal.y, Goal.z);
+							auto &Goal = follow->GetPosition();
+
+							if (running) {
+								RunTo(Goal.x, Goal.y, Goal.z);
+							} else {
+								WalkTo(Goal.x, Goal.y, Goal.z);
+							}
+						} else {
+							moved = false;
+							StopNavigation();
 						}
-						else {
-							WalkTo(Goal.x, Goal.y, Goal.z);
-						}
-					}
-					else {
-						moved = false;
-						StopNavigation();
 					}
 				}
-			}
-			else //not a pet, and not following somebody...
-			{
+			} else {
 				// dont move till a bit after you last fought
 				if (time_until_can_move < Timer::GetCurrentTime()) {
 					if (IsClient()) {
