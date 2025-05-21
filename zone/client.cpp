@@ -1061,8 +1061,6 @@ bool Client::Save(uint8 iCommitNow) {
 		m_pp.endurance = current_endurance;
 	}
 
-	database.TransactionBegin();
-
 	/* Save Account Kill Counts */
 	std::vector<AccountKillCountsRepository::AccountKillCounts> entries;
     for (const auto& [race_id, count] : kill_counters) {
