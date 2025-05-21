@@ -9,9 +9,13 @@ void command_castspellthj(Client *c, const Seperator *sep)
 
     const auto arguments = sep->argnum;
     if (!arguments) {
+		c->Message(
+            Chat::White,
+            "This command may be used to cast non-Detrimental spells directly from your spellbook while out of combat."
+        );
         c->Message(
             Chat::White,
-            "Usage: #castspell [Spell Name or ID from your spellbook]"
+            "Usage: /cast [Spell Name (or Spell ID)]"
         );
         return;
     }
@@ -63,6 +67,11 @@ void command_castspellthj(Client *c, const Seperator *sep)
         );
         return;
     }
+
+	if (IsDetrimentalSpell(spell_id)) {
+		c->Message(Chat::SpellFailure, "You cannot cast detrimental spells directly from your spellbook.");
+		return;
+	}
 
     Mob* t = c;
     if (c->GetTarget()) {
