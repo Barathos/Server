@@ -1873,8 +1873,7 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 	if (slot <= CastingSlot::MaxGems && slot >= CastingSlot::Gem1 || !IsClient()) {
 		if (target && !target->IsMezzed()) {
 			if(IsOfClientBotMerc() && IsEffectInSpell(spell_id, SE_CurrentHP)) {
-				TrySympatheticProc(target, spell_id);
-
+				//TrySympatheticProc(target, spell_id);
 			}
 			if (spell_success) {
 				TryTwincast(this, target, spell_id);
