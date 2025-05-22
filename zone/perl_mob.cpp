@@ -1044,12 +1044,12 @@ void Perl_Mob_BuffFadeBySlot(Mob* self, int slot, bool recalc_bonuses) // @categ
 	self->BuffFadeBySlot(slot, recalc_bonuses);
 }
 
-bool Perl_Mob_CanBuffStack(Mob* self, uint16 spell_id, uint8 caster_level) // @categories Script Utility, Spells and Disciplines
+int Perl_Mob_CanBuffStack(Mob* self, uint16 spell_id, uint8 caster_level) // @categories Script Utility, Spells and Disciplines
 {
 	return self->CanBuffStack(spell_id, caster_level);
 }
 
-bool Perl_Mob_CanBuffStack(Mob* self, uint16 spell_id, uint8 caster_level, bool fail_if_overwritten) // @categories Script Utility, Spells and Disciplines
+int Perl_Mob_CanBuffStack(Mob* self, uint16 spell_id, uint8 caster_level, bool fail_if_overwritten) // @categories Script Utility, Spells and Disciplines
 {
 	return self->CanBuffStack(spell_id, caster_level, fail_if_overwritten);
 }
@@ -3629,8 +3629,8 @@ void perl_register_mob()
 	package.add("CameraEffect", (void(*)(Mob*, uint32, float))&Perl_Mob_CameraEffect);
 	package.add("CameraEffect", (void(*)(Mob*, uint32, float, Client*))&Perl_Mob_CameraEffect);
 	package.add("CameraEffect", (void(*)(Mob*, uint32, float, perl::nullable<Client*>, bool))&Perl_Mob_CameraEffect);
-	package.add("CanBuffStack", (bool(*)(Mob*, uint16, uint8))&Perl_Mob_CanBuffStack);
-	package.add("CanBuffStack", (bool(*)(Mob*, uint16, uint8, bool))&Perl_Mob_CanBuffStack);
+	package.add("CanBuffStack", (int(*)(Mob*, uint16, uint8))&Perl_Mob_CanBuffStack);
+	package.add("CanBuffStack", (int(*)(Mob*, uint16, uint8, bool))&Perl_Mob_CanBuffStack);
 	package.add("CanClassEquipItem", &Perl_Mob_CanClassEquipItem);
 	package.add("CanRaceEquipItem", &Perl_Mob_CanRaceEquipItem);
 	package.add("CanThisClassDodge", &Perl_Mob_CanThisClassDodge);

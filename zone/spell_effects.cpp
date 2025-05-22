@@ -4195,8 +4195,8 @@ void Mob::DoBuffTic(const Buffs_Struct &buff, int slot, Mob *caster)
 
 				caster->ResourceTap(-effect_value, buff.spellid);
 				effect_value = -effect_value;
-				Damage(caster, effect_value, buff.spellid, spell.skill, false, i, true);
 
+				Damage(caster, effect_value, buff.spellid, spell.skill, false, i, true);
 				caster->TrySympatheticProc(this, buff.spellid);
 
 			} else if (effect_value > 0) {
@@ -4212,6 +4212,7 @@ void Mob::DoBuffTic(const Buffs_Struct &buff, int slot, Mob *caster)
 			}
 
 			HealDamage(effect_value, caster, buff.spellid);
+			caster->TrySympatheticProc(this, buff.spellid);
 			// healing aggro would go here; removed for now
 			break;
 		}
