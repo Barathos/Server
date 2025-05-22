@@ -6419,6 +6419,10 @@ void Mob::TrySympatheticProc(Mob* target, uint32 spell_id)
 		return;
 	}
 
+	if (IsDetrimentalSpell(spell_id) && target->IsClient()) {
+		return;
+	}
+
 	Mob* new_target = entity_list.GetMob(GetSpellImpliedTargetID(spell_id, target->GetID()));
 	if (new_target) {
 		target = new_target;
