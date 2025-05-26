@@ -608,15 +608,25 @@ void Mob::CalcAABonuses(StatBonuses *newbon)
 		auto ability = ability_rank.first;
 		auto rank = ability_rank.second;
 
-		if(!ability) {
+		if (!ability) {
 			continue;
 		}
 
-		// bad data or no effects
 		if (rank->effects.empty())
 			continue;
 
+		if (!HasEnabledAA(ability_rank.first->id)) {
+			continue;
+		}
+
 		ApplyAABonuses(*rank, newbon);
+	}
+
+	// Debug output of all focus effects
+	for (int i = 0; i <= HIGHEST_FOCUS; ++i) {
+		if (newbon->FocusEffects[i] != 0) {
+			LogDebug("[AA FocusEffect] FocusType {} = {}", i, newbon->FocusEffects[i]);
+		}
 	}
 }
 

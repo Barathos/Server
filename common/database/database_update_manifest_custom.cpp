@@ -210,6 +210,25 @@ ON DUPLICATE KEY UPDATE
 		.content_schema_update = false,
 	},
 
+	// Add character_aa_disabled table
+	ManifestEntry{
+		.version = 12,
+		.description = "2025_05_20_thj_character_aa_disabled",
+		.check = "SHOW TABLES LIKE 'character_aa_disabled'",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+	CREATE TABLE `character_aa_disabled` (
+	`aa_id` int(10) NOT NULL,
+	`character_id` int(10) NOT NULL,
+	`disabled` tinyint(4) NOT NULL,
+	PRIMARY KEY (`aa_id`,`character_id`),
+	KEY `idx_character_id` (`character_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+	)",
+		.content_schema_update = false,
+	},
+
 	// Used for testing
 	//	ManifestEntry{
 	//		.version = 9229,

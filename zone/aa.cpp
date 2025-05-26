@@ -44,6 +44,7 @@ Copyright (C) 2001-2016 EQEMu Development Team (http://eqemulator.net)
 #include "../common/repositories/aa_ranks_repository.h"
 #include "../common/repositories/aa_rank_effects_repository.h"
 #include "../common/repositories/aa_rank_prereqs_repository.h"
+#include "../common/repositories/character_aa_disabled_repository.h"
 
 extern WorldServer worldserver;
 extern QueryServ* QServ;
@@ -945,6 +946,7 @@ Mob *SwarmPet::GetOwner()
 void Client::SendAlternateAdvancementTable() {
 	LogDebug("Sending AA Table");
 	GetDynamicAATimers();
+	GetAllToggleAAStatus();
 
 	for(auto &aa : zone->aa_abilities) {
 		uint32 charges = 0;
@@ -1124,7 +1126,6 @@ void Client::SendAlternateAdvancementPoints() {
 		}
 	}
 
-
 	aa2->aa_spent = GetSpentAA();
 	QueuePacket(outapp);
 	safe_delete(outapp);
@@ -1163,8 +1164,70 @@ void Client::SendAlternateAdvancementTimers() {
 	safe_delete(outapp);
 }
 
+void Client::GetAllToggleAAStatus() {
+	m_aa_status_cache.clear();
+
+	auto entries = CharacterAaDisabledRepository::GetWhere(
+		database,
+		fmt::format("character_id = {}", CharacterID())
+	);
+
+	for (const auto& entry : entries) {
+		m_aa_status_cache[entry.aa_id] = (entry.disabled == 0);
+	}
+}
+
+bool Mob::HasEnabledAA(int aa_id) const {
+	if (!IsClient()) {
+		return true;
+	}
+
+	const Client* c = CastToClient();
+	return c && c->GetToggleAAStatus(aa_id);
+}
+
+bool Client::GetToggleAAStatus(int ability_id) const {
+	auto it = m_aa_status_cache.find(ability_id);
+	if (it != m_aa_status_cache.end()) {
+		return it->second;
+	}
+
+	return true;
+}
+
+void Client::SetToggleAAStatus(int ability_id, bool status) {
+	m_aa_status_cache[ability_id] = status;
+
+	int8_t disabled_value = status ? 0 : 1;
+
+	auto existing_entries = CharacterAaDisabledRepository::GetWhere(
+		database,
+		fmt::format("aa_id = {} AND character_id = {}", ability_id, CharacterID())
+	);
+
+	if (!existing_entries.empty()) {
+		if (status) {
+			CharacterAaDisabledRepository::DeleteWhere(
+				database,
+				fmt::format("aa_id = {} AND character_id = {}", ability_id, CharacterID())
+			);
+		} else {
+			auto entry = existing_entries[0];
+			entry.disabled = disabled_value;
+			CharacterAaDisabledRepository::UpdateOne(database, entry);
+		}
+	} else if (!status) {
+		auto entry = CharacterAaDisabledRepository::NewEntity();
+		entry.aa_id = ability_id;
+		entry.character_id = CharacterID();
+		entry.disabled = disabled_value;
+		CharacterAaDisabledRepository::InsertOne(database, entry);
+	}
+
+	CalcBonuses();
+}
+
 void Client::GetDynamicAATimers() {
-    // Fetch all relevant aaTimer entries from the database
     auto results = DataBucketsRepository::GetWhere(
         database,
         fmt::format(
@@ -1174,22 +1237,17 @@ void Client::GetDynamicAATimers() {
         )
     );
 
-    // Clear the existing cache to ensure it's up to date
     aa_timers_cache.clear();
 
-    // Process the results and populate the cache
     for (const auto& bucket : results) {
         if (!bucket.value.empty()) {
 			int timer_value = Strings::ToInt(bucket.value, 0);
-
-			// Extract timer ID from the key (e.g., "aaTimer_42" -> 42)
-			int timer_id = Strings::ToInt(bucket.key_.substr(8), -1); // "aaTimer_" is 8 characters long
+			int timer_id = Strings::ToInt(bucket.key_.substr(8), -1);
 
 			if (timer_id == -1) {
 				LogError("Could not parse TimerID for Character ID [{}], Timer Key [{}]", CharacterID(), bucket.key_);
 			}
 
-			// Populate the cache
 			aa_timers_cache[timer_value] = timer_id;
 
 			LogDebugDetail("Cached TimerID: [{}] - [{}]", timer_id, timer_value);
@@ -1198,42 +1256,35 @@ void Client::GetDynamicAATimers() {
 }
 
 int Client::GetDynamicAATimer(int aa_id) {
-    // Check cache first
     auto it = aa_timers_cache.find(aa_id);
     if (it != aa_timers_cache.end()) {
         LogDebugDetail("Returning TimerID from cache: [{}] - [{}]", it->second, aa_id);
         return it->second;
     }
 
-    // If cache is empty or the specific timer is not found, fetch all timers
     GetDynamicAATimers();
 
-    // Check the cache again after updating it
     it = aa_timers_cache.find(aa_id);
     if (it != aa_timers_cache.end()) {
         LogDebugDetail("Returning TimerID after fetching: [{}] - [{}]", it->second, aa_id);
         return it->second;
     }
 
-    return 0; // Return 0 if no associated timer ID is found
+    return 0;
 }
 
 int Client::SetDynamicAATimer(int aa_id) {
-    // Iterate through possible timer IDs to find an available one
     for (int timerID = 1; timerID <= (pTimerAAEnd - pTimerAAStart); ++timerID) {
         if (std::none_of(aa_timers_cache.begin(), aa_timers_cache.end(), [timerID](const auto& pair) { return pair.second == timerID; })) {
-            // Associate this timer with the given aa_id
             aa_timers_cache[aa_id] = timerID;
 
-            // Persist to data bucket
             std::string key = "aaTimer_" + std::to_string(timerID);
             SetBucket(key, std::to_string(aa_id));
 
             LogDebugDetail("Set TimerID: [{}] for AA ID: [{}]", timerID, aa_id);
-            return timerID; // Return the assigned timer ID
         }
     }
-    return 0; // No available timer ID found
+    return 0;
 }
 
 void Client::ClearDynamicAATimers() {

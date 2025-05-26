@@ -1,4 +1,5 @@
 #include "../client.h"
+#include <regex>
 
 void command_castspellthj(Client *c, const Seperator *sep)
 {
@@ -7,24 +8,16 @@ void command_castspellthj(Client *c, const Seperator *sep)
         return;
     }
 
-    const auto arguments = sep->argnum;
-    if (!arguments) {
-		c->Message(
-            Chat::White,
-            "This command may be used to cast non-Detrimental spells directly from your spellbook while out of combat."
-        );
-        c->Message(
-            Chat::White,
-            "Usage: /cast [Spell Name (or Spell ID)]"
-        );
+    if (!sep->argnum || !sep->msg || sep->msg[0] == '\0') {
+        c->Message(Chat::White, "This command may be used to cast non-Detrimental spells directly from your spellbook while out of combat.");
+        c->Message(Chat::White, "Usage: /cast [Spell Name (quoted if necessary) or Spell ID]");
         return;
     }
 
-    // Get full argument string after the command
+    // Extract everything after the first word (/cast)
     std::string spell_string;
-    if (sep->msg) {
+    {
         std::string full_msg(sep->msg);
-        // Find the position after the first word (the command itself)
         size_t pos = full_msg.find_first_of(" \t");
         if (pos != std::string::npos) {
             spell_string = full_msg.substr(pos + 1);
@@ -36,27 +29,31 @@ void command_castspellthj(Client *c, const Seperator *sep)
         return;
     }
 
-	if (c->GetRestTimer())	{
-		c->Message(Chat::SpellFailure, "You cannot cast spells from your spellbook while in combat.");
-		return;
-	}
+    // Strip quotes if present
+    if (spell_string.front() == '"' && spell_string.back() == '"' && spell_string.length() > 1) {
+        spell_string = spell_string.substr(1, spell_string.length() - 2);
+    }
+
+    if (c->GetRestTimer()) {
+        c->Message(Chat::SpellFailure, "You cannot cast spells from your spellbook while in combat.");
+        return;
+    }
 
     uint16 spell_id = 0;
     int spell_book_slot = -1;
 
-    // Check if the argument is a number (spell ID)
-    if (sep->IsNumber(1)) {
-        spell_id = Strings::ToUnsignedInt(sep->arg[1]);
+    // Try numeric ID first
+    if (std::all_of(spell_string.begin(), spell_string.end(), ::isdigit)) {
+        spell_id = static_cast<uint16>(Strings::ToUnsignedInt(spell_string));
         spell_book_slot = c->FindSpellBookSlotBySpellID(spell_id);
     } else {
-        // Treat as spell name
+        // Try by name
         spell_book_slot = c->FindSpellBookSlotBySpellName(spell_string);
         if (spell_book_slot >= 0) {
             spell_id = c->GetSpellIDByBookSlot(spell_book_slot);
         }
     }
 
-    // Verify the spell is in the character's spellbook
     if (spell_book_slot == -1 || spell_id == 0 || spell_id >= SPDAT_RECORDS) {
         c->Message(
             Chat::SpellFailure,
@@ -68,28 +65,32 @@ void command_castspellthj(Client *c, const Seperator *sep)
         return;
     }
 
-	if (IsDetrimentalSpell(spell_id)) {
-		c->Message(Chat::SpellFailure, "You cannot cast detrimental spells directly from your spellbook.");
-		return;
-	}
-
-    Mob* t = c;
-    if (c->GetTarget()) {
-        t = c->GetTarget();
+    if (IsBardSong(spell_id)) {
+        c->Message(Chat::SpellFailure, "You may not sing bard songs directly from your spellbook.");
+        return;
     }
 
-    uint16 target_id = t->GetID();
+    if (IsDetrimentalSpell(spell_id)) {
+        c->Message(Chat::SpellFailure, "You cannot cast detrimental spells directly from your spellbook.");
+        return;
+    }
 
-	if (spells[spell_id].target_type == ST_Self) {
-		target_id = c->GetID();
-	}
+    Mob* target = c->GetTarget() ? c->GetTarget() : c;
+    uint16 target_id = target->GetID();
 
-	c->Message(
+    if (spells[spell_id].target_type == ST_Self) {
+        target_id = c->GetID();
+    }
+
+	Mob* target_mob = entity_list.GetMob(target_id);
+	std::string target_name = target_mob ? target_mob->GetCleanName() : "Unknown";
+
+    c->Message(
         Chat::Spells,
         fmt::format(
             "Casting {} on {} from your Spellbook.",
             GetSpellName(spell_id),
-            entity_list.GetMob(target_id)->GetCleanName()
+            target_name
         ).c_str()
     );
 

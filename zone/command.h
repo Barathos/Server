@@ -45,6 +45,7 @@ void command_acceptrules(Client *c, const Seperator *sep);
 void command_advnpcspawn(Client *c, const Seperator *sep);
 void command_aggrozone(Client *c, const Seperator *sep);
 void command_ai(Client *c, const Seperator *sep);
+void command_alt_toggle(Client *c, const Seperator *sep);
 void command_appearance(Client *c, const Seperator *sep);
 void command_appearanceeffects(Client *c, const Seperator *sep);
 void command_apply_shared_memory(Client *c, const Seperator *sep);

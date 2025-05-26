@@ -1131,6 +1131,10 @@ public:
 	int SetDynamicAATimer(int aa_id);
 	void ClearDynamicAATimers();
 
+	void GetAllToggleAAStatus();
+	void SetToggleAAStatus(int ability_id, bool status);
+	bool GetToggleAAStatus(int ability_id) const;
+
 	std::unordered_map<int, int> aa_timers_cache; // Cache to store AA timers as key-value pairs (aa_id -> timerID)
 
 	//New AA Methods
@@ -2531,6 +2535,8 @@ private:
 	std::vector<uint32_t> m_dynamic_zone_ids;
 
 	std::vector<uint32_t> m_completed_shared_tasks;
+
+	std::unordered_map<int, bool> m_aa_status_cache;
 
 public:
 	enum BotOwnerOption : size_t {

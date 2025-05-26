@@ -1057,6 +1057,7 @@ public:
 	bool HasPersistDeathIllusion(int32 spell_id);
 	void DoShieldDamageOnShielderSpellEffect(Mob* shield_target, int64 hit_damage_done, EQ::skills::SkillType skillInUse);
 
+	bool HasEnabledAA(int aa_id) const;
 
 	bool TryDoubleMeleeRoundEffect();
 	bool GetUseDoubleMeleeRoundDmgBonus() const { return use_double_melee_round_dmg_bonus; }

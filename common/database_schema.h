@@ -37,6 +37,7 @@ namespace DatabaseSchema {
 		return {
 			{"adventure_stats",                "player_id"},
 			{"char_recipe_list",               "char_id"},
+			{"character_aa_disabled",          "character_id"},
 			{"character_activities",           "charid"},
 			{"character_alt_currency",         "char_id"},
 			{"character_alternate_abilities",  "id"},
@@ -114,6 +115,7 @@ namespace DatabaseSchema {
 			"buyer_buy_lines",
 			"buyer_trade_items",
 			"char_recipe_list",
+			"character_aa_disabled",
 			"character_activities",
 			"character_alt_currency",
 			"character_alternate_abilities",
