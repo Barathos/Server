@@ -2068,9 +2068,9 @@ void Client::FixModel(Spawn_Struct* npc) {
 }
 
 void Client::QueuePacket(const EQApplicationPacket* app, bool ack_req, CLIENT_CONN_STATUS required_state, eqFilterType filter) {
-    if (filter != FilterNone && GetFilter(filter) == FilterHide) {
-        return;
-    }
+	if (filter != FilterNone && GetFilter(filter) == FilterHide) {
+		return;
+	}
 
 	if (RuleB(Character, AutoIdleFilterPackets) && m_is_idle && IsFilteredAFKPacket(app)) {
 		return;
