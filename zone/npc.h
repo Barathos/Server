@@ -294,6 +294,7 @@ public:
 	void 	PetOnSpawn(NewSpawn_Struct *ns);
 
 	void    DoPetCommand(int pet_command_id, Mob* target = nullptr);
+	void    ConfigureInitialCommands();
 	Client* DoPetCommandChecks(int pet_command_id);
 	void    DoPetCommandHealthReport();
 	void    DoPetCommandLeaderReport();

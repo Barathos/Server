@@ -1118,6 +1118,7 @@ public:
     Mob* GetPet(uint8 idx = 0);                      // Get the Mob instance of the pet at the given index (default is index 0)
 	Mob* GetActivePet();
 	std::vector<Mob*> GetAllPets();  			 	 // Returns a vector of all Mob* pets associated with this Mob
+	std::vector<Mob*> GetAllSwarmPets();
 	bool RemovePetByIndex(uint8 idx = 0);            // Remove the pet at the given index (default is index 0)
     bool RemovePet(Mob* pet);                        // Remove the pet corresponding to the given Mob pointer
     bool RemovePet(uint16 pet_id);                   // Remove the pet corresponding to the given pet ID

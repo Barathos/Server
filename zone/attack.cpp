@@ -3298,7 +3298,7 @@ void Mob::AddToHateList(Mob* other, int64 hate /*= 0*/, int64 damage /*= 0*/, bo
 
 	// we skip these checks if it's forced through a pet command
 	if (!pet_command) {
-		if (IsPet()) {
+		if (IsPet() || IsNPC() && CastToNPC()->GetSwarmOwner()) {
 			if ((IsGHeld() || (IsHeld() && IsFocused())) && !on_hatelist) // we want them to be able to climb the hate list
 				return;
 			if ((IsHeld() || IsPetStop() || IsPetRegroup()) && !was_engaged) // not 100% sure on stop/regroup kind of hard to test, but regroup is like "classic hold"
@@ -6773,9 +6773,6 @@ void Mob::CommonOutgoingHitSuccess(Mob* defender, DamageHitInfo &hit, ExtraAttac
 		hit.damage_done = (hit.damage_done * spec_mod) / 100;
 
 	int pct_damage_reduction = defender->GetSkillDmgTaken(hit.skill, opts) + defender->GetPositionalDmgTaken(this);
-
-	LogDebug("Before Damage Reduction: {} After Damage Reduction: {}",
-		hit.damage_done, hit.damage_done + (hit.damage_done * pct_damage_reduction / 100));
 	hit.damage_done += (hit.damage_done * pct_damage_reduction / 100) + defender->GetPositionalDmgTakenAmt(this);
 
 	if (defender->GetShielderID() || defender->spellbonuses.ShieldTargetSpa[SBIndex::SHIELD_TARGET_MITIGATION_PERCENT]) {

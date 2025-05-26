@@ -45,6 +45,7 @@ Copyright (C) 2001-2016 EQEMu Development Team (http://eqemulator.net)
 #include "../common/repositories/aa_rank_effects_repository.h"
 #include "../common/repositories/aa_rank_prereqs_repository.h"
 #include "../common/repositories/character_aa_disabled_repository.h"
+#include "../common/repositories/character_pet_command_states_repository.h"
 
 extern WorldServer worldserver;
 extern QueryServ* QServ;
@@ -181,6 +182,12 @@ void Mob::TemporaryPets(uint16 spell_id, Mob *targ, const char *name_override, u
 			swarm_pet_npc->GiveNPCTypeData(npc_dup);
 
 		entity_list.AddNPC(swarm_pet_npc, true, true);
+
+		// custom orders
+		if (IsClient()) {
+			swarm_pet_npc->ConfigureInitialCommands();
+		}
+
 		summon_count--;
 	}
 
@@ -189,12 +196,13 @@ void Mob::TemporaryPets(uint16 spell_id, Mob *targ, const char *name_override, u
 	}
 
 	//the target of these swarm pets will take offense to being cast on...
-	if (targ != nullptr)
+	if (targ != nullptr && targ->GetID() != GetID())
 		targ->AddToHateList(this, 1, 0);
 
 	// The other pointers we make are handled elsewhere.
 	delete made_npc;
 }
+
 void Mob::TypesTemporaryPets(uint32 typesid, Mob *targ, const char *name_override, uint32 duration_override, bool followme, bool sticktarg) {
 
 	SwarmPet_Struct pet;
@@ -327,7 +335,7 @@ void Mob::WakeTheDead(uint16 spell_id, Corpse *corpse_to_use, Mob *tar, uint32 d
 	memcpy(made_npc, npc_type, sizeof(NPCType));
 
 	char NewName[64];
-	sprintf(NewName, "%s`s Animated Corpse", GetCleanName());
+	sprintf(NewName, "%s`s_Animated_Corpse", GetCleanName());
 	strcpy(made_npc->name, NewName);
 	npc_type = made_npc;
 
@@ -506,6 +514,11 @@ void Mob::WakeTheDead(uint16 spell_id, Corpse *corpse_to_use, Mob *tar, uint32 d
 			swarm_pet_npc->GiveNPCTypeData(npc_dup);
 
 		entity_list.AddNPC(swarm_pet_npc, true, true);
+
+		if (IsClient()) {
+			swarm_pet_npc->ConfigureInitialCommands();
+		}
+
 		summon_count--;
 	}
 

@@ -77,6 +77,7 @@ namespace EQ
 #include "../common/repositories/character_evolving_items_repository.h"
 #include "../common/repositories/player_titlesets_repository.h"
 #include "../common/repositories/thj_waypoints_repository.h"
+#include "../common/repositories/character_pet_command_states_repository.h"
 
 #include "bot_structs.h"
 
@@ -2315,7 +2316,12 @@ public:
 	Timer m_stun_immune_timer;
 	Timer m_silence_immune_timer;
 
+	bool GetSavedPetCommand(uint8 class_id, uint8 command_id);
+	void SetSavedPetCommand(uint8 class_id, uint8 command_id, bool new_state);
+
 private:
+
+	std::unordered_map<uint8, CharacterPetCommandStatesRepository::PetCommandStates> m_pet_command_cache;
 
 	PlayerProfile_Struct m_pp;
 	ExtendedProfile_Struct m_epp;

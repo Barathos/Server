@@ -1812,11 +1812,7 @@ void Client::Handle_Connect_OP_ZoneEntry(const EQApplicationPacket *app)
 						pet->CalcBonuses();
 						pet->SetHP(pet_info.HP);
 						pet->SetMana(pet_info.Mana);
-
-						// Taunt persists when zoning on newer clients, overwrite default.
-						if (m_ClientVersionBit & EQ::versions::maskUFAndLater) {
-							pet->SetTaunting(pet_info.taunting);
-						}
+						pet->ConfigureInitialCommands();
 					}
 
 					DoPetBagResync(pet->GetPetOriginClass());

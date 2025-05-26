@@ -1320,30 +1320,27 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 				{
 					return false;
 				}
-				else
+			else
 				{
 					MakePet(spell_id, spell.teleport_zone);
-					// TODO: we need to sync the states for these clients ...
-					// Will fix buttons for now
-					Mob *pet=GetPet();
-					if (IsClient() && pet) {
-						auto c = CastToClient();
-						if (c->ClientVersionBit() & EQ::versions::maskUFAndLater) {
-							c->SetPetCommandState(PET_BUTTON_SIT, 0);
-							c->SetPetCommandState(PET_BUTTON_STOP, 0);
-							c->SetPetCommandState(PET_BUTTON_REGROUP, 0);
-							c->SetPetCommandState(PET_BUTTON_FOLLOW, 1);
-							c->SetPetCommandState(PET_BUTTON_GUARD, 0);
-							// Creating pet from spell - taunt always false
-							// If suspended pet - that will be restore there
-							// If logging in, client will send toggle
-							c->SetPetCommandState(PET_BUTTON_HOLD, 0);
-							c->SetPetCommandState(PET_BUTTON_GHOLD, 0);
-							c->SetPetCommandState(PET_BUTTON_FOCUS, 0);
-							c->SetPetCommandState(PET_BUTTON_SPELLHOLD, 0);
-						}
 
-						pet->ApplyGlobalBuffs();
+					if (!IsClient()) {
+						break;
+					}
+
+					for (auto pet : GetAllPets()) {
+						if (pet->CastToNPC()->GetPetSpellID() == spell_id) {
+							NPC* pet_npc = pet->CastToNPC();
+							uint8 pet_class = pet_npc->GetPetOriginClass();
+							Client* c = CastToClient();
+
+							if (!pet_npc || !c) {
+								break;
+							}
+
+							pet_npc->ConfigureInitialCommands();
+							pet_npc->ApplyGlobalBuffs();
+						}
 					}
 				}
 				break;
