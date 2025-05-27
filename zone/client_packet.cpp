@@ -1071,9 +1071,16 @@ void Client::CompleteConnect()
 	ApplyGlobalBuffs();
 
 	if (zone->GetZoneID() != Zones::BAZAAR && m_inv.HasItem(17899,1,invWherePersonal) >= 0) {
-		Message(Chat::System, "Trader's Satchels may not leave the Bazaar.");
+		Message(Chat::Red, "Trader's Satchels may not leave the Bazaar.");
+		SetBucket("TraderBagEjection", "true");
+
 		const auto safe = zone_store.GetZoneSafeCoordinates(Zones::BAZAAR);
 		MovePC(Zones::BAZAAR, safe.x, safe.y, safe.z, safe.w);
+	}
+
+	if (zone->GetZoneID() == Zones::BAZAAR && GetBucket("TraderBagEjection") == "true") {
+		SendMarqueeMessage(Chat::Red, "Trader's Satchels may not leave the Bazaar.", 30000);
+		DeleteBucket("TraderBagEjection");
 	}
 }
 
@@ -13979,6 +13986,10 @@ void Client::Handle_OP_ShopPlayerBuy(const EQApplicationPacket *app)
 	}
 
 	CheckItemDiscoverability(item_id);
+
+	if (item_id == 17899) {
+		SendMarqueeMessage(Chat::Red, "Trader's Satchels may not leave the Bazaar.", 30000);
+	}
 
 	safe_delete(inst);
 	safe_delete(outapp);
