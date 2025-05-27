@@ -1320,6 +1320,10 @@ void Client::FixModel(Spawn_Struct* npc) {
 			}
 		break;
 
+		case Race::Skeleton:
+			npc->race = Race::Skeleton2;
+		break;
+
 		case Race::Fayguard:
 			npc->race = Race::WoodElf;
 			if (npc->equip_chest2 == 0 && npc->gender == Gender::Male) {
