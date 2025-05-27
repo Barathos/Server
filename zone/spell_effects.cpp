@@ -4100,13 +4100,13 @@ void Mob::BuffProcess()
 						}
 					}
 
-					if (buffs[buffs_i].ticsremaining < 0 && buffs[buffs_i].expiration_timer.Check(false)) {
+					if (buffs[buffs_i].ticsremaining < 0 && (IsDetrimentalSpell(buffs[buffs_i].spellid) || buffs[buffs_i].expiration_timer.Check(false))) {
 						LogSpells("Buff [{}] in slot [{}] has expired. Fading", buffs[buffs_i].spellid, buffs_i);
 						BuffFadeBySlot(buffs_i);
 					}
 					else
 					{
-						LogSpells("Buff [{}] in slot [{}] has [{}] tics remaining, [{}] ms remaining", buffs[buffs_i].spellid, buffs_i, buffs[buffs_i].ticsremaining, buffs[buffs_i].expiration_timer.GetRemainingTime());
+						LogSpells("Buff [{}] in slot [{}] has [{}] tics remaining, [{}]ms remaining", buffs[buffs_i].spellid, buffs_i, buffs[buffs_i].ticsremaining, buffs[buffs_i].expiration_timer.GetRemainingTime());
 					}
 				}
 				else if (IsClient() && !(CastToClient()->ClientVersionBit() & EQ::versions::maskSoFAndLater))

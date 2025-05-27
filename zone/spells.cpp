@@ -6973,7 +6973,7 @@ void Client::SendBuffDurationPacket(Buffs_Struct &buff, int slot)
 	sbf->buff.level = buff.casterlevel > 0 ? buff.casterlevel : GetLevel();
 	sbf->buff.bard_modifier = buff.instrument_mod;
 	sbf->buff.spellid = buff.spellid;
-	sbf->buff.duration = buff.ticsremaining;
+	sbf->buff.duration = (spells[buff.spellid].buff_duration && buff.ticsremaining > 0) ? buff.ticsremaining : 0;
 	if (buff.dot_rune)
 		sbf->buff.counters = buff.dot_rune;
 	else if (buff.magic_rune)
