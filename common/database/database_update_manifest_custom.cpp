@@ -262,7 +262,7 @@ CREATE TABLE `character_dynamic_aa_timers` (
   `aa_id` int(10) NOT NULL,
   `timer_id` int(10) NOT NULL,
   PRIMARY KEY (`character_id`,`aa_id`),
-  UNIQUE KEY `character_id` (`character_id`,`aa_id`,`timer_id`),
+  UNIQUE KEY `character_id` (`character_id`,`timer_id`),
   KEY `aa_id` (`aa_id`),
   KEY `timer_id` (`timer_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
