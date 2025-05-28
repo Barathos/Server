@@ -249,6 +249,27 @@ ON DUPLICATE KEY UPDATE
 		.content_schema_update = false,
 	},
 
+	// Add character_dynamic_aa_timers table
+	ManifestEntry{
+		.version = 14,
+		.description = "2025_05_27_character_dynamic_aa_timers_table",
+		.check = "SHOW TABLES LIKE 'character_dynamic_aa_timers'",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+CREATE TABLE `character_dynamic_aa_timers` (
+  `character_id` int(10) NOT NULL,
+  `aa_id` int(10) NOT NULL,
+  `timer_id` int(10) NOT NULL,
+  PRIMARY KEY (`character_id`,`aa_id`),
+  UNIQUE KEY `character_id` (`character_id`,`aa_id`,`timer_id`),
+  KEY `aa_id` (`aa_id`),
+  KEY `timer_id` (`timer_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+)",
+		.content_schema_update = false,
+	},
+
 	// Used for testing
 	//	ManifestEntry{
 	//		.version = 9229,

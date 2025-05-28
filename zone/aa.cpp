@@ -46,6 +46,7 @@ Copyright (C) 2001-2016 EQEMu Development Team (http://eqemulator.net)
 #include "../common/repositories/aa_rank_prereqs_repository.h"
 #include "../common/repositories/character_aa_disabled_repository.h"
 #include "../common/repositories/character_pet_command_states_repository.h"
+#include "../common/repositories/character_dynamic_aa_timers_repository.h"
 
 extern WorldServer worldserver;
 extern QueryServ* QServ;
@@ -1241,81 +1242,85 @@ void Client::SetToggleAAStatus(int ability_id, bool status) {
 }
 
 void Client::GetDynamicAATimers() {
-    auto results = DataBucketsRepository::GetWhere(
-        database,
-        fmt::format(
-            "character_id = {} AND `key` LIKE '{}%%'",
-            CharacterID(),
-            "aaTimer_"
-        )
-    );
+    LogDebug("Getting dynamic AA timers.");
+    m_aa_timers_cache.clear();
+    auto r = CharacterDynamicAaTimersRepository::GetByCharacterId(database, CharacterID());
 
-    aa_timers_cache.clear();
-
-    for (const auto& bucket : results) {
-        if (!bucket.value.empty()) {
-			int timer_value = Strings::ToInt(bucket.value, 0);
-			int timer_id = Strings::ToInt(bucket.key_.substr(8), -1);
-
-			if (timer_id == -1) {
-				LogError("Could not parse TimerID for Character ID [{}], Timer Key [{}]", CharacterID(), bucket.key_);
-			}
-
-			aa_timers_cache[timer_value] = timer_id;
-
-			LogDebugDetail("Cached TimerID: [{}] - [{}]", timer_id, timer_value);
-        }
+    for (const auto& e : r) {
+        m_aa_timers_cache[e.aa_id] = e.timer_id;
+        LogDebugDetail("Cached AA ID: [{}] -> timer_id: [{}]", e.aa_id, e.timer_id);
     }
 }
 
 int Client::GetDynamicAATimer(int aa_id) {
-    auto it = aa_timers_cache.find(aa_id);
-    if (it != aa_timers_cache.end()) {
-        LogDebugDetail("Returning TimerID from cache: [{}] - [{}]", it->second, aa_id);
-        return it->second;
+    if (m_aa_timers_cache.empty()) {
+        LogDebugDetail("Cache Miss, repopulating cache.");
+        GetDynamicAATimers();
     }
 
-    GetDynamicAATimers();
+    auto a = m_aa_timers_cache.find(aa_id);
+    if (a != m_aa_timers_cache.end())
+        return a->second;
 
-    it = aa_timers_cache.find(aa_id);
-    if (it != aa_timers_cache.end()) {
-        LogDebugDetail("Returning TimerID after fetching: [{}] - [{}]", it->second, aa_id);
-        return it->second;
-    }
-
-    return 0;
+    LogDebugDetail("Not in DB, assigning new timer.");
+    return SetDynamicAATimer(aa_id);
 }
 
 int Client::SetDynamicAATimer(int aa_id) {
-    for (int timerID = 1; timerID <= (pTimerAAEnd - pTimerAAStart); ++timerID) {
-        if (std::none_of(aa_timers_cache.begin(), aa_timers_cache.end(), [timerID](const auto& pair) { return pair.second == timerID; })) {
-            aa_timers_cache[aa_id] = timerID;
+    for (int t = 1; t <= (pTimerAAEnd - pTimerAAStart); ++t) {
+        if (std::any_of(m_aa_timers_cache.begin(), m_aa_timers_cache.end(),
+                        [t](const auto& p) { return p.second == t; }))
+            continue;
 
-            std::string key = "aaTimer_" + std::to_string(timerID);
-            SetBucket(key, std::to_string(aa_id));
+        auto e = CharacterDynamicAaTimersRepository::NewEntity();
+        e.character_id = CharacterID();
+        e.aa_id = aa_id;
+        e.timer_id = t;
 
-            LogDebugDetail("Set TimerID: [{}] for AA ID: [{}]", timerID, aa_id);
+        auto r = CharacterDynamicAaTimersRepository::InsertOne(database, e);
+        int id = 0;
+
+        if (r.character_id != 0) {
+            id = t;
+            LogDebugDetail("Set timer_id: [{}] for AA ID: [{}]", id, aa_id);
+        } else {
+            auto x = CharacterDynamicAaTimersRepository::GetWhere(
+                database,
+                fmt::format("character_id = {} AND aa_id = {}", CharacterID(), aa_id)
+            );
+
+            if (x.empty()) {
+                LogError("Insert failed and couldn't find existing timer for AA ID [{}]", aa_id);
+                return 0;
+            }
+
+            id = x[0].timer_id;
+            LogDebug("Found existing timer for AA ID [{}]: [{}]", aa_id, id);
         }
+
+        m_aa_timers_cache[aa_id] = id;
+
+        if (id >= 100) {
+            LogError("WARNING: Out-of-Range AA Timer ID [{}] assigned to character [{}] ([{}]) for AA [{}] -> Classes [{}]",
+                     id, GetCleanName(), CharacterID(), aa_id, GetClassesBits());
+        }
+
+        return id;
     }
+
+    LogError("Unable to assign AA Timer ID - no available slots!");
     return 0;
 }
 
 void Client::ClearDynamicAATimers() {
     ResetAlternateAdvancementTimers();
+    m_aa_timers_cache.clear();
 
-    aa_timers_cache.clear();
+    CharacterDynamicAaTimersRepository::DeleteByCharacterId(database, CharacterID());
 
-	DataBucketsRepository::DeleteWhere(
-		database,
-		fmt::format(
-			"character_id = {} AND `key` LIKE '{}%%'",
-			CharacterID(),
-			"aaTimer_"
-		)
-	);
-
-    LogDebugDetail("Cleared all dynamic AA timers");
+    LogDebug("Cleared all dynamic AA timers");
 }
+
 
 void Client::ResetAlternateAdvancementTimer(int ability) {
 	AA::Rank *rank = zone->GetAlternateAdvancementRank(casting_spell_aa_id);
