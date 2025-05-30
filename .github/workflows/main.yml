@@ -1,0 +1,81 @@
+name: Deploy
+
+on:
+  push:
+    branches: 
+      - staging
+      - 'deploy/*'
+  create:
+    branches:
+      - 'deploy/*'
+
+jobs:
+  deploy-staging:
+    if: github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Deploy to Test server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.N_THJ_TEST_HOST }}
+        username: ${{ secrets.N_THJ_TEST_USER }}
+        key: ${{ secrets.N_THJ_TEST_KEY }}
+        port: 2222
+        script: |
+          set -e
+          cd ~/code/
+          echo "Deploying staging branch..."
+          git fetch origin
+          git reset --hard origin/staging
+          echo "✅ Successfully deployed staging to test server"
+
+  deploy-production:
+    if: startsWith(github.ref, 'refs/heads/deploy/')
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Deploy to Production server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.N_THJ_PROD_HOST }}
+        username: ${{ secrets.N_THJ_PROD_USER }}
+        key: ${{ secrets.N_THJ_PROD_KEY }}
+        port: ${{ secrets.N_THJ_PROD_PORT }}
+        script: |
+          set -e  # Exit on any error
+          
+          cd /opt/thj/eqemu/code
+          
+          # Verify we're in the right directory
+          if [ ! -d ".git" ]; then
+            echo "Error: Not in a git repository"
+            exit 1
+          fi
+          
+          # Fetch all branches
+          echo "Fetching latest changes..."
+          git fetch --all
+          
+          # Extract branch name from GitHub ref
+          BRANCH_NAME="${{ github.ref_name }}"
+          echo "Deploying branch: $BRANCH_NAME"
+          
+          # Switch to the deploy branch
+          if git show-ref --verify --quiet refs/heads/"$BRANCH_NAME"; then
+            echo "Branch exists locally, checking out..."
+            git checkout "$BRANCH_NAME"
+          else
+            echo "Creating new local branch from remote..."
+            git checkout -b "$BRANCH_NAME" origin/"$BRANCH_NAME"
+          fi
+          
+          # Pull latest changes
+          echo "Pulling latest changes..."
+          git pull origin "$BRANCH_NAME"
+          
+          # Show current status
+          echo "Current HEAD:"
+          git log -1 --oneline
+          
+          echo "✅ Successfully deployed branch $BRANCH_NAME to production server"
