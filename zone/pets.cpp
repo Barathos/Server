@@ -1261,7 +1261,7 @@ std::vector<Mob*> Mob::GetAllPets() {
 std::vector<Mob*> Mob::GetAllSwarmPets() {
 	std::vector<Mob*> swarm_list;
 	for (auto e : entity_list.GetNPCList()) {
-		if (e.second && e.second->GetSwarmOwner() == GetID() && !e.second->GetSwarmInfo()->m_familiar) {
+		if (e.second && e.second->GetSwarmOwner() == GetID() && (e.second->GetSwarmInfo() && !e.second->GetSwarmInfo()->m_familiar)) {
 			swarm_list.push_back(e.second);
 		}
 	}
