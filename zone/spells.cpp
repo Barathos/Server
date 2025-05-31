@@ -3333,6 +3333,12 @@ int Mob::CheckStackConflict(uint16 spellid1, int caster_level1, uint16 spellid2,
 		return 0;
 	}
 
+	// Familiar spells do not interact via stacking with non-familiar spells
+	if (IsEffectInSpell(spellid1, SE_Familiar) != IsEffectInSpell(spellid2, SE_Familiar)) {
+		LogDebug("Familiar is in one of these spells, no conflict!");
+		return 0;
+	}
+
 	if (RuleB(Custom, BypassMulticlassStackConflict)) {
 		auto check_class_overlap = [&](int spellid1, int spellid2) -> bool {
 			if (spellid1 == spellid2) {
