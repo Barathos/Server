@@ -24,7 +24,7 @@ jobs:
         port: 2222
         script: |
           set -e
-          cd ~/code/
+          cd /home/eqemu/code/
           echo "Deploying staging branch..."
           git fetch origin
           git reset --hard origin/staging
@@ -45,7 +45,7 @@ jobs:
         script: |
           set -e  # Exit on any error
           
-          cd /opt/thj/eqemu/code
+          cd /home/eqemu/code/
           
           # Verify we're in the right directory
           if [ ! -d ".git" ]; then
