@@ -1557,6 +1557,25 @@ void Mob::DoAttack(Mob *other, DamageHitInfo &hit, ExtraAttackOptions *opts, boo
 	}
 }
 
+
+inline float HeroicSTRScale(float str) {
+    int baseCap = RuleI(Custom, ScaleAutoAttackHStrSoftCap);
+    float c1 = float(baseCap);
+    float c2 = c1 * 2.0f;
+    float c3 = c1 * 3.0f;
+
+    // use the MIN()/MAX() macros from global_define.h
+    float t1 = MIN(str,             c1);
+    float t2 = MIN( MAX(str - c1, 0.0f), c2 - c1);
+    float t3 = MIN( MAX(str - c2, 0.0f), c3 - c2);
+    float t4 = MAX(str - c3,         0.0f);
+
+    return t1 * 0.01f
+         + t2 * 0.0075f
+         + t3 * 0.005f
+         + t4 * 0.0025f;
+}
+
 //note: throughout this method, setting `damage` to a negative is a way to
 //stop the attack calculations
 // IsFromSpell added to allow spell effects to use Attack. (Mainly for the Rampage AA right now.)
@@ -1750,7 +1769,8 @@ bool Mob::Attack(Mob* other, int Hand, bool bRiposte, bool IsStrikethrough, bool
 	}
 
 	if (RuleR(Custom, ScaleAutoAttackByHStr)) {
-		my_hit.damage_done += my_hit.damage_done * (RuleR(Custom, ScaleAutoAttackByHStr) * GetHeroicSTR() / 100.0);
+		float bonus = HeroicSTRScale(GetHeroicSTR());
+		my_hit.damage_done += my_hit.damage_done * (RuleR(Custom, ScaleAutoAttackByHStr) * bonus);
 	}
 
 	///////////////////////////////////////////////////////////

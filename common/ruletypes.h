@@ -1278,6 +1278,7 @@ RULE_BOOL(Custom,	AlternateMobFDBehavior,					true, "Enable to cause mob FD effe
 RULE_BOOL(Custom,   EnableAccountAltCurrency, 				false, "Enable account-based alternate currency.")
 RULE_INT(Custom,  	AAConsumeBaseValue, 					50, "Base value for AA consumption")
 RULE_REAL(Custom, 	ScaleAutoAttackByHStr, 					0.0f, "Scale auto attack damage by this value. 0.0 to disable.")
+RULE_INT(Custom, 	ScaleAutoAttackHStrSoftCap,	 			100, "Soft-cap: 1.0 to cap, then 0.75% to 2x cap, 0.5% to 3xcap, 0.25% beyond.")
 RULE_STRING(Custom, DoppelgangerBuffBacklist, "21773,30736", "Comma-seperated list of spells to never transfer to Doppelganger")
 
 // Seasonal
