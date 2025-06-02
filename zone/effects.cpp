@@ -397,6 +397,7 @@ int64 Mob::GetActDoTDamage(uint16 spell_id, int64 value, Mob* target, bool from_
 	int64 extra_dmg = 0;
 	int16 chance = 0;
 	chance += GetSharedCriticalDoTChance();
+	bool Critical = false;
 
 	if (spellbonuses.CriticalDotDecay)
 		chance += GetDecayEffectValue(spell_id, SE_CriticalDotDecay);
@@ -454,65 +455,94 @@ int64 Mob::GetActDoTDamage(uint16 spell_id, int64 value, Mob* target, bool from_
 
 	value -= extra_dmg;
 
-	if (!spells[spell_id].good_effect && chance > 0 && (zone->random.Roll(chance))) {
-		int64 ratio = 200;
-		ratio += GetSharedDotCritDmgIncrease();
+	if (!spells[spell_id].good_effect) {
+		bool isNecroCaster = (IsOfClientBot() && HasClass(Class::Necromancer)) || (IsMerc() && HasClass(Class::Necromancer));
 
-		value = value * ratio / 100;
+		bool necroCrit = false;
+		bool didCrit = false;
 
-		// Generate flavorful message based on resist type
-		std::string crit_message;
-		std::string self_message;
-
-		switch(spells[spell_id].resist_type) {
-			case RESIST_FIRE:
-				crit_message = fmt::format("{}'s fiery affliction consumes {} with devastating intensity! ({}) ({})",
-										 GetCleanName(), target->GetCleanName(), std::abs(value), spells[spell_id].name);
-				self_message = fmt::format("Your fiery affliction rages out of control upon {}! ({}) ({})",
-										 target->GetCleanName(), std::abs(value), spells[spell_id].name);
-				break;
-
-			case RESIST_COLD:
-				crit_message = fmt::format("{}'s freezing affliction bites deep into {}, chilling to the bone! ({}) ({})",
-										 GetCleanName(), target->GetCleanName(), std::abs(value), spells[spell_id].name);
-				self_message = fmt::format("Your freezing affliction penetrates deep into {}! ({}) ({})",
-										 target->GetCleanName(), std::abs(value), spells[spell_id].name);
-				break;
-
-			case RESIST_POISON:
-				crit_message = fmt::format("{}'s toxic affliction courses through {}'s veins with lethal potency! ({}) ({})",
-										 GetCleanName(), target->GetCleanName(), std::abs(value), spells[spell_id].name);
-				self_message = fmt::format("Your toxic affliction reaches critical toxicity in {}! ({}) ({})",
-										 target->GetCleanName(), std::abs(value), spells[spell_id].name);
-				break;
-
-			case RESIST_DISEASE:
-				crit_message = fmt::format("{}'s vile affliction ravages {} with virulent force! ({}) ({})",
-										 GetCleanName(), target->GetCleanName(), std::abs(value), spells[spell_id].name);
-				self_message = fmt::format("Your vile affliction ravages {} with exceptional virulence! ({}) ({})",
-										 target->GetCleanName(), std::abs(value), spells[spell_id].name);
-				break;
-
-			case RESIST_MAGIC:
-			default:
-				crit_message = fmt::format("{}'s arcane affliction tears through {} with exceptional power! ({}) ({})",
-										 GetCleanName(), target->GetCleanName(), std::abs(value), spells[spell_id].name);
-				self_message = fmt::format("Your arcane affliction tears through {} with critical force! ({}) ({})",
-										 target->GetCleanName(), std::abs(value), spells[spell_id].name);
-				break;
+		if (chance > 0 && zone->random.Roll(chance)) {
+			didCrit = true;
+		}
+		else if (isNecroCaster
+				&& GetLevel() >= RuleI(Spells, NecroDotCritLevel)
+				&& zone->random.Roll(RuleI(Spells, NecroDotCritChance))
+				)
+		{
+			didCrit = true;
+			necroCrit = true;
 		}
 
-		entity_list.FilteredMessageClose(
-			this,
-			true,
-			RuleI(Range, SpellMessages),
-			Chat::SpellCrit,
-			FilterSpellCrits,
-			crit_message.c_str()
-		);
+		if (didCrit) {
 
-		if (IsClient()) {
-			Message(Chat::SpellCrit, self_message.c_str());
+
+			int64 ratio = 200;
+			ratio += GetSharedDotCritDmgIncrease();
+
+			value = value * ratio / 100;
+
+			// Generate flavorful message based on resist type
+			std::string crit_message;
+			std::string self_message;
+
+			switch(spells[spell_id].resist_type) {
+				case RESIST_FIRE:
+					crit_message = fmt::format("{}'s fiery affliction consumes {} with devastating intensity! ({}) ({})",
+											 GetCleanName(), target->GetCleanName(), std::abs(value), spells[spell_id].name);
+					self_message = fmt::format("Your fiery affliction rages out of control upon {}! ({}) ({})",
+											 target->GetCleanName(), std::abs(value), spells[spell_id].name);
+					break;
+
+				case RESIST_COLD:
+					crit_message = fmt::format("{}'s freezing affliction bites deep into {}, chilling to the bone! ({}) ({})",
+											 GetCleanName(), target->GetCleanName(), std::abs(value), spells[spell_id].name);
+					self_message = fmt::format("Your freezing affliction penetrates deep into {}! ({}) ({})",
+											 target->GetCleanName(), std::abs(value), spells[spell_id].name);
+					break;
+
+				case RESIST_POISON:
+					crit_message = fmt::format("{}'s toxic affliction courses through {}'s veins with lethal potency! ({}) ({})",
+											 GetCleanName(), target->GetCleanName(), std::abs(value), spells[spell_id].name);
+					self_message = fmt::format("Your toxic affliction reaches critical toxicity in {}! ({}) ({})",
+											 target->GetCleanName(), std::abs(value), spells[spell_id].name);
+					break;
+
+				case RESIST_DISEASE:
+					crit_message = fmt::format("{}'s vile affliction ravages {} with virulent force! ({}) ({})",
+											 GetCleanName(), target->GetCleanName(), std::abs(value), spells[spell_id].name);
+					self_message = fmt::format("Your vile affliction ravages {} with exceptional virulence! ({}) ({})",
+											 target->GetCleanName(), std::abs(value), spells[spell_id].name);
+					break;
+
+				case RESIST_MAGIC:
+				default:
+					crit_message = fmt::format("{}'s arcane affliction tears through {} with exceptional power! ({}) ({})",
+											 GetCleanName(), target->GetCleanName(), std::abs(value), spells[spell_id].name);
+					self_message = fmt::format("Your arcane affliction tears through {} with critical force! ({}) ({})",
+											 target->GetCleanName(), std::abs(value), spells[spell_id].name);
+					break;
+			}
+
+			entity_list.FilteredMessageClose(
+				this,
+				true,
+				RuleI(Range, SpellMessages),
+				Chat::SpellCrit,
+				FilterSpellCrits,
+				crit_message.c_str()
+			);
+
+			if (IsClient()) {
+				Message(Chat::SpellCrit, self_message.c_str());
+			}
+		}
+		if (necroCrit) {
+			if (IsClient()) {
+				std::string self_message_necro;
+				self_message_necro = fmt::format("Your necromantic mastery intensifies a critical affliction on {}!",
+						target->GetCleanName());
+				Message(Chat::SpellCrit, self_message_necro.c_str());
+			}
 		}
 	}
 
