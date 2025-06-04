@@ -1046,6 +1046,7 @@ public:
 	int MemmedCount();
 	std::vector<int> GetLearnableDisciplines(uint8 min_level = 1, uint8 max_level = 0);
 	std::vector<int> GetLearnedDisciplines();
+	int GetMemmedSpell(EQ::spells::CastingSlot slot);
 	std::vector<int> GetMemmedSpells();
 	std::vector<int> GetScribeableSpells(uint8 min_level = 1, uint8 max_level = 0);
 	std::vector<int> GetScribedSpells();

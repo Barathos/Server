@@ -1969,7 +1969,13 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 				c->SetLinkedSpellReuseTimer(spells[spell_id].timer_id, (spells[spell_id].recast_time / 1000) - (casting_spell_recast_adjust / 1000));
 			}
 
-			c->MemorizeSpell(static_cast<uint32>(slot), spell_id, memSpellSpellbar, casting_spell_recast_adjust);
+			//Don't deactivate the spell gem on the client when the spell is cast from places other than their spellbar.
+			//This is done by checking if the spell in the casted slot is actually the spell being cast.
+			int memmed_spell = c->GetMemmedSpell(slot);
+			bool cast_from_gem = IsValidSpell(memmed_spell) && memmed_spell == spell_id;
+			if (cast_from_gem) {
+				c->MemorizeSpell(static_cast<uint32>(slot), spell_id, memSpellSpellbar, casting_spell_recast_adjust);
+			}
 
 			// this tells the client that casting may happen again
 			SetMana(GetMana());

@@ -1,6 +1,8 @@
 #include "../client.h"
 #include <regex>
 
+using EQ::spells::CastingSlot;
+
 void command_castspellthj(Client *c, const Seperator *sep)
 {
     if (SPDAT_RECORDS <= 0) {
@@ -94,5 +96,15 @@ void command_castspellthj(Client *c, const Seperator *sep)
         ).c_str()
     );
 
-    c->CastSpell(spell_id, target_id, EQ::spells::CastingSlot::Gem1);
+    CastingSlot target_slot = CastingSlot::Gem1;
+    //Checking to see if they actually had it memmed and using that gem if so
+    for(uint32 slot = uint32(CastingSlot::Gem1); slot < uint32(CastingSlot::MaxGems) && slot < EQ::spells::SPELL_GEM_COUNT; slot++) {
+	    int memmed_spell = c->GetPP().mem_spells[slot];
+	    if (IsValidSpell(memmed_spell) && memmed_spell == spell_id) {
+		    target_slot = CastingSlot(slot);
+		    break;
+	    }
+    }
+
+    c->CastSpell(spell_id, target_id, target_slot);
 }

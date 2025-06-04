@@ -12258,6 +12258,15 @@ std::vector<int> Client::GetLearnedDisciplines() {
 	return learned_disciplines;
 }
 
+int Client::GetMemmedSpell(EQ::spells::CastingSlot slot) {
+	uint32 unsafe_slot = uint32(slot);
+	if (unsafe_slot >= EQ::spells::SPELL_GEM_COUNT) {
+		return SPELL_UNKNOWN;
+	}
+
+	return m_pp.mem_spells[unsafe_slot];
+}
+
 std::vector<int> Client::GetMemmedSpells() {
 	std::vector<int> memmed_spells;
 	for (int index = 0; index < EQ::spells::SPELL_GEM_COUNT; index++) {
