@@ -1559,7 +1559,7 @@ void Mob::DoAttack(Mob *other, DamageHitInfo &hit, ExtraAttackOptions *opts, boo
 
 inline float HeroicSTRScale(float str) {
 	int base_cap = RuleI(Custom, ScaleAutoAttackHStrSoftCap);
-  float scale_floor = RuleR(Custom, ScaleAutoAttackHStrScaleFloor); // 0.25
+	float scale_floor = RuleR(Custom, ScaleAutoAttackHStrScaleFloor); // 0.25
 	float scale_factor = RuleR(Custom, ScaleAutoAttackHStrScaleFactor); // 0.0075
 	int high_cap = static_cast<int>(base_cap + ((1.0f - scale_floor) / scale_factor));
 	if (str <= base_cap) {
@@ -1575,6 +1575,28 @@ inline float HeroicSTRScale(float str) {
 		}
 		
 		return scaled_str / 100.0f;
+	}
+}
+
+inline float HeroicDexScale(float dex) {
+	int base_cap = RuleI(Custom, ScaleBowHDexSoftCap);
+	float scale_floor = RuleR(Custom, ScaleBowHDexScaleFloor); // 0.15
+	float scale_factor = RuleR(Custom, ScaleBowHDexScaleFactor); // 0.0125
+	float scale_divide = RuleR(Custom, ScaleBowByHDexDivide); // 6.66
+	int high_cap = static_cast<int>(base_cap + ((1.0f - scale_floor) / scale_factor));
+	if (dex <= base_cap) {
+		return dex / 100.0f / scale_divide;
+	} else {
+		float scaler_start = 1.0f;
+		int capped_dex = std::min(high_cap, static_cast<int>(dex));
+		int count = capped_dex - base_cap;
+		float sum_scaler = count * scaler_start - scale_factor * (count * (count + 1)) / 2.0f;
+		float scaled_dex = static_cast<float>(base_cap) + std::max(sum_scaler, 0.0f);
+		if (dex > high_cap) {
+			scaled_dex += (dex - high_cap) * std::max(scaler_start - scale_factor * count, 0.0f);
+		}
+		
+		return scaled_dex / 100.0f / scale_divide;
 	}
 }
 
@@ -6709,6 +6731,11 @@ void Mob::CommonOutgoingHitSuccess(Mob* defender, DamageHitInfo &hit, ExtraAttac
 			{
 				LogDebug("hit clamped to [{}] from [{}]", min, hit.damage_done);
 				hit.damage_done = min;
+			}
+			
+			if (RuleR(Custom, ScaleBowByHDex)) {
+				float bonus = HeroicDexScale(GetHeroicDEX());
+				hit.damage_done += hit.damage_done * (RuleR(Custom, ScaleBowByHDex) * bonus);
 			}
 		}
 	}
