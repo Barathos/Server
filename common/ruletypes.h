@@ -1279,10 +1279,10 @@ RULE_BOOL(Custom,   EnableAccountAltCurrency, 				false, "Enable account-based a
 RULE_INT(Custom,  	AAConsumeBaseValue, 					50, "Base value for AA consumption")
 RULE_REAL(Custom, 	ScaleAutoAttackByHStr, 					1.0f, "Scale auto attack damage by this value. 0.0 to disable.")
 RULE_INT(Custom, 	ScaleAutoAttackHStrSoftCap,	 			100, "Soft-cap: Lower bound of hStr linear decay soft scaling")
-RULE_INT(Custom, 	ScaleAutoAttackHStrHighCap,	 			200, "Soft-cap: Upper bound of hStr linear decay soft scaling.")
-RULE_REAL(Custom, 	ScaleAutoAttackHStrScaleFactor,			0.0075, "Soft-cap: Scaling factor of hStr linear decay between upper and lower bound.")
-RULE_STRING(Custom, DoppelgangerBuffBacklist, 				"21773,30736", "Comma-seperated list of spells to never transfer to Doppelganger")
-RULE_INT(Custom, NecroDotCritLevel,						  	12, "Necromancer inherent dot critical chance begins at this level")
+RULE_REAL(Custom, 	ScaleAutoAttackHStrScaleFloor,	 		0.25, "Soft-cap: Scaling floor of hStr linear decay curve.")
+RULE_REAL(Custom, 	ScaleAutoAttackHStrScaleFactor,	 		0.0075, "Soft-cap: Scaling factor of hStr linear decay between upper and lower bound.")
+RULE_STRING(Custom, DoppelgangerBuffBacklist,				"21773,30736", "Comma-seperated list of spells to never transfer to Doppelganger")
+RULE_INT(Custom, NecroDotCritLevel,							12, "Necromancer inherent dot critical chance begins at this level")
 RULE_INT(Spells, NecroDotCritChance,						7, "Necromancer inherent dot critical percentage chance")
 
 // Seasonal
