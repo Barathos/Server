@@ -1557,23 +1557,25 @@ void Mob::DoAttack(Mob *other, DamageHitInfo &hit, ExtraAttackOptions *opts, boo
 	}
 }
 
-
 inline float HeroicSTRScale(float str) {
-    int baseCap = RuleI(Custom, ScaleAutoAttackHStrSoftCap);
-    float c1 = float(baseCap);
-    float c2 = c1 * 2.0f;
-    float c3 = c1 * 3.0f;
+	int base_cap = RuleI(Custom, ScaleAutoAttackHStrSoftCap);
+	int high_cap = RuleI(Custom, ScaleAutoAttackHStrHighCap); // 200
+	float scale_factor = RuleR(Custom, ScaleAutoAttackHStrScaleFactor); // 0.0075
 
-    // use the MIN()/MAX() macros from global_define.h
-    float t1 = MIN(str,             c1);
-    float t2 = MIN( MAX(str - c1, 0.0f), c2 - c1);
-    float t3 = MIN( MAX(str - c2, 0.0f), c3 - c2);
-    float t4 = MAX(str - c3,         0.0f);
+	if (str <= base_cap) {
+		return str / 100.0f;
+	} else {
+		float scaler_start = 1.0f;
+		int capped_str = std::min(high_cap, static_cast<int>(str));
+		int count = capped_str - base_cap;
+		float sum_scaler = count * scaler_start - scale_factor * (count * (count + 1)) / 2.0f;
+		float scaled_str = static_cast<float>(base_cap) + std::max(sum_scaler, 0.0f);
+		if (str > high_cap) {
+			scaled_str += (str - high_cap) * std::max(scaler_start - scale_factor * count, 0.0f);
+		}
 
-    return t1 * 0.01f
-         + t2 * 0.0075f
-         + t3 * 0.005f
-         + t4 * 0.0025f;
+		return scaled_str / 100.0f;
+	}
 }
 
 //note: throughout this method, setting `damage` to a negative is a way to
