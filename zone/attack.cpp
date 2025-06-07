@@ -1559,8 +1559,8 @@ void Mob::DoAttack(Mob *other, DamageHitInfo &hit, ExtraAttackOptions *opts, boo
 
 inline float HeroicSTRScale(float str) {
 	int base_cap = RuleI(Custom, ScaleAutoAttackHStrSoftCap);
-	float scale_floor = RuleR(Custom, ScaleAutoAttackHStrscale_floor); // 0.25
-	float scale_factor = RuleR(Custom, ScaleAutoAttackHStrscale_factor); // 0.0075
+	float scale_floor = RuleR(Custom, ScaleAutoAttackHStrscaleFloor); // 0.25
+	float scale_factor = RuleR(Custom, ScaleAutoAttackHStrScaleFactor); // 0.0075
 	int high_cap = static_cast<int>(base_cap + ((1.0f - scale_floor) / scale_factor));
 	if (str <= base_cap) {
 		return str / 100.0f;
