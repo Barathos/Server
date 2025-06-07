@@ -777,6 +777,10 @@ bool Client::Process() {
 					continue;
 				}
 
+				if (IsBardSong(buffs[buffs_i].spellid)) {
+					continue;
+				}
+
 				if (buffs[buffs_i].expiration_timer.Check(false)) {
 					LogSpells("Buff [{}] in slot [{}] has expired during fast tic. Fading", buffs[buffs_i].spellid, buffs_i);
 					BuffFadeBySlot(buffs_i);
