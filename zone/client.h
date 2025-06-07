@@ -2379,7 +2379,6 @@ private:
 	Timer endupkeep_timer;
 	Timer autosave_timer;
 	Timer tribute_timer;
-	Timer fast_tic_timer;
 
 	Timer proximity_timer;
 	Timer TaskPeriodic_Timer;

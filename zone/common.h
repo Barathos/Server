@@ -285,7 +285,7 @@ struct Buffs_Struct {
 
 	void InitExpirationTimer()
 	{
-		uint32 duration_ms = (ticsremaining + 1) * 6000;
+		uint32 duration_ms = ticsremaining * 6000;
 		expiration_timer.SetTimer(duration_ms);
 		expiration_timer.Start();
 	}
