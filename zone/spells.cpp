@@ -277,7 +277,7 @@ uint16 Mob::GetSpellImpliedTargetID(uint16 spell_id, uint16 target_id) {
 							return target_target->GetID();
 						}
 					}
- 				}
+				}
 			}
 		}
 	}
@@ -802,6 +802,7 @@ bool Mob::DoCastingChecksOnCaster(int32 spell_id, CastingSlot slot) {
 		}
 	}
 
+
 	return true;
 }
 
@@ -1089,6 +1090,54 @@ bool Mob::DoCastingChecksOnTarget(bool check_on_casting, int32 spell_id, Mob *sp
 					return false;
 				}
 			}
+		}
+	}
+	/*
+	 Require that if this has a stacking conflict, the spell will actually land.
+	 */
+	{
+		int buff_count = spell_target->GetMaxTotalSlots();
+		uint32 start_slot = spell_target->GetFirstBuffSlot(
+				IsDisciplineBuff(spell_id),
+				spells[spell_id].short_buff_box
+				);
+		uint32 end_slot = spell_target->GetLastBuffSlot(
+				IsDisciplineBuff(spell_id),
+				spells[spell_id].short_buff_box
+				);
+
+		for (uint32 buffslot = 0; buffslot < static_cast<uint32>(buff_count); buffslot++) {
+				const Buffs_Struct &curbuf = spell_target->buffs[buffslot];
+				if (!IsValidSpell(curbuf.spellid))
+					continue;
+				int32 ret = CheckStackConflict(
+						curbuf.spellid,
+						curbuf.casterlevel,
+						spell_id,
+						GetCasterLevel(spell_id),
+						entity_list.GetMobID(curbuf.casterid),
+						this,
+						buffslot
+						);
+
+				if (ret == -1) {
+					LogSpells("Adding buff [%d] to target [%s] failed: stacking prevented by spell [%d] "
+							"in slot [%d] with caster level [%d]",
+							spell_id,
+							spell_target->GetName(),
+							curbuf.spellid,
+							buffslot,
+							curbuf.casterlevel);
+					if (IsClient() && RuleB(Client, UseLiveBlockedMessage)) {
+						Message(Chat::Red,
+								"Your %s did not take hold on %s. (Blocked by %s.)",
+								spells[spell_id].name,
+								spell_target->GetName(),
+								spells[curbuf.spellid].name
+								);
+					}
+					return false;
+				}
 		}
 	}
 
@@ -3372,10 +3421,10 @@ int Mob::CheckStackConflict(uint16 spellid1, int caster_level1, uint16 spellid2,
 
 
 		auto is_same_caster = [&](Mob* caster1, Mob* caster2) {
-            return (caster1 && caster2 && caster1->GetID() == caster2->GetID()) ||
-                   (caster1 && caster1->GetID() == GetID()) ||
-                   (caster2 && caster2->GetID() == GetID());
-        };
+		return (caster1 && caster2 && caster1->GetID() == caster2->GetID()) ||
+			(caster1 && caster1->GetID() == GetID()) ||
+			(caster2 && caster2->GetID() == GetID());
+		};
 
 		if (!check_class_overlap(spellid1, spellid2) && is_same_caster(caster1, caster2)) {
 			return 0;
@@ -6527,21 +6576,21 @@ int Client::FindSpellBookSlotBySpellID(uint16 spellid) {
 
 int Client::FindSpellBookSlotBySpellName(std::string spellname) {
     std::transform(spellname.begin(), spellname.end(), spellname.begin(),
-                   [](unsigned char c){ return std::tolower(c); });
+		   [](unsigned char c){ return std::tolower(c); });
 
     for(int i = 0; i < EQ::spells::SPELLBOOK_SIZE; i++) {
-        if (!IsValidSpell(m_pp.spell_book[i])) {
-            continue;
-        }
+	if (!IsValidSpell(m_pp.spell_book[i])) {
+	    continue;
+	}
 
-        auto spell = spells[m_pp.spell_book[i]];
-        std::string spell_name_lower = spell.name;
-        std::transform(spell_name_lower.begin(), spell_name_lower.end(),
-                      spell_name_lower.begin(),
-                      [](unsigned char c){ return std::tolower(c); });
+	auto spell = spells[m_pp.spell_book[i]];
+	std::string spell_name_lower = spell.name;
+	std::transform(spell_name_lower.begin(), spell_name_lower.end(),
+		      spell_name_lower.begin(),
+		      [](unsigned char c){ return std::tolower(c); });
 
-        if(spell_name_lower == spellname)
-            return i;
+	if(spell_name_lower == spellname)
+	    return i;
     }
 
     return -1;  //default
@@ -6823,8 +6872,8 @@ bool Mob::AddProcToWeapon(uint16 spell_id, bool bPerma, uint16 iChance, uint16 b
 		for (i = 0; i < 10; i++) {
 		    // Check if the spell_id already exists in the array
 		    if (SpellProcs[i].spellID == spell_id) {
-		        LogSpells("Spell ID [{}] is already in the SpellProcs array at slot [{}], skipping add.", spell_id, i);
-		        return false; // Prevent duplicates
+			LogSpells("Spell ID [{}] is already in the SpellProcs array at slot [{}], skipping add.", spell_id, i);
+			return false; // Prevent duplicates
 		    }
 		}
 

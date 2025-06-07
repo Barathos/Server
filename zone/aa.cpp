@@ -1632,7 +1632,10 @@ void Client::ActivateAlternateAdvancementAbility(int rank_id, int target_id) {
 			if (!DoCastingChecksOnCaster(rank->spell, EQ::spells::CastingSlot::AltAbility)) {
 				return;
 			}
-
+			int32 spell_id = rank->spell;
+			if (!DoCastingChecksOnTarget(false, spell_id, entity_list.GetMob(target_id))){
+				return;
+			}
 			if (!SpellFinished(rank->spell, entity_list.GetMob(target_id), EQ::spells::CastingSlot::AltAbility, spells[rank->spell].mana, -1, spells[rank->spell].resist_difficulty, false, -1,
 				spell_type + pTimerAAStart, timer_duration, false, rank->id)) {
 					LogDebug("Casting Failed?");

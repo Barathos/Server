@@ -1180,6 +1180,30 @@ bool Client::UseDiscipline(uint32 spell_id, uint32 target) {
 	if (spell.buff_duration_formula != 0 && spell.target_type == ST_Self && HasDiscBuff())
 		return false;
 
+	int target_id = GetSpellImpliedTargetID(spell_id, target);
+	auto spell_target = entity_list.GetMob(target_id);
+
+	if (spell_target && IsEffectInSpell(spell_id, SE_RiposteChance)) {
+		for (auto target_buff_spell_id : spell_target->GetBuffSpellIDs()) {
+			if (!IsValidSpell(target_buff_spell_id))
+				continue;
+			int idx = GetSpellEffectIndex(target_buff_spell_id, SE_StackingCommand_Block);
+			if (idx >= 0 && spells[target_buff_spell_id].base_value[idx] == 173) {
+				uint32 secondsRemaining = 0;
+				for (uint32 j = 0; j < static_cast<uint32>(GetMaxTotalSlots()); ++j) {
+					if (buffs[j].spellid == target_buff_spell_id) {
+						secondsRemaining = buffs[j].ticsremaining * 6;
+						break;
+					}
+				}
+				Message(Chat::SpellFailure,
+						"You cannot activate a Riposte Discipline for %u more seconds.",
+						secondsRemaining);
+				return false;
+			}
+		}
+	}
+
 	//Check the disc timer
 	pTimerType DiscTimer = pTimerDisciplineReuseStart + spell.timer_id;
 
@@ -1221,14 +1245,17 @@ bool Client::UseDiscipline(uint32 spell_id, uint32 target) {
 
 			if ((HasClass(Class::Bard) || RuleB(Custom, MulticlassingEnabled)) && IsCasting() && spells[spell_id].cast_time == 0) {
 				if (DoCastingChecksOnCaster(spell_id, EQ::spells::CastingSlot::Discipline)) {
-					SpellFinished(spell_id, entity_list.GetMob(target), EQ::spells::CastingSlot::Discipline, 0, -1, spells[spell_id].resist_difficulty, false, -1, (uint32)DiscTimer, reduced_recast, false);
+					SpellFinished(spell_id, entity_list.GetMob(target_id), EQ::spells::CastingSlot::Discipline, 0, -1, spells[spell_id].resist_difficulty, false, -1, (uint32)DiscTimer, reduced_recast, false);
+				}
+				else {
+					return false;
 				}
 			}
 			else {
 				if (IsCasting()) {
 					InterruptSpell();
 				}
-				if (!CastSpell(spell_id, target, EQ::spells::CastingSlot::Discipline, -1, -1, 0, -1, (uint32)DiscTimer, reduced_recast)) {
+				if (!CastSpell(spell_id, target_id, EQ::spells::CastingSlot::Discipline, -1, -1, 0, -1, (uint32)DiscTimer, reduced_recast)) {
 					return false;
 				}
 			}
@@ -1240,11 +1267,14 @@ bool Client::UseDiscipline(uint32 spell_id, uint32 target) {
 	if (instant_recast) {
 		if (HasClass(Class::Bard) && IsCasting() && spells[spell_id].cast_time == 0) {
 			if (DoCastingChecksOnCaster(spell_id, EQ::spells::CastingSlot::Discipline)) {
-				SpellFinished(spell_id, entity_list.GetMob(target), EQ::spells::CastingSlot::Discipline, 0, -1, spells[spell_id].resist_difficulty, false, -1, 0xFFFFFFFF, 0, false);
+				SpellFinished(spell_id, entity_list.GetMob(target_id), EQ::spells::CastingSlot::Discipline, 0, -1, spells[spell_id].resist_difficulty, false, -1, 0xFFFFFFFF, 0, false);
+			}
+			else {
+				return false;
 			}
 		}
 		else {
-			CastSpell(spell_id, target, EQ::spells::CastingSlot::Discipline);
+			CastSpell(spell_id, target_id, EQ::spells::CastingSlot::Discipline);
 		}
 	}
 	return true;
