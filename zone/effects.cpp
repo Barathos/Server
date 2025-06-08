@@ -199,6 +199,18 @@ int64 Mob::GetActSpellDamage(uint16 spell_id, int64 value, Mob* target) {
 
 		if (zone->random.Roll(chance)) {
 			Critical = true;
+		}
+                else if ((IsOfClientBot() && HasClass(Class::Wizard)) || (IsMerc() && GetClass() == CASTERDPS)) {
+                        if ((GetLevel() >= RuleI(Spells, WizCritLevel)) && zone->random.Roll(RuleI(Spells, WizCritChance))) {
+                                Critical = true;
+                                std::string self_message_wizard;
+                                self_message_wizard = fmt::format("Your arcane mastery triggers a critical blast on {}!",
+                                                target->GetCleanName());
+                                Message(Chat::SpellCrit, self_message_wizard.c_str());
+                        }
+                }
+
+		if (Critical) {
 			ratio += GetSharedSpellCritDmgIncrease();
 			ratio += GetSharedSpellCritDmgIncNoStack();
 
@@ -209,13 +221,7 @@ int64 Mob::GetActSpellDamage(uint16 spell_id, int64 value, Mob* target) {
 					ratio *= RuleR(Custom, ProcSpellCritBonusRatio);
 				}
 			}
-		} else if ((IsOfClientBot() && HasClass(Class::Wizard)) || (IsMerc() && GetClass() == CASTERDPS)) {
-			if ((GetLevel() >= RuleI(Spells, WizCritLevel)) && zone->random.Roll(RuleI(Spells, WizCritChance))) {
-				//Wizard innate critical chance is calculated seperately from spell effect and is not a set ratio. (20-70 is parse confirmed)
-				ratio += zone->random.Int(RuleI(Spells, WizardCritMinimumRandomRatio), RuleI(Spells, WizardCritMaximumRandomRatio));
-				Critical = true;
-			}
-		}
+		} 
 
 		if (IsOfClientBot() && (HasClass(Class::Wizard))) {
 			ratio += RuleI(Spells, WizCritRatio); //Default is zero
