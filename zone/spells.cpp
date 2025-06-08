@@ -7154,7 +7154,8 @@ EQApplicationPacket *Mob::MakeBuffsPacket(bool for_target, bool clear_buffs)
 	buff->entity_id = GetID();
 	buff->count = count;
 	buff->all_buffs = 1;
-	buff->tic_timer = tic_timer.GetRemainingTime();
+	buff->tic_timer = 0;
+//	buff->tic_timer = tic_timer.GetRemainingTime();
 	// there are more types, the client doesn't seem to really care though. The others are also currently hard to fill in here ...
 	// (see comment in common/eq_packet_structs.h)
 	if (for_target)
