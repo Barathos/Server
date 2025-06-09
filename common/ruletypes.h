@@ -1286,6 +1286,7 @@ RULE_REAL(Custom, 	ScaleBowByHDexDivide, 					6.66f, "Divide final HDex scaling 
 RULE_INT(Custom, 	ScaleBowHDexSoftCap,	 				200, "Soft-cap: Lower bound of hDex linear decay soft scaling")
 RULE_REAL(Custom, 	ScaleBowHDexScaleFloor,	 				0.15, "Soft-cap: Scaling floor of hDex linear decay curve.")
 RULE_REAL(Custom, 	ScaleBowHDexScaleFactor,	 			0.0125, "Soft-cap: Scaling factor of hDex linear decay between upper and lower bound.")
+RULE_REAL(Custom, 	ScaleBowMinimumDamageMultiplier,		5.0, "Clamp bow minimum damage to this multiple of hDex.")
 RULE_STRING(Custom, DoppelgangerBuffBacklist,				"21773,30736", "Comma-seperated list of spells to never transfer to Doppelganger")
 RULE_INT(Custom, NecroDotCritLevel,							12, "Necromancer inherent dot critical chance begins at this level")
 RULE_INT(Spells, NecroDotCritChance,						7, "Necromancer inherent dot critical percentage chance")

@@ -6726,13 +6726,13 @@ void Mob::CommonOutgoingHitSuccess(Mob* defender, DamageHitInfo &hit, ExtraAttac
 
 		if (IsClient())
 		{
-			int min = GetHeroicDEX();
+			int min = (GetHeroicDEX() * RuleR(Custom, ScaleBowMinimumDamageMultiplier));
 			if (hit.damage_done < min)
 			{
 				LogDebug("hit clamped to [{}] from [{}]", min, hit.damage_done);
 				hit.damage_done = min;
 			}
-			
+
 			if (RuleR(Custom, ScaleBowByHDex)) {
 				float bonus = HeroicDexScale(GetHeroicDEX());
 				hit.damage_done += hit.damage_done * (RuleR(Custom, ScaleBowByHDex) * bonus);
