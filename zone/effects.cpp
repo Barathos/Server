@@ -155,7 +155,7 @@ int64 Mob::GetActSpellDamage(uint16 spell_id, int64 value, Mob* target) {
                 }
         }
         if (!heroic_stat_bonus) {
-+// AA abilities are class level 254, if its less than level 254, and its not a combat skill and not a combat proc, give the bonus
+				// AA abilities are class level 254, if its less than level 254, and its not a combat skill and not a combat proc, give the bonus
                 if (!((IsCombatSkill(spell_id) || IsCombatProc(spell_id)))) {
                         for (uint8 class_id = Class::Warrior; class_id <= Class::Berserker; class_id++) {
                                 if (GetSpellLevelForCaster(spell_id) < UINT8_MAX) {
@@ -165,7 +165,7 @@ int64 Mob::GetActSpellDamage(uint16 spell_id, int64 value, Mob* target) {
                         }
                 }
         }
- 
+
         if (heroic_stat_bonus) {
 
 
@@ -244,7 +244,7 @@ int64 Mob::GetActSpellDamage(uint16 spell_id, int64 value, Mob* target) {
 					ratio *= RuleR(Custom, ProcSpellCritBonusRatio);
 				}
 			}
-		} 
+		}
 
 		if (IsOfClientBot() && (HasClass(Class::Wizard))) {
 			ratio += RuleI(Spells, WizCritRatio); //Default is zero
