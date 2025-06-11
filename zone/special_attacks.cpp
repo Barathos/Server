@@ -1038,6 +1038,8 @@ void Mob::TryBackstab(Mob *other, int ReuseTime) {
 }
 
 int Mob::GetWeaponBackstabDamage(EQ::ItemInstance* inst, Mob *target) {
+	auto skill_level = GetSkill(EQ::skills::SkillBackstab);
+	float skill_bonus = static_cast<float>(skill_level) * 0.02f;
 	int base = 3;
 	if (inst && inst->GetItem()) {
 		if (RuleB(Custom, AdditiveBackstabDamage)) {
@@ -1059,8 +1061,11 @@ int Mob::GetWeaponBackstabDamage(EQ::ItemInstance* inst, Mob *target) {
 				base += target->CheckBaneDamage(inst);
 			}
 		}
+	}	
+	if (RuleB(Character, ItemExtraSkillDamageCalcAsPercent) && GetSkillDmgAmt(EQ::skills::SkillBackstab) > 0) {
+		return static_cast<int>(static_cast<float>(base) * (skill_bonus + 2.0f)) * std::abs(GetSkillDmgAmt(EQ::skills::SkillBackstab) / 100);
 	}
-	return base;
+	return static_cast<int>(static_cast<float>(base) * (skill_bonus + 2.0f));
 }
 
 int Mob::CalculateWeaponBackstab(EQ::ItemInstance* wpn, Mob* other) {
