@@ -2382,10 +2382,11 @@ void Client::ClearRestingDetrimentalEffects()
 		for (unsigned int j = 0; j < buff_count; j++) {
 			const uint16 buff_id = buffs[j].spellid;
 			if (
-				IsValidSpell(buff_id) &&
+				buff_id == SPELL_SUPPRESSED ||
+				(IsValidSpell(buff_id) &&
 				IsDetrimentalSpell(buff_id) &&
 				(buffs[j].ticsremaining > 0) &&
-				buff_id != 2860
+				buff_id != 2860)
 			) {
 				BuffFadeBySlot(j);
 			}
@@ -2397,10 +2398,11 @@ void Client::ClearRestingDetrimentalEffects()
 			for (unsigned int j = 0; j < pet_buff_count; j++) {
 				const uint16 buff_id = pet_buffs[j].spellid;
 				if (
-					IsValidSpell(buff_id) &&
+					buff_id == SPELL_SUPPRESSED ||
+					(IsValidSpell(buff_id) &&
 					IsDetrimentalSpell(buff_id) &&
 					(pet_buffs[j].ticsremaining > 0) &&
-					strcmp(pet_buffs[j].caster_name, GetCleanName()) != 0  // Skip owner-cast spells
+					strcmp(pet_buffs[j].caster_name, GetCleanName()) != 0)  // Skip owner-cast spells
 				) {
 					pet->BuffFadeBySlot(j);  // Fade the buff if all conditions are met
 				}

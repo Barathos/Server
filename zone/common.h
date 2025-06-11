@@ -280,6 +280,8 @@ struct Buffs_Struct {
 	bool	client; //True if the caster is a client
 	bool	UpdateClient;
 	uint32	ticsinitial;
+	uint16  suppressedid;
+	uint32  suppressedticsremaining;
 
 	Timer expiration_timer;
 

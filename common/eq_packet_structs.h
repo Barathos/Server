@@ -246,6 +246,12 @@ struct CharacterSetUnlockRequest_Struct {
 
 /* End Character Sets */
 
+struct SuppressBuffNameInfo_Struct {
+	uint32 slot_id;
+	uint32 time_to_expire;
+	char original_buff_name[64];
+};
+
 /*
 ** Generic Spawn Struct
 ** Length: 257 Bytes

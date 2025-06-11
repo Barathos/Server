@@ -1147,24 +1147,8 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 						caster->MessageString(Chat::SpellFailure, SPELL_NO_EFFECT, spells[spell_id].name);
 					break;
 				}
-				/*
-					TODO: Parsing shows there is no level modifier. However, a consistent -2% modifer was
-					found on spell with value 950 (95% spells would have 7% failure rates).
-					Further investigation is needed. ~ Kayen
-				*/
-				int chance = spells[spell_id].base_value[i];
-				int buff_count = GetMaxTotalSlots();
-				for(int slot = 0; slot < buff_count; slot++) {
-					if (IsValidSpell(buffs[slot].spellid) &&
-						IsDetrimentalSpell(buffs[slot].spellid) &&
-						spells[buffs[slot].spellid].dispel_flag == 0)
-					{
-						if (zone->random.Int(1, 1000) <= chance){
-							BuffFadeBySlot(slot);
-							slot = buff_count;
-						}
-					}
-				}
+
+				DispelMagic(caster, spell_id, effect_value, true);
 				break;
 			}
 
@@ -1179,19 +1163,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 					break;
 				}
 
-				int chance = spells[spell_id].base_value[i];
-				int buff_count = GetMaxTotalSlots();
-				for(int slot = 0; slot < buff_count; slot++) {
-					if (IsValidSpell(buffs[slot].spellid) &&
-						IsBeneficialSpell(buffs[slot].spellid) &&
-						spells[buffs[slot].spellid].dispel_flag == 0)
-					{
-						if (zone->random.Int(1, 1000) <= chance) {
-							BuffFadeBySlot(slot);
-							slot = buff_count;
-						}
-					}
-				}
+				DispelMagic(caster, spell_id, effect_value, false, true);
 				break;
 			}
 
@@ -3263,9 +3235,19 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 				break;
 			}
 
-			case SE_PersistentEffect:
+			case SE_PersistentEffect: {
 				MakeAura(spell_id);
 				break;
+			}
+
+			case SE_SuppressBuff: {
+#ifdef SPELL_EFFECT_SPAM
+				snprintf(effect_desc, _EDLEN, "Suppress Buff");
+#endif
+				SuppressBuff(caster, spell_id, spell.base_value[i]);
+
+				break;
+			}
 
 			// Handled Elsewhere
 			case SE_ImmuneFleeing:
@@ -4031,19 +4013,19 @@ void Mob::BuffProcess()
 
 	for (int buffs_i = 0; buffs_i < buff_count; ++buffs_i)
 	{
-		if (IsValidSpell(buffs[buffs_i].spellid))
+		if (IsValidOrSuppressedSpell(buffs[buffs_i].spellid))
 		{
 			DoBuffTic(buffs[buffs_i], buffs_i, entity_list.GetMob(buffs[buffs_i].casterid));
 			// If the Mob died during DoBuffTic, then the buff we are currently processing will have been removed
-			if(!IsValidSpell(buffs[buffs_i].spellid)) {
+			if(!IsValidOrSuppressedSpell(buffs[buffs_i].spellid)) {
 				continue;
 			}
 
 			// DF_Permanent uses -1 DF_Aura uses -4 but we need to check negatives for some spells for some reason?
-			if (spells[buffs[buffs_i].spellid].buff_duration_formula != DF_Permanent &&
-			    spells[buffs[buffs_i].spellid].buff_duration_formula != DF_Aura &&
-				buffs[buffs_i].ticsremaining != PERMANENT_BUFF_DURATION) {
-
+			if (buffs[buffs_i].spellid == SPELL_SUPPRESSED ||
+				(spells[buffs[buffs_i].spellid].buff_duration_formula != DF_Permanent &&
+				spells[buffs[buffs_i].spellid].buff_duration_formula != DF_Aura &&
+				buffs[buffs_i].ticsremaining != PERMANENT_BUFF_DURATION)) {
 
 				if (RuleB(Custom, MulticlassingEnabled) && IsBardSong(buffs[buffs_i].spellid) && !IsEffectInSpell(buffs[buffs_i].spellid, SE_DivineAura)) {
 					Client* caster = entity_list.GetClientByName(buffs[buffs_i].caster_name);
@@ -4083,7 +4065,7 @@ void Mob::BuffProcess()
 						}
 					}
 
-					if (buffs[buffs_i].ticsremaining < 0 && (IsDetrimentalSpell(buffs[buffs_i].spellid) || buffs[buffs_i].expiration_timer.Check(false))) {
+					if (buffs[buffs_i].ticsremaining < 0 && (buffs[buffs_i].spellid == SPELL_SUPPRESSED || IsDetrimentalSpell(buffs[buffs_i].spellid) || buffs[buffs_i].expiration_timer.Check(false))) {
 						LogSpells("Buff [{}] in slot [{}] has expired. Fading", buffs[buffs_i].spellid, buffs_i);
 						BuffFadeBySlot(buffs_i);
 					}
@@ -4566,16 +4548,21 @@ void Mob::DoBuffTic(const Buffs_Struct &buff, int slot, Mob *caster)
 }
 
 // removes the buff in the buff slot 'slot'
-void Mob::BuffFadeBySlot(int slot, bool iRecalcBonuses)
+void Mob::BuffFadeBySlot(int slot, bool iRecalcBonuses, bool suppress, uint32 suppresstics)
 {
 	if(slot < 0 || slot > GetMaxTotalSlots())
 		return;
 
-	if(!IsValidSpell(buffs[slot].spellid))
+	if(!IsValidOrSuppressedSpell(buffs[slot].spellid))
 		return;
 
-	if (IsClient() && !CastToClient()->IsDead())
-		CastToClient()->MakeBuffFadePacket(buffs[slot].spellid, slot);
+	if (IsClient()) {
+		auto client = CastToClient();
+		if (!client->IsDead()) {
+			uint32 spell_id = (buffs[slot].spellid != SPELL_SUPPRESSED) ? buffs[slot].spellid : RuleI(Custom, SuppressDebuffSpellID);
+			client->MakeBuffFadePacket(spell_id, slot);
+		}
+	}
 
 	LogSpells("Fading buff [{}] from slot [{}]", buffs[slot].spellid, slot);
 
@@ -4636,6 +4623,7 @@ void Mob::BuffFadeBySlot(int slot, bool iRecalcBonuses)
 			{
 				uint16 procid = GetProcID(buffs[slot].spellid, i);
 				RemoveDefensiveProc(procid);
+
 				break;
 			}
 
@@ -4704,19 +4692,25 @@ void Mob::BuffFadeBySlot(int slot, bool iRecalcBonuses)
 
 			case SE_Rune:
 			{
-				buffs[slot].melee_rune = 0;
+				if (!suppress) {
+					buffs[slot].melee_rune = 0;
+				}
 				break;
 			}
 
 			case SE_AbsorbMagicAtt:
 			{
-				buffs[slot].magic_rune = 0;
+				if (!suppress) {
+					buffs[slot].magic_rune = 0;
+				}
 				break;
 			}
 
 			case SE_Familiar:
 			{
-				DismissFamiliar(buffs[slot].spellid);
+				if (!suppress) {
+					DismissFamiliar(buffs[slot].spellid);
+				}
 				break;
 			}
 
@@ -5038,10 +5032,72 @@ void Mob::BuffFadeBySlot(int slot, bool iRecalcBonuses)
 			Numhits(false);
 	}
 
-	if (spells[buffs[slot].spellid].nimbus_effect > 0)
+	if (IsValidSpell(buffs[slot].spellid) && spells[buffs[slot].spellid].nimbus_effect > 0)
 		RemoveNimbusEffect(spells[buffs[slot].spellid].nimbus_effect);
 
-	buffs[slot].spellid = SPELL_UNKNOWN;
+	if (suppress && suppresstics > 0) {
+		if (buffs[slot].spellid != SPELL_SUPPRESSED) {
+			if (IsClient()) {
+				auto client = CastToClient();
+				auto sip = new EQApplicationPacket(OP_SuppressBuffNameInfo, sizeof(SuppressBuffNameInfo_Struct));
+				auto si  = reinterpret_cast<SuppressBuffNameInfo_Struct*>(sip->pBuffer);
+				strn0cpy(si->original_buff_name, spells[buffs[slot].spellid].name, sizeof(si->original_buff_name));
+				si->time_to_expire = buffs[slot].suppressedticsremaining;
+				si->slot_id = slot;
+				client->QueuePacket(sip);
+				safe_delete(sip);
+			}
+
+			buffs[slot].suppressedid = buffs[slot].spellid;
+			buffs[slot].suppressedticsremaining = buffs[slot].ticsremaining;
+			buffs[slot].spellid = SPELL_SUPPRESSED;
+		}
+		buffs[slot].ticsremaining = suppresstics;
+	} else if (buffs[slot].spellid == SPELL_SUPPRESSED) {
+		buffs[slot].spellid = buffs[slot].suppressedid;
+		buffs[slot].ticsremaining = buffs[slot].suppressedticsremaining;
+		buffs[slot].suppressedid = 0;
+		buffs[slot].suppressedticsremaining = -1;
+		buffs[slot].InitExpirationTimer(); //Fix any timer drift caused by the suppression
+
+		if (buffs[slot].hit_number > 0) {
+			Numhits(true);
+		}
+
+		if (IsClient()) {
+			//This bit of magic need to arrive before our BuffCreate.  It appears to put the client in a state
+			//where it will be more accepting of information like 'Make this player levitate' or 'This buff has num-hit counters'
+			auto client = CastToClient();
+			auto* action_packet = new EQApplicationPacket(OP_Action, sizeof(Action_Struct));
+			auto* action = reinterpret_cast<Action_Struct*>(action_packet->pBuffer);
+
+			action->source         = buffs[slot].casterid;
+			action->target         = client->GetID();
+			action->level          = client->GetLevel();
+			action->instrument_mod = buffs[slot].instrument_mod;
+			action->force          = 0;
+			action->hit_heading    = client->GetHeading();
+			action->hit_pitch      = 0;
+			action->type           = 231;	// 231 means a spell
+			action->spell          = buffs[slot].spellid;
+			action->spell_level    = buffs[slot].casterlevel;
+			action->effect_flag    = 0x04;  // Successful action
+
+			client->QueuePacket(action_packet);
+			safe_delete(action_packet);
+			client->ReapplyBuff(slot, true);
+
+			auto sip = new EQApplicationPacket(OP_SuppressBuffNameInfo, sizeof(SuppressBuffNameInfo_Struct));
+			auto si  = reinterpret_cast<SuppressBuffNameInfo_Struct*>(sip->pBuffer);
+			strn0cpy(si->original_buff_name, "", sizeof(si->original_buff_name));
+			si->time_to_expire = 0;
+			client->QueuePacket(sip);
+			safe_delete(sip);
+		}
+	} else {
+		buffs[slot].spellid = SPELL_UNKNOWN;
+	}
+
 	if(IsPet() && GetOwner() && GetOwner()->IsClient()) {
 		SendPetBuffsToClient();
 	}
@@ -7951,29 +8007,90 @@ bool Mob::PassLimitClass(uint32 Classes_, uint16 Class_)
 	return false;
 }
 
-void Mob::DispelMagic(Mob* caster, uint16 spell_id, int effect_value)
+void Mob::DispelMagic(Mob* caster, uint16 spell_id, int effect_value, bool detrimental_only, bool beneficial_only)
 {
-	for (int slot = 0; slot < GetMaxTotalSlots(); slot++) {
-		if (
-			buffs[slot].spellid != SPELL_UNKNOWN &&
-			spells[buffs[slot].spellid].dispel_flag == 0 &&
-			!IsDiscipline(buffs[slot].spellid)
-		) {
-			if (caster && TryDispel(caster->GetCasterLevel(spell_id), buffs[slot].casterlevel, effect_value)) {
-				if (RuleB(Custom, PlayerDispelCures)) {
-					bool caster_client = caster->IsClient() || (caster->GetOwner() && caster->GetOwner()->IsClient());
-					bool target_client = IsClient() || (GetOwner() && GetOwner()->IsClient());
-					bool eligible_spell = IsBeneficialSpell(buffs[slot].spellid) || IsPoisonCounterSpell(buffs[slot].spellid) || IsDiseaseCounterSpell(buffs[slot].spellid) || IsCurseCounterSpell(buffs[slot].spellid);
+	bool target_is_client = IsClient() || (GetUltimateOwner() && GetUltimateOwner()->IsClient());
+	bool caster_is_client = caster && (caster->IsClient() || (caster->GetUltimateOwner() && caster->GetUltimateOwner()->IsClient()));
 
-					if (eligible_spell && caster_client && target_client) {
-						continue;
-					}
-				}
+	for (int slot = 0; slot < GetMaxTotalSlots(); ++slot) {
+		auto s = buffs[slot].spellid;
 
-				BuffFadeBySlot(slot);
-				break;
-			}
+		if (spells[s].short_buff_box) {
+			continue;
 		}
+
+		if (s == SPELL_UNKNOWN || spells[s].dispel_flag != 0 || IsDiscipline(s)) {
+			continue;
+		}
+
+		if (detrimental_only && !IsDetrimentalSpell(s)) {
+			continue;
+		}
+
+		if (beneficial_only && IsDetrimentalSpell(s)) {
+			continue;
+		}
+
+		if (target_is_client && caster_is_client && !IsDetrimentalSpell(s)) {
+			continue;
+		}
+
+		if (!caster || !TryDispel(caster->GetCasterLevel(spell_id), buffs[slot].casterlevel, effect_value)) {
+			continue;
+		}
+
+		bool perma_remove = false;
+
+		if (caster_is_client && target_is_client && IsDetrimentalSpell(s)) {
+			perma_remove = true;
+		} else if (!target_is_client) {
+			perma_remove = true;
+		}
+
+		if (perma_remove || !RuleB(Custom, SuppressDispels)) {
+			BuffFadeBySlot(slot);
+		} else {
+			BuffFadeBySlot(slot, true, true, RuleI(Custom, SuppressDispelsTime));
+		}
+
+		break;
+	}
+}
+
+bool Mob::IsSuppressableBuff(int slot) const {
+	auto sid = buffs[slot].spellid;
+
+	//Suppressed spells can be re-suppressed to refresh their timer
+	if (sid == SPELL_SUPPRESSED) {
+		return true;
+	}
+
+	return IsValidSpell(sid) &&
+		IsBeneficialSpell(sid) &&
+		!IsBardSong(sid) &&
+		spells[sid].dispel_flag == 0;
+}
+
+void Mob::SuppressBuff(Mob *caster, uint16 spell_id, int tic_count)
+{
+	//Think I'll let dispel imumunity apply to this as well
+	if(GetSpecialAbility(SpecialAbility::DispellImmunity)){
+		if (caster && caster->IsClient()) {
+			caster->MessageString(Chat::SpellFailure, SPELL_NO_EFFECT, spells[spell_id].name);
+		}
+		return;
+	}
+
+	std::vector<int> candidates;
+	for(int slot = 0, count = GetMaxBuffSlots(); slot < count; ++slot) {
+		if (IsSuppressableBuff(slot)) {
+			candidates.push_back(slot);
+		}
+	}
+
+	if(!candidates.empty()) {
+		int choice = zone->random.Int(0, candidates.size() - 1);
+		BuffFadeBySlot(candidates[choice], true, true, tic_count);
 	}
 }
 

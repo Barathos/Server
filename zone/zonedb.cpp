@@ -2955,7 +2955,7 @@ void ZoneDatabase::SaveBuffs(Client *client)
 	uint32 character_buff_count = 0;
 
 	for (int slot_id = 0; slot_id < max_buff_slots; slot_id++) {
-		if (!IsValidSpell(buffs[slot_id].spellid)) {
+		if (!IsValidOrSuppressedSpell(buffs[slot_id].spellid)) {
 			continue;
 		}
 
@@ -2965,16 +2965,18 @@ void ZoneDatabase::SaveBuffs(Client *client)
 	v.reserve(character_buff_count);
 
 	for (int slot_id = 0; slot_id < max_buff_slots; slot_id++) {
-		if (!IsValidSpell(buffs[slot_id].spellid)) {
+		if (!IsValidOrSuppressedSpell(buffs[slot_id].spellid)) {
 			continue;
 		}
 
+		bool suppressed = buffs[slot_id].spellid == SPELL_SUPPRESSED;
+
 		e.character_id   = client->CharacterID();
 		e.slot_id        = slot_id;
-		e.spell_id       = buffs[slot_id].spellid;
+		e.spell_id       = suppressed ? buffs[slot_id].suppressedid : buffs[slot_id].spellid;
 		e.caster_level   = buffs[slot_id].casterlevel;
 		e.caster_name    = buffs[slot_id].caster_name;
-		e.ticsremaining  = buffs[slot_id].ticsremaining;
+		e.ticsremaining  = suppressed ? buffs[slot_id].suppressedticsremaining : buffs[slot_id].ticsremaining;
 		e.counters       = buffs[slot_id].counters;
 		e.numhits        = buffs[slot_id].hit_number;
 		e.melee_rune     = buffs[slot_id].melee_rune;
@@ -3041,22 +3043,24 @@ void ZoneDatabase::LoadBuffs(Client *client)
 
 		strn0cpy(buffs[e.slot_id].caster_name, e.caster_name.c_str(), 64);
 
-		buffs[e.slot_id].ticsremaining     = e.ticsremaining;
-		buffs[e.slot_id].counters          = e.counters;
-		buffs[e.slot_id].hit_number        = e.numhits;
-		buffs[e.slot_id].melee_rune        = e.melee_rune;
-		buffs[e.slot_id].magic_rune        = e.magic_rune;
-		buffs[e.slot_id].persistant_buff   = e.persistent ? true : false;
-		buffs[e.slot_id].dot_rune          = e.dot_rune;
-		buffs[e.slot_id].caston_x          = e.caston_x;
-		buffs[e.slot_id].caston_y          = e.caston_y;
-		buffs[e.slot_id].caston_z          = e.caston_z;
-		buffs[e.slot_id].ExtraDIChance     = e.ExtraDIChance;
-		buffs[e.slot_id].RootBreakChance   = 0;
-		buffs[e.slot_id].virus_spread_time = 0;
-		buffs[e.slot_id].UpdateClient      = false;
-		buffs[e.slot_id].instrument_mod    = e.instrument_mod;
+		buffs[e.slot_id].ticsremaining           = e.ticsremaining;
+		buffs[e.slot_id].counters                = e.counters;
+		buffs[e.slot_id].hit_number              = e.numhits;
+		buffs[e.slot_id].melee_rune              = e.melee_rune;
+		buffs[e.slot_id].magic_rune              = e.magic_rune;
+		buffs[e.slot_id].persistant_buff         = e.persistent ? true : false;
+		buffs[e.slot_id].dot_rune                = e.dot_rune;
+		buffs[e.slot_id].caston_x                = e.caston_x;
+		buffs[e.slot_id].caston_y                = e.caston_y;
+		buffs[e.slot_id].caston_z                = e.caston_z;
+		buffs[e.slot_id].ExtraDIChance           = e.ExtraDIChance;
+		buffs[e.slot_id].RootBreakChance         = 0;
+		buffs[e.slot_id].virus_spread_time       = 0;
+		buffs[e.slot_id].UpdateClient            = false;
+		buffs[e.slot_id].instrument_mod          = e.instrument_mod;
 		buffs[e.slot_id].InitExpirationTimer();
+		buffs[e.slot_id].suppressedid            = 0;
+		buffs[e.slot_id].suppressedticsremaining = -1;
 	}
 
 	// We load up to the most our client supports

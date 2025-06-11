@@ -1296,6 +1296,9 @@ RULE_REAL(Custom, 	ScaleBowMinimumDamageMultiplier,		5.0, "Clamp bow minimum dam
 RULE_STRING(Custom, DoppelgangerBuffBacklist,				"21773,30736", "Comma-seperated list of spells to never transfer to Doppelganger")
 RULE_INT(Custom, NecroDotCritLevel,							12, "Necromancer inherent dot critical chance begins at this level")
 RULE_INT(Spells, NecroDotCritChance,						7, "Necromancer inherent dot critical percentage chance")
+RULE_BOOL(Custom,	SuppressDispels,						0, "Swaps 'cancel magic' SPA logic with SuppressBuff SPA (527).")
+RULE_INT(Custom,	SuppressDispelsTime,					6, "Number of tics that dispelled buffs will be suppressed for")
+RULE_INT(Custom,	SuppressDebuffSpellID,					21840, "Spell ID to send to client when a spell is supprssed.  21840 = 'Suppression Field'")
 
 // Seasonal
 RULE_INT(Custom,  	EnableSeasonalCharacters, 				0, "Set to Seasonal ID to track for current Seasonal characters, 0 to disable.")
