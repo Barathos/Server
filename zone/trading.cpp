@@ -1907,7 +1907,7 @@ void Client::SellToBuyer(const EQApplicationPacket *app)
 					}
 				}
 
-				if (!DoBarterBuyerChecks(sell_line)) {
+				if (!buyer->DoBarterBuyerChecks(sell_line)) {
 					return;
 				}
 
@@ -3892,21 +3892,6 @@ bool Client::DoBarterBuyerChecks(BuyerLineSellItem_Struct &sell_line)
 		return false;
 	}
 
-	auto buyer_time = BuyerRepository::GetTransactionDate(database, buyer->CharacterID());
-	if (buyer_time > GetBarterTime()) {
-		if (sell_line.purchase_method == BarterByVendor) {
-			SendBarterBuyerClientMessage(
-				sell_line,
-				Barter_SellerTransactionComplete,
-				Barter_Success,
-				Barter_DataOutOfDate
-			);
-			return false;
-		}
-		SendBarterBuyerClientMessage(sell_line, Barter_SellerTransactionComplete, Barter_Failure, Barter_DataOutOfDate);
-		return false;
-	}
-
 	std::unique_ptr<EQ::ItemInstance> inst(database.CreateItem(sell_line.item_id, sell_line.seller_quantity));
 	if (buyer->GetInv().FindFirstFreeSlotThatFitsItemWithStacking(inst.get()) == INVALID_INDEX) {
 		LogTradingDetail(
@@ -4004,6 +3989,23 @@ bool Client::DoBarterBuyerChecks(BuyerLineSellItem_Struct &sell_line)
 bool Client::DoBarterSellerChecks(BuyerLineSellItem_Struct &sell_line)
 {
 	bool seller_error = false;
+
+	auto buyer_time = BuyerRepository::GetTransactionDate(database, sell_line.buyer_id);
+	if (buyer_time > GetBarterTime()) {
+		if (sell_line.purchase_method == BarterByVendor) {
+			SendBarterBuyerClientMessage(
+				sell_line,
+				Barter_SellerTransactionComplete,
+				Barter_Success,
+				Barter_DataOutOfDate
+			);
+			return false;
+		}
+
+		SendBarterBuyerClientMessage(sell_line, Barter_SellerTransactionComplete, Barter_Failure, Barter_DataOutOfDate);
+		return false;
+	}
+
 	auto sell_item_slot_id = GetInv().HasItem(sell_line.item_id, sell_line.seller_quantity, invWherePersonal);
 	auto sell_item = sell_item_slot_id == INVALID_INDEX ? nullptr : GetInv().GetItem(sell_item_slot_id);
 	if (!sell_item) {

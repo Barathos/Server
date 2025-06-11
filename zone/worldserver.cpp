@@ -4004,6 +4004,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 					sell_line.buyer_entity_id = in->buyer_entity_id;
 					sell_line.seller_quantity = in->seller_quantity;
 					sell_line.slot            = in->slot;
+					sell_line.purchase_method = in->purchase_method;
 					strn0cpy(sell_line.item_name, in->item_name, sizeof(sell_line.item_name));
 
 					if (!buyer->DoBarterBuyerChecks(sell_line)) {
