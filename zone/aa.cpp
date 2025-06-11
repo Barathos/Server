@@ -518,6 +518,20 @@ void Mob::WakeTheDead(uint16 spell_id, Corpse *corpse_to_use, Mob *tar, uint32 d
 
 		if (IsClient()) {
 			swarm_pet_npc->ConfigureInitialCommands();
+
+			for (int spell_id : swarm_pet_npc->GetNPCSpellList()) {
+				if (!IsValidSpell(spell_id) ||
+					IsEffectInSpell(spell_id, SE_Fear) ||
+					IsEffectInSpell(spell_id, SE_Blind) ||
+					IsEffectInSpell(spell_id, SE_Charm) ||
+					IsEffectInSpell(spell_id, SE_SummonPet) ||
+					IsEffectInSpell(spell_id, SE_Gate) ||
+					IsEffectInSpell(spell_id, SE_ShadowStep) ||
+					IsEffectInSpell(spell_id, SE_ShadowStepDirectional)) {
+
+					swarm_pet_npc->RemoveSpellFromNPCList(spell_id);
+				}
+			}
 		}
 
 		summon_count--;

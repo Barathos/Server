@@ -2270,6 +2270,11 @@ bool Mob::DetermineSpellTargets(uint16 spell_id, Mob *&spell_target, Mob *&ae_ce
 
 		case ST_Corpse:
 		{
+			if (IsEffectInSpell(spell_id, SE_WakeTheDead)) {
+				CastAction = SingleTarget;
+				break;
+			}
+
 			if(!spell_target || !spell_target->IsPlayerCorpse())
 			{
 				LogSpells("Spell [{}] canceled: invalid target (corpse)", spell_id);
@@ -4289,7 +4294,8 @@ bool Mob::SpellOnTarget(
 		!IsAttackAllowed(spelltar, true) &&
 		!IsResurrectionEffects(spell_id) &&
 		!IsEffectInSpell(spell_id, SE_BindSight) &&
-		!IsCharmSpell(spell_id)
+		!IsCharmSpell(spell_id) &&
+		!IsEffectInSpell(spell_id, SE_WakeTheDead)
 	) {
 		if (!IsClient() || !CastToClient()->GetGM()) {
 			MessageString(Chat::SpellFailure, SPELL_NO_HOLD);
@@ -4640,7 +4646,9 @@ bool Mob::SpellOnTarget(
 		} else if (
 			!IsAttackAllowed(spelltar, true) &&
 			!IsResurrectionEffects(spell_id) &&
-			!IsEffectInSpell(spell_id, SE_BindSight) && !(IsCharmSpell(spell_id) && spelltar->IsNPC() && spelltar->IsCharmed() && spelltar->GetOwnerID() == GetID())
+			!IsEffectInSpell(spell_id, SE_BindSight) &&
+			!IsEffectInSpell(spell_id, SE_WakeTheDead) &&
+			!(IsCharmSpell(spell_id) && spelltar->IsNPC() && spelltar->IsCharmed() && spelltar->GetOwnerID() == GetID())
 		) { // Detrimental spells - PVP check
 			LogSpells(
 				"Detrimental spell [{}] can't take hold [{}] -> [{}]",

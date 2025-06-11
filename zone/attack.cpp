@@ -1573,7 +1573,7 @@ inline float HeroicSTRScale(float str) {
 		if (str > high_cap) {
 			scaled_str += (str - high_cap) * std::max(scaler_start - scale_factor * count, 0.0f);
 		}
-		
+
 		return scaled_str / 100.0f;
 	}
 }
@@ -1595,7 +1595,7 @@ inline float HeroicDexScale(float dex) {
 		if (dex > high_cap) {
 			scaled_dex += (dex - high_cap) * std::max(scaler_start - scale_factor * count, 0.0f);
 		}
-		
+
 		return scaled_dex / 100.0f / scale_divide;
 	}
 }
@@ -2769,6 +2769,8 @@ bool NPC::Death(Mob* killer_mob, int64 damage, uint16 spell, EQ::skills::SkillTy
 
 	const bool is_ldon_treasure = GetClass() == Class::LDoNTreasure;
 
+	bool should_trigger_spell_on_kill = false;
+
 	if (give_exp_client && !IsCorpse()) {
 		Group* killer_group = entity_list.GetGroupByClient(give_exp_client);
 		Raid*  killer_raid  = entity_list.GetRaidByClient(give_exp_client);
@@ -2789,14 +2791,10 @@ bool NPC::Death(Mob* killer_mob, int64 damage, uint16 spell, EQ::skills::SkillTy
 			if (!is_ldon_treasure && MerchantType == 0) {
 				killer_raid->SplitExp(ExpSource::Kill, final_exp, this);
 
-				if (
-					killer_mob &&
-					(
-						killer_raid->IsRaidMember(killer_mob->GetName()) ||
-						killer_raid->IsRaidMember(killer_mob->GetUltimateOwner()->GetName())
-					)
-				) {
-					killer_mob->TrySpellOnKill(killed_level, spell);
+				if (killer_mob &&
+					(killer_raid->IsRaidMember(killer_mob->GetName()) ||
+					 killer_raid->IsRaidMember(killer_mob->GetUltimateOwner()->GetName()))) {
+					should_trigger_spell_on_kill = true;
 				}
 			}
 
@@ -2822,16 +2820,12 @@ bool NPC::Death(Mob* killer_mob, int64 damage, uint16 spell, EQ::skills::SkillTy
 			}
 		} else if (give_exp_client->IsGrouped() && killer_group) {
 			if (!is_ldon_treasure && MerchantType == 0) {
-					killer_group->SplitExp(ExpSource::Kill, final_exp, this);
+				killer_group->SplitExp(ExpSource::Kill, final_exp, this);
 
-				if (
-					killer_mob &&
-					(
-						killer_group->IsGroupMember(killer_mob->GetName()) ||
-						killer_group->IsGroupMember(killer_mob->GetUltimateOwner()->GetName())
-					)
-				) {
-					killer_mob->TrySpellOnKill(killed_level, spell);
+				if (killer_mob &&
+					(killer_group->IsGroupMember(killer_mob->GetName()) ||
+					 killer_group->IsGroupMember(killer_mob->GetUltimateOwner()->GetName()))) {
+					should_trigger_spell_on_kill = true;
 				}
 			}
 
@@ -2861,14 +2855,10 @@ bool NPC::Death(Mob* killer_mob, int64 damage, uint16 spell, EQ::skills::SkillTy
 					if (!GetOwner() || (GetOwner() && !GetOwner()->IsOfClientBot())) {
 						give_exp_client->AddEXP(ExpSource::Kill, final_exp, con_level, false, this);
 
-						if (
-							killer_mob &&
-							(
-								killer_mob->GetID() == give_exp_client->GetID() ||
-								killer_mob->GetUltimateOwner()->GetID() == give_exp_client->GetID()
-							)
-						) {
-							killer_mob->TrySpellOnKill(killed_level, spell);
+						if (killer_mob &&
+							(killer_mob->GetID() == give_exp_client->GetID() ||
+							 killer_mob->GetUltimateOwner()->GetID() == give_exp_client->GetID())) {
+							should_trigger_spell_on_kill = true;
 						}
 					}
 				}
@@ -3185,17 +3175,15 @@ bool NPC::Death(Mob* killer_mob, int64 damage, uint16 spell, EQ::skills::SkillTy
 			if (emote_id) {
 				owner_or_self->CastToNPC()->DoNPCEmote(EQ::constants::EmoteEventTypes::KilledNPC, emote_id, this);
 			}
-
-			if (killer_mob) {
-				killer_mob->TrySpellOnKill(killed_level, spell);
-			}
 		}
+	}
+
+	if (should_trigger_spell_on_kill && killer_mob) {
+		killer_mob->TrySpellOnKill(killed_level, spell, corpse);
 	}
 
 	if (killer_mob) {
 		parse->EventBotMerc(EVENT_NPC_SLAY, killer_mob, this);
-
-		killer_mob->TrySpellOnKill(killed_level, spell);
 	}
 
 	WipeHateList();

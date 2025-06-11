@@ -2606,16 +2606,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 					if (!dur) {
 						dur = 60;
 					}
-
-					Mob* m_target = caster->GetTarget();
-
-					if (!m_target) {
-						m_target = this;
-					}
-
-					if (m_target) {
-						entity_list.TryWakeTheDead(caster, m_target, spell_id, 250, dur, 1);
-					}
+					entity_list.TryWakeTheDead(caster, this, spell_id, 250, dur, 1);
 				}
 				break;
 			}
@@ -2633,15 +2624,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 						amount = 1;
 					}
 
-					Mob* m_target = caster->GetTarget();
-
-					if (!m_target) {
-						m_target = this;
-					}
-
-					if (m_target) {
-						entity_list.TryWakeTheDead(caster, m_target, spell_id, 250, dur, amount);
-					}
+					entity_list.TryWakeTheDead(caster, this, spell_id, 250, dur, amount);
 				}
 				break;
 			}

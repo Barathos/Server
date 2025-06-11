@@ -6768,7 +6768,7 @@ void Mob::DoKnockback(Mob *caster, uint32 push_back, uint32 push_up)
 	}
 }
 
-void Mob::TrySpellOnKill(uint8 level, uint16 spell_id)
+void Mob::TrySpellOnKill(uint8 level, uint16 spell_id, Corpse* corpse)
 {
 	if (IsValidSpell(spell_id))
 	{
@@ -6779,7 +6779,7 @@ void Mob::TrySpellOnKill(uint8 level, uint16 spell_id)
 					if (IsValidSpell(spells[spell_id].limit_value[i]) && spells[spell_id].max_value[i] <= level)
 					{
 						if(zone->random.Roll(spells[spell_id].base_value[i]))
-							SpellFinished(spells[spell_id].limit_value[i], this, EQ::spells::CastingSlot::Item, 0, -1, spells[spells[spell_id].limit_value[i]].resist_difficulty);
+							SpellFinished(spells[spell_id].limit_value[i], IsDetrimentalSpell(spells[spell_id].limit_value[i]) && corpse ? corpse : this, EQ::spells::CastingSlot::Item, 0, -1, spells[spells[spell_id].limit_value[i]].resist_difficulty);
 					}
 				}
 			}
@@ -6789,7 +6789,7 @@ void Mob::TrySpellOnKill(uint8 level, uint16 spell_id)
 	if (IsPetOwnerClient()) {
 		auto owner = GetOwner();
 		if (owner) {
-			owner->TrySpellOnKill(level, spell_id);
+			owner->TrySpellOnKill(level, spell_id, corpse);
 		}
 	}
 
@@ -6798,20 +6798,19 @@ void Mob::TrySpellOnKill(uint8 level, uint16 spell_id)
 
 	// Allow to check AA, items and buffs in all cases. Base2 = Spell to fire | Base1 = % chance | Base3 = min level
 	for(int i = 0; i < MAX_SPELL_TRIGGER*3; i+=3) {
-
 		if(aabonuses.SpellOnKill[i] && IsValidSpell(aabonuses.SpellOnKill[i]) && (level >= aabonuses.SpellOnKill[i + 2])) {
 			if(zone->random.Roll(static_cast<int>(aabonuses.SpellOnKill[i + 1])))
-				SpellFinished(aabonuses.SpellOnKill[i], this, EQ::spells::CastingSlot::Item, 0, -1, spells[aabonuses.SpellOnKill[i]].resist_difficulty);
+				SpellFinished(aabonuses.SpellOnKill[i], IsDetrimentalSpell(aabonuses.SpellOnKill[i]) && corpse ? corpse : this, EQ::spells::CastingSlot::Item, 0, -1, spells[aabonuses.SpellOnKill[i]].resist_difficulty);
 		}
 
 		if(itembonuses.SpellOnKill[i] && IsValidSpell(itembonuses.SpellOnKill[i]) && (level >= itembonuses.SpellOnKill[i + 2])){
 			if(zone->random.Roll(static_cast<int>(itembonuses.SpellOnKill[i + 1])))
-				SpellFinished(itembonuses.SpellOnKill[i], this, EQ::spells::CastingSlot::Item, 0, -1, spells[aabonuses.SpellOnKill[i]].resist_difficulty);
+				SpellFinished(itembonuses.SpellOnKill[i], IsDetrimentalSpell(itembonuses.SpellOnKill[i]) && corpse ? corpse : this, EQ::spells::CastingSlot::Item, 0, -1, spells[aabonuses.SpellOnKill[i]].resist_difficulty);
 		}
 
 		if(spellbonuses.SpellOnKill[i] && IsValidSpell(spellbonuses.SpellOnKill[i]) && (level >= spellbonuses.SpellOnKill[i + 2])) {
 			if(zone->random.Roll(static_cast<int>(spellbonuses.SpellOnKill[i + 1])))
-				SpellFinished(spellbonuses.SpellOnKill[i], this, EQ::spells::CastingSlot::Item, 0, -1, spells[aabonuses.SpellOnKill[i]].resist_difficulty);
+				SpellFinished(spellbonuses.SpellOnKill[i], IsDetrimentalSpell(spellbonuses.SpellOnKill[i]) && corpse ? corpse : this, EQ::spells::CastingSlot::Item, 0, -1, spells[aabonuses.SpellOnKill[i]].resist_difficulty);
 		}
 
 	}

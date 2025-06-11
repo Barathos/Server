@@ -1017,7 +1017,7 @@ public:
 	void DoKnockback(Mob *caster, uint32 push_back, uint32 push_up);
 	int16 CalcResistChanceBonus();
 	int16 CalcFearResistChance();
-	void TrySpellOnKill(uint8 level, uint16 spell_id);
+	void TrySpellOnKill(uint8 level, uint16 spell_id, Corpse* corpse = nullptr);
 	bool TrySpellOnDeath();
 	void CastOnCurer(uint32 spell_id);
 	void CastOnCure(uint32 spell_id);
