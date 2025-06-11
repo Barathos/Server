@@ -1037,6 +1037,56 @@ void Mob::TryBackstab(Mob *other, int ReuseTime) {
 	}
 }
 
+int Mob::GetWeaponBackstabDamage(EQ::ItemInstance* inst, Mob *target) {
+	int base = 3;
+	if (inst && inst->GetItem()) {
+		if (RuleB(Custom, AdditiveBackstabDamage)) {
+			base = inst->GetItemWeaponDamage(true) + inst->GetItemBackstabDamage(true);
+		} else {
+			base = inst->GetItemBackstabDamage(true);
+			if (!inst->GetItemBackstabDamage()) {
+				base += inst->GetItemWeaponDamage(true);
+			}
+		}
+		if (target) {
+			if (inst->GetItemElementalFlag(true) && inst->GetItemElementalDamage(true) &&
+				!RuleB(Combat, BackstabIgnoresElemental)) {
+				base += target->ResistElementalWeaponDmg(inst);
+			}
+
+			if ((inst->GetItemBaneDamageBody(true) || inst->GetItemBaneDamageRace(true)) &&
+				!RuleB(Combat, BackstabIgnoresBane)) {
+				base += target->CheckBaneDamage(inst);
+			}
+		}
+	}
+	return base;
+}
+
+int Mob::CalculateWeaponBackstab(EQ::ItemInstance* wpn, Mob* other) {
+	int base_damage = 0;
+	if (!GetWeaponDamage(other, wpn)) {
+		return 0;
+	}
+	base_damage = GetWeaponBackstabDamage(wpn, other);
+	if (!wpn || (wpn->GetItem()->ItemType != EQ::item::ItemType1HPiercing)) {
+		if (wpn) {
+			switch (static_cast<EQ::item::ItemType>(wpn->GetItem()->ItemType)) {
+				case EQ::item::ItemType2HBlunt:
+				case EQ::item::ItemType2HPiercing:
+				case EQ::item::ItemType2HSlash:
+					base_damage *= RuleR(Custom, NonDaggerBackstabMultiplier2H);
+					break;
+				default:
+					base_damage *= RuleR(Custom, NonDaggerBackstabMultiplier1H);
+			}
+		} else {
+			base_damage *= RuleR(Custom, NonDaggerBackstabMultiplier1H);
+		}
+	}
+	return base_damage;
+}
+
 //heko: backstab
 void Mob::RogueBackstab(Mob* other, bool min_damage, int ReuseTime)
 {
@@ -1048,28 +1098,22 @@ void Mob::RogueBackstab(Mob* other, bool min_damage, int ReuseTime)
 
 	// make sure we can hit (bane, magical, etc)
 	if (IsClient()) {
-		const EQ::ItemInstance* wpn = CastToClient()->GetInv().GetItem(EQ::invslot::slotPrimary);
-
-		if (!GetWeaponDamage(other, wpn)) {
+		auto wpn_primary = CastToClient()->GetInv().GetItem(EQ::invslot::slotPrimary);
+		auto wpn_secondary = CastToClient()->GetInv().GetItem(EQ::invslot::slotSecondary);
+		if (!GetWeaponDamage(other, wpn_primary) && !GetWeaponDamage(other, wpn_secondary)) {
 			return;
 		}
-
-		base_damage = GetBaseSkillDamage(EQ::skills::SkillBackstab, other);
-
-		if (!wpn || (wpn->GetItem()->ItemType != EQ::item::ItemType1HPiercing)) {
-			Message(Chat::Skills, "Your backstab is less effective due to your unconventional weapon");
-			if (wpn) {
-				switch (static_cast<EQ::item::ItemType>(wpn->GetItem()->ItemType)) {
-					case EQ::item::ItemType2HBlunt:
-					case EQ::item::ItemType2HPiercing:
-					case EQ::item::ItemType2HSlash:
-						base_damage *= RuleR(Custom, NonDaggerBackstabMultiplier2H);
-						break;
-					default:
-						base_damage *= RuleR(Custom, NonDaggerBackstabMultiplier1H);
-				}
-			} else {
-				base_damage *= RuleR(Custom, NonDaggerBackstabMultiplier1H);
+		int backstab_damage_primary = CalculateWeaponBackstab(wpn_primary, other);
+		int backstab_damage_secondary = CalculateWeaponBackstab(wpn_secondary, other);
+		if (backstab_damage_primary > backstab_damage_secondary) {
+			base_damage = backstab_damage_primary;
+			if (!wpn_primary || (wpn_primary->GetItem()->ItemType != EQ::item::ItemType1HPiercing)) {
+				Message(Chat::Skills, "Your backstab is less effective due to your unconventional weapon");
+			}
+		} else {
+			base_damage = backstab_damage_secondary;
+			if (!wpn_secondary || (wpn_secondary->GetItem()->ItemType != EQ::item::ItemType1HPiercing)) {
+				Message(Chat::Skills, "Your backstab is less effective due to your unconventional weapon");
 			}
 		}
 	}
