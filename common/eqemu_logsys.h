@@ -153,6 +153,7 @@ namespace Logs {
 		NetClient,
 		NetTCP,
 		Waypoints,
+		CharacterSets,
 		MaxCategoryID /* Don't Remove this */
 	};
 
@@ -264,7 +265,8 @@ namespace Logs {
 		"ZoneState",
 		"Net Server <-> Client",
 		"Net TCP",
-		"Waypoints"
+		"Waypoints",
+		"Character Sets"
 	};
 }
 

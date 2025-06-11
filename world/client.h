@@ -28,8 +28,16 @@
 #include "../common/eq_packet_structs.h"
 #include "cliententry.h"
 
+#include "../common/repositories/account_character_sets_repository.h"
+#include "../common/repositories/account_character_set_limits_repository.h"
+#include "../common/repositories/account_character_set_members_repository.h"
+#include "../common/repositories/character_data_repository.h"
+
 class EQApplicationPacket;
 class EQStreamInterface;
+
+constexpr uint8 MAX_CHARACTER_SETS = 64;
+constexpr uint8 EOM_CURRENCY_ID = 6;
 
 class Client {
 public:
@@ -37,7 +45,7 @@ public:
 	~Client();
 
 	bool	Process();
-	void	SendCharInfo();
+	void	SendCharInfo(uint32 character_set = 0);
 	void	SendMaxCharCreate();
 	void	SendMembership();
 	void	SendMembershipSettings();
@@ -76,6 +84,32 @@ public:
 		EQ::InventoryProfile *p_inventory_profile
 	);
 
+	void SendCharacterSetInfo();
+	void PopulateCharacterDataCache();
+	void WritebackCharacterDataCache();
+	std::vector<uint32> GetCharacterIDsForSetFromCache(uint32 set_id);
+	bool AddCharacterToSetInCache(uint32 set_id, uint32 character_id);
+	std::vector<CharacterDataRepository::CharacterData> GetCharactersForSetFromCache(uint32 set_id);
+	AccountCharacterSetsRepository::AccountCharacterSets CreateCharacterSetInCache(const std::string& set_name);
+	bool DeleteCharacterSet(uint32 set_id);
+	bool RenameCharacterSetInCache(uint32 set_id, const std::string& new_name);
+	void RemoveCharacterFromSetInCache(uint32 character_id, uint32 set_id);
+	uint8 GetMaxCharacterSets();
+	bool CanCreateMoreCharacterSets();
+	uint32 GetMaxCharacterSlots();
+	uint32 GetAvailableSlotUnlocks();
+	uint32 GetAvailableSetUnlocks();
+	bool CanCreateNewCharacter();
+	bool GrantBonusCharacterSets(uint32 quantity);
+	bool GrantBonusCharacterSlots(uint32 quantity);
+	void UpdateSelectedCharacterSet(uint32 set_id);
+	bool DeleteCharacterByNameFromCache(const std::string& character_name);
+
+	enum CharacterSetUnlockAction {
+		CHARACTER_SLOT = 1,
+		CHARACTER_SET  = 0
+	};
+
 private:
 
 	uint32	ip;
@@ -88,6 +122,15 @@ private:
 	Timer	autobootup_timeout;
 	uint32	zone_waiting_for_bootup;
 	bool	enter_world_triggered;
+
+	uint32  m_selected_character_set;
+	uint32  m_default_character_set;
+	uint32  m_eom_available;
+
+	AccountCharacterSetLimitsRepository::AccountCharacterSetLimits m_character_set_meta;
+	std::vector<AccountCharacterSetsRepository::AccountCharacterSets> m_character_sets;
+	std::vector<AccountCharacterSetMembersRepository::AccountCharacterSetMembers> m_character_set_members;
+	std::vector<CharacterDataRepository::CharacterData> m_account_characters;
 
 	bool StartInTutorial;
 	EQ::versions::ClientVersion m_ClientVersion;
@@ -113,9 +156,16 @@ private:
 	bool HandleDeleteCharacterPacket(const EQApplicationPacket *app);
 	bool HandleZoneChangePacket(const EQApplicationPacket *app);
 	bool HandleChecksumPacket(const EQApplicationPacket *app);
+	bool HandleCharacterSetRequest(const EQApplicationPacket *app);
+	bool HandleCharacterSetCreateRequest(const EQApplicationPacket *app);
+	bool HandleCharacterSetMoveRequest(const EQApplicationPacket *app);
+	bool HandleCharacterSetUnlockRequest(const EQApplicationPacket *app);
 	bool ChecksumVerificationCRCEQGame(uint64 checksum);
 	bool ChecksumVerificationCRCSkillCaps(uint64 checksum);
 	bool ChecksumVerificationCRCBaseData(uint64 checksum);
+
+	bool HandleSetUnlock(uint32 quantity);
+	bool HandleSlotUnlock(uint32 quantity);
 
 	EQStreamInterface* eqs;
 	bool CanTradeFVNoDropItem();

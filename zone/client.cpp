@@ -80,6 +80,7 @@ extern volatile bool RunLoops;
 #include "../common/repositories/account_kill_counts_repository.h"
 #include "../common/repositories/character_pet_name_repository.h"
 #include "../common/repositories/account_alt_currency_repository.h"
+#include "../common/repositories/account_character_set_limits_repository.h"
 #include "../common/events/player_events.h"
 #include "../common/events/player_event_logs.h"
 #include "dialogue_window.h"

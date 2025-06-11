@@ -932,6 +932,16 @@
         OutF(LogSys, Logs::Detail, Logs::Waypoints, __FILE__, __func__, __LINE__, message, ##__VA_ARGS__);\
 } while (0)
 
+#define LogCharacterSets(message, ...) do {\
+    if (LogSys.IsLogEnabled(Logs::General, Logs::CharacterSets))\
+        OutF(LogSys, Logs::General, Logs::CharacterSets, __FILE__, __func__, __LINE__, message, ##__VA_ARGS__);\
+} while (0)
+
+#define LogCharacterSetsDetail(message, ...) do {\
+    if (LogSys.IsLogEnabled(Logs::Detail, Logs::CharacterSets))\
+        OutF(LogSys, Logs::Detail, Logs::CharacterSets, __FILE__, __func__, __LINE__, message, ##__VA_ARGS__);\
+} while (0)
+
 #define Log(debug_level, log_category, message, ...) do {\
     if (LogSys.IsLogEnabled(debug_level, log_category))\
         LogSys.Out(debug_level, log_category, __FILE__, __func__, __LINE__, message, ##__VA_ARGS__);\

@@ -22,6 +22,7 @@
 #include "../common/eq_packet.h"
 #include "../common/repositories/inventory_repository.h"
 #include "../common/repositories/character_data_repository.h"
+#include "../common/repositories/account_character_sets_repository.h"
 
 struct PlayerProfile_Struct;
 struct CharCreate_Struct;
@@ -31,7 +32,7 @@ struct CharacterSelect_Struct;
 class WorldDatabase : public SharedDatabase {
 public:
 	bool GetStartZone(PlayerProfile_Struct* pp, CharCreate_Struct* p_char_create_struct, bool is_titanium);
-	void GetCharSelectInfo(uint32 account_id, EQApplicationPacket **out_app, uint32 client_version_bit);
+	void GetCharSelectInfo(uint32 account_id, EQApplicationPacket **out_app, uint32 client_version_bit, std::vector<CharacterDataRepository::CharacterData> character_set);
 	int MoveCharacterToBind(int character_id, uint8 bind_number = 0);
 	int MoveCharacterToInstanceSafeReturn(int character_id, int instance_zone_id, int instance_id);
 

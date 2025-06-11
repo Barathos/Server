@@ -270,6 +270,68 @@ CREATE TABLE `character_dynamic_aa_timers` (
 		.content_schema_update = false,
 	},
 
+	// Create account_character_sets table
+	ManifestEntry{
+		.version = 15,
+		.description = "2025_05_23_create_account_character_sets_table",
+		.check = "SHOW TABLES LIKE 'account_character_sets'",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+CREATE TABLE `account_character_sets` (
+	`account_id` int(11) NOT NULL,
+	`set_id` int(11) NOT NULL,
+	`set_name` varchar(255) NOT NULL,
+	`created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+	PRIMARY KEY (`account_id`, `set_id`),
+	UNIQUE KEY `unique_account_set_name` (`account_id`, `set_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+)",
+		.content_schema_update = false,
+	},
+
+	// Create account_character_set_members table
+	ManifestEntry{
+		.version = 16,
+		.description = "2025_05_23_create_account_character_set_members_table",
+		.check = "SHOW TABLES LIKE 'account_character_set_members'",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+CREATE TABLE `account_character_set_members` (
+	`account_id` int(11) NOT NULL,
+	`set_id` int(11) NOT NULL,
+	`character_id` int(11) NOT NULL,
+	PRIMARY KEY (`account_id`, `set_id`, `character_id`),
+	INDEX `idx_set_id` (`set_id`),
+	INDEX `idx_character_id` (`character_id`),
+	INDEX `idx_account_set` (`account_id`, `set_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+)",
+		.content_schema_update = false,
+	},
+
+	// Create limits table
+	ManifestEntry{
+		.version = 17,
+		.description = "2025_05_23_create_account_character_set_limits_table",
+		.check = "SHOW TABLES LIKE 'account_character_set_limits'",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+CREATE TABLE `account_character_set_limits` (
+	`account_id` int(11) NOT NULL,
+	`eom_sets` int(11) NOT NULL DEFAULT 0,
+	`bonus_sets` int(11) NOT NULL DEFAULT 0,
+	`default_set` int(11) NOT NULL DEFAULT 0,
+	`eom_slots` int(11) NOT NULL DEFAULT 0,
+	`bonus_slots` int(11) NOT NULL DEFAULT 0,
+	PRIMARY KEY (`account_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+	)",
+		.content_schema_update = false,
+	},
+
 	// Used for testing
 	//	ManifestEntry{
 	//		.version = 9229,

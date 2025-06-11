@@ -187,6 +187,65 @@ struct CharacterSelect_Struct
 	CharacterSelectEntry_Struct Entries[0];
 };
 
+/* Character Sets */
+
+struct CharacterSetRequest_Struct {
+	uint32 requested_set;
+	bool update_default;
+};
+
+struct CharacterSet_Struct {
+	uint32 set_id;
+	char   name[64];
+};
+
+struct CharacterEntry_Struct {
+	uint32 character_id;
+	char   name[64];
+	uint32 level;
+	uint32 classes;
+	uint32 assigned_sets[64];
+};
+
+struct CharacterSetList_Struct {
+	uint32 selected_set;
+	uint32 default_set;
+	uint32 set_count;
+	uint32 character_count;
+	uint32 max_character_sets;
+	uint32 max_character_slots;
+	uint32 eom_available;
+	uint32 character_slot_cost;
+	uint32 character_set_cost;
+	uint32 available_slot_unlocks;
+	uint32 available_set_unlocks;
+	CharacterSet_Struct sets[64];
+	CharacterEntry_Struct characters[];
+};
+
+struct CharacterSetCreateRequest_Struct {
+	uint32 set_id;
+	char name[64];
+};
+
+struct CharacterSetDeleteRequest_Struct {
+	uint32 set_id;
+};
+
+struct CharacterSetMoveRequest_Struct {
+	uint32 set_id;
+	char character_name[64];
+	bool assign_to_set; // true = assign to set, false = remove from set
+
+};
+
+struct CharacterSetUnlockRequest_Struct {
+	uint32 type; // 0 for set, 1 for slot
+	uint32 quantity;
+};
+
+/* End Character Sets */
+
 /*
 ** Generic Spawn Struct
 ** Length: 257 Bytes

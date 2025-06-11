@@ -51,6 +51,8 @@
 #include "../common/repositories/reports_repository.h"
 #include "../common/repositories/variables_repository.h"
 #include "../common/repositories/character_pet_name_repository.h"
+#include "../common/repositories/account_character_sets_repository.h"
+#include "../common/repositories/account_character_set_members_repository.h"
 #include "../common/events/player_event_logs.h"
 
 // Disgrace: for windows compile
@@ -404,6 +406,9 @@ bool Database::DeleteCharacter(const std::string& name)
 				delete_type
 			);
 		}
+
+		// This makes an immediate db remove for character sets as there are places other than world where this can happen.
+		AccountCharacterSetMembersRepository::RemoveCharacterFromAllSets(*this, e.id);
 
 		return true;
 	}

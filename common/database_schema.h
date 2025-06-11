@@ -92,7 +92,8 @@ namespace DatabaseSchema {
 			{"thj_waypoints_character",        "character_id"},
 			{"timers",                         "char_id"},
 			{"trader",                         "char_id"},
-			{"zone_flags",                     "charID"}
+			{"zone_flags",                     "charID"},
+			{"account_character_set_members",  "character_id"}
 		};
 	}
 
@@ -110,6 +111,9 @@ namespace DatabaseSchema {
 			"account_flags",
 			"account_rewards",
 			"account_kill_counts",
+			"account_character_sets",
+			"account_character_set_members",
+			"account_character_set_limits",
 			"account_alt_currency",
 			"adventure_details",
 			"adventure_stats",

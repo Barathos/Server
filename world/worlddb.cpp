@@ -35,13 +35,16 @@
 #include "../common/repositories/character_material_repository.h"
 #include "../common/repositories/start_zones_repository.h"
 #include "../common/repositories/data_buckets_repository.h"
+#include "../common/repositories/account_character_sets_repository.h"
+#include "../common/repositories/account_character_set_members_repository.h"
+#include "../common/repositories/account_character_set_limits_repository.h"
 
 WorldDatabase database;
 WorldDatabase content_db;
 extern std::vector<RaceClassAllocation> character_create_allocations;
 extern std::vector<RaceClassCombos> character_create_race_class_combos;
 
-void WorldDatabase::GetCharSelectInfo(uint32 account_id, EQApplicationPacket **out_app, uint32 client_version_bit)
+void WorldDatabase::GetCharSelectInfo(uint32 account_id, EQApplicationPacket **out_app, uint32 client_version_bit, std::vector<CharacterDataRepository::CharacterData> character_set)
 {
 	EQ::versions::ClientVersion
 		   client_version  = EQ::versions::ConvertClientVersionBitToClientVersion(client_version_bit);
@@ -56,14 +59,11 @@ void WorldDatabase::GetCharSelectInfo(uint32 account_id, EQApplicationPacket **o
 		character_limit = 8;
 	}
 
-	auto characters = CharacterDataRepository::GetWhere(
-		database,
-		fmt::format(
-			"`account_id` = {} AND `deleted_at` IS NULL ORDER BY `name` LIMIT {}",
-			account_id,
-			character_limit
-		)
-	);
+	auto characters = character_set;
+
+	if (characters.size() > character_limit) {
+		characters.resize(character_limit);
+	}
 
 	size_t character_count = characters.size();
 	if (characters.empty()) {
@@ -108,6 +108,7 @@ void WorldDatabase::GetCharSelectInfo(uint32 account_id, EQApplicationPacket **o
 	std::vector<DataBucketsRepository::DataBuckets> buckets = {};
 	if (RuleB(Custom, MulticlassingEnabled)) {
 		buckets = DataBucketsRepository::GetWhere(database, "`key` = 'GestaltClasses' AND character_id IN (" + Strings::Join(character_ids, ",") + ")");
+
 	}
 
 	std::vector<DataBucketsRepository::DataBuckets> attackmode_buckets = {};
