@@ -708,6 +708,28 @@ bool NPC::Process()
 			}
 		}
 
+		if (fast_tic_timer.Check()) {
+			int buff_count = GetMaxTotalSlots();
+			for (int buffs_i = 0; buffs_i < buff_count; ++buffs_i) {
+				if (buffs[buffs_i].spellid >= UINT16_MAX) {
+					continue;
+				}
+
+				if (buffs[buffs_i].ticsremaining > 0) {
+					continue;
+				}
+
+				if (IsBardSong(buffs[buffs_i].spellid)) {
+					continue;
+				}
+
+				if (buffs[buffs_i].expiration_timer.Check(false)) {
+					LogSpells("Buff [{}] in slot [{}] has expired during fast tic. Fading", buffs[buffs_i].spellid, buffs_i);
+					BuffFadeBySlot(buffs_i);
+				}
+			}
+		}
+
 		BuffProcess();
 
 		if (currently_fleeing) {

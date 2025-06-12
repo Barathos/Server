@@ -4065,7 +4065,7 @@ void Mob::BuffProcess()
 						}
 					}
 
-					if (buffs[buffs_i].ticsremaining < 0 && (buffs[buffs_i].spellid == SPELL_SUPPRESSED || IsDetrimentalSpell(buffs[buffs_i].spellid) || buffs[buffs_i].expiration_timer.Check(false))) {
+					if (buffs[buffs_i].ticsremaining < 0 && (buffs[buffs_i].spellid == SPELL_SUPPRESSED || (GetUltimateOwner()->IsClient() && IsDetrimentalSpell(buffs[buffs_i].spellid)) || buffs[buffs_i].expiration_timer.Check(false))) {
 						LogSpells("Buff [{}] in slot [{}] has expired. Fading", buffs[buffs_i].spellid, buffs_i);
 						BuffFadeBySlot(buffs_i);
 					}
