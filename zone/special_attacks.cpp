@@ -495,9 +495,6 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk, bool is_riposte
 	// allready do their checking in conjunction with the attack timer
 	// throwing weapons
 	if (ca_atk->m_atk == EQ::invslot::slotRange && ranged_timer.Check(false)) {
-		if (GetAttackMode() == AttackMode::RANGED) {
-			return;
-		}
 		if (ca_atk->m_skill == EQ::skills::SkillThrowing) {
 			SetAttackTimer();
 			ThrowingAttack(GetTarget());
@@ -526,6 +523,10 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk, bool is_riposte
 			}
 			return;
 		}
+	}
+
+	if (ca_atk->m_atk == EQ::invslot::slotRange && GetAttackMode() == AttackMode::RANGED && (AutoAttackEnabled() || AutoFireEnabled())) {
+		return;
 	}
 
 	// check range for all these abilities, they are all close combat stuff
@@ -1061,7 +1062,7 @@ int Mob::GetWeaponBackstabDamage(EQ::ItemInstance* inst, Mob *target) {
 				base += target->CheckBaneDamage(inst);
 			}
 		}
-	}	
+	}
 	if (RuleB(Character, ItemExtraSkillDamageCalcAsPercent) && GetSkillDmgAmt(EQ::skills::SkillBackstab) > 0) {
 		return static_cast<int>(static_cast<float>(base) * (skill_bonus + 2.0f)) * std::abs(GetSkillDmgAmt(EQ::skills::SkillBackstab) / 100);
 	}
