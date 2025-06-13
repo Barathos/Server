@@ -3756,18 +3756,17 @@ snare has both of them negative, yet their range should work the same:
 			break;
 
 		case 111:
-			result = updownsign * (ubase + 6 * (caster_level - 16));
+			result = updownsign * (ubase + 6 * std::max(0, caster_level - std::max(uint8(34), GetSpellLevelForCaster(spell_id))));
 			break;
 		case 112:
-			result = updownsign * (ubase + 8 * (caster_level - 24));
+			result = updownsign * (ubase + 8 * std::max(0, caster_level - std::max(uint8(34), GetSpellLevelForCaster(spell_id))));
 			break;
 		case 113:
-			result = updownsign * (ubase + 10 * (caster_level - 34));
+			result = updownsign * (ubase + 10 * std::max(0, caster_level - std::max(uint8(34), GetSpellLevelForCaster(spell_id))));
 			break;
 		case 114:
-			result = updownsign * (ubase + 15 * (caster_level - 44));
+			result = updownsign * (ubase + 15 * std::max(0, caster_level - std::max(uint8(34), GetSpellLevelForCaster(spell_id))));
 			break;
-
 		case 115:	// this is only in symbol of transal
 			result = ubase;
 			if (caster_level > 15)
