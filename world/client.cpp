@@ -2940,6 +2940,7 @@ std::vector<uint32> Client::GetCharacterIDsForSetFromCache(uint32 set_id) {
 	return character_ids;
 }
 
+
 bool Client::AddCharacterToSetInCache(uint32 set_id, uint32 character_id) {
 	for (const auto& m : m_character_set_members) {
 		if (m.set_id == set_id && m.character_id == character_id) {
@@ -2947,9 +2948,14 @@ bool Client::AddCharacterToSetInCache(uint32 set_id, uint32 character_id) {
 		}
 	}
 
+	std::unordered_set<uint32> valid_character_ids;
+	for (const auto& character : m_account_characters) {
+		valid_character_ids.insert(character.id);
+	}
+
 	uint32 current_count = 0;
 	for (const auto& m : m_character_set_members) {
-		if (m.set_id == set_id) {
+		if (m.set_id == set_id && valid_character_ids.count(m.character_id)) {
 			current_count++;
 		}
 	}
