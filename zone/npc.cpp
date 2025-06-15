@@ -460,6 +460,8 @@ NPC::NPC(const NPCType *npc_type_data, Spawn2 *in_respawn, const glm::vec4 &posi
 	npc_scale_manager->ScaleNPC(this);
 
 	RestoreMana();
+	pet_assist_timer.Start(0);
+	last_assist_target_id = 0;  // Initialize to no target
 
 	if (GetBodyType() == BodyType::Animal && !RuleB(NPC, AnimalsOpenDoors)) {
 		m_can_open_doors = false;
@@ -2706,6 +2708,11 @@ void NPC::DoPetCommandAssistOnTarget(Mob* target) {
 	if (!target) { return; }
 	if (target->GetOwnerOrSelf()->IsClient()) { return; }
 
+	// Check rate limit
+	if (!pet_assist_timer.Check()) {
+		return;
+	}
+
 	Client* owner = DoPetCommandChecks(PET_ATTACK);
 	if (!owner && GetSwarmOwner()) {
 		owner = entity_list.GetClientByID(GetSwarmOwner());
@@ -2747,8 +2754,14 @@ void NPC::DoPetCommandAssistOnTarget(Mob* target) {
 
 	AddToHateList(target, hate, hate, true, false, false, SPELL_UNKNOWN, true);
 	//owner->MessageString(Chat::PetResponse, PET_ATTACKING, GetCleanName(), target->GetCleanName());
-	owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'Assisting you with {}, Master.", GetCleanName(), target->GetCleanName()).c_str());
+	if (last_assist_target_id != target->GetID()) {
+		owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'Assisting you with {}, Master.", GetCleanName(), target->GetCleanName()).c_str());
+		last_assist_target_id = target->GetID();
+	}
 	SetTarget(target);
+
+	// Start the rate limit timer
+	pet_assist_timer.Start(RuleI(Custom, PetAssistRateLimit));
 
 	return;
 }

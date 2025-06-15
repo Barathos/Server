@@ -1299,6 +1299,7 @@ RULE_INT(Spells, NecroDotCritChance,						7, "Necromancer inherent dot critical 
 RULE_BOOL(Custom,	SuppressDispels,						0, "Swaps 'cancel magic' SPA logic with SuppressBuff SPA (527).")
 RULE_INT(Custom,	SuppressDispelsTime,					6, "Number of tics that dispelled buffs will be suppressed for")
 RULE_INT(Custom,	SuppressDebuffSpellID,					21840, "Spell ID to send to client when a spell is supprssed.  21840 = 'Suppression Field'")
+RULE_INT(Custom,    PetAssistRateLimit,                     1000, "Minimum time in milliseconds between pet assist commands")
 
 // Seasonal
 RULE_INT(Custom,  	EnableSeasonalCharacters, 				0, "Set to Seasonal ID to track for current Seasonal characters, 0 to disable.")
