@@ -1195,7 +1195,7 @@ public:
 	virtual int GetHaste();
 	int32 GetMeleeMitigation();
 
-	uint8 GetWeaponDamageBonus(const EQ::ItemData* weapon, bool offhand = false);
+	int GetWeaponDamageBonus(const EQ::ItemData* weapon, bool offhand = false);
 	const DamageTable &GetDamageTable() const;
 	int GetMobFixedOffenseSkill();
 	int GetMobFixedWeaponSkill();

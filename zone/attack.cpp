@@ -3635,8 +3635,7 @@ void Mob::DamageShield(Mob* attacker, bool spell_ds) {
 		 																									//do we need to send a damage packet here also?
 	}
 }
-
-uint8 Mob::GetWeaponDamageBonus(const EQ::ItemData *weapon, bool offhand)
+int Mob::GetWeaponDamageBonus(const EQ::ItemData *weapon, bool offhand)
 {
 	// dev quote with old and new formulas
 	// https://forums.daybreakgames.com/eq/index.php?threads/test-update-09-17-15.226618/page-5#post-3326194
