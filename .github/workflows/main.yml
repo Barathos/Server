@@ -13,6 +13,7 @@ jobs:
   deploy-staging:
     if: github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     
     steps:
     - name: Deploy to Test server
@@ -29,7 +30,7 @@ jobs:
           git fetch origin
           git reset --hard origin/staging
 
-          cd ~/code/build && ninja -j$(expr $(nproc) - 2)
+          cd ~/code/build && ninja -j4
           echo "✅ successfully built new binaries on test server"
 
           cd ~/server
