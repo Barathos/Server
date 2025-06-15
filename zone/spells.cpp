@@ -7121,8 +7121,8 @@ void Mob::SendPetBuffsToClient()
 
 	for(int buffslot = 0; buffslot < MaxSlots; buffslot++)
 	{
-		if (IsValidSpell(buffs[buffslot].spellid)) {
-			pbs->spellid[buffslot] = buffs[buffslot].spellid;
+		if (IsValidOrSuppressedSpell(buffs[buffslot].spellid)) {
+			pbs->spellid[buffslot] = buffs[buffslot].spellid != SPELL_SUPPRESSED ? buffs[buffslot].spellid : RuleI(Custom, SuppressDebuffSpellID);
 			pbs->ticsremaining[buffslot] = buffs[buffslot].ticsremaining;
 			PetBuffCount++;
 		}

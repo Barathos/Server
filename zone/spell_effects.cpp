@@ -5002,7 +5002,7 @@ void Mob::BuffFadeBySlot(int slot, bool iRecalcBonuses, bool suppress, uint32 su
 		Mob *notify = p;
 		if(p->IsPet())
 			notify = p->GetOwner();
-		if(p) {
+		if(p && buffs[slot].spellid != SPELL_SUPPRESSED) {
 			notify->MessageString(Chat::SpellWornOff, SPELL_WORN_OFF_OF,
 				spells[buffs[slot].spellid].name, GetCleanName());
 		}
