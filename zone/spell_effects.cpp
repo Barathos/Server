@@ -3756,17 +3756,77 @@ snare has both of them negative, yet their range should work the same:
 			break;
 
 		case 111:
-			result = updownsign * (ubase + 6 * std::max(0, caster_level - std::max(uint8(34), GetSpellLevelForCaster(spell_id))));
-			break;
+			{
+				int spell_min_level = GetSpellLevelForCaster(spell_id);
+
+				if (spell_min_level <= 0) {
+					spell_min_level = 16;
+				}
+
+				int baseline = std::min(16, spell_min_level);
+				int level_diff = caster_level - baseline;
+
+				if (level_diff < 0) {
+					level_diff = 0;
+				}
+
+				result = updownsign * (ubase + 6 * level_diff);
+				break;
+			}
 		case 112:
-			result = updownsign * (ubase + 8 * std::max(0, caster_level - std::max(uint8(34), GetSpellLevelForCaster(spell_id))));
-			break;
+			{
+				int spell_min_level = GetSpellLevelForCaster(spell_id);
+
+				if (spell_min_level <= 0) {
+					spell_min_level = 24;
+				}
+
+				int baseline = std::min(24, spell_min_level);
+				int level_diff = caster_level - baseline;
+
+				if (level_diff < 0) {
+					level_diff = 0;
+				}
+
+				result = updownsign * (ubase + 8 * level_diff);
+				break;
+			}
 		case 113:
-			result = updownsign * (ubase + 10 * std::max(0, caster_level - std::max(uint8(34), GetSpellLevelForCaster(spell_id))));
-			break;
+			{
+				int spell_min_level = GetSpellLevelForCaster(spell_id);
+
+				if (spell_min_level <= 0) {
+					spell_min_level = 34;
+				}
+
+				int baseline = std::min(34, spell_min_level);
+				int level_diff = caster_level - baseline;
+
+				if (level_diff < 0) {
+					level_diff = 0;
+				}
+
+				result = updownsign * (ubase + 10 * level_diff);
+				break;
+			}
 		case 114:
-			result = updownsign * (ubase + 15 * std::max(0, caster_level - std::max(uint8(34), GetSpellLevelForCaster(spell_id))));
-			break;
+			{
+				int spell_min_level = GetSpellLevelForCaster(spell_id);
+
+				if (spell_min_level <= 0) {
+					spell_min_level = 44;
+				}
+
+				int baseline = std::min(44, spell_min_level);
+				int level_diff = caster_level - baseline;
+
+				if (level_diff < 0) {
+					level_diff = 0;
+				}
+
+				result = updownsign * (ubase + 15 * level_diff);
+				break;
+			}
 		case 115:	// this is only in symbol of transal
 			result = ubase;
 			if (caster_level > 15)
