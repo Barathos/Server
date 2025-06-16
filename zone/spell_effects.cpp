@@ -3754,79 +3754,18 @@ snare has both of them negative, yet their range should work the same:
 			//is there a reason we dont use updownsign here???
 			result = ubase + (caster_level / 6);
 			break;
-
 		case 111:
-			{
-				int spell_min_level = GetSpellLevelForCaster(spell_id);
-
-				if (spell_min_level <= 0) {
-					spell_min_level = 16;
-				}
-
-				int baseline = std::min(16, spell_min_level);
-				int level_diff = caster_level - baseline;
-
-				if (level_diff < 0) {
-					level_diff = 0;
-				}
-
-				result = updownsign * (ubase + 6 * level_diff);
-				break;
-			}
+			result = updownsign * (ubase + 6 * (std::max(0,caster_level - 16)));
+			break;
 		case 112:
-			{
-				int spell_min_level = GetSpellLevelForCaster(spell_id);
-
-				if (spell_min_level <= 0) {
-					spell_min_level = 24;
-				}
-
-				int baseline = std::min(24, spell_min_level);
-				int level_diff = caster_level - baseline;
-
-				if (level_diff < 0) {
-					level_diff = 0;
-				}
-
-				result = updownsign * (ubase + 8 * level_diff);
-				break;
-			}
+			result = updownsign * (ubase + 8 * (std::max(0,caster_level - 24)));
+			break;
 		case 113:
-			{
-				int spell_min_level = GetSpellLevelForCaster(spell_id);
-
-				if (spell_min_level <= 0) {
-					spell_min_level = 34;
-				}
-
-				int baseline = std::min(34, spell_min_level);
-				int level_diff = caster_level - baseline;
-
-				if (level_diff < 0) {
-					level_diff = 0;
-				}
-
-				result = updownsign * (ubase + 10 * level_diff);
-				break;
-			}
+			result = updownsign * (ubase + 10 * (std::max(0,caster_level - 34)));
+			break;
 		case 114:
-			{
-				int spell_min_level = GetSpellLevelForCaster(spell_id);
-
-				if (spell_min_level <= 0) {
-					spell_min_level = 44;
-				}
-
-				int baseline = std::min(44, spell_min_level);
-				int level_diff = caster_level - baseline;
-
-				if (level_diff < 0) {
-					level_diff = 0;
-				}
-
-				result = updownsign * (ubase + 15 * level_diff);
-				break;
-			}
+			result = updownsign * (ubase + 15 * (std::max(0,caster_level - 44)));
+			break;
 		case 115:	// this is only in symbol of transal
 			result = ubase;
 			if (caster_level > 15)
