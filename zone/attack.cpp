@@ -6724,7 +6724,6 @@ void Mob::CommonOutgoingHitSuccess(Mob* defender, DamageHitInfo &hit, ExtraAttac
 				float bonus = HeroicDexScale(GetHeroicDEX());
 				hit.damage_done += hit.damage_done * (RuleR(Custom, ScaleBowByHDex) * bonus);
 			}
-			hit.damage_done = DoDamageCaps(hit.damage_done);
 		}
 	}
 
