@@ -2151,8 +2151,9 @@ bool ZoneDatabase::LoadStaticZonePoints(LinkedList<ZonePoint *> *zone_point_list
 		zp->target_x             = zone_point.target_x;
 		zp->target_y             = zone_point.target_y;
 		zp->target_z             = zone_point.target_z;
-		zp->target_zone_id       = zone_point.target_zone_id;
-		zp->heading              = zone_point.heading;
+                zp->target_zone_id       = zone_point.target_zone_id;
+                zp->target_version       = zone_point.target_version;
+                zp->heading              = zone_point.heading;
 		zp->target_heading       = zone_point.target_heading;
 		zp->number               = zone_point.number;
 		zp->target_zone_instance = zone_point.target_instance;
@@ -2161,8 +2162,8 @@ bool ZoneDatabase::LoadStaticZonePoints(LinkedList<ZonePoint *> *zone_point_list
 		zp->height               = zone_point.height;
 		zp->width                = zone_point.width;
 
-		LogZonePoints(
-			"Loading ZP x [{}] y [{}] z [{}] heading [{}] target x y z zone_id instance_id [{}] [{}] [{}] [{}] [{}] number [{}] is_virtual [{}] height [{}] width [{}]",
+                LogZonePoints(
+                        "Loading ZP x [{}] y [{}] z [{}] heading [{}] target x y z zone_id version instance_id [{}] [{}] [{}] [{}] [{}] [{}] number [{}] is_virtual [{}] height [{}] width [{}]",
 			zp->x,
 			zp->y,
 			zp->z,
@@ -2170,13 +2171,14 @@ bool ZoneDatabase::LoadStaticZonePoints(LinkedList<ZonePoint *> *zone_point_list
 			zp->target_x,
 			zp->target_y,
 			zp->target_z,
-			zp->target_zone_id,
-			zp->target_zone_instance,
-			zp->number,
-			zp->is_virtual ? "true" : "false",
-			zp->height,
-			zp->width
-		);
+                        zp->target_zone_id,
+                        zp->target_version,
+                        zp->target_zone_instance,
+                        zp->number,
+                        zp->is_virtual ? "true" : "false",
+                        zp->height,
+                        zp->width
+                );
 
 		if (zone_point.is_virtual) {
 			zone->virtual_zone_point_list.emplace_back(zone_point);

@@ -74,9 +74,10 @@ void Client::Handle_OP_ZoneChange(const EQApplicationPacket *app) {
 
 	content_service.HandleZoneRoutingMiddleware(zc);
 
-	uint16 target_zone_id = 0;
-	auto target_instance_id = zc->instanceID;
-	ZonePoint* zone_point = nullptr;
+        uint16 target_zone_id = 0;
+        auto target_instance_id = zc->instanceID;
+        int16 target_version = 0;
+        ZonePoint* zone_point = nullptr;
 
 	//figure out where they are going.
 	if (zc->zoneID == 0) {
@@ -102,11 +103,12 @@ void Client::Handle_OP_ZoneChange(const EQApplicationPacket *app) {
 				break;
 			case ZoneUnsolicited: //client came up with this on its own.
 				zone_point = zone->GetClosestZonePointWithoutZone(GetX(), GetY(), GetZ(), this, ZONEPOINT_NOZONE_RANGE);
-				if (zone_point) {
-					//we found a zone point, which is a reasonable distance away
-					//assume that is the one were going with.
-					target_zone_id = zone_point->target_zone_id;
-					target_instance_id = zone_point->target_zone_instance;
+                                if (zone_point) {
+                                        //we found a zone point, which is a reasonable distance away
+                                        //assume that is the one were going with.
+                                        target_zone_id = zone_point->target_zone_id;
+                                        target_instance_id = zone_point->target_zone_instance;
+                                        target_version = zone_point->target_version;
 				} else {
 					//unable to find a zone point... is there anything else
 					//that can be a valid un-zolicited zone request?
@@ -199,7 +201,7 @@ void Client::Handle_OP_ZoneChange(const EQApplicationPacket *app) {
 		return;
 	}
 
-	auto target_instance_version = database.GetInstanceVersion(target_instance_id);
+        auto target_instance_version = target_instance_id ? database.GetInstanceVersion(target_instance_id) : target_version;
 	auto zone_data = GetZoneVersionWithFallback(
 		ZoneID(target_zone_name),
 		target_instance_version
@@ -375,9 +377,10 @@ void Client::Handle_OP_ZoneChange(const EQApplicationPacket *app) {
 		Message(Chat::White, "Your GM flag allows you to bypass zone expansion checks.");
 	}
 
-	if (zoning_message == ZoningMessage::ZoneSuccess) {
-		DoZoneSuccess(zc, target_zone_id, target_instance_id, target_x, target_y, target_z, target_heading, ignore_restrictions);
-	} else {
+        if (zoning_message == ZoningMessage::ZoneSuccess) {
+                uint32 send_instance = target_instance_id ? target_instance_id : target_version;
+                DoZoneSuccess(zc, target_zone_id, send_instance, target_x, target_y, target_z, target_heading, ignore_restrictions);
+        } else {
 		LogError("Zoning [{}]: Rules prevent this char from zoning into [{}]", GetName(), target_zone_name);
 		SendZoneError(zc, zoning_message);
 	}
@@ -590,7 +593,12 @@ void Client::MovePC(uint32 zoneID, float x, float y, float z, float heading, uin
 }
 
 void Client::MovePC(uint32 zoneID, uint32 instanceID, float x, float y, float z, float heading, uint8 ignorerestrictions, ZoneMode zm){
-	ProcessMovePC(zoneID, instanceID, x, y, z, heading, ignorerestrictions, zm);
+        ProcessMovePC(zoneID, instanceID, x, y, z, heading, ignorerestrictions, zm);
+}
+
+void Client::MovePC(uint32 zoneID, int16 version, float x, float y, float z, float heading, uint8 ignorerestrictions, ZoneMode zm)
+{
+        ProcessMovePC(zoneID, version, x, y, z, heading, ignorerestrictions, zm);
 }
 
 void Client::MoveZone(const char *zone_short_name, const glm::vec4 &location) {

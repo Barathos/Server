@@ -7099,19 +7099,30 @@ ALTER TABLE `npc_types`
 )",
 		.content_schema_update = true
 	},
-	ManifestEntry{
-		.version = 9323,
-		.description = "2025_04_16_character_data_first_login.sql",
-		.check = "SHOW COLUMNS FROM `character_data` LIKE 'first_login'",
-		.condition = "empty",
-		.match = "",
-		.sql = R"(
+        ManifestEntry{
+                .version = 9323,
+                .description = "2025_04_16_character_data_first_login.sql",
+                .check = "SHOW COLUMNS FROM `character_data` LIKE 'first_login'",
+                .condition = "empty",
+                .match = "",
+                .sql = R"(
 ALTER TABLE `character_data`
 CHANGE COLUMN `firstlogon` `ingame` tinyint(1) UNSIGNED NOT NULL DEFAULT 0 AFTER `xtargets`,
 ADD COLUMN `first_login` int(11) UNSIGNED NOT NULL DEFAULT 0 AFTER `xtargets`;
 )",
-		.content_schema_update = false
-	},
+                .content_schema_update = false
+        },
+        ManifestEntry{
+                .version = 9324,
+                .description = "2025_06_01_zonepoints_target_version.sql",
+                .check = "SHOW COLUMNS FROM `zone_points` LIKE 'target_version'",
+                .condition = "empty",
+                .match = "",
+                .sql = R"(
+ALTER TABLE `zone_points` ADD COLUMN `target_version` INT NOT NULL DEFAULT 0 AFTER `target_zone_id`;
+)",
+                .content_schema_update = false
+        },
 // -- template; copy/paste this when you need to create a new entry
 //	ManifestEntry{
 //		.version = 9228,
