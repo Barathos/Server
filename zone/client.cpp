@@ -6988,12 +6988,14 @@ void Client::SendZonePoints()
 			// if we don't use the same instance_id that the client was sent, the client will forcefully
 			// issue a zone change request when they should be simply moving to a different point in the same zone
 			// because the client will think the zone point target is different from the current instance
-			auto target_instance = data->target_zone_instance;
-			if (data->target_zone_id == zone->GetZoneID() && data->target_zone_instance == 0) {
-				target_instance = zone->GetInstanceID();
-			}
+                        auto target_instance = data->target_zone_instance;
+                        if (data->target_zone_id == zone->GetZoneID() && data->target_zone_instance == 0 && data->target_version == 0) {
+                                target_instance = zone->GetInstanceID();
+                        } else if (data->target_zone_instance == 0 && data->target_version != 0) {
+                                target_instance = data->target_version;
+                        }
 
-			zp->zpe[i].zoneinstance = target_instance;
+                        zp->zpe[i].zoneinstance = target_instance;
 			i++;
 		}
 		iterator.Advance();
@@ -9872,14 +9874,25 @@ void Client::CheckVirtualZoneLines()
 			GetZ() < (virtual_zone_point.z + (float) virtual_zone_point.height)
 			) {
 
-			MovePC(
-				virtual_zone_point.target_zone_id,
-				virtual_zone_point.target_instance,
-				virtual_zone_point.target_x,
-				virtual_zone_point.target_y,
-				virtual_zone_point.target_z,
-				virtual_zone_point.target_heading
-			);
+                        if (virtual_zone_point.target_instance == 0 && virtual_zone_point.target_version != 0) {
+                                MovePC(
+                                        virtual_zone_point.target_zone_id,
+                                        virtual_zone_point.target_version,
+                                        virtual_zone_point.target_x,
+                                        virtual_zone_point.target_y,
+                                        virtual_zone_point.target_z,
+                                        virtual_zone_point.target_heading
+                                );
+                        } else {
+                                MovePC(
+                                        virtual_zone_point.target_zone_id,
+                                        virtual_zone_point.target_instance,
+                                        virtual_zone_point.target_x,
+                                        virtual_zone_point.target_y,
+                                        virtual_zone_point.target_z,
+                                        virtual_zone_point.target_heading
+                                );
+                        }
 
 			LogZonePoints(
 				"Virtual Zone Box Sending player [{}] to [{}]",

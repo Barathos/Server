@@ -800,7 +800,8 @@ public:
 	void MovePC(const char* zonename, float x, float y, float z, float heading, uint8 ignorerestrictions = 0, ZoneMode zm = ZoneSolicited);
 	void MovePC(uint32 zoneID, float x, float y, float z, float heading, uint8 ignorerestrictions = 0, ZoneMode zm = ZoneSolicited);
 	void MovePC(float x, float y, float z, float heading, uint8 ignorerestrictions = 0, ZoneMode zm = ZoneSolicited);
-	void MovePC(uint32 zoneID, uint32 instanceID, float x, float y, float z, float heading, uint8 ignorerestrictions = 0, ZoneMode zm = ZoneSolicited);
+        void MovePC(uint32 zoneID, uint32 instanceID, float x, float y, float z, float heading, uint8 ignorerestrictions = 0, ZoneMode zm = ZoneSolicited);
+        void MovePC(uint32 zoneID, int16 version, float x, float y, float z, float heading, uint8 ignorerestrictions = 0, ZoneMode zm = ZoneSolicited);
 	void MoveZone(const char *zone_short_name, const glm::vec4& location = glm::vec4(0.f));
 	void MoveZoneGroup(const char *zone_short_name, const glm::vec4& location = glm::vec4(0.f));
 	void MoveZoneRaid(const char *zone_short_name, const glm::vec4& location = glm::vec4(0.f));

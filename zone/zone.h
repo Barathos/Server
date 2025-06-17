@@ -69,8 +69,9 @@ struct ZonePoint {
 	float  target_y;
 	float  target_z;
 	float  target_heading;
-	uint16 target_zone_id;
-	int32  target_zone_instance;
+        uint16 target_zone_id;
+        int16  target_version;
+        int32  target_zone_instance;
 	uint32 client_version_mask;
 	bool   is_virtual;
 	int    height;
