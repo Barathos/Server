@@ -29,13 +29,23 @@ jobs:
           echo "Deploying staging branch..."
           git fetch origin
           git reset --hard origin/staging
-
-          cd ~/code/build && ninja -j4
+        
+          cd ~/code/build
+        
+          # Keep-alive to avoid GitHub 10-min no-output timeout
+          (while true; do echo "Building..."; sleep 30; done) &
+          KEEP_ALIVE_PID=$!
+        
+          echo "Starting build..."
+          stdbuf -oL ninja -j4
+        
+          kill $KEEP_ALIVE_PID
+        
           echo "✅ successfully built new binaries on test server"
-
+        
           cd ~/server
           ./bin/spire spire:launcher restart
-          
+        
           echo "✅ Successfully deployed staging to test server"
 
   deploy-production:
