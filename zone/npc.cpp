@@ -462,6 +462,7 @@ NPC::NPC(const NPCType *npc_type_data, Spawn2 *in_respawn, const glm::vec4 &posi
 	RestoreMana();
 	pet_assist_timer.Start(0);
 	last_assist_target_id = 0;  // Initialize to no target
+	last_attack_target_id = 0;	// Initialize to no target
 
 	if (GetBodyType() == BodyType::Animal && !RuleB(NPC, AnimalsOpenDoors)) {
 		m_can_open_doors = false;
@@ -2698,7 +2699,10 @@ void NPC::DoPetCommandAttack(Mob* target, bool force) {
 	}
 
 	AddToHateList(target, hate, hate, true, false, false, SPELL_UNKNOWN, true);
-	owner->MessageString(Chat::PetResponse, PET_ATTACKING, GetCleanName(), target->GetCleanName());
+	if (last_attack_target_id != target->GetID()) {
+		last_attack_target_id = target->GetID();
+		owner->MessageString(Chat::PetResponse, PET_ATTACKING, GetCleanName(), target->GetCleanName());
+	}
 	SetTarget(target);
 
 	return;
@@ -2707,11 +2711,6 @@ void NPC::DoPetCommandAttack(Mob* target, bool force) {
 void NPC::DoPetCommandAssistOnTarget(Mob* target) {
 	if (!target) { return; }
 	if (target->GetOwnerOrSelf()->IsClient()) { return; }
-
-	// Check rate limit
-	if (!pet_assist_timer.Check()) {
-		return;
-	}
 
 	Client* owner = DoPetCommandChecks(PET_ATTACK);
 	if (!owner && GetSwarmOwner()) {
@@ -2726,6 +2725,14 @@ void NPC::DoPetCommandAssistOnTarget(Mob* target) {
 
 	if (target->IsMezzed()) {
 		owner->MessageString(Chat::PetResponse, CANNOT_WAKE, GetCleanName(), target->GetCleanName());
+		return;
+	}
+
+	// Check rate limit
+	if (!pet_assist_timer.Check()) {
+		zone->AddAggroMob();
+		int hate = 1;
+		AddToHateList(target, hate, hate, true, false, false, SPELL_UNKNOWN, true);
 		return;
 	}
 
@@ -2757,6 +2764,9 @@ void NPC::DoPetCommandAssistOnTarget(Mob* target) {
 	if (last_assist_target_id != target->GetID()) {
 		owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'Assisting you with {}, Master.", GetCleanName(), target->GetCleanName()).c_str());
 		last_assist_target_id = target->GetID();
+		if (last_attack_target_id != target->GetID()) {
+			last_attack_target_id = 0;
+		}
 	}
 	SetTarget(target);
 
@@ -2776,7 +2786,7 @@ void NPC::DoPetCommandBackOff() {
 	if (!owner) { return; }
 
 	owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'As you command, Master, calming down.", GetCleanName()).c_str());
-
+	last_attack_target_id = 0;
 	WipeHateList();
 	SetTarget(nullptr);
 	SetPetStop(false);
@@ -3306,6 +3316,7 @@ void NPC::DoPetCommandSit(bool enabled) {
 	owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'Changing position, Master.", GetCleanName()).c_str());
 
 	if (enabled) {
+		last_attack_target_id = 0; // Reset attack target when sitting
 		SetPetOrder(SPO_Sit);
 		SetRunAnimSpeed(0);
 		InterruptSpell();
@@ -3332,6 +3343,7 @@ void NPC::DoPetCommandHold(bool enabled) {
    SetHeld(enabled);
 
    if (enabled) {
+	last_attack_target_id = 0; // Reset attack target when held
    	owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'Waiting for your order to attack, Master.", GetCleanName()).c_str());
    } else {
    	owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'Attacking at will, Master.", GetCleanName()).c_str());
@@ -3354,6 +3366,7 @@ void NPC::DoPetCommandGHold(bool enabled) {
    SetGHeld(enabled);
 
    if (enabled) {
+	last_attack_target_id = 0; // Reset attack target when held
    	owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'Waiting for your order to attack any new targets, Master.", GetCleanName()).c_str());
    } else {
    	owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'Attacking at will, Master.", GetCleanName()).c_str());
@@ -3416,6 +3429,7 @@ void NPC::DoPetCommandFeign() {
 		SetFeigned(false);
 		entity_list.MessageCloseString(this, false, 200, 10, STRING_FEIGNFAILED, GetCleanName());
 	} else {
+		last_attack_target_id = 0;  // Reset attack target when feigning
 		bool has_aggro_immunity = GetSpecialAbility(SpecialAbility::AggroImmunity);
 		SetSpecialAbility(SpecialAbility::AggroImmunity, 1);
 		WipeHateList();
@@ -3444,6 +3458,7 @@ void NPC::DoPetCommandStop(bool enabled) {
 	SetPetStop(enabled);
 
 	if (enabled) {
+		last_attack_target_id = 0; // Reset attack target when stopping
 		owner->Message(Chat::PetResponse, fmt::format("{} tells you, 'As you wish, oh great one.", GetCleanName()).c_str());
 	}
 }

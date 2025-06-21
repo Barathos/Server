@@ -603,6 +603,7 @@ public:
 	std::unique_ptr<Timer> AIautocastspell_timer;
 	Timer pet_assist_timer;  // Rate limit timer for pet assist commands
 	uint32 last_assist_target_id;
+	uint32 last_attack_target_id;
 
 	virtual int GetStuckBehavior() const { return NPCTypedata_ours ? NPCTypedata_ours->stuck_behavior : NPCTypedata->stuck_behavior; }
 
