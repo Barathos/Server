@@ -1792,7 +1792,7 @@ bool Mob::Attack(Mob* other, int Hand, bool bRiposte, bool IsStrikethrough, bool
 		}
 	}
 
-	if (RuleR(Custom, ScaleAutoAttackByHStr)) {
+	if (my_hit.damage_done > 0 && RuleR(Custom, ScaleAutoAttackByHStr)) {
 		float bonus = HeroicSTRScale(GetHeroicSTR());
 		my_hit.damage_done += my_hit.damage_done * (RuleR(Custom, ScaleAutoAttackByHStr) * bonus);
 	}
@@ -6720,7 +6720,7 @@ void Mob::CommonOutgoingHitSuccess(Mob* defender, DamageHitInfo &hit, ExtraAttac
 				hit.damage_done = min;
 			}
 
-			if (RuleR(Custom, ScaleBowByHDex)) {
+			if (hit.damage_done > 0 && RuleR(Custom, ScaleBowByHDex)) {
 				float bonus = HeroicDexScale(GetHeroicDEX());
 				hit.damage_done += hit.damage_done * (RuleR(Custom, ScaleBowByHDex) * bonus);
 			}
