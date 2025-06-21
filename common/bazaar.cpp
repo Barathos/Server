@@ -205,7 +205,7 @@ Bazaar::GetSearchResults(
 	if (search.slot != std::numeric_limits<uint32>::max()) {
 		if (item_slot_searches_new.contains(search.slot)) {
 			where_criteria_items.append(
-				fmt::format(" AND items.slots & {0} = {0}", item_slot_searches_new[search.slot]));
+				fmt::format(" AND items.slots & {0} != 0", item_slot_searches_new[search.slot]));
 		}
 	}
 
@@ -220,11 +220,11 @@ Bazaar::GetSearchResults(
 
 	if (search.race != std::numeric_limits<uint32>::max()) {
 		where_criteria_items.append(
-			fmt::format(" AND items.races & {0} = {0}", GetPlayerRaceBit(GetRaceIDFromPlayerRaceValue(search.race))));
+			fmt::format(" AND items.races & {0} != 0", GetPlayerRaceBit(GetRaceIDFromPlayerRaceValue(search.race))));
 	}
 
 	if (search._class != std::numeric_limits<uint32>::max()) {
-		where_criteria_items.append(fmt::format(" AND items.classes & {0} = {0}", GetPlayerClassBit(search._class)));
+		where_criteria_items.append(fmt::format(" AND items.classes & {0} != 0", GetPlayerClassBit(search._class)));
 	}
 
 	if (search.item_stat != std::numeric_limits<uint32>::max()) {
@@ -232,7 +232,8 @@ Bazaar::GetSearchResults(
 			field_criteria_items = fmt::format("{}", item_stat_searches_new[search.item_stat].query_string);
 			if (item_stat_searches_new[search.item_stat].skill_type) {
 				where_criteria_items.append(
-					fmt::format(" AND items.skillmodtype = {} ", item_stat_searches_new[search.item_stat].skill_type));
+					fmt::format(" AND items.skillmodtype = {} AND items.skillmodvalue > 0",
+						item_stat_searches_new[search.item_stat].skill_type));
 			}
 			else {
 				where_criteria_items.append(

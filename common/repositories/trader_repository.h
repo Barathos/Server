@@ -296,7 +296,7 @@ public:
 
 		auto query = fmt::format(
 			"SELECT trader.*, c.`name` FROM `trader` INNER JOIN character_data AS c ON trader.char_id = c.id "
-			"WHERE {} ORDER BY trader.char_id ASC",
+			"WHERE {} ORDER BY trader.item_id ASC, trader.item_cost ASC, trader.char_id ASC",
 			search_criteria_trader
 		);
 
