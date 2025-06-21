@@ -6712,7 +6712,7 @@ void Mob::CommonOutgoingHitSuccess(Mob* defender, DamageHitInfo &hit, ExtraAttac
 
 		if (IsClient())
 		{
-			int min = (std::max(GetHeroicDEX() / 3, 1) * (hit.base_damage / RuleR(Custom, ScaleBowMinimumDamageMultiplier)));
+			int min = (std::max(GetHeroicDEX() / RuleR(Custom, ScaleBowMinimumDamageDivisor), 1) * (hit.base_damage / RuleR(Custom, ScaleBowMinimumDamageMultiplier)));
 			if (hit.damage_done < min)
 			{
 				LogDebug("hit clamped to [{}] from [{}]", min, hit.damage_done);
