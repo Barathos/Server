@@ -6696,7 +6696,6 @@ void Mob::CommonOutgoingHitSuccess(Mob* defender, DamageHitInfo &hit, ExtraAttac
 
 	if (hit.skill == EQ::skills::SkillArchery) {
 		int bonus = aabonuses.ArcheryDamageModifier + itembonuses.ArcheryDamageModifier + spellbonuses.ArcheryDamageModifier;
-		hit.damage_done += hit.damage_done * bonus / 100;
 		int headshot = TryHeadShot(defender, hit.skill);
 		if (headshot > 0) {
 			hit.damage_done = headshot;
@@ -6713,7 +6712,7 @@ void Mob::CommonOutgoingHitSuccess(Mob* defender, DamageHitInfo &hit, ExtraAttac
 
 		if (IsClient())
 		{
-			int min = (GetHeroicDEX() * RuleR(Custom, ScaleBowMinimumDamageMultiplier));
+			int min = (std::max(GetHeroicDEX() / 3, 1) * (hit.base_damage / RuleR(Custom, ScaleBowMinimumDamageMultiplier)));
 			if (hit.damage_done < min)
 			{
 				LogDebug("hit clamped to [{}] from [{}]", min, hit.damage_done);
@@ -6724,7 +6723,9 @@ void Mob::CommonOutgoingHitSuccess(Mob* defender, DamageHitInfo &hit, ExtraAttac
 				float bonus = HeroicDexScale(GetHeroicDEX());
 				hit.damage_done += hit.damage_done * (RuleR(Custom, ScaleBowByHDex) * bonus);
 			}
+			hit.damage_done = DoDamageCaps(hit.damage_done);
 		}
+		hit.damage_done += hit.damage_done * bonus / 100;
 	}
 
 	int extra_mincap = 0;
