@@ -1095,7 +1095,17 @@ bool Mob::DoCastingChecksOnTarget(bool check_on_casting, int32 spell_id, Mob *sp
 	/*
 	 Require that if this has a stacking conflict, the spell will actually land.
 	 */
-	{
+	// Skip buff conflict check for mass group buffs and group buffs
+	bool check_buff_conflicts = true;
+    if (spells[spell_id].target_type == ST_Group || spells[spell_id].target_type == ST_GroupNoPets ||
+			spells[spell_id].target_type == ST_GroupTeleport || IsEffectInSpell(spell_id, SE_MassGroupBuff)) {
+		check_buff_conflicts= false;
+	}
+    // For target type 14 (pets), try to cast regardless of conflicts
+    if (spells[spell_id].target_type == ST_Pet) {
+		check_buff_conflicts= false;
+	}
+	if (check_buff_conflicts) {
 		int buff_count = spell_target->GetMaxTotalSlots();
 		uint32 start_slot = spell_target->GetFirstBuffSlot(
 				IsDisciplineBuff(spell_id),
