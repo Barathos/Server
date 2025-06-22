@@ -23,29 +23,24 @@ jobs:
         username: ${{ secrets.N_THJ_TEST_USER }}
         key: ${{ secrets.N_THJ_TEST_KEY }}
         port: 2222
+        timeout: 90m
+        command_timeout: 60m
         script: |
           set -e
           cd /home/eqemu/code/
           echo "Deploying staging branch..."
           git fetch origin
           git reset --hard origin/staging
-        
+    
           cd ~/code/build
-        
-          # Keep-alive to avoid GitHub 10-min no-output timeout
-          (while true; do echo "Building..."; sleep 30; done) &
-          KEEP_ALIVE_PID=$!
-        
           echo "Starting build..."
-          stdbuf -oL ninja -j4
-        
-          kill $KEEP_ALIVE_PID
-        
+          stdbuf -oL ninja -j4 -v
+    
           echo "✅ successfully built new binaries on test server"
-        
+    
           cd ~/server
           ./bin/spire spire:launcher restart
-        
+    
           echo "✅ Successfully deployed staging to test server"
 
   deploy-production:
