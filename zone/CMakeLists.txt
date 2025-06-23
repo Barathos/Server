@@ -24,6 +24,7 @@ SET(zone_sources
     combat_record.cpp
     corpse.cpp
     ../common/data_bucket.cpp
+    ../common/data_bucket.cpp
     doors.cpp
     dialogue_window.cpp
     dynamic_zone.cpp
