@@ -3173,7 +3173,7 @@ bool Perl_Client_IsAutoFireEnabled(Client* self)
 
 bool Perl_Client_ReloadDataBuckets(Client* self)
 {
-	return DataBucket::GetDataBuckets(self);
+	return self->LoadDataBucketsCache();
 }
 
 bool Perl_Client_IsTrader(Client* self)

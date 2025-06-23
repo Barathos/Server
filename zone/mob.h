@@ -20,7 +20,7 @@
 #define MOB_H
 
 #include "common.h"
-#include "data_bucket.h"
+#include "../common/data_bucket.h"
 #include "entity.h"
 #include "hate_list.h"
 #include "pathfinder_interface.h"
@@ -1572,6 +1572,7 @@ public:
 	void CalcHeroicBonuses(StatBonuses* newbon);
 
 	DataBucketKey GetScopedBucketKeys();
+	bool LoadDataBucketsCache();
 
 	bool IsCloseToBanker();
 

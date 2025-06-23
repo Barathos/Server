@@ -265,7 +265,7 @@ void Client::TransportToWaypoint(uint32 waypoint_id)
 			instance_id = GetExpedition()->GetInstanceID();
 			zone_mode = ZoneMode::ZoneToSafeCoords;
 
-			auto safe_coords = zone_store.GetZoneSafeCoordinates(zone_id, database.GetInstanceVersion(instance_id));
+			auto safe_coords = ZoneStore::Instance()->GetZoneSafeCoordinates(zone_id, database.GetInstanceVersion(instance_id));
 
 			x = safe_coords.x;
 			y = safe_coords.y;
@@ -281,7 +281,7 @@ void Client::TransportToWaypoint(uint32 waypoint_id)
 		h = waypoint->heading;
 
 		zone_mode = ZoneSolicited;
-		zone_id = zone_store.GetZoneID(waypoint->shortname);
+		zone_id = ZoneStore::Instance()->GetZoneID(waypoint->shortname);
 	}
 	else
 	{

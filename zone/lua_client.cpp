@@ -3262,7 +3262,7 @@ bool Lua_Client::IsAutoFireEnabled()
 
 bool Lua_Client::ReloadDataBuckets() {
 	Lua_Safe_Call_Bool();
-	return DataBucket::GetDataBuckets(self);
+	return self->LoadDataBucketsCache();
 }
 
 uint32 Lua_Client::GetEXPForLevel(uint16 check_level)

@@ -95,7 +95,6 @@ std::vector<RaceClassCombos> character_create_race_class_combos;
 extern ZSList zoneserver_list;
 extern LoginServerList loginserverlist;
 extern ClientList client_list;
-extern EQ::Random emu_random;
 extern uint32 numclients;
 extern volatile bool RunLoops;
 extern volatile bool UCSServerAvailable_;
@@ -1028,7 +1027,7 @@ bool Client::HandleEnterWorldPacket(const EQApplicationPacket *app) {
 	safe_delete(outapp);
 
 	// set mailkey - used for duration of character session
-	int mail_key = emu_random.Int(1, INT_MAX);
+	int mail_key = EQ::Random::Instance()->Int(1, INT_MAX);
 
 	database.SetMailKey(charid, GetIP(), mail_key);
 	if (UCSServerAvailable_) {
@@ -2426,7 +2425,7 @@ void Client::SetClassStartingSkills(PlayerProfile_Struct* pp)
 			uint8 highest_cap = 0;
 			for (uint8 class_id = Class::Warrior; class_id <= Class::Berserker; ++class_id) {
 				if (pp->classes & GetPlayerClassBit(class_id)) {
-					uint8 cap = skill_caps.GetSkillCap(class_id, (EQ::skills::SkillType)i, 1).cap;
+					uint8 cap = SkillCaps::Instance()->GetSkillCap(class_id, (EQ::skills::SkillType)i, 1).cap;
 					if (cap > highest_cap) {
 						highest_cap = cap;
 					}
@@ -2637,7 +2636,7 @@ bool Client::StoreCharacter(
 		return false;
 	}
 
-	const std::string& zone_name = zone_store.GetZoneName(p_player_profile_struct->zone_id, true);
+	const std::string& zone_name = ZoneStore::Instance()->GetZoneName(p_player_profile_struct->zone_id, true);
 	if (Strings::EqualFold(zone_name, "UNKNOWN")) {
 		p_player_profile_struct->zone_id = Zones::QEYNOS;
 	}

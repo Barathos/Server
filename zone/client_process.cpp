@@ -737,7 +737,7 @@ bool Client::Process() {
 					if (GetZoneID() != Zones::BAZAAR) {
 						if (CUnauth_tics >= 11) {
 							zone->SendDiscordMessage("admin", fmt::format("Moving [{}] to Bazaar. Unauthorized Client.", GetCleanName()));
-							const auto safe = zone_store.GetZoneSafeCoordinates(Zones::BAZAAR);
+							const auto safe = ZoneStore::Instance()->GetZoneSafeCoordinates(Zones::BAZAAR);
 							auto zone_mode = ZoneSolicited;
 
 							MovePC(

@@ -4137,10 +4137,6 @@ void EntityList::ProcessProximitySay(const char *message, Client *c, uint8 langu
 
 void EntityList::SaveAllClientsTaskState()
 {
-	if (!task_manager) {
-		return;
-	}
-
 	auto it = client_list.begin();
 	while (it != client_list.end()) {
 		Client *client = it->second;
@@ -4154,9 +4150,6 @@ void EntityList::SaveAllClientsTaskState()
 
 void EntityList::ReloadAllClientsTaskState(int task_id)
 {
-	if (!task_manager)
-		return;
-
 	auto it = client_list.begin();
 	while (it != client_list.end()) {
 		Client *client = it->second;
@@ -4167,7 +4160,7 @@ void EntityList::ReloadAllClientsTaskState(int task_id)
 				Log(Logs::General, Logs::Tasks, "[CLIENTLOAD] Reloading Task State For Client %s", client->GetName());
 				client->RemoveClientTaskState();
 				client->LoadClientTaskState();
-				task_manager->SendActiveTasksToClient(client);
+				TaskManager::Instance()->SendActiveTasksToClient(client);
 			}
 		}
 		++it;

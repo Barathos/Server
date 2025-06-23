@@ -1242,7 +1242,7 @@ uint16 Bot::GetPrimarySkillValue() {
 }
 
 uint16 Bot::MaxSkill(EQ::skills::SkillType skillid, uint16 class_, uint16 level) const {
-	return skill_caps.GetSkillCap(class_, skillid, level).cap;
+	return SkillCaps::Instance()->GetSkillCap(class_, skillid, level).cap;
 }
 
 uint32 Bot::GetTotalATK() {
@@ -3554,7 +3554,7 @@ void Bot::Depop() {
 	RemoveAllAuras();
 
 	Mob* bot_pet = GetPet();
-	
+
 	if (bot_pet) {
 		if (bot_pet->Charmed()) {
 			bot_pet->BuffFadeByEffect(SE_Charm);
@@ -3619,7 +3619,7 @@ bool Bot::Spawn(Client* botCharacterOwner) {
 		entity_list.AddBot(this, true, true);
 
 		ClearDataBucketCache();
-		DataBucket::GetDataBuckets(this);
+		LoadDataBucketsCache();
 		LoadBotSpellSettings();
 		if (!AI_AddBotSpells(GetBotSpellID())) {
 			GetBotOwner()->CastToClient()->Message(
@@ -7308,7 +7308,7 @@ void Bot::CalcBotStats(bool showtext) {
 		SetLevel(GetBotOwner()->GetLevel());
 
 	for (int sindex = 0; sindex <= EQ::skills::HIGHEST_SKILL; ++sindex) {
-		skills[sindex] = skill_caps.GetSkillCap(GetClass(), (EQ::skills::SkillType)sindex, GetLevel()).cap;
+		skills[sindex] = SkillCaps::Instance()->GetSkillCap(GetClass(), (EQ::skills::SkillType)sindex, GetLevel()).cap;
 	}
 
 	taunt_timer.Start(1000);
@@ -11240,7 +11240,7 @@ void Bot::SetSpellTypePriority(uint16 spell_type, uint8 priority_type, uint16 pr
 
 std::list<BotSpellTypeOrder> Bot::GetSpellTypesPrioritized(uint8 priority_type) {
 	std::list<BotSpellTypeOrder> cast_order;
-	
+
 	for (uint16 i = BotSpellTypes::START; i <= BotSpellTypes::END; i++) {
 		BotSpellTypeOrder typeSettings = {
 			.spellType = i,

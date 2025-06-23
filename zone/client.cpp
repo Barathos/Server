@@ -41,7 +41,7 @@ extern volatile bool RunLoops;
 #include "../common/strings.h"
 #include "../common/data_verification.h"
 #include "../common/profanity_manager.h"
-#include "data_bucket.h"
+#include "../common/data_bucket.h"
 #include "dynamic_zone.h"
 #include "expedition_request.h"
 #include "position.h"
@@ -1068,7 +1068,7 @@ bool Client::Save(uint8 iCommitNow) {
 		if (loaded_kill_counters[race_id] != count) {
 			entries.push_back(
 				AccountKillCountsRepository::AccountKillCounts{
-					.account_id = account_id,
+					.account_id = static_cast<int>(account_id),
 					.race_id = race_id,
 					.count = count
 				}
@@ -4218,7 +4218,7 @@ bool Client::CanHaveSkill(EQ::skills::SkillType skill_id) const
 	}
 
 	for (int i = Class::Warrior; i <= Class::Berserker; i++) {
-		if (HasClass(i) && skill_caps.GetSkillCap(i, skill_id, RuleI(Character, MaxLevel)).cap > 0) {
+		if (HasClass(i) && SkillCaps::Instance()->GetSkillCap(i, skill_id, RuleI(Character, MaxLevel)).cap > 0) {
 			return true;
 		}
 	}
@@ -4239,7 +4239,7 @@ uint16 Client::MaxSkill(EQ::skills::SkillType skill_id, uint16 class_id, uint8 l
 	uint16 maxSkill = 0;
 	for (int i = Class::Warrior; i <= Class::Berserker; i++) {
 		if (HasClass(i)) {
-			uint16 test = skill_caps.GetSkillCap(i, skill_id, level).cap;
+			uint16 test = SkillCaps::Instance()->GetSkillCap(class_id, skill_id, level).cap;
 			if (test > maxSkill) {
 				maxSkill = test;
 			}
@@ -4258,7 +4258,7 @@ uint16 Client::MaxSkillOriginal(EQ::skills::SkillType skill_id, uint16 class_id,
 		skill_id = EQ::skills::Skill2HPiercing;
 	}
 
-	return skill_caps.GetSkillCap(class_id, skill_id, level).cap;
+	return SkillCaps::Instance()->GetSkillCap(class_id, skill_id, level).cap;
 }
 
 uint8 Client::GetSkillTrainLevel(EQ::skills::SkillType skill_id, uint8 class_id)
@@ -4271,7 +4271,7 @@ uint8 Client::GetSkillTrainLevel(EQ::skills::SkillType skill_id, uint8 class_id)
 		skill_id = EQ::skills::Skill2HPiercing;
 	}
 
-	return skill_caps.GetSkillTrainLevel(class_id, skill_id, RuleI(Character, MaxLevel));
+	return SkillCaps::Instance()->GetSkillTrainLevel(class_id, skill_id, RuleI(Character, MaxLevel));
 }
 
 uint16 Client::GetMaxSkillAfterSpecializationRules(EQ::skills::SkillType skillid, uint16 maxSkill)
@@ -13708,22 +13708,11 @@ void Client::MaxSkills()
                     uint16 classSkillCap = (
                         EQ::skills::IsSpecializedSkill(s.first) ?
 						MAX_SPECIALIZED_SKILL :
-						skill_caps.GetSkillCap(GetClass(), s.first, GetLevel()).cap
+						SkillCaps::Instance()->GetSkillCap(classID, s.first, RuleI(Character, MaxLevel)).cap
 					);
-
-                    // Update highestSkillCap if this class has a higher skill cap
-                    if (classSkillCap > highestSkillCap) {
-                        highestSkillCap = classSkillCap;
-                    }
-                }
-            }
-        } else {
-            highestSkillCap = (
-                EQ::skills::IsSpecializedSkill(s.first) ?
-				MAX_SPECIALIZED_SKILL :
-				skill_caps.GetSkillCap(GetClass(), s.first, GetLevel()).cap
-			);
-        }
+				}
+			}
+		}
 
 		// Set skill to the highest cap found across all classes
 		if (GetSkill(s.first) < highestSkillCap) {
@@ -13731,7 +13720,6 @@ void Client::MaxSkills()
 		}
     }
 }
-
 
 void Client::SendPath(Mob* target)
 {
