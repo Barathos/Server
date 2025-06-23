@@ -203,7 +203,7 @@ int bot_command_init(void)
 		bot_command_add("spellsettingstoggle", "Toggle a bot spell use", AccountStatus::Player, bot_command_spell_settings_toggle) ||
 		bot_command_add("spellsettingsupdate", "Update a bot spell setting entry", AccountStatus::Player, bot_command_spell_settings_update) ||
 		bot_command_add("spelltypeids", "Lists spelltypes by ID", AccountStatus::Player, bot_command_spelltype_ids) ||
-		bot_command_add("spelltypenames", "Lists spelltypes by shortname", AccountStatus::Player, bot_command_spelltype_names) ||
+                bot_command_add("spelltype_shortnames", "Lists spelltypes by shortname", AccountStatus::Player, bot_command_spelltype_names) ||
 		bot_command_add("suspend", "Suspends a bot's AI processing until released", AccountStatus::Player, bot_command_suspend) ||
 		bot_command_add("taunt", "Toggles taunt use by a bot", AccountStatus::Player, bot_command_taunt) ||
 		bot_command_add("timer", "Checks or clears timers of the chosen type.", AccountStatus::GMMgmt, bot_command_timer) ||
