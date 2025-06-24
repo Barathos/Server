@@ -759,23 +759,20 @@ int64 Mob::GetActSpellHealing(uint16 spell_id, int64 value, Mob* target, bool fr
 		if (RuleB(Spells, AllowExtraDmgSkill) && !RuleB(Character, ItemExtraSkillDamageCalcAsPercent)) {
 			extra_heal += GetSkillDmgAmt(spells[spell_id].skill);
 		}
-
-		if (!lifetap) {
-			if (RuleB(Spells, HOTsScaleWithHealAmt)) {
-				if (
-					RuleB(Spells, IgnoreSpellDmgLvlRestriction) &&
-					!spells[spell_id].no_heal_damage_item_mod &&
-					GetSharedHealAmount()
-				) {
-					extra_heal += GetExtraSpellAmt(spell_id, GetSharedHealAmount(), base_value);
-				}
-				else if (
-					!spells[spell_id].no_heal_damage_item_mod &&
-					GetSharedHealAmount() &&
-					GetSpellLevelForCaster(spell_id) >= GetLevel() - 5
-				) {
-					extra_heal += GetExtraSpellAmt(spell_id, GetSharedHealAmount(), base_value);
-				}
+		if (RuleB(Spells, HOTsScaleWithHealAmt)) {
+			if (
+				RuleB(Spells, IgnoreSpellDmgLvlRestriction) &&
+				!spells[spell_id].no_heal_damage_item_mod &&
+				GetSharedHealAmount()
+			) {
+				extra_heal += GetExtraSpellAmt(spell_id, GetSharedHealAmount(), base_value);
+			}
+			else if (
+				!spells[spell_id].no_heal_damage_item_mod &&
+				GetSharedHealAmount() &&
+				GetSpellLevelForCaster(spell_id) >= GetLevel() - 5
+			) {
+				extra_heal += GetExtraSpellAmt(spell_id, GetSharedHealAmount(), base_value);
 			}
 		}
 
