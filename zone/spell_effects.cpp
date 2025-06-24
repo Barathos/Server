@@ -3803,7 +3803,7 @@ snare has both of them negative, yet their range should work the same:
 			result = ubase + (caster_level / 3); break;
 		case 122:
 		{
-			int ticdif = CalcBuffDuration_formula(caster_level, spells[spell_id].buff_duration_formula, spells[spell_id].buff_duration) - std::max((ticsremaining - 1), 0);
+			int ticdif = CalcBuffDuration_formula(caster_level, spells[spell_id].buff_duration_formula, spells[spell_id].buff_duration) - std::max((std::min(ticsremaining, static_cast<int>(spells[spell_id].buff_duration)) - 1), 0);
 			if(ticdif < 0)
 				ticdif = 0;
 
