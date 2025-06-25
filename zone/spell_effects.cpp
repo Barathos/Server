@@ -4721,6 +4721,9 @@ void Mob::BuffFadeBySlot(int slot, bool iRecalcBonuses, bool suppress, uint32 su
 
 			case SE_Charm:
 			{
+				//Trying to restore pet ownership after suppression is too much, so just downgrade to a normal dispel
+				suppress = false;
+
 				if(IsNPC())
 				{
 					CastToNPC()->RestoreGuardSpotCharm();
