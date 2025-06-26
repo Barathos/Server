@@ -8839,10 +8839,32 @@ std::unordered_map<uint16, Mob*>& Mob::GetCloseMobList(float distance)
 
 void Mob::ApplyGlobalBuffs()
 {
+	if (IsClient() && CastToClient()->IsHardcore()) {
+		return;
+	}
+
+	if (IsPet()) {
+		auto owner = GetUltimateOwner();
+		if (owner->IsClient() && owner->CastToClient()->IsHardcore()) {
+			return;
+		}
+	}
+
 	auto all_global_buffs = database.GetGlobalBuffs();
 	int64 current_time = Timer::GetTimeSeconds();
 	for (auto& buff : all_global_buffs)
 	{
+		if (IsClient() && IsBlockedBuff(buff.second.spell_id)) {
+			continue;
+		}
+
+		if (IsPet()) {
+			auto owner = GetUltimateOwner();
+			if (owner->IsClient() && owner->CastToClient()->IsBlockedPetBuff(buff.second.spell_id)) {
+				continue;
+			}
+		}
+
 		ApplyGlobalBuff(buff.second.spell_id, buff.second.duration, current_time);
 	}
 }
