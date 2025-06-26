@@ -68,7 +68,6 @@ extern Zone                  *zone;
 extern volatile bool          is_zone_loaded;
 extern void                   Shutdown();
 extern WorldServer            worldserver;
-extern PetitionList           petition_list;
 extern uint32                 numclients;
 extern volatile bool          RunLoops;
 extern QuestParserCollection *parse;
@@ -230,7 +229,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 			LogInfo("World assigned Port [{}] for this zone", sci->port);
 			ZoneConfig::SetZonePort(sci->port);
 
-			LogSys.SetDiscordHandler(&Zone::DiscordWebhookMessageHandler);
+			EQEmuLogSys::Instance()->SetDiscordHandler(&Zone::DiscordWebhookMessageHandler);
 		}
 		break;
 	}
@@ -911,8 +910,8 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 		std::cout << "Got Server Requested Petition List Refresh" << std::endl;
 		ServerPetitionUpdate_Struct* sus = (ServerPetitionUpdate_Struct*)pack->pBuffer;
 		// this was typoed to = instead of ==, not that it acts any different now though..
-		if (sus->status == 0) petition_list.ReadDatabase();
-		else if (sus->status == 1) petition_list.ReadDatabase(); // Until I fix this to be better....
+		if (sus->status == 0) PetitionList::Instance()->ReadDatabase();
+		else if (sus->status == 1) PetitionList::Instance()->ReadDatabase(); // Until I fix this to be better....
 		break;
 	}
 	case ServerOP_RezzPlayer: {
@@ -3806,7 +3805,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 
 			auto item = trader_pc->FindTraderItemBySerialNumber(item_sn);
 
-			if (item && player_event_logs.IsEventEnabled(PlayerEvent::TRADER_SELL)) {
+			if (item && PlayerEventLogs::Instance()->IsEventEnabled(PlayerEvent::TRADER_SELL)) {
 				auto e = PlayerEvent::TraderSellEvent{
 					.item_id              = item ? item->GetID() : 0,
 					.augment_1_id         = item->GetAugmentItemID(0),
@@ -3902,7 +3901,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 									Barter_Failure
 								);
 
-								if (player_event_logs.IsEventEnabled(PlayerEvent::BARTER_TRANSACTION)) {
+								if (PlayerEventLogs::Instance()->IsEventEnabled(PlayerEvent::BARTER_TRANSACTION)) {
 									PlayerEvent::BarterTransaction e{};
 									e.status        = "Failed Barter Transaction";
 									e.item_id       = sell_line.item_id;
@@ -3939,7 +3938,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 									Barter_Failure
 								);
 
-								if (player_event_logs.IsEventEnabled(PlayerEvent::BARTER_TRANSACTION)) {
+								if (PlayerEventLogs::Instance()->IsEventEnabled(PlayerEvent::BARTER_TRANSACTION)) {
 									PlayerEvent::BarterTransaction e{};
 									e.status        = "Failed Barter Transaction";
 									e.item_id       = sell_line.item_id;
@@ -4067,7 +4066,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 						Barter_Success
 					);
 
-					if (player_event_logs.IsEventEnabled(PlayerEvent::BARTER_TRANSACTION)) {
+					if (PlayerEventLogs::Instance()->IsEventEnabled(PlayerEvent::BARTER_TRANSACTION)) {
 						PlayerEvent::BarterTransaction e{};
 						e.status        = "Successful Barter Transaction";
 						e.item_id       = sell_line.item_id;
@@ -4125,7 +4124,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 						Barter_Success
 					);
 
-					if (player_event_logs.IsEventEnabled(PlayerEvent::BARTER_TRANSACTION)) {
+					if (PlayerEventLogs::Instance()->IsEventEnabled(PlayerEvent::BARTER_TRANSACTION)) {
 						PlayerEvent::BarterTransaction e{};
 						e.status        = "Successful Barter Transaction";
 						e.item_id       = sell_line.item_id;
@@ -4573,7 +4572,7 @@ void WorldServer::ProcessReload(const ServerReload::Request& request)
 			break;
 
 		case ServerReload::Type::ContentFlags:
-			content_service.SetExpansionContext()->ReloadContentFlags();
+			WorldContentService::Instance()->SetExpansionContext()->ReloadContentFlags();
 			break;
 
 		case ServerReload::Type::DzTemplates:
@@ -4591,8 +4590,8 @@ void WorldServer::ProcessReload(const ServerReload::Request& request)
 			break;
 
 		case ServerReload::Type::Logs:
-			LogSys.LoadLogDatabaseSettings();
-			player_event_logs.ReloadSettings();
+			EQEmuLogSys::Instance()->LoadLogDatabaseSettings();
+			PlayerEventLogs::Instance()->ReloadSettings();
 			break;
 
 		case ServerReload::Type::Loot:

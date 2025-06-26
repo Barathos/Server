@@ -74,6 +74,7 @@ extern volatile bool RunLoops;
 #include "../common/repositories/character_disciplines_repository.h"
 #include "../common/repositories/character_data_repository.h"
 #include "../common/repositories/character_pet_name_repository.h"
+#include "../common/repositories/completed_tasks_repository.h"
 #include "../common/repositories/discovered_items_repository.h"
 #include "../common/repositories/inventory_repository.h"
 #include "../common/repositories/keyring_repository.h"
@@ -96,7 +97,6 @@ extern Zone* zone;
 extern volatile bool is_zone_loaded;
 extern WorldServer worldserver;
 extern uint32 numclients;
-extern PetitionList petition_list;
 
 void UpdateWindowTitle(char* iNewTitle);
 
@@ -2241,7 +2241,7 @@ void Client::ChannelMessageReceived(uint8 chan_num, uint8 language, uint8 lang_s
 		}
 	}
 
-	if (player_event_logs.IsEventEnabled(PlayerEvent::EventType::SPEECH)) {
+	if (PlayerEventLogs::Instance()->IsEventEnabled(PlayerEvent::EventType::SPEECH)) {
 		PlayerEvent::PlayerSpeech e{};
 		std::string msg = message;
 		if (!msg.empty() && msg.at(0) != '#' && msg.at(0) != '^') {
@@ -2463,7 +2463,7 @@ void Client::ChannelMessageReceived(uint8 chan_num, uint8 language, uint8 lang_s
 		break;
 	}
 	case ChatChannel_Say: { /* Say */
-		if (player_event_logs.IsEventEnabled(PlayerEvent::SAY)) {
+		if (PlayerEventLogs::Instance()->IsEventEnabled(PlayerEvent::SAY)) {
 			std::string msg = message;
 			if (!msg.empty() && msg.at(0) != '#' && msg.at(0) != '^') {
 				auto e = PlayerEvent::SayEvent{
@@ -3163,7 +3163,7 @@ void Client::UpdateAdmin(bool from_database) {
 
 	if (m_pp.gm) {
 		LogInfo("[{}] - [{}] is a GM", __FUNCTION__ , GetName());
-		petition_list.UpdateGMQueue();
+		PetitionList::Instance()->UpdateGMQueue();
 	}
 
 	UpdateWho();
@@ -4076,7 +4076,7 @@ bool Client::CheckIncreaseSkill(EQ::skills::SkillType skillid, Mob *against_who,
 				//Message(Chat::Skills, "You have become better at %s! (%d/%d)", EQ::skills::GetSkillName(static_cast<EQ::skills::SkillType>(skillid)).c_str(), GetSkill(skillid), maxskill);
 			}
 
-			if (player_event_logs.IsEventEnabled(PlayerEvent::SKILL_UP)) {
+			if (PlayerEventLogs::Instance()->IsEventEnabled(PlayerEvent::SKILL_UP)) {
 				auto e = PlayerEvent::SkillUpEvent{
 					.skill_id = static_cast<uint32>(skillid),
 					.value = static_cast<int>((skillval + 1)),
@@ -6409,7 +6409,7 @@ void Client::DiscoverItem(uint32 item_id) {
 	e.item_id = item_id;
 	auto d = DiscoveredItemsRepository::InsertOne(database, e);
 
-	if (player_event_logs.IsEventEnabled(PlayerEvent::DISCOVER_ITEM)) {
+	if (PlayerEventLogs::Instance()->IsEventEnabled(PlayerEvent::DISCOVER_ITEM)) {
 		const auto* item = database.GetItem(item_id);
 
 		auto e = PlayerEvent::DiscoverItemEvent{
@@ -11526,8 +11526,8 @@ void Client::ShowDevToolsMenu()
 		Chat::White,
 		fmt::format(
 			"Current Expansion | {} ({})",
-			content_service.GetCurrentExpansionName(),
-			content_service.GetCurrentExpansion()
+			WorldContentService::Instance()->GetCurrentExpansionName(),
+			WorldContentService::Instance()->GetCurrentExpansion()
 		).c_str()
 	);
 
@@ -15110,4 +15110,18 @@ void Client::CheckItemDiscoverability(uint32 item_id)
 	}
 
 	DiscoverItem(item_id);
+}
+
+bool Client::UncompleteTask(int task_id)
+{
+	CompletedTasksRepository::DeleteWhere(
+		database,
+		fmt::format(
+			"charid = {} AND taskid = {}",
+			CharacterID(),
+			task_id
+		)
+	);
+
+	return task_state->UncompleteTask(task_id);
 }

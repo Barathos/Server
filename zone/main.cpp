@@ -88,7 +88,6 @@ extern volatile bool is_zone_loaded;
 #include "../common/path_manager.h"
 #include "../common/database/database_update.h"
 #include "../common/skill_caps.h"
-#include "zone_event_scheduler.h"
 #include "zone_cli.h"
 
 EntityList  entity_list;
@@ -102,12 +101,6 @@ TitleManager          title_manager;
 QueryServ             *QServ        = 0;
 NpcScaleManager       *npc_scale_manager;
 QuestParserCollection *parse        = 0;
-EQEmuLogSys           LogSys;
-ZoneEventScheduler    event_scheduler;
-WorldContentService   content_service;
-PlayerEventLogs       player_event_logs;
-DatabaseUpdate        database_update;
-EvolvingItemsManager  evolving_items_manager;
 
 const SPDat_Spell_Struct* spells;
 int32 SPDAT_RECORDS = -1;
@@ -124,13 +117,13 @@ bool CheckForCompatibleQuestPlugins();
 int main(int argc, char **argv)
 {
 	RegisterExecutablePlatform(ExePlatformZone);
-	LogSys.LoadLogSettingsDefaults();
+	EQEmuLogSys::Instance()->LoadLogSettingsDefaults();
 
 	set_exception_handler();
 
 	// silence logging if we ran a command
 	if (ZoneCLI::RanConsoleCommand(argc, argv) || ZoneCLI::RanTestCommand(argc, argv)) {
-		LogSys.SilenceConsoleLogging();
+		EQEmuLogSys::Instance()->SilenceConsoleLogging();
 	}
 
 	PathManager::Instance()->Init();
@@ -296,27 +289,27 @@ int main(int argc, char **argv)
 
 	// command handler (no sidecar or test commands)
 	if (ZoneCLI::RanConsoleCommand(argc, argv) && !(ZoneCLI::RanSidecarCommand(argc, argv) || ZoneCLI::RanTestCommand(argc, argv))) {
-		LogSys.EnableConsoleLogging();
+		EQEmuLogSys::Instance()->EnableConsoleLogging();
 		ZoneCLI::CommandHandler(argc, argv);
 	}
 
-	LogSys.SetDatabase(&database)
+	EQEmuLogSys::Instance()->SetDatabase(&database)
 		->SetLogPath(PathManager::Instance()->GetLogPath())
 		->LoadLogDatabaseSettings(ZoneCLI::RanTestCommand(argc, argv))
 		->SetGMSayHandler(&Zone::GMSayHookCallBackProcess)
 		->StartFileLogs();
 
 	if (ZoneCLI::RanTestCommand(argc, argv)) {
-		LogSys.SilenceConsoleLogging();
+		EQEmuLogSys::Instance()->SilenceConsoleLogging();
 	}
 
-	player_event_logs.SetDatabase(&database)->Init();
+	PlayerEventLogs::Instance()->SetDatabase(&database)->Init();
 
 	SkillCaps::Instance()->SetContentDatabase(&content_db)->LoadSkillCaps();
 
 	const auto c = EQEmuConfig::get();
 	if (c->auto_database_updates) {
-		if (database_update.SetDatabase(&database)->HasPendingUpdates()) {
+		if (DatabaseUpdate::Instance()->SetDatabase(&database)->HasPendingUpdates()) {
 			LogWarning("Database is not up to date [world] needs to be ran to apply updates, shutting down in 5 seconds");
 			std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 			LogInfo("Exiting due to pending database updates");
@@ -396,9 +389,9 @@ int main(int argc, char **argv)
 	content_db.LoadTributes();
 
 	// Load evolving item data
-	evolving_items_manager.SetDatabase(&database);
-	evolving_items_manager.SetContentDatabase(&content_db);
-	evolving_items_manager.LoadEvolvingItems();
+	EvolvingItemsManager::Instance()->SetDatabase(&database);
+	EvolvingItemsManager::Instance()->SetContentDatabase(&content_db);
+	EvolvingItemsManager::Instance()->LoadEvolvingItems();
 
 	database.GetDecayTimes(npcCorpseDecayTimes);
 
@@ -414,12 +407,12 @@ int main(int argc, char **argv)
 		LogInfo("Loaded [{}] commands loaded", Strings::Commify(std::to_string(retval)));
 	}
 
-	content_service.SetDatabase(&database)
+	WorldContentService::Instance()->SetDatabase(&database)
 		->SetContentDatabase(&content_db)
 		->SetExpansionContext()
 		->ReloadContentFlags();
 
-	event_scheduler.SetDatabase(&database)->LoadScheduledEvents();
+	ZoneEventScheduler::Instance()->SetDatabase(&database)->LoadScheduledEvents();
 
 	EQ::SayLinkEngine::LoadCachedSaylinks();
 
@@ -485,12 +478,12 @@ int main(int argc, char **argv)
 	QServ->CheckForConnectState();
 
 	worldserver.Connect();
-	worldserver.SetScheduler(&event_scheduler);
+	worldserver.SetScheduler(ZoneEventScheduler::Instance());
 
 	// sidecar command handler
 	if (ZoneCLI::RanConsoleCommand(argc, argv)
 		&& (ZoneCLI::RanSidecarCommand(argc, argv) || ZoneCLI::RanTestCommand(argc, argv))) {
-		LogSys.EnableConsoleLogging();
+		EQEmuLogSys::Instance()->EnableConsoleLogging();
 		ZoneCLI::CommandHandler(argc, argv);
 	}
 
@@ -629,7 +622,8 @@ int main(int argc, char **argv)
 				entity_list.MobProcess();
 				entity_list.BeaconProcess();
 				entity_list.EncounterProcess();
-				event_scheduler.Process(zone, &content_service);
+
+				ZoneEventScheduler::Instance()->Process(zone, WorldContentService::Instance());
 
 				if (zone) {
 					if (!zone->Process()) {
@@ -682,7 +676,7 @@ int main(int argc, char **argv)
 	bot_command_deinit();
 	safe_delete(parse);
 	LogInfo("Proper zone shutdown complete.");
-	LogSys.CloseFileLogs();
+	EQEmuLogSys::Instance()->CloseFileLogs();
 
 	safe_delete(mutex);
 	safe_delete(QServ);
@@ -694,7 +688,7 @@ void Shutdown()
 {
 	zone->Shutdown(true);
 	LogInfo("Shutting down...");
-	LogSys.CloseFileLogs();
+	EQEmuLogSys::Instance()->CloseFileLogs();
 	EQ::EventLoop::Get().Shutdown();
 }
 

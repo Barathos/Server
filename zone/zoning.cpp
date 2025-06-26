@@ -72,7 +72,7 @@ void Client::Handle_OP_ZoneChange(const EQApplicationPacket *app) {
 		int(zone_mode)
 	);
 
-	content_service.HandleZoneRoutingMiddleware(zc);
+	WorldContentService::Instance()->HandleZoneRoutingMiddleware(zc);
 
 	uint16 target_zone_id = 0;
 	auto target_instance_id = zc->instanceID;
@@ -247,9 +247,7 @@ void Client::Handle_OP_ZoneChange(const EQApplicationPacket *app) {
 		}
 	}
 
-	LogDebug("target_zone_id = {}", target_zone_id);
-
-	if (player_event_logs.IsEventEnabled(PlayerEvent::ZONING)) {
+	if (PlayerEventLogs::Instance()->IsEventEnabled(PlayerEvent::ZONING)) {
 		auto e = PlayerEvent::ZoningEvent{};
 		e.from_zone_long_name   = zone->GetLongName();
 		e.from_zone_short_name  = zone->GetShortName();
@@ -357,19 +355,19 @@ void Client::Handle_OP_ZoneChange(const EQApplicationPacket *app) {
 	//TODO: ADVENTURE ENTRANCE CHECK
 
 	// Expansion checks and routing
-	if (content_service.GetCurrentExpansion() >= Expansion::Classic && !GetGM()) {
+	if (WorldContentService::Instance()->GetCurrentExpansion() >= Expansion::Classic && !GetGM()) {
 		bool meets_zone_expansion_check = false;
 
 		auto z = ZoneStore::Instance()->GetZoneWithFallback(ZoneID(target_zone_name), 0);
-		if (z->expansion <= content_service.GetCurrentExpansion() || z->bypass_expansion_check) {
+		if (z->expansion <= WorldContentService::Instance()->GetCurrentExpansion() || z->bypass_expansion_check) {
 			meets_zone_expansion_check = true;
 		}
 
 		LogZoning(
 			"Checking zone request [{}] for expansion [{}] ({}) success [{}]",
 			target_zone_name,
-			(content_service.GetCurrentExpansion()),
-			content_service.GetCurrentExpansionName(),
+			(WorldContentService::Instance()->GetCurrentExpansion()),
+			WorldContentService::Instance()->GetCurrentExpansionName(),
 			meets_zone_expansion_check ? "true" : "false"
 		);
 
@@ -378,7 +376,7 @@ void Client::Handle_OP_ZoneChange(const EQApplicationPacket *app) {
 		}
 	}
 
-	if (content_service.GetCurrentExpansion() >= Expansion::Classic && GetGM()) {
+	if (WorldContentService::Instance()->GetCurrentExpansion() >= Expansion::Classic && GetGM()) {
 		LogInfo("[{}] Bypassing zone expansion checks because GM flag is set", GetCleanName());
 		Message(Chat::White, "Your GM flag allows you to bypass zone expansion checks.");
 	}
@@ -771,7 +769,7 @@ void Client::ZonePC(uint32 zoneID, uint32 instance_id, float x, float y, float z
 		pZoneName = strcpy(new char[zd->long_name.length() + 1], zd->long_name.c_str());
 	}
 
-	auto r = content_service.FindZone(zoneID, instance_id);
+	auto r = WorldContentService::Instance()->FindZone(zoneID, instance_id);
 	if (r.zone_id) {
 		zoneID      = r.zone_id;
 		instance_id = r.instance.id;
@@ -789,7 +787,7 @@ void Client::ZonePC(uint32 zoneID, uint32 instance_id, float x, float y, float z
 		);
 
 		// If we are zoning to the same zone, we need to use the current instance ID if it is not specified.
-		if (content_service.IsInPublicStaticInstance(instance_id) && zoneID == zone->GetZoneID() && instance_id == 0) {
+		if (WorldContentService::Instance()->IsInPublicStaticInstance(instance_id) && zoneID == zone->GetZoneID() && instance_id == 0) {
 			instance_id = zone->GetInstanceID();
 		}
 	}

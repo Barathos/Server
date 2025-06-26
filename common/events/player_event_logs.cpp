@@ -509,7 +509,7 @@ bool PlayerEventLogs::IsEventDiscordEnabled(int32_t event_type_id)
 	}
 
 	// ensure there is a matching webhook to begin with
-	if (!LogSys.GetDiscordWebhooks()[m_settings[event_type_id].discord_webhook_id].webhook_url.empty()) {
+	if (!EQEmuLogSys::Instance()->GetDiscordWebhooks()[m_settings[event_type_id].discord_webhook_id].webhook_url.empty()) {
 		return true;
 	}
 
@@ -529,11 +529,25 @@ std::string PlayerEventLogs::GetDiscordWebhookUrlFromEventType(int32_t event_typ
 	}
 
 	// ensure there is a matching webhook to begin with
-	if (!LogSys.GetDiscordWebhooks()[m_settings[event_type_id].discord_webhook_id].webhook_url.empty()) {
-		return LogSys.GetDiscordWebhooks()[m_settings[event_type_id].discord_webhook_id].webhook_url;
+	if (!EQEmuLogSys::Instance()->GetDiscordWebhooks()[m_settings[event_type_id].discord_webhook_id].webhook_url.empty()) {
+		return EQEmuLogSys::Instance()->GetDiscordWebhooks()[m_settings[event_type_id].discord_webhook_id].webhook_url;
 	}
 
 	return "";
+}
+
+void PlayerEventLogs::LoadPlayerEventSettingsFromQS(
+	const std::vector<PlayerEventLogSettingsRepository::PlayerEventLogSettings> &settings
+)
+{
+	for (const auto &e : settings) {
+		if (e.id >= PlayerEvent::MAX || e.id < 0) {
+			continue;
+		}
+		m_settings[e.id] = e;
+	}
+
+	LogInfo("Applied [{}] player event log settings from QS", settings.size());
 }
 
 // GM_COMMAND           | [x] Implemented Formatter

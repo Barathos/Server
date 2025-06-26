@@ -81,7 +81,6 @@ extern QueryServ* QServ;
 extern Zone* zone;
 extern volatile bool is_zone_loaded;
 extern WorldServer worldserver;
-extern PetitionList petition_list;
 extern EntityList entity_list;
 typedef void (Client::*ClientPacketProc)(const EQApplicationPacket *app);
 
@@ -469,7 +468,7 @@ int Client::HandlePacket(const EQApplicationPacket *app)
 		OpcodeManager::EmuToName(app->GetOpcode()),
 		o->EmuToEQ(app->GetOpcode()) == 0 ? app->GetProtocolOpcode() : o->EmuToEQ(app->GetOpcode()),
 		app->Size(),
-		(LogSys.IsLogEnabled(Logs::Detail, Logs::PacketClientServer) ? DumpPacketToString(app) : "")
+		(EQEmuLogSys::Instance()->IsLogEnabled(Logs::Detail, Logs::PacketClientServer) ? DumpPacketToString(app) : "")
 	);
 
 	EmuOpcode opcode = app->GetOpcode();
@@ -2838,7 +2837,7 @@ void Client::Handle_OP_AltCurrencyPurchase(const EQApplicationPacket *app)
 			charges = item->MaxCharges;
 		}
 
-		if (player_event_logs.IsEventEnabled(PlayerEvent::MERCHANT_PURCHASE)) {
+		if (PlayerEventLogs::Instance()->IsEventEnabled(PlayerEvent::MERCHANT_PURCHASE)) {
 			auto e = PlayerEvent::MerchantPurchaseEvent{
 				.npc_id = tar->GetNPCTypeID(),
 				.merchant_name = tar->GetCleanName(),
@@ -3043,7 +3042,7 @@ void Client::Handle_OP_AltCurrencySell(const EQApplicationPacket *app)
 		FastQueuePacket(&outapp);
 		uint64 new_balance = AddAlternateCurrencyValue(alt_cur_id, cost);
 
-		if (player_event_logs.IsEventEnabled(PlayerEvent::MERCHANT_SELL)) {
+		if (PlayerEventLogs::Instance()->IsEventEnabled(PlayerEvent::MERCHANT_SELL)) {
 			auto e = PlayerEvent::MerchantSellEvent{
 				.npc_id = tar->GetNPCTypeID(),
 				.merchant_name = tar->GetCleanName(),
@@ -5828,7 +5827,7 @@ void Client::Handle_OP_CrashDump(const EQApplicationPacket *app)
 
 void Client::Handle_OP_CreateObject(const EQApplicationPacket *app)
 {
-	if (LogSys.log_settings[Logs::Inventory].is_category_enabled)
+	if (EQEmuLogSys::Instance()->log_settings[Logs::Inventory].is_category_enabled)
 		LogInventory("Handle_OP_CreateObject() [psize: [{}]] [{}]", app->size, DumpPacketToString(app).c_str());
 
 	DropItem(EQ::invslot::slotCursor);
@@ -6002,7 +6001,7 @@ void Client::Handle_OP_DeleteItem(const EQApplicationPacket *app)
 
 		SetIntoxication(GetIntoxication()+IntoxicationIncrease);
 
-		if (player_event_logs.IsEventEnabled(PlayerEvent::ITEM_DESTROY) && inst->GetItem()) {
+		if (PlayerEventLogs::Instance()->IsEventEnabled(PlayerEvent::ITEM_DESTROY) && inst->GetItem()) {
 			auto e = PlayerEvent::DestroyItemEvent{
 				.item_id      = inst->GetItem()->ID,
 				.item_name    = inst->GetItem()->Name,
@@ -8029,7 +8028,7 @@ void Client::Handle_OP_GuildBank(const EQApplicationPacket *app)
 			if (slot_id >= 0) {
 				auto inst = GuildBanks->GetItem(GuildID(), GuildBankMainArea, slot_id, 1);
 				if (inst) {
-					if (player_event_logs.IsEventEnabled(PlayerEvent::GUILD_BANK_MOVE_TO_BANK_AREA)) {
+					if (PlayerEventLogs::Instance()->IsEventEnabled(PlayerEvent::GUILD_BANK_MOVE_TO_BANK_AREA)) {
 						PlayerEvent::GuildBankTransaction log{};
 						log.char_id  = CharacterID();
 						log.guild_id = GuildID();
@@ -8143,7 +8142,7 @@ void Client::Handle_OP_GuildBank(const EQApplicationPacket *app)
 				GuildBankDepositAck(false, sentAction);
 				DeleteItemInInventory(EQ::invslot::slotCursor, 0, false);
 
-				if (player_event_logs.IsEventEnabled(PlayerEvent::GUILD_BANK_DEPOSIT)) {
+				if (PlayerEventLogs::Instance()->IsEventEnabled(PlayerEvent::GUILD_BANK_DEPOSIT)) {
 					PlayerEvent::GuildBankTransaction log{};
 					log.char_id        = CharacterID();
 					log.guild_id       = GuildID();
@@ -8219,7 +8218,7 @@ void Client::Handle_OP_GuildBank(const EQApplicationPacket *app)
 			SendItemPacket(EQ::invslot::slotCursor, inst.get(), ItemPacketLimbo);
 			GuildBanks->DeleteItem(GuildID(), gbwis->Area, gbwis->SlotID, gbwis->Quantity, this);
 
-			if (player_event_logs.IsEventEnabled(PlayerEvent::GUILD_BANK_WITHDRAWAL)) {
+			if (PlayerEventLogs::Instance()->IsEventEnabled(PlayerEvent::GUILD_BANK_WITHDRAWAL)) {
 				PlayerEvent::GuildBankTransaction log{};
 				log.char_id  = CharacterID();
 				log.guild_id = GuildID();
@@ -11383,7 +11382,7 @@ void Client::Handle_OP_PDeletePetition(const EQApplicationPacket *app)
 		LogError("Wrong size: OP_PDeletePetition, size=[{}], expected [{}]", app->size, 2);
 		return;
 	}
-	if (petition_list.DeletePetitionByCharName((char*)app->pBuffer))
+	if (PetitionList::Instance()->DeletePetitionByCharName((char*)app->pBuffer))
 		MessageString(Chat::White, PETITION_DELETED);
 	else
 		MessageString(Chat::White, PETITION_NO_DELETE);
@@ -11444,7 +11443,7 @@ void Client::Handle_OP_Petition(const EQApplicationPacket *app)
 	}*/
 	else
 	{
-		if (petition_list.FindPetitionByAccountName(AccountName()))
+		if (PetitionList::Instance()->FindPetitionByAccountName(AccountName()))
 		{
 			Message(Chat::White, "You already have a petition in the queue, you must wait for it to be answered or use /deletepetition to delete it.");
 			return;
@@ -11460,10 +11459,10 @@ void Client::Handle_OP_Petition(const EQApplicationPacket *app)
 		pet->SetPetitionText((char*)app->pBuffer);
 		pet->SetZone(zone->GetZoneID());
 		pet->SetUrgency(0);
-		petition_list.AddPetition(pet);
+		PetitionList::Instance()->AddPetition(pet);
 		database.InsertPetitionToDB(pet);
-		petition_list.UpdateGMQueue();
-		petition_list.UpdateZoneListQueue();
+		PetitionList::Instance()->UpdateGMQueue();
+		PetitionList::Instance()->UpdateZoneListQueue();
 		worldserver.SendEmoteMessage(
 			0,
 			0,
@@ -11494,16 +11493,16 @@ void Client::Handle_OP_PetitionCheckIn(const EQApplicationPacket *app)
 	}
 	Petition_Struct* inpet = (Petition_Struct*)app->pBuffer;
 
-	Petition* pet = petition_list.GetPetitionByID(inpet->petnumber);
+	Petition* pet = PetitionList::Instance()->GetPetitionByID(inpet->petnumber);
 	//if (inpet->urgency != pet->GetUrgency())
 	pet->SetUrgency(inpet->urgency);
 	pet->SetLastGM(GetName());
 	pet->SetGMText(inpet->gmtext);
 
 	pet->SetCheckedOut(false);
-	petition_list.UpdatePetition(pet);
-	petition_list.UpdateGMQueue();
-	petition_list.UpdateZoneListQueue();
+	PetitionList::Instance()->UpdatePetition(pet);
+	PetitionList::Instance()->UpdateGMQueue();
+	PetitionList::Instance()->UpdateZoneListQueue();
 	return;
 }
 
@@ -11517,14 +11516,14 @@ void Client::Handle_OP_PetitionCheckout(const EQApplicationPacket *app)
 		Message(Chat::Red, "Error: World server disconnected");
 	else {
 		uint32 getpetnum = *((uint32*)app->pBuffer);
-		Petition* getpet = petition_list.GetPetitionByID(getpetnum);
+		Petition* getpet = PetitionList::Instance()->GetPetitionByID(getpetnum);
 		if (getpet != 0) {
 			getpet->AddCheckout();
 			getpet->SetCheckedOut(true);
 			getpet->SendPetitionToPlayer(CastToClient());
-			petition_list.UpdatePetition(getpet);
-			petition_list.UpdateGMQueue();
-			petition_list.UpdateZoneListQueue();
+			PetitionList::Instance()->UpdatePetition(getpet);
+			PetitionList::Instance()->UpdateGMQueue();
+			PetitionList::Instance()->UpdateZoneListQueue();
 		}
 	}
 	return;
@@ -11544,16 +11543,16 @@ void Client::Handle_OP_PetitionDelete(const EQApplicationPacket *app)
 	pet->senttime = 0;
 	strcpy(pet->accountid, "");
 	strcpy(pet->gmsenttoo, "");
-	pet->quetotal = petition_list.GetTotalPetitions();
+	pet->quetotal = PetitionList::Instance()->GetTotalPetitions();
 	strcpy(pet->charname, "");
 	FastQueuePacket(&outapp);
 
-	if (petition_list.DeletePetition(pet->petnumber) == -1)
+	if (PetitionList::Instance()->DeletePetition(pet->petnumber) == -1)
 		std::cout << "Something is borked with: " << pet->petnumber << std::endl;
-	petition_list.ClearPetitions();
-	petition_list.UpdateGMQueue();
-	petition_list.ReadDatabase();
-	petition_list.UpdateZoneListQueue();
+	PetitionList::Instance()->ClearPetitions();
+	PetitionList::Instance()->UpdateGMQueue();
+	PetitionList::Instance()->ReadDatabase();
+	PetitionList::Instance()->UpdateZoneListQueue();
 	return;
 }
 
@@ -11588,12 +11587,12 @@ void Client::Handle_OP_PetitionUnCheckout(const EQApplicationPacket *app)
 		Message(Chat::Red, "Error: World server disconnected");
 	else {
 		uint32 getpetnum = *((uint32*)app->pBuffer);
-		Petition* getpet = petition_list.GetPetitionByID(getpetnum);
+		Petition* getpet = PetitionList::Instance()->GetPetitionByID(getpetnum);
 		if (getpet != 0) {
 			getpet->SetCheckedOut(false);
-			petition_list.UpdatePetition(getpet);
-			petition_list.UpdateGMQueue();
-			petition_list.UpdateZoneListQueue();
+			PetitionList::Instance()->UpdatePetition(getpet);
+			PetitionList::Instance()->UpdateGMQueue();
+			PetitionList::Instance()->UpdateZoneListQueue();
 		}
 	}
 	return;
@@ -13325,7 +13324,7 @@ void Client::Handle_OP_RezzAnswer(const EQApplicationPacket *app)
 	OPRezzAnswer(r->action, r->spellid, r->zone_id, r->instance_id, r->x, r->y, r->z);
 
 	if (r->action == ResurrectionActions::Accept) {
-		if (player_event_logs.IsEventEnabled(PlayerEvent::REZ_ACCEPTED)) {
+		if (PlayerEventLogs::Instance()->IsEventEnabled(PlayerEvent::REZ_ACCEPTED)) {
 			auto e = PlayerEvent::ResurrectAcceptEvent{
 				.resurrecter_name = r->rezzer_name,
 				.spell_name = spells[r->spellid].name,
@@ -13961,7 +13960,7 @@ void Client::Handle_OP_ShopPlayerBuy(const EQApplicationPacket *app)
 		}
 	}
 
-	if (player_event_logs.IsEventEnabled(PlayerEvent::MERCHANT_PURCHASE)) {
+	if (PlayerEventLogs::Instance()->IsEventEnabled(PlayerEvent::MERCHANT_PURCHASE)) {
 		auto e = PlayerEvent::MerchantPurchaseEvent{
 			.npc_id = tmp->GetNPCTypeID(),
 			.merchant_name = tmp->GetCleanName(),
@@ -14155,7 +14154,7 @@ void Client::Handle_OP_ShopPlayerSell(const EQApplicationPacket *app)
 		parse->EventPlayer(EVENT_MERCHANT_SELL, this, export_string, 0);
 	}
 
-	if (player_event_logs.IsEventEnabled(PlayerEvent::MERCHANT_SELL)) {
+	if (PlayerEventLogs::Instance()->IsEventEnabled(PlayerEvent::MERCHANT_SELL)) {
 		auto e = PlayerEvent::MerchantSellEvent{
 			.npc_id = vendor->GetNPCTypeID(),
 			.merchant_name = vendor->GetCleanName(),
@@ -16519,7 +16518,7 @@ void Client::RecordKilledNPCEvent(NPC *n)
 	};
 
 	for (auto &c: checks) {
-		if (c.check && player_event_logs.IsEventEnabled(c.event)) {
+		if (c.check && PlayerEventLogs::Instance()->IsEventEnabled(c.event)) {
 			auto e = PlayerEvent::KilledNPCEvent{
 				.npc_id = n->GetNPCTypeID(),
 				.npc_name = n->GetCleanName(),
@@ -16912,7 +16911,7 @@ void Client::Handle_OP_GuildTributeDonateItem(const EQApplicationPacket *app)
 
 		SendGuildTributeDonateItemReply(in, favor);
 
-		if(inst && player_event_logs.IsEventEnabled(PlayerEvent::GUILD_TRIBUTE_DONATE_ITEM)) {
+		if(inst && PlayerEventLogs::Instance()->IsEventEnabled(PlayerEvent::GUILD_TRIBUTE_DONATE_ITEM)) {
 			auto e = PlayerEvent::GuildTributeDonateItem{ .item_id      = inst->GetID(),
 														  .augment_1_id = inst->GetAugmentItemID(0),
 														  .augment_2_id = inst->GetAugmentItemID(1),
@@ -16961,7 +16960,7 @@ void Client::Handle_OP_GuildTributeDonatePlat(const EQApplicationPacket *app)
 		TakePlatinum(quantity, false);
 		SendGuildTributeDonatePlatReply(in, favor);
 
-		if(player_event_logs.IsEventEnabled(PlayerEvent::GUILD_TRIBUTE_DONATE_PLAT)) {
+		if(PlayerEventLogs::Instance()->IsEventEnabled(PlayerEvent::GUILD_TRIBUTE_DONATE_PLAT)) {
 			auto e = PlayerEvent::GuildTributeDonatePlat {
 				.plat = quantity,
 				.guild_favor = favor

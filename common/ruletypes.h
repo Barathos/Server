@@ -234,7 +234,7 @@ RULE_INT(Character, BandolierSwapDelay, 0, "Bandolier swap delay in milliseconds
 RULE_BOOL(Character, EnableQuestExperience, true, "Whether or not Quest experience is enabled.")
 RULE_BOOL(Character, EnableHackedFastCampForGM, false, "Enables hacked fast camp for GM clients, if the GM doesn't have a hacked client they'll camp like normal")
 RULE_BOOL(Character, AlwaysAllowNameChange, false, "Enable this option to allow /changename to work without enabling a name change via scripts.")
-RULE_BOOL(Character, EnableAutoAFK, true, "Enable or disable the auto AFK feature, cuts down on packet spam")
+RULE_BOOL(Character, EnableAutoAFK, false, "Enable or disable the auto AFK feature, cuts down on packet spam")
 RULE_BOOL(Character, AutoIdleFilterPackets, true, "Enable or disable filtering packets when auto AFK is enabled, heavily cuts down on packet spam in zones with lots of players")
 RULE_INT(Character, SecondsBeforeIdleCombatZone, 600, "Seconds before a player is considered idle in combat zones (600 = 10 minutes)")
 RULE_INT(Character, SecondsBeforeIdleNonCombatZone, 60, "Seconds before a player is considered idle in non-combat zones (60 = 1 minute)")

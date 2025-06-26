@@ -343,6 +343,7 @@ struct CharacterCorpseEntry
 	uint32 drakkin_tattoo;
 	uint32 drakkin_details;
 	std::vector<CharacterCorpseItemEntry> items;
+	std::string entity_variables;
 };
 
 namespace BeastlordPetData {

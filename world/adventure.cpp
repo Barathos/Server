@@ -15,9 +15,7 @@
 #include "../common/zone_store.h"
 #include "../common/repositories/character_corpses_repository.h"
 
-extern ZSList zoneserver_list;
-extern ClientList client_list;
-extern AdventureManager adventure_manager;
+extern EQ::Random emu_random;
 
 Adventure::Adventure(AdventureTemplate *t)
 {
@@ -176,7 +174,7 @@ void Adventure::SetStatus(AdventureStatus new_status)
 		ut->instance_id = instance_id;
 		ut->new_duration = adventure_template->duration + 60;
 
-		zoneserver_list.SendPacket(0, instance_id, pack);
+		ZSList::Instance()->SendPacket(0, instance_id, pack);
 		safe_delete(pack);
 	}
 	else if(new_status == AS_WaitingForSecondaryEndTime)
@@ -190,7 +188,7 @@ void Adventure::SetStatus(AdventureStatus new_status)
 		ut->instance_id = instance_id;
 		ut->new_duration = 1860;
 
-		zoneserver_list.SendPacket(0, instance_id, pack);
+		ZSList::Instance()->SendPacket(0, instance_id, pack);
 		safe_delete(pack);
 	}
 	else if(new_status == AS_Finished)
@@ -204,7 +202,7 @@ void Adventure::SetStatus(AdventureStatus new_status)
 		ut->instance_id = instance_id;
 		ut->new_duration = 1860;
 
-		zoneserver_list.SendPacket(0, instance_id, pack);
+		ZSList::Instance()->SendPacket(0, instance_id, pack);
 		safe_delete(pack);
 	}
 	else
@@ -215,7 +213,7 @@ void Adventure::SetStatus(AdventureStatus new_status)
 	auto iter = players.begin();
 	while(iter != players.end())
 	{
-		adventure_manager.GetAdventureData((*iter).c_str());
+		AdventureManager::Instance()->GetAdventureData((*iter).c_str());
 		++iter;
 	}
 }
@@ -229,11 +227,11 @@ void Adventure::SendAdventureMessage(uint32 type, const char *msg)
 	auto iter = players.begin();
 	while(iter != players.end())
 	{
-		ClientListEntry *current = client_list.FindCharacter((*iter).c_str());
+		ClientListEntry *current = ClientList::Instance()->FindCharacter((*iter).c_str());
 		if(current)
 		{
 			strcpy(sms->to, (*iter).c_str());
-			zoneserver_list.SendPacket(current->zone(), current->instance(), pack);
+			ZSList::Instance()->SendPacket(current->zone(), current->instance(), pack);
 		}
 		++iter;
 	}
@@ -282,7 +280,7 @@ void Adventure::Finished(AdventureWinStatus ws)
 {
 	auto iter = players.begin();
 	while (iter != players.end()) {
-		ClientListEntry *current = client_list.FindCharacter((*iter).c_str());
+		ClientListEntry *current = ClientList::Instance()->FindCharacter((*iter).c_str());
 		auto character_id = database.GetCharacterID(*iter);
 
 		if (character_id == 0) {
@@ -309,7 +307,7 @@ void Adventure::Finished(AdventureWinStatus ws)
 					af->win = false;
 					af->points = 0;
 				}
-				zoneserver_list.SendPacket(current->zone(), current->instance(), pack);
+				ZSList::Instance()->SendPacket(current->zone(), current->instance(), pack);
 				database.UpdateAdventureStatsEntry(character_id, GetTemplate()->theme, (ws != AWS_Lose) ? true : false);
 				delete pack;
 			}
@@ -330,7 +328,7 @@ void Adventure::Finished(AdventureWinStatus ws)
 					afe.win = false;
 					afe.points = 0;
 				}
-				adventure_manager.AddFinishedEvent(afe);
+				AdventureManager::Instance()->AddFinishedEvent(afe);
 				database.UpdateAdventureStatsEntry(character_id, GetTemplate()->theme, (ws != AWS_Lose) ? true : false);
 			}
 		}
@@ -351,12 +349,12 @@ void Adventure::Finished(AdventureWinStatus ws)
 				afe.win = false;
 				afe.points = 0;
 			}
-			adventure_manager.AddFinishedEvent(afe);
+			AdventureManager::Instance()->AddFinishedEvent(afe);
 			database.UpdateAdventureStatsEntry(character_id, GetTemplate()->theme, (ws != AWS_Lose) ? true : false);
 		}
 		++iter;
 	}
-	adventure_manager.GetAdventureData(this);
+	AdventureManager::Instance()->GetAdventureData(this);
 }
 
 void Adventure::MoveCorpsesToGraveyard()
@@ -395,7 +393,7 @@ void Adventure::MoveCorpsesToGraveyard()
 		d->InstanceID  = 0;
 		d->ZoneID      = GetTemplate()->graveyard_zone_id;
 
-		zoneserver_list.SendPacket(0, GetInstanceID(), pack);
+		ZSList::Instance()->SendPacket(0, GetInstanceID(), pack);
 
 		delete pack;
 
@@ -406,7 +404,7 @@ void Adventure::MoveCorpsesToGraveyard()
 		spc->player_corpse_id = e.id;
 		spc->zone_id          = GetTemplate()->graveyard_zone_id;
 
-		zoneserver_list.SendPacket(spc->zone_id, 0, pack);
+		ZSList::Instance()->SendPacket(spc->zone_id, 0, pack);
 
 		delete pack;
 	}

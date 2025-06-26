@@ -1646,6 +1646,7 @@ public:
 	{
 		return task_state ? task_state->CompleteTask(this, task_id) : false;
 	}
+	bool UncompleteTask(int task_id);
 	inline void FailTask(int task_id) { if (task_state) { task_state->FailTask(this, task_id); }}
 	inline int TaskTimeLeft(int task_id) { return (task_state ? task_state->TaskTimeLeft(task_id) : 0); }
 	inline int EnabledTaskCount(int task_set_id)
@@ -2118,6 +2119,9 @@ public:
 
 	// if they have aggro (AggroCount != 0) their timer is saved in m_pp.RestTimer, else we need to get current timer
 	inline uint32 GetRestTimer() const { return AggroCount ? m_pp.RestTimer : rest_timer.GetRemainingTime() / 1000; }
+
+	// used only for testing
+	inline void SetCharacterId(uint32_t id) { character_id = id; }
 
 protected:
 	friend class Mob;

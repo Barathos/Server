@@ -55,7 +55,6 @@ extern Zone *zone;
 extern volatile bool is_zone_loaded;
 extern WorldServer worldserver;
 extern uint32 numclients;
-extern PetitionList petition_list;
 
 extern char errorname[32];
 
@@ -3409,7 +3408,7 @@ void EntityList::SendPetitionToAdmins(Petition *pet)
 		strcpy(pcus->accountid, pet->GetAccountName());
 		strcpy(pcus->charname, pet->GetCharName());
 	}
-	pcus->quetotal = petition_list.GetTotalPetitions();
+	pcus->quetotal = PetitionList::Instance()->GetTotalPetitions();
 	auto it = client_list.begin();
 	while (it != client_list.end()) {
 		if (it->second->CastToClient()->Admin() >= AccountStatus::QuestTroupe) {
@@ -3434,7 +3433,7 @@ void EntityList::ClearClientPetitionQueue()
 	strcpy(pet->accountid, "");
 	strcpy(pet->gmsenttoo, "");
 	strcpy(pet->charname, "");
-	pet->quetotal = petition_list.GetTotalPetitions();
+	pet->quetotal = PetitionList::Instance()->GetTotalPetitions();
 	auto it = client_list.begin();
 	while (it != client_list.end()) {
 		if (it->second->CastToClient()->Admin() >= AccountStatus::GMAdmin) {
