@@ -1294,6 +1294,8 @@ RULE_REAL(Custom, 	ScaleBowHDexScaleFloor,	 				0.15, "Soft-cap: Scaling floor o
 RULE_REAL(Custom, 	ScaleBowHDexScaleFactor,	 			0.0125, "Soft-cap: Scaling factor of hDex linear decay between upper and lower bound.")
 RULE_REAL(Custom, 	ScaleBowMinimumDamageMultiplier,		5.0, "Divide bow+arrow damage by this amount, multiply by divided hDex, for min bow damage.")
 RULE_REAL(Custom, 	ScaleBowMinimumDamageDivisor,			4.0, "Divide hDex by this amount before multiplying by bow multiplier.")
+RULE_INT(Custom, 	CascadeOfDecaySpellId,					38127, "The spell ID for the necro Cascade of Decay AA tap proc.")
+RULE_REAL(Custom, 	CascadeOfDecayTapPercent,				1.0, "The percentage of damage for necro Cascade of Decay to tap heal for.")
 RULE_STRING(Custom, DoppelgangerBuffBacklist,				"21773,30736", "Comma-seperated list of spells to never transfer to Doppelganger")
 RULE_INT(Custom, NecroDotCritLevel,							12, "Necromancer inherent dot critical chance begins at this level")
 RULE_INT(Spells, NecroDotCritChance,						7, "Necromancer inherent dot critical percentage chance")

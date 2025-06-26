@@ -747,8 +747,6 @@ int64 Mob::GetActSpellHealing(uint16 spell_id, int64 value, Mob* target, bool fr
 				MessageString(Chat::SpellCrit, YOU_CRIT_HEAL, itoa(value));
 			}
 		}
-
-		return value;
 	}
 
 	//Heal over time spells. [Heal Rate and Additional Healing effects do not increase this value]
@@ -794,6 +792,9 @@ int64 Mob::GetActSpellHealing(uint16 spell_id, int64 value, Mob* target, bool fr
 
 		value += extra_heal;
 		value *= critical_modifier;
+	}
+	if (spell_id == RuleI(Custom, CascadeOfDecaySpellId)) {
+		value *= RuleR(Custom, CascadeOfDecayTapPercent);
 	}
 
 	return value;
