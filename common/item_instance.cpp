@@ -579,7 +579,7 @@ EQ::ItemInstance* EQ::ItemInstance::GetOrnamentationAugment() const
 uint32 EQ::ItemInstance::GetOrnamentHeroModel(int32 material_slot) const
 {
 	// Not a Hero Forge item.
-	if (m_ornament_hero_model == 0 || material_slot < 0) {
+	if (m_ornament_hero_model == 0) {
 		return 0;
 	}
 
@@ -605,6 +605,7 @@ bool EQ::ItemInstance::UpdateOrnamentationInfo()
 
 		if (augment_item) {
 			SetOrnamentIcon(augment_item->Icon);
+			LogDebug("Attempting to Update for item ID [{}] to HF model: [{}]", m_item->ID, augment_item->HerosForgeModel);
 			SetOrnamentHeroModel(augment_item->HerosForgeModel);
 
 			if (strlen(augment_item->IDFile) > 2) {
