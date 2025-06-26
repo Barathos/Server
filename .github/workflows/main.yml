@@ -34,7 +34,7 @@ jobs:
     
           cd ~/code/build
           echo "Starting build..."
-          stdbuf -oL ninja -j4 -v
+          stdbuf -oL ninja -j4
     
           echo "✅ successfully built new binaries on test server"
     
