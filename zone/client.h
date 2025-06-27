@@ -1335,6 +1335,8 @@ public:
 	void BreakFeignDeathWhenCastOn(bool IsResisted);
 	void LeaveGroup();
 
+	bool CanCastSpell(uint16 spell_id);
+
 	bool Hungry() const {if (GetGM() || !RuleB(Character, EnableFoodRequirement)) return false; return m_pp.hunger_level <= 3000;}
 	bool Thirsty() const {if (GetGM() || !RuleB(Character, EnableFoodRequirement)) return false; return m_pp.thirst_level <= 3000;}
 	int32 GetHunger() const { return m_pp.hunger_level; }

@@ -1033,7 +1033,6 @@ uint8 GetSpellLevel(uint16 spell_id, uint8 class_id)
 	return spells[spell_id].classes[class_id - 1];
 }
 
-
 std::map<uint8, uint8> GetSpellClasses(uint16 spell_id) {
     std::map<uint8, uint8> class_map;
 

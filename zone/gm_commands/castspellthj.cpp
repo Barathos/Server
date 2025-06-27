@@ -67,6 +67,11 @@ void command_castspellthj(Client *c, const Seperator *sep)
         return;
     }
 
+	if (!c->CanCastSpell(spell_id)) {
+		c->Message(Chat::SpellFailure, "You are not high enough level to cast that spell.");
+        return;
+	}
+
     if (IsBardSong(spell_id)) {
         c->Message(Chat::SpellFailure, "You may not sing bard songs directly from your spellbook.");
         return;

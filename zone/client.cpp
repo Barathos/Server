@@ -14986,6 +14986,26 @@ void Client::BroadcastPositionUpdate()
 	}
 }
 
+bool Client::CanCastSpell(uint16 spell_id)
+{
+    if (!IsValidSpell(spell_id)) {
+        return false;
+    }
+
+    uint32 class_bits = GetClassesBits();
+
+    uint8 required_level = GetSpellLevelForCaster(spell_id);
+    if (required_level == UINT8_MAX) {
+        return false;
+    }
+
+    if (GetLevel() < required_level) {
+        return false;
+    }
+
+    return true;
+}
+
 std::string Client::GetAccountBucket(std::string bucket_name)
 {
 	DataBucketKey k = {};
