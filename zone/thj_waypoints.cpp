@@ -306,7 +306,7 @@ void Client::TransportToWaypoint(uint32 waypoint_id)
 			if (gmc->GetWaypointAutoTransportState())
 			{
 				gmc->WaypointTransport(zone_id, instance_id, x, y, z, h, zone_mode);
-				return;
+				continue;
 			}
 
 			gmc->PromptWaypointTransport(zone_id, instance_id, x, y, z, h);
