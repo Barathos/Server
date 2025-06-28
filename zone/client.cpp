@@ -4240,7 +4240,7 @@ uint16 Client::MaxSkill(EQ::skills::SkillType skill_id, uint16 class_id, uint8 l
 	uint16 maxSkill = 0;
 	for (int i = Class::Warrior; i <= Class::Berserker; i++) {
 		if (HasClass(i)) {
-			uint16 test = SkillCaps::Instance()->GetSkillCap(class_id, skill_id, level).cap;
+			uint16 test = SkillCaps::Instance()->GetSkillCap(i, skill_id, level).cap;
 			if (test > maxSkill) {
 				maxSkill = test;
 			}
