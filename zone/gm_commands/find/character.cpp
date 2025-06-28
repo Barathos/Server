@@ -4,7 +4,7 @@
 void FindCharacter(Client *c, const Seperator *sep)
 {
 	if (sep->IsNumber(2)) {
-		const auto character_id = Strings::ToUnsignedInt(sep->arg[2]);
+		const uint32 character_id = Strings::ToUnsignedInt(sep->arg[2]);
 
 		const auto& e = CharacterDataRepository::FindOne(database, character_id);
 		if (!e.id) {
@@ -31,7 +31,7 @@ void FindCharacter(Client *c, const Seperator *sep)
 		return;
 	}
 
-	const auto search_criteria = Strings::ToLower(sep->argplus[2]);
+	const std::string& search_criteria = Strings::ToLower(sep->argplus[2]);
 
 	const auto& l = CharacterDataRepository::GetWhere(
 		database,
@@ -51,7 +51,7 @@ void FindCharacter(Client *c, const Seperator *sep)
 		);
 	}
 
-	auto found_count = 0;
+	uint32 found_count = 0;
 
 	for (const auto& e : l) {
 		c->Message(
