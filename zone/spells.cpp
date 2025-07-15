@@ -5750,6 +5750,12 @@ float Mob::ResistSpell(uint8 resist_type, uint16 spell_id, Mob *caster, bool use
 		return 100;
 	}
 
+	if (!RuleB(Custom, CanPlayerAoEHitPlayer)){
+		if (caster->IsClient() && (IsAENukeSpell(spell_id) || IsPBAENukeSpell(spell_id) || IsAERainNukeSpell(spell_id)) && (IsClient() || IsPetOwnerOfClientBot())) {
+			return 0;
+		}
+	}
+
 	if (!spells[spell_id].no_resist && !resist_type == RESIST_NONE) {
 		if(GetSpecialAbility(SpecialAbility::CastingFromRangeImmunity))
 		{
