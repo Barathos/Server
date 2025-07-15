@@ -1303,6 +1303,7 @@ RULE_BOOL(Custom,	SuppressDispels,						0, "Swaps 'cancel magic' SPA logic with 
 RULE_INT(Custom,	SuppressDispelsTime,					6, "Number of tics that dispelled buffs will be suppressed for")
 RULE_INT(Custom,	SuppressDebuffSpellID,					21840, "Spell ID to send to client when a spell is supprssed.  21840 = 'Suppression Field'")
 RULE_INT(Custom,    PetAssistRateLimit,                     1000, "Minimum time in milliseconds between pet assist commands")
+RULE_BOOL(Custom, 	CorpseFixSummonsCorpses,				false, "Enable to cause #corpsefix to summon corpses to player")
 RULE_BOOL(Custom,   CanPlayerAoEHitPlayer,					false, "Allow player-casted AoE spells to hit the player if they are in range of the spell.")
 
 // Seasonal

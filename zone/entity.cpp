@@ -3321,7 +3321,7 @@ void EntityList::CorpseFix(Client* c)
 	for (const auto& e : corpse_list) {
 		auto cur = e.second;
 		if (cur->IsNPCCorpse()) {
-			if (DistanceNoZ(c->GetPosition(), cur->GetPosition()) < 100) {
+			if (DistanceNoZ(c->GetPosition(), cur->GetPosition()) < 200) {
 				c->Message(
 					Chat::White,
 					fmt::format(
@@ -3329,13 +3329,21 @@ void EntityList::CorpseFix(Client* c)
 						cur->GetCleanName()
 					).c_str()
 				);
-
-				cur->GMMove(
-					cur->GetX(),
-					cur->GetY(),
-					cur->GetFixedZ(c->GetPosition()),
-					c->GetHeading()
-				);
+				if (!RuleB(Custom, CorpseFixSummonsCorpses)) {
+					cur->GMMove(
+						cur->GetX(),
+						cur->GetY(),
+						cur->GetFixedZ(cur->GetPosition()),
+						c->GetHeading()
+					);
+				} else {
+					cur->GMMove(
+						c->GetX(),
+						c->GetY(),
+						c->GetFixedZ(c->GetPosition()),
+						cur->GetHeading()
+					);
+				}
 
 				fixed_count++;
 			}
@@ -3343,14 +3351,14 @@ void EntityList::CorpseFix(Client* c)
 	}
 
 	if (!fixed_count) {
-		c->Message(Chat::White, "There were no nearby NPC corpses to fix.");
+		c->Message(Chat::White, "There were no nearby NPC corpses to fix. You may also attempt to /target a corpse by name, such as \"/target Lord_Inquisitor\" for Lord Inquisitor Seru. Underscores are used for whitespace in NPC names. You may then use the /loot command to attempt looting the corpse. Try moving around while using /loot to see if a corpse is reachable from a nearby location.");
 		return;
 	}
 
 	c->Message(
 		Chat::White,
 		fmt::format(
-			"Fixed {} nearby NPC corpse{}.",
+			"Fixed {} nearby NPC corpse{}. You may also attempt to /target a corpse by name, such as \"/target Lord_Inquisitor\" for Lord Inquisitor Seru. Underscores are used for whitespace in NPC names. You may then use the /loot command to attempt looting the corpse. Try moving around while using /loot to see if a corpse is reachable from a nearby location.",
 			fixed_count,
 			fixed_count != 1 ? "s" : ""
 		).c_str()
