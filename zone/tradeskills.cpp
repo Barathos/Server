@@ -1309,8 +1309,8 @@ bool ZoneDatabase::GetTradeRecipe(
 	//just increment sum and count accordingly
 	bool        first = true;
 	std::string buf2;
-	uint32      count = 0;
-	uint32      sum   = 0;
+       uint32      count = 0;
+       uint32      sum   = 0;
 
 	for (uint8 slot_id = EQ::invbag::SLOT_BEGIN; slot_id < EQ::invbag::SLOT_COUNT; slot_id++) { // <watch> TODO: need to determine if this is bound to world/item container size
 		LogTradeskills("Fetching item [{}]", slot_id);
@@ -1325,8 +1325,8 @@ bool ZoneDatabase::GetTradeRecipe(
 			return false;
 		}
 
-		const auto item = database.GetItem(inst->GetItem()->ID);
-		if (!item) {
+               const auto item = database.GetItem(inst->GetItem()->ID);
+               if (!item) {
 			LogTradeskills("item [{}] not found!", inst->GetItem()->ID);
 			continue;
 		}
@@ -1338,8 +1338,9 @@ bool ZoneDatabase::GetTradeRecipe(
 			buf2 += fmt::format(", {}", item->ID);
 		}
 
-		sum += item->ID;
-		count++;
+               uint32 qty = inst->IsStackable() ? std::max<int16>(1, inst->GetCharges()) : 1;
+               sum += item->ID * qty;
+               count += qty;
 
 		LogTradeskills(
 			"Item in container index [{}] item [{}] found [{}]",
@@ -1495,9 +1496,10 @@ bool ZoneDatabase::GetTradeRecipe(
 				continue;
 			}
 
-			if (item->ID == Strings::ToUnsignedInt(row[0])) {
-				component_count++;
-			}
+                       uint32 qty = inst->IsStackable() ? std::max<int16>(1, inst->GetCharges()) : 1;
+                       if (item->ID == Strings::ToUnsignedInt(row[0])) {
+                               component_count += qty;
+                       }
 
 			LogTradeskills(
 				"Component count loop [{}] item [{}] recipe component_count [{}]",
