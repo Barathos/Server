@@ -21,6 +21,8 @@
 
 #include <algorithm>
 #include <list>
+#include <unordered_map>
+#include <limits>
 
 #ifndef WIN32
 #include <netinet/in.h>	//for htonl
@@ -43,6 +45,51 @@ extern QueryServ* QServ;
 extern WorldServer worldserver;
 
 static const EQ::skills::SkillType TradeskillUnknown = EQ::skills::Skill1HBlunt; /* an arbitrary non-tradeskill */
+
+static uint32 CalcTradeskillCombineCount(const EQ::ItemInstance *container, uint32 recipe_id)
+{
+    if (!container) {
+        return 0;
+    }
+
+    auto entries = TradeskillRecipeEntriesRepository::GetWhere(
+            content_db,
+            fmt::format("recipe_id = {} AND componentcount > 0", recipe_id)
+    );
+
+    if (entries.empty()) {
+        return 0;
+    }
+
+    std::unordered_map<uint32, uint32> counts;
+    for (uint8 slot_id = EQ::invbag::SLOT_BEGIN; slot_id < EQ::invtype::WORLD_SIZE; ++slot_id) {
+        const EQ::ItemInstance *inst = container->GetItem(slot_id);
+        if (!inst) {
+            continue;
+        }
+        const EQ::ItemData *item = inst->GetItem();
+        if (!item) {
+            continue;
+        }
+        uint32 qty = inst->IsStackable() ? inst->GetCharges() : 1;
+        counts[item->ID] += qty;
+    }
+
+    uint32 combine_count = std::numeric_limits<uint32>::max();
+    for (const auto &e : entries) {
+        auto it = counts.find(e.item_id);
+        if (it == counts.end()) {
+            return 0;
+        }
+        combine_count = std::min(combine_count, it->second / static_cast<uint32>(e.componentcount));
+    }
+
+    if (combine_count == std::numeric_limits<uint32>::max()) {
+        return 0;
+    }
+
+    return combine_count;
+}
 
 void Object::HandleAugmentation(Client* user, const AugmentItem_Struct* in_augment, Object *worldo)
 {
@@ -402,7 +449,7 @@ void Object::HandleCombine(Client* user, const NewCombine_Struct* in_combine, Ob
 		}
 	}
 
-	if (!content_db.GetTradeRecipe(container, c_type, some_id, user, &spec, &is_augmented)) {
+       if (!content_db.GetTradeRecipe(container, c_type, some_id, user, &spec, &is_augmented)) {
 
 		LogTradeskillsDetail("Check 2");
 
@@ -410,7 +457,16 @@ void Object::HandleCombine(Client* user, const NewCombine_Struct* in_combine, Ob
 			user->MessageString(Chat::Emote, TRADESKILL_NOCOMBINE);
 		} else {
 			user->Message(Chat::Emote, "You must remove augments from all component items before you can attempt this combine.");
-		}
+       }
+
+       uint32 combine_count = CalcTradeskillCombineCount(container, spec.recipe_id);
+       if (combine_count == 0) {
+               auto outapp = new EQApplicationPacket(OP_TradeSkillCombine, 0);
+               user->QueuePacket(outapp);
+               safe_delete(outapp);
+               user->MessageString(Chat::Skills, TRADESKILL_MISSING_COMPONENTS);
+               return;
+       }
 
 		auto outapp = new EQApplicationPacket(OP_TradeSkillCombine, 0);
 		user->QueuePacket(outapp);
@@ -511,35 +567,69 @@ void Object::HandleCombine(Client* user, const NewCombine_Struct* in_combine, Ob
 	user->QueuePacket(outapp);
 	safe_delete(outapp);
 
-	//now clean out the containers.
-	if(worldcontainer){
-		container->Clear();
-		outapp = new EQApplicationPacket(OP_ClearObject, sizeof(ClearObject_Struct));
-		ClearObject_Struct *cos = (ClearObject_Struct *)outapp->pBuffer;
-		cos->Clear = 1;
-		user->QueuePacket(outapp);
-		safe_delete(outapp);
-		database.DeleteWorldContainer(worldo->m_id, zone->GetZoneID());
-	} else{
-		for (uint8 i = EQ::invbag::SLOT_BEGIN; i < EQ::invtype::WORLD_SIZE; i++) {
-			const EQ::ItemInstance* inst = container->GetItem(i);
-			if (inst) {
-				user->DeleteItemInInventory(EQ::InventoryProfile::CalcSlotId(in_combine->container_slot, i), 0, true);
-			}
-		}
-		container->Clear();
-	}
-	//do the check and send results...
-	bool success = user->TradeskillExecute(&spec);
+       //now clean out the containers.
+       if(worldcontainer){
+               container->Clear();
+               outapp = new EQApplicationPacket(OP_ClearObject, sizeof(ClearObject_Struct));
+               ClearObject_Struct *cos = (ClearObject_Struct *)outapp->pBuffer;
+               cos->Clear = 1;
+               user->QueuePacket(outapp);
+               safe_delete(outapp);
+               database.DeleteWorldContainer(worldo->m_id, zone->GetZoneID());
+       } else {
+               auto recipe_entries = TradeskillRecipeEntriesRepository::GetWhere(
+                       content_db,
+                       fmt::format("recipe_id = {} AND componentcount > 0", spec.recipe_id)
+               );
+
+               for (const auto &entry : recipe_entries) {
+                       uint32 remaining = entry.componentcount * combine_count;
+                       for (uint8 i = EQ::invbag::SLOT_BEGIN; i < EQ::invtype::WORLD_SIZE && remaining > 0; ++i) {
+                               const EQ::ItemInstance *inst = container->GetItem(i);
+                               if (!inst || inst->GetItem()->ID != entry.item_id) {
+                                       continue;
+                               }
+                               uint32 slot_id = EQ::InventoryProfile::CalcSlotId(in_combine->container_slot, i);
+                               if (inst->IsStackable()) {
+                                       uint32 remove = std::min<uint32>(inst->GetCharges(), remaining);
+                                       user->DeleteItemInInventory(slot_id, remove, true);
+                                       remaining -= remove;
+                               } else {
+                                       user->DeleteItemInInventory(slot_id, 0, true);
+                                       --remaining;
+                               }
+                       }
+               }
+       }
+
+       //do the check and send results...
+       uint32 success_count = 0;
+       for (uint32 i = 0; i < combine_count; ++i) {
+               if (user->TradeskillExecute(&spec)) {
+                       ++success_count;
+               }
+       }
+
+       if (combine_count > 1) {
+               if (success_count == combine_count) {
+                       user->Message(Chat::LightBlue, "You successfully complete %u combines.", success_count);
+               } else if (success_count > 0) {
+                       user->Message(Chat::LightBlue, "You successfully complete %u of %u combines.", success_count, combine_count);
+               } else {
+                       user->Message(Chat::Emote, "All %u combines failed.", combine_count);
+               }
+       }
+
+       bool success = success_count > 0;
 
 	// Learn new recipe message
 	// Update Made count
-	if (success) {
-		if (!spec.has_learnt && ((spec.must_learn&0x10) != 0x10)) {
-			user->MessageString(Chat::LightBlue, TRADESKILL_LEARN_RECIPE, spec.name.c_str());
-		}
-		database.UpdateRecipeMadecount(spec.recipe_id, user->CharacterID(), spec.madecount+1);
-	}
+       if (success) {
+               if (!spec.has_learnt && ((spec.must_learn&0x10) != 0x10)) {
+                       user->MessageString(Chat::LightBlue, TRADESKILL_LEARN_RECIPE, spec.name.c_str());
+               }
+               database.UpdateRecipeMadecount(spec.recipe_id, user->CharacterID(), spec.madecount + success_count);
+       }
 
 	// Replace the container on success if required.
 	//
@@ -1507,9 +1597,9 @@ bool ZoneDatabase::GetTradeRecipe(
 			);
 		}
 
-		if (component_count != Strings::ToInt(row[1])) {
-			return false;
-		}
+               if (component_count < Strings::ToInt(row[1])) {
+                       return false;
+               }
 	}
 
 	return GetTradeRecipe(recipe_id, c_type, some_id, c, spec);
