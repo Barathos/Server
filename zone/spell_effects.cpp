@@ -6746,6 +6746,10 @@ std::vector<std::pair<std::string,int>> GetTriggerOnCastWhitelist() {
 
 void Mob::TryTriggerOnCastFocusEffect(focusType type, uint16 spell_id, bool check_whitelist)
 {
+	if (IsBardSong(spell_id)) {
+		return;
+	}
+
 	if (!IsValidSpell(spell_id)) {
 		return;
 	}
@@ -6938,6 +6942,10 @@ bool Mob::TryTriggerOnCastProc(uint16 focusspellid, uint16 spell_id, uint16 proc
 }
 
 uint16 Mob::GetSympatheticFocusEffect(focusType type, uint16 spell_id) {
+
+	if (!RuleB(Custom, MulticlassingEnabled) && IsBardSong(spell_id)) {
+		return 0;
+	}
 
 	uint16 proc_spellid = 0;
 	float ProcChance = 0.0f;
