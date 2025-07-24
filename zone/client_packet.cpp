@@ -7138,6 +7138,12 @@ void Client::Handle_OP_GMNameChange(const EQApplicationPacket *app)
 			return;
 		}
 
+		if (GetExpedition()) {
+			p->response_code = ChangeNameResponse::RateLimited;
+			QueuePacket(app);
+			return;
+		}
+
 		p->response_code = ChangeFirstName(p->new_name) ? ChangeNameResponse::Accepted : ChangeNameResponse::Denied;
 		QueuePacket(app);
 

@@ -6106,6 +6106,7 @@ enum ChangeNameResponse : int {
 	Timeout     = -1, // 5977: "Your request for a name change has timed out. Please try again later."
 	ServerError = -2, // 5978: "The server had an error while processing your name request. Please try again later."
 	RateLimited = -3, // 5979: "You must wait longer before submitting another name request. Please try again in a few minutes."
+					  // Override by THJ files to be 'Failed due to expedition'
 	Ineligible  = -4, // 5980: "Your character is not eligible for a name change."
 	Pending     = -5  // 5193: "You already have a name change pending. Please wait until it is fully processed before attempting another name change."
 };
