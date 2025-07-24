@@ -676,13 +676,9 @@ bool NPC::Process()
 			parse->EventNPC(EVENT_TICK, this, nullptr, "", 0);
 		}
 
-		if (!GetTarget() && (GetOwnerOrSelf())) {
-			auto owner = GetOwner()->CastToClient();
-			if (!owner) {
-				owner = entity_list.GetClientByID(GetSwarmOwner());
-			}
-
-			if (owner && GetPetOrder() == eStandingPetOrder::SPO_Guard && !(IsHeld() || IsGHeld())) {
+		auto owner = GetOwner();
+		if (!GetTarget() && owner && owner->IsClient()) {
+			if (GetPetOrder() == eStandingPetOrder::SPO_Guard && !(IsHeld() || IsGHeld())) {
 				std::vector<NPC*> npc_vector;
 				for (const auto& npc_entity : entity_list.GetNPCList()) {
 					bool match = false;
