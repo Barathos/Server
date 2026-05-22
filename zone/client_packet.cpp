@@ -7465,7 +7465,7 @@ void Client::Handle_OP_GroupInvite2(const EQApplicationPacket *app)
 					safe_delete(outapp);
 					return;
 				} else {
-					//The correct opcode, no reason to bother wasting time reconstructing the packet
+					//The correct opcode, no reason to reconstruct the packet
 					invitee->CastToClient()->QueuePacket(app);
 				}
 			} else if (invitee->IsRaidGrouped()) {

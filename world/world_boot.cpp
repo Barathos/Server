@@ -318,6 +318,8 @@ bool WorldBoot::DatabaseLoadRoutines(int argc, char **argv)
 		);
 	}
 
+	content_db.SetSharedItemsCount(content_db.GetItemsCount());
+
 	if (!content_db.LoadItems(hotfix_name)) {
 		LogError("Error: Could not load item data. But ignoring");
 	}

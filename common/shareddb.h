@@ -20,6 +20,7 @@
 #include "common/database.h"
 #include "common/fixed_memory_hash_set.h"
 #include "common/fixed_memory_variable_hash_set.h"
+#include "common/item_data.h"
 #include "common/repositories/character_evolving_items_repository.h"
 #include "common/repositories/command_subsettings_repository.h"
 #include "common/repositories/items_evolving_details_repository.h"
@@ -27,9 +28,11 @@
 #include "common/skills.h"
 #include "common/spdat.h"
 
+#include <ctime>
 #include <list>
 #include <map>
 #include <memory>
+#include <mutex>
 
 class EvolveInfo;
 struct InspectMessage_Struct;
@@ -61,6 +64,13 @@ struct Book_Struct
 
 class SharedDatabase : public Database {
 public:
+	struct LiveItemCacheEntry {
+		EQ::ItemData item {};
+		time_t       updated {};
+		time_t       last_checked {};
+		bool         exists {};
+	};
+
 	SharedDatabase();
 	SharedDatabase(const char *host, const char *user, const char *passwd, const char *database, uint32 port);
 	virtual ~SharedDatabase();
@@ -158,6 +168,11 @@ public:
 	bool LoadItems(const std::string &prefix);
 	const EQ::ItemData *IterateItems(uint32 *id) const;
 	const EQ::ItemData *GetItem(uint32 id) const;
+	const EQ::ItemData *GetLiveItem(uint32 id, bool has_shared_item) const;
+	bool IsLiveItemID(uint32 id) const;
+	bool GetLiveItemCacheEntry(uint32 id, LiveItemCacheEntry &entry) const;
+	void ClearLiveItemCache();
+	bool ClearLiveItemCache(uint32 id);
 	const EvolveInfo *GetEvolveInfo(uint32 loregroup);
 	uint32 GetSharedItemsCount() { return m_shared_items_count; }
 	uint32 GetItemsCount();
@@ -186,6 +201,8 @@ protected:
 	std::unique_ptr<EQ::MemoryMappedFile>                        skill_caps_mmf;
 	std::unique_ptr<EQ::MemoryMappedFile>                        items_mmf;
 	std::unique_ptr<EQ::FixedMemoryHashSet<EQ::ItemData>>        items_hash;
+	mutable std::mutex                                           live_items_cache_mutex;
+	mutable std::map<uint32, LiveItemCacheEntry>                live_items_cache;
 	std::unique_ptr<EQ::MemoryMappedFile>                        faction_mmf;
 	std::unique_ptr<EQ::FixedMemoryHashSet<NPCFactionList>>      faction_hash;
 	std::unique_ptr<EQ::MemoryMappedFile>                        faction_associations_mmf;
@@ -198,4 +215,5 @@ public:
 protected:
 	uint32 m_shared_items_count = 0;
 	uint32 m_shared_spells_count = 0;
+	time_t m_shared_items_load_time = 0;
 };

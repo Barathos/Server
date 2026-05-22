@@ -103,6 +103,8 @@ int command_init(void)
 		command_add("appearanceeffects", "[Help|Remove|Set|View] - Modify appearance effects on yourself or your target.", AccountStatus::GMAdmin, command_appearanceeffects) ||
 		command_add("apply_shared_memory", "[shared_memory_name] - Tells every zone and world to apply a specific shared memory segment by name.", AccountStatus::GMImpossible, command_apply_shared_memory) ||
 		command_add("attack", "[Entity Name] - Make your NPC target attack an entity by name", AccountStatus::GMLeadAdmin, command_attack) ||
+		command_add("autoloot", "[window|on|off|mode|nearby|group|stackables] - Source-backed AutoLoot settings and actions", AccountStatus::Player, command_autoloot) ||
+		command_add("autosell", "[preview|confirm|cancel|exclude] - Preview and sell items from AutoSell bags", AccountStatus::Player, command_autosell) ||
 		command_add("augmentitem", "Force augments an item. Must have the augment item window open.", AccountStatus::GMImpossible, command_augmentitem) ||
 		command_add("ban", "[Character Name] [Reason] - Ban by character name", AccountStatus::GMLeadAdmin, command_ban) ||
 		command_add("bugs", "[Close|Delete|Review|Search|View] - Handles player bug reports", AccountStatus::QuestTroupe, command_bugs) ||
@@ -164,10 +166,13 @@ int command_init(void)
 		command_add("interrupt", "[Message ID] [Color] - Interrupt your casting. Arguments are optional.", AccountStatus::Guide, command_interrupt) ||
 		command_add("invsnapshot", "Manipulates inventory snapshots for your current target", AccountStatus::QuestTroupe, command_invsnapshot) ||
 		command_add("ipban", "[IP] - Ban IP", AccountStatus::GMMgmt, command_ipban) ||
+		command_add("itemedit", "[set|add|clear|proc] - Edit the item currently held on your cursor", AccountStatus::GMMgmt, command_itemedit) ||
 		command_add("kick", "[Character Name] - Disconnect a player by name", AccountStatus::GMLeadAdmin, command_kick) ||
 		command_add("kill", "Kill your target", AccountStatus::GMAdmin, command_kill) ||
 		command_add("killallnpcs", "[npc_name] - Kills all npcs by search name, leave blank for all attackable NPC's", AccountStatus::GMMgmt, command_killallnpcs) ||
 		command_add("list", "[npcs|players|corpses|doors|objects] [search] - Search entities", AccountStatus::ApprenticeGuide, command_list) ||
+		command_add("liveitem", "[status|clear|clone|summon|bump] - Manage live database item testing and cache state", AccountStatus::GMMgmt, command_liveitem) ||
+		command_add("lootfilter", "[include|exclude|remove|list|mode] - Manage AutoLoot item filters", AccountStatus::Player, command_lootfilter) ||
 		command_add("lootsim", "[npc_type_id] [loottable_id] [iterations] - Runs benchmark simulations using real loot logic to report numbers and data", AccountStatus::GMImpossible, command_lootsim) ||
 		command_add("load_shared_memory", "[shared_memory_name] - Reloads shared memory and uses the input as output", AccountStatus::GMImpossible, command_load_shared_memory) ||
 		command_add("loc", "Print out your or your target's current location and heading", AccountStatus::Player, command_loc) ||
@@ -184,6 +189,7 @@ int command_init(void)
 		command_add("npccast", "[targetname/entityid] [spellid] - Causes NPC target to cast spellid on targetname/entityid", AccountStatus::QuestTroupe, command_npccast) ||
 		command_add("npcedit", "[column] [value] - Mega NPC editing command", AccountStatus::GMAdmin, command_npcedit) ||
 		command_add("npceditmass", "[name-search] [column] [value] - Mass (Zone wide) NPC data editing command", AccountStatus::GMAdmin, command_npceditmass) ||
+		command_add("needgreed", "[vote] [Vote ID] [need|greed|pass] - Respond to AutoLoot Need/Greed rolls", AccountStatus::Player, command_needgreed) ||
 		command_add("npcemote", "[Message] - Make your NPC target emote a message.", AccountStatus::GMLeadAdmin, command_npcemote) ||
 		command_add("npcloot", "Manipulate the loot an NPC is carrying. Use #npcloot help for more information.", AccountStatus::QuestTroupe, command_npcloot) ||
 		command_add("npcsay", "[Message] - Make your NPC target say a message.", AccountStatus::GMLeadAdmin, command_npcsay) ||

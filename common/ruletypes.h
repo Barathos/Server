@@ -1158,6 +1158,10 @@ RULE_BOOL(Items, SummonItemAllowInvisibleAugments, false, "Enable this to allow 
 RULE_BOOL(Items, AugmentItemAllowInvisibleAugments, false, "Enable this to allow augments to be put in invisible augment slots by players")
 RULE_BOOL(Items, AlwaysReturnHandins, true, "Enable this to always return handins to the player")
 RULE_BOOL(Items, NPCUseRecommendedLevels, false, "Enable to have NPCs scale item stats by recommended levels")
+RULE_BOOL(Items, LiveItemLoading, true, "Enable live database item loading for item IDs in the configured live item range.")
+RULE_INT(Items, LiveItemMinID, 900000, "Minimum item ID eligible for live database item loading. Set both min and max to 0 to allow all item IDs.")
+RULE_INT(Items, LiveItemMaxID, 999999, "Maximum item ID eligible for live database item loading. Set to 0 to allow every item ID above LiveItemMinID.")
+RULE_INT(Items, LiveItemPollIntervalSeconds, 1, "Seconds to cache live database item lookups before polling the database again.")
 RULE_CATEGORY_END()
 
 RULE_CATEGORY(Parcel)

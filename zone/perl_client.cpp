@@ -30,6 +30,11 @@ void Perl_Client_SendSound(Client* self) // @categories Script Utility
 	self->SendSound();
 }
 
+void Perl_Client_SendItemScale(Client* self, EQ::ItemInstance* inst) // @categories Inventory and Items
+{
+	self->SendItemScale(inst);
+}
+
 bool Perl_Client_Save(Client* self, uint8 commit_now) // @categories Script Utility
 {
 	return self->Save(commit_now);
@@ -3813,6 +3818,7 @@ void perl_register_client()
 	package.add("SendMarqueeMessage", (void(*)(Client*, uint32, std::string))&Perl_Client_SendMarqueeMessage);
 	package.add("SendMarqueeMessage", (void(*)(Client*, uint32, std::string, uint32))&Perl_Client_SendMarqueeMessage);
 	package.add("SendMarqueeMessage", (void(*)(Client*, uint32, uint32, uint32, uint32, uint32, std::string))&Perl_Client_SendMarqueeMessage);
+	package.add("SendItemScale", &Perl_Client_SendItemScale);
 	package.add("SendOPTranslocateConfirm", &Perl_Client_SendOPTranslocateConfirm);
 	package.add("SendPayload", (void(*)(Client*, int))&Perl_Client_SendPayload);
 	package.add("SendPayload", (void(*)(Client*, int, std::string))&Perl_Client_SendPayload);

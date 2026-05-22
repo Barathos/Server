@@ -1517,6 +1517,8 @@ packet with the item number in it, but I cant seem to find it right now
 	if (!inst)
 		return;
 
+	RefreshLiveItemTree(const_cast<EQ::ItemInstance *>(inst));
+
 	const EQ::ItemData* item = inst->GetItem();
 	const char* name2 = &item->Name[0];
 	auto outapp = new EQApplicationPacket(OP_ItemLinkText, strlen(name2) + 68);
@@ -1549,6 +1551,39 @@ packet with the item number in it, but I cant seem to find it right now
 void Client::SendLootItemInPacket(const EQ::ItemInstance* inst, int16 slot_id)
 {
 	SendItemPacket(slot_id,inst, ItemPacketTrade);
+}
+
+bool Client::RefreshLiveItem(EQ::ItemInstance* inst)
+{
+	if (!inst || !database.IsLiveItemID(inst->GetID())) {
+		return false;
+	}
+
+	const auto *item = database.GetItem(inst->GetID());
+	if (!item) {
+		return false;
+	}
+
+	return inst->RefreshItemData(item);
+}
+
+bool Client::RefreshLiveItemTree(EQ::ItemInstance* inst)
+{
+	if (!inst) {
+		return false;
+	}
+
+	bool refreshed = RefreshLiveItem(inst);
+	auto *contents = inst->GetContents();
+	if (!contents) {
+		return refreshed;
+	}
+
+	for (auto &entry : *contents) {
+		refreshed = RefreshLiveItemTree(entry.second) || refreshed;
+	}
+
+	return refreshed;
 }
 
 bool Client::IsValidSlot(uint32 slot) {
@@ -3005,6 +3040,8 @@ void Client::SendItemPacket(int16 slot_id, const EQ::ItemInstance* inst, ItemPac
 			}
 		}
 	}
+
+	RefreshLiveItemTree(const_cast<EQ::ItemInstance *>(inst));
 
 	// Serialize item into |-delimited string (Titanium- uses '|' delimiter .. newer clients use pure data serialization)
 	std::string packet = inst->Serialize(slot_id);

@@ -23,6 +23,7 @@
 #include "common/rulesys.h"
 #include "common/spdat.h"
 #include "common/strings.h"
+#include "zone/autoloot_manager.h"
 #include "zone/bot.h"
 #include "zone/fastmath.h"
 #include "zone/lua_parser.h"
@@ -3008,6 +3009,8 @@ bool NPC::Death(Mob* killer_mob, int64 damage, uint16 spell, EQ::skills::SkillTy
 		},
 		0, &args
 	);
+
+	auto_loot_manager.ProcessCorpseDeath(corpse, killer_mob ? killer_mob : owner_or_self);
 
 	// Zone controller process EVENT_DEATH_ZONE (Death events)
 	if (parse->HasQuestSub(ZONE_CONTROLLER_NPC_ID, EVENT_DEATH_ZONE)) {

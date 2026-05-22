@@ -3326,7 +3326,7 @@ namespace Titanium
 // file scope helper methods
 	void SerializeItem(EQ::OutBuffer& ob, const EQ::ItemInstance *inst, int16 slot_id_in, uint8 depth) {
 		const char *protection      = "\\\\\\\\\\";
-		const EQ::ItemData *item = inst->GetUnscaledItem();
+		const EQ::ItemData *item = inst->GetClientItem();
 
 		ob << StringFormat(
 			"%.*s%s",
@@ -3340,7 +3340,7 @@ namespace Titanium
 		ob << '|' << itoa((!inst->GetMerchantSlot() ? slot_id_in : inst->GetMerchantSlot())); // inst slot/merchant slot
 		ob << '|' << itoa(inst->GetPrice()); // merchant price
 		ob << '|' << itoa((!inst->GetMerchantSlot() ? 1 : inst->GetMerchantCount())); // inst count/merchant count
-		ob << '|' << itoa((inst->IsScaling() ? (inst->GetExp() / 100) : 0)); // inst experience
+		ob << '|' << itoa((inst->IsScaling() && !inst->HasDynamicItemData() ? (inst->GetExp() / 100) : 0)); // inst experience
 		ob << '|' << itoa((!inst->GetMerchantSlot() ? inst->GetSerialNumber()
 			: inst->GetMerchantSlot())); // merchant serial number
 		ob << '|' << itoa(inst->GetRecastTimestamp()); // recast timestamp

@@ -37,6 +37,26 @@ namespace EQ {
 
 #define MAX_LOOTERS 72
 
+enum class CorpseAutoLootResultCode {
+	Success,
+	Invalid,
+	LoreConflict,
+	LootPrevented,
+	DynamicZoneDenied,
+	InventoryFull,
+	PartialStacked
+};
+
+struct CorpseAutoLootResult {
+	CorpseAutoLootResultCode code = CorpseAutoLootResultCode::Invalid;
+	uint32 item_id = 0;
+	uint32 item_count = 0;
+	uint32 remaining_count = 0;
+	std::string item_name;
+
+	bool IsSuccess() const { return code == CorpseAutoLootResultCode::Success; }
+};
+
 class Corpse : public Mob {
 public:
 
@@ -218,6 +238,7 @@ public:
 	uint16 GetFirstLootSlotByItemID(uint32 item_id);
 	std::vector<int> GetLootList();
 	inline const LootItems &GetLootItems() { return m_item_list; }
+	CorpseAutoLootResult AutoLootItem(Client *c, uint16 lootslot, bool send_messages = true);
 	void LootCorpseItem(Client *c, const EQApplicationPacket *app);
 	void EndLoot(Client *c, const EQApplicationPacket *app);
 	void MakeLootRequestPackets(Client *c, const EQApplicationPacket *app);

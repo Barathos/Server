@@ -4476,7 +4476,7 @@ namespace UF
 
 	void SerializeItem(EQ::OutBuffer& ob, const EQ::ItemInstance *inst, int16 slot_id_in, uint8 depth)
 	{
-		const EQ::ItemData *item = inst->GetUnscaledItem();
+		const EQ::ItemData *item = inst->GetClientItem();
 
 		UF::structs::ItemSerializationHeader hdr;
 
@@ -4488,7 +4488,7 @@ namespace UF
 		hdr.slot = (inst->GetMerchantSlot() ? inst->GetMerchantSlot() : slot_id);
 		hdr.price = inst->GetPrice();
 		hdr.merchant_slot = (inst->GetMerchantSlot() ? inst->GetMerchantCount() : 1);
-		hdr.scaled_value = (inst->IsScaling() ? (inst->GetExp() / 100) : 0);
+		hdr.scaled_value = (inst->IsScaling() && !inst->HasDynamicItemData() ? (inst->GetExp() / 100) : 0);
 		hdr.instance_id = (inst->GetMerchantSlot() ? inst->GetMerchantSlot() : inst->GetSerialNumber());
 		hdr.unknown028 = 0;
 		hdr.last_cast_time = inst->GetRecastTimestamp();

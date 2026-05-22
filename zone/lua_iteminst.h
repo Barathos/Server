@@ -89,6 +89,14 @@ public:
 	void SetCustomData(const std::string &identifier, bool value);
 	std::string GetCustomData(const std::string& identifier);
 	void DeleteCustomData(const std::string& identifier);
+	void SetDynamicItemModifier(const std::string &identifier, int value);
+	void SetDynamicItemData(const std::string &identifier, const std::string &value);
+	void SetDynamicItemData(const std::string &identifier, int value);
+	void DeleteDynamicItemModifier(const std::string &identifier);
+	void DeleteDynamicItemData(const std::string &identifier);
+	void ClearDynamicItemData();
+	bool HasDynamicItemData();
+	void RebuildDynamicItemData();
 	void SetScaling(bool v);
 	void SetScale(double scale_factor);
 	uint32 GetExp();

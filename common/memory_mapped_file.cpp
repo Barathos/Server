@@ -71,10 +71,11 @@ namespace EQ {
 			PAGE_READWRITE,
 			0,
 			total_size,
-			filename.c_str());
+			nullptr);
 
 		if(!imp_->mapped_object_) {
-			EQ_EXCEPT("Shared Memory", "Could not create a file mapping for this shared memory file.");
+			auto last_error = GetLastError();
+			EQ_EXCEPT("Shared Memory", "Could not create a file mapping for shared memory file [" + filename_ + "] with size [" + std::to_string(total_size) + "], Windows error [" + std::to_string(last_error) + "].");
 		}
 
 		memory_ = reinterpret_cast<shared_memory_struct*>(MapViewOfFile(imp_->mapped_object_,
@@ -84,7 +85,8 @@ namespace EQ {
 			total_size));
 
 		if(!memory_) {
-			EQ_EXCEPT("Shared Memory", "Could not map a view of the shared memory file.");
+			auto last_error = GetLastError();
+			EQ_EXCEPT("Shared Memory", "Could not map a view of shared memory file [" + filename_ + "] with size [" + std::to_string(total_size) + "], Windows error [" + std::to_string(last_error) + "].");
 		}
 
 #else
@@ -140,10 +142,11 @@ namespace EQ {
 			PAGE_READWRITE,
 			0,
 			total_size,
-			filename.c_str());
+			nullptr);
 
 		if(!imp_->mapped_object_) {
-			EQ_EXCEPT("Shared Memory", "Could not create a file mapping for this shared memory file.");
+			auto last_error = GetLastError();
+			EQ_EXCEPT("Shared Memory", "Could not create a file mapping for shared memory file [" + filename_ + "] with size [" + std::to_string(total_size) + "], Windows error [" + std::to_string(last_error) + "].");
 		}
 
 		memory_ = reinterpret_cast<shared_memory_struct*>(MapViewOfFile(imp_->mapped_object_,
@@ -153,7 +156,8 @@ namespace EQ {
 			total_size));
 
 		if(!memory_) {
-			EQ_EXCEPT("Shared Memory", "Could not map a view of the shared memory file.");
+			auto last_error = GetLastError();
+			EQ_EXCEPT("Shared Memory", "Could not map a view of shared memory file [" + filename_ + "] with size [" + std::to_string(total_size) + "], Windows error [" + std::to_string(last_error) + "].");
 		}
 
 #else
