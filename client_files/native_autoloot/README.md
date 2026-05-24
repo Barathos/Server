@@ -1,31 +1,79 @@
-# Native AutoLoot Client Files
+# Native Client Runtime
 
-This folder contains the AutoLoot-specific native UI XML for the matching server branch.
+This folder contains the current client-side native runtime for the custom EQEmu feature set.
 
-The DLL source is not included in this proof branch yet. The current DLL implementation still lives in shared native-client runtime code and needs a `native-client-base` split before the client side is a clean AutoLoot-only pack.
+It supports the native EQ UI windows and transport lines for:
+
+- AutoLoot: `AUTOLOOT|...`
+- Live Items / Item Forge: `LIVEITEM|...`
+- Live Spells / Spell Forge: `LIVESPELL|...`
+- Achievements: `ACH|...`
 
 ## Install
 
-Copy the SIDL XML file to the client's default UI folder:
+Copy the prebuilt DLL to the root of the EverQuest client folder:
+
+```text
+client_files/native_autoloot/eq-core-dll/bin/dinput8.dll
+```
+
+Copy the native UI XML files to the client's default UI folder:
 
 ```text
 client_files/native_autoloot/ui/EQUI_NativeAutoLootWnd.xml
+client_files/native_autoloot/ui/EQUI_NativeItemForgeWnd.xml
+client_files/native_autoloot/ui/EQUI_NativeSpellForgeWnd.xml
+client_files/native_autoloot/ui/EQUI_NativeAchievementWnd.xml
 ```
 
 Destination example:
 
 ```text
+EverQuest/dinput8.dll
 EverQuest/uifiles/default/EQUI_NativeAutoLootWnd.xml
+EverQuest/uifiles/default/EQUI_NativeItemForgeWnd.xml
+EverQuest/uifiles/default/EQUI_NativeSpellForgeWnd.xml
+EverQuest/uifiles/default/EQUI_NativeAchievementWnd.xml
 ```
 
 Only load one patched client folder at a time.
 
 ## In Game
 
-Use this command to reopen the window if it is closed:
+Useful reopen commands:
 
 ```text
 #autoloot native show
+#itemforge dialog
+#livespell dialog
+#ach window
 ```
 
-The server remains authoritative. The native client DLL host only creates the native window, parses `AUTOLOOT|...` status lines, and sends normal server commands back to the zone.
+The server remains authoritative. The DLL creates native windows, parses server transport lines, and sends normal server commands back to the zone.
+
+## Current Shape
+
+This is a monolithic native runtime. The feature-specific code currently lives mostly in:
+
+```text
+client_files/native_autoloot/eq-core-dll/src/core_autoloot_native.h
+```
+
+The old `EQUI_AoTAutoLootWnd.xml` combined prototype window is intentionally not included. AutoLoot uses `EQUI_NativeAutoLootWnd.xml`.
+
+The surrounding DLL project still contains older MacroQuest-derived scaffolding because the current hooks were built on that client-side base. That is separate from the removed Lua/MQ AutoLoot UI path.
+
+## Build
+
+Open one of these solutions in Visual Studio:
+
+```text
+client_files/native_autoloot/eq-core-dll/eq-core-dll-visualstudio2022.sln
+client_files/native_autoloot/eq-core-dll/eq-core-dll-visualstudio2019.sln
+```
+
+Build `Release|Win32`. The output is:
+
+```text
+client_files/native_autoloot/eq-core-dll/bin/dinput8.dll
+```
