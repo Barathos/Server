@@ -135,6 +135,7 @@ void command_kill(Client *c, const Seperator *sep);
 void command_list(Client *c, const Seperator *sep);
 void command_lootfilter(Client *c, const Seperator *sep);
 void command_liveitem(Client *c, const Seperator *sep);
+void command_livespell(Client *c, const Seperator *sep);
 void command_lootsim(Client *c, const Seperator *sep);
 void command_load_shared_memory(Client *c, const Seperator *sep);
 void command_loc(Client *c, const Seperator *sep);

@@ -165,6 +165,7 @@ set(zone_headers
     lua_entity_list.h
     lua_expedition.h
     lua_general.h
+    live_spell_manager.h
     lua_group.h
     lua_hate_list.h
     lua_inventory.h
@@ -467,6 +468,7 @@ set(gm_command_sources
     gm_commands/killallnpcs.cpp
     gm_commands/list.cpp
     gm_commands/liveitem.cpp
+    gm_commands/livespell.cpp
     gm_commands/loc.cpp
     gm_commands/logs.cpp
     gm_commands/lootsim.cpp

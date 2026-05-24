@@ -33,6 +33,7 @@
 #include "zone/dynamic_zone.h"
 #include "zone/event_codes.h"
 #include "zone/guild_mgr.h"
+#include "zone/live_spell_manager.h"
 #include "zone/map.h"
 #include "zone/petitions.h"
 #include "zone/queryserv.h"
@@ -1155,6 +1156,7 @@ void Client::OPMemorizeSpell(const EQApplicationPacket* app)
 	}
 
 	const auto* m = (MemorizeSpell_Struct*) app->pBuffer;
+	LiveSpellManager::EnsureServerLoaded();
 
 	if (!IsValidSpell(m->spell_id)) {
 		Message(

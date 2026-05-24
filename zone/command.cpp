@@ -174,6 +174,7 @@ int command_init(void)
 		command_add("list", "[npcs|players|corpses|doors|objects] [search] - Search entities", AccountStatus::ApprenticeGuide, command_list) ||
 		command_add("lootfilter", "[include|exclude|remove|list|mode] - Manage AutoLoot item filters", AccountStatus::Player, command_lootfilter) ||
 		command_add("liveitem", "[status|clear|clone|summon|bump] - Manage live database item testing and cache state", AccountStatus::GMMgmt, command_liveitem) ||
+		command_add("livespell", "[dialog|craft|test|patch|scribe|ack|ready] - Prototype live generated spell sync", AccountStatus::Player, command_livespell) ||
 		command_add("lootsim", "[npc_type_id] [loottable_id] [iterations] - Runs benchmark simulations using real loot logic to report numbers and data", AccountStatus::GMImpossible, command_lootsim) ||
 		command_add("load_shared_memory", "[shared_memory_name] - Reloads shared memory and uses the input as output", AccountStatus::GMImpossible, command_load_shared_memory) ||
 		command_add("loc", "Print out your or your target's current location and heading", AccountStatus::Player, command_loc) ||
