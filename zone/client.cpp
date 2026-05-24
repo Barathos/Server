@@ -6597,6 +6597,7 @@ void Client::ProcessInspectRequest(Client *requestee, Client *requester)
 			inst = requestee->GetInv().GetItem(L);
 
 			if (inst) {
+				requestee->RefreshLiveItemTree(const_cast<EQ::ItemInstance *>(inst));
 				item = inst->GetItem();
 				if (item) {
 					strcpy(insr->itemnames[L], item->Name);
@@ -8657,6 +8658,19 @@ void Client::TryItemTimer(int slot)
 		return;
 	}
 
+	const bool live_item_refreshed = RefreshLiveItemTree(inst);
+	if (live_item_refreshed) {
+		SendItemPacket(
+			slot,
+			inst,
+			slot == EQ::invslot::slotCursor ? ItemPacketCharInventory : ItemPacketTrade
+		);
+
+		if (slot <= EQ::invslot::EQUIPMENT_END) {
+			CalcBonuses();
+		}
+	}
+
 	auto item_timers = inst->GetTimers();
 	auto it_iter = item_timers.begin();
 	while(it_iter != item_timers.end()) {
@@ -8695,8 +8709,25 @@ void Client::TryItemTimer(int slot)
 void Client::SendItemScale(EQ::ItemInstance *inst) {
 	int slot = m_inv.GetSlotByItemInst(inst);
 	if(slot != -1) {
-		inst->ScaleItem();
-		SendItemPacket(slot, inst, ItemPacketCharmUpdate);
+		bool dynamic_item_refreshed = false;
+
+		if (inst->IsScaling()) {
+			inst->ScaleItem();
+		} else if (inst->HasDynamicItemData()) {
+			inst->RebuildDynamicItemData();
+			inst->AssignNewSerialNumber();
+			dynamic_item_refreshed = true;
+		} else {
+			inst->ScaleItem();
+		}
+
+		SendItemPacket(
+			slot,
+			inst,
+			dynamic_item_refreshed ?
+				(slot == EQ::invslot::slotCursor ? ItemPacketCharInventory : ItemPacketTrade) :
+				ItemPacketCharmUpdate
+		);
 		CalcBonuses();
 	}
 }

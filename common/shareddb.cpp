@@ -44,6 +44,7 @@
 
 #include "fmt/format.h"
 #include <algorithm>
+#include <ctime>
 
 SharedDatabase::SharedDatabase()
 : Database()
@@ -56,6 +57,274 @@ SharedDatabase::SharedDatabase(const char* host, const char* user, const char* p
 }
 
 SharedDatabase::~SharedDatabase() = default;
+
+namespace {
+	EQ::ItemData BuildLiveItemData(SharedDatabase *database, const ItemsRepository::Items &e)
+	{
+		EQ::ItemData item {};
+
+		std::string variable_buffer;
+
+		bool disable_attuneable          = RuleB(Items, DisableAttuneable);
+		bool disable_bard_focus_effects  = RuleB(Items, DisableBardFocusEffects);
+		bool disable_lore                = RuleB(Items, DisableLore);
+		bool disable_no_drop             = RuleB(Items, DisableNoDrop);
+		bool disable_no_pet              = RuleB(Items, DisableNoPet);
+		bool disable_no_rent             = RuleB(Items, DisableNoRent);
+		bool disable_no_transfer         = RuleB(Items, DisableNoTransfer);
+		bool disable_potion_belt         = RuleB(Items, DisablePotionBelt);
+		bool disable_spell_focus_effects = RuleB(Items, DisableSpellFocusEffects);
+
+		if (database && database->GetVariable("disablelore", variable_buffer) && variable_buffer == "1") {
+			disable_lore = true;
+		}
+
+		if (database && database->GetVariable("disablenodrop", variable_buffer) && variable_buffer == "1") {
+			disable_no_drop = true;
+		}
+
+		if (database && database->GetVariable("disablenorent", variable_buffer) && variable_buffer == "1") {
+			disable_no_rent = true;
+		}
+
+		if (database && database->GetVariable("disablenotransfer", variable_buffer) && variable_buffer == "1") {
+			disable_no_transfer = true;
+		}
+
+		item.ID = e.id;
+		item.MinStatus = static_cast<uint8>(e.minstatus);
+
+		strn0cpy(item.Name, e.Name.c_str(), sizeof(item.Name));
+		strn0cpy(item.Lore, e.lore.c_str(), sizeof(item.Lore));
+		strn0cpy(item.Comment, e.comment.c_str(), sizeof(item.Comment));
+
+		item.ArtifactFlag    = e.artifactflag;
+		item.Attuneable      = !disable_attuneable && e.attuneable;
+		item.BenefitFlag     = e.benefitflag;
+		item.FVNoDrop        = e.fvnodrop;
+		item.Magic           = e.magic;
+		item.NoDrop          = disable_no_drop ? std::numeric_limits<uint8>::max() : e.nodrop;
+		item.NoPet           = !disable_no_pet && e.nopet;
+		item.NoRent          = disable_no_rent ? std::numeric_limits<uint8>::max() : e.norent;
+		item.NoTransfer      = !disable_no_transfer && e.notransfer;
+		item.PendingLoreFlag = e.pendingloreflag;
+		item.QuestItemFlag   = e.questitemflag;
+		item.Stackable       = e.stackable;
+		item.Tradeskills     = e.tradeskills;
+		item.SummonedFlag    = e.summonedflag;
+
+		item.LoreGroup = disable_lore ? 0 : e.loregroup;
+		item.LoreFlag  = !disable_lore && item.LoreGroup != 0;
+
+		item.AugType  = e.augtype;
+		item.ItemType = static_cast<uint8>(e.itemtype);
+		item.SubType  = e.subtype;
+
+		item.ExpendableArrow = e.expendablearrow;
+		item.Light           = EQ::Clamp(e.light, -128, 127);
+		item.MaxCharges      = e.maxcharges;
+		item.Size            = static_cast<uint8>(e.size);
+		item.StackSize       = e.stacksize;
+		item.Weight          = e.weight;
+
+		item.PotionBelt      = !disable_potion_belt && e.potionbelt;
+		item.PotionBeltSlots = disable_potion_belt ? 0 : static_cast<uint8>(e.potionbeltslots);
+
+		item.Favor      = e.favor;
+		item.GuildFavor = e.guildfavor;
+		item.Price      = e.price;
+		item.SellRate   = e.sellrate;
+
+		item.Color           = e.color;
+		item.EliteMaterial   = e.elitematerial;
+		item.HerosForgeModel = e.herosforgemodel;
+		item.Icon            = e.icon;
+		strn0cpy(item.IDFile, e.idfile.c_str(), sizeof(item.IDFile));
+		item.Material = e.material;
+
+		item.CR           = EQ::Clamp(e.cr, -128, 127);
+		item.DR           = EQ::Clamp(e.dr, -128, 127);
+		item.FR           = EQ::Clamp(e.fr, -128, 127);
+		item.MR           = EQ::Clamp(e.mr, -128, 127);
+		item.PR           = EQ::Clamp(e.pr, -128, 127);
+		item.SVCorruption = EQ::Clamp(e.svcorruption, -128, 127);
+
+		item.HeroicCR       = e.heroic_cr;
+		item.HeroicDR       = e.heroic_dr;
+		item.HeroicFR       = e.heroic_fr;
+		item.HeroicMR       = e.heroic_mr;
+		item.HeroicPR       = e.heroic_pr;
+		item.HeroicSVCorrup = e.heroic_svcorrup;
+
+		item.AAgi = EQ::Clamp(e.aagi, -128, 127);
+		item.ACha = EQ::Clamp(e.acha, -128, 127);
+		item.ADex = EQ::Clamp(e.adex, -128, 127);
+		item.AInt = EQ::Clamp(e.aint, -128, 127);
+		item.ASta = EQ::Clamp(e.asta, -128, 127);
+		item.AStr = EQ::Clamp(e.astr, -128, 127);
+		item.AWis = EQ::Clamp(e.awis, -128, 127);
+
+		item.HeroicAgi = e.heroic_agi;
+		item.HeroicCha = e.heroic_cha;
+		item.HeroicDex = e.heroic_dex;
+		item.HeroicInt = e.heroic_int;
+		item.HeroicSta = e.heroic_sta;
+		item.HeroicStr = e.heroic_str;
+		item.HeroicWis = e.heroic_wis;
+
+		item.HP             = e.hp;
+		item.Regen          = e.regen;
+		item.Mana           = e.mana;
+		item.ManaRegen      = e.manaregen;
+		item.Endur          = e.endur;
+		item.EnduranceRegen = e.enduranceregen;
+
+		item.BaneDmgAmt     = e.banedmgamt;
+		item.BaneDmgBody    = e.banedmgbody;
+		item.BaneDmgRace    = e.banedmgrace;
+		item.BaneDmgRaceAmt = e.banedmgraceamt;
+
+		item.ElemDmgType = static_cast<uint8>(e.elemdmgtype);
+		item.ElemDmgAmt  = static_cast<uint8>(e.elemdmgamt);
+
+		item.BackstabDmg = e.backstabdmg;
+		item.Damage      = e.damage;
+		item.Delay       = static_cast<uint8>(e.delay);
+		item.Range       = static_cast<uint8>(e.range_);
+
+		item.AC            = e.ac;
+		item.Accuracy      = EQ::Clamp(e.accuracy, -128, 127);
+		item.Attack        = e.attack;
+		item.Avoidance     = EQ::Clamp(e.avoidance, -128, 127);
+		item.Clairvoyance  = e.clairvoyance;
+		item.CombatEffects = Strings::IsNumber(e.combateffects) ? static_cast<int8>(EQ::Clamp(Strings::ToInt(e.combateffects), -128, 127)) : 0;
+		item.DamageShield  = e.damageshield;
+		item.DotShielding  = e.dotshielding;
+		item.DSMitigation  = e.dsmitigation;
+		item.Haste         = e.haste;
+		item.HealAmt       = e.healamt;
+		item.Purity        = e.purity;
+		item.Shielding     = EQ::Clamp(e.shielding, -128, 127);
+		item.SpellDmg      = e.spelldmg;
+		item.SpellShield   = EQ::Clamp(e.spellshield, -128, 127);
+		item.StrikeThrough = EQ::Clamp(e.strikethrough, -128, 127);
+		item.StunResist    = EQ::Clamp(e.stunresist, -128, 127);
+
+		item.AugRestrict = e.augrestrict;
+		item.Classes     = e.classes;
+		item.Deity       = e.deity;
+		item.ItemClass   = static_cast<uint8>(e.itemclass);
+		item.Races       = e.races;
+		item.RecLevel    = static_cast<uint8>(e.reclevel);
+		item.RecSkill    = static_cast<uint8>(e.recskill);
+		item.ReqLevel    = static_cast<uint8>(e.reqlevel);
+		item.Slots       = e.slots;
+
+		item.SkillModValue = e.skillmodvalue;
+		item.SkillModMax   = e.skillmodmax;
+		item.SkillModType  = e.skillmodtype;
+
+		item.ExtraDmgSkill = e.extradmgskill;
+		item.ExtraDmgAmt   = e.extradmgamt;
+
+		item.BardType  = e.bardtype;
+		item.BardValue = e.bardvalue;
+
+		item.FactionAmt1 = e.factionamt1;
+		item.FactionMod1 = e.factionmod1;
+		item.FactionAmt2 = e.factionamt2;
+		item.FactionMod2 = e.factionmod2;
+		item.FactionAmt3 = e.factionamt3;
+		item.FactionMod3 = e.factionmod3;
+		item.FactionAmt4 = e.factionamt4;
+		item.FactionMod4 = e.factionmod4;
+
+		item.AugDistiller = e.augdistiller;
+
+		item.AugSlotType[0]    = static_cast<uint8>(e.augslot1type);
+		item.AugSlotVisible[0] = static_cast<uint8>(e.augslot1visible);
+		item.AugSlotType[1]    = static_cast<uint8>(e.augslot2type);
+		item.AugSlotVisible[1] = static_cast<uint8>(e.augslot2visible);
+		item.AugSlotType[2]    = static_cast<uint8>(e.augslot3type);
+		item.AugSlotVisible[2] = static_cast<uint8>(e.augslot3visible);
+		item.AugSlotType[3]    = static_cast<uint8>(e.augslot4type);
+		item.AugSlotVisible[3] = static_cast<uint8>(e.augslot4visible);
+		item.AugSlotType[4]    = static_cast<uint8>(e.augslot5type);
+		item.AugSlotVisible[4] = static_cast<uint8>(e.augslot5visible);
+		item.AugSlotType[5]    = static_cast<uint8>(e.augslot6type);
+		item.AugSlotVisible[5] = static_cast<uint8>(e.augslot6visible);
+
+		for (uint8 i = EQ::invaug::SOCKET_BEGIN; i <= EQ::invaug::SOCKET_END; i++) {
+			item.AugSlotUnk2[i] = 0;
+		}
+
+		item.LDoNTheme        = e.ldontheme;
+		item.LDoNPrice        = e.ldonprice;
+		item.LDoNSellBackRate = e.ldonsellbackrate;
+		item.LDoNSold         = e.ldonsold;
+		item.PointType        = e.pointtype;
+
+		item.BagSize  = static_cast<uint8>(e.bagsize);
+		item.BagSlots = EQ::Clamp(e.bagslots, 0, static_cast<int>(EQ::invbag::SLOT_COUNT));
+		item.BagType  = static_cast<uint8>(e.bagtype);
+		item.BagWR    = EQ::Clamp(e.bagwr, 0, 100);
+
+		item.Bard.Effect = disable_bard_focus_effects ? 0 : e.bardeffect;
+		item.Bard.Type   = disable_bard_focus_effects ? 0 : static_cast<uint8>(e.bardeffecttype);
+		item.Bard.Level  = disable_bard_focus_effects ? 0 : static_cast<uint8>(e.bardlevel);
+		item.Bard.Level2 = disable_bard_focus_effects ? 0 : static_cast<uint8>(e.bardlevel2);
+
+		item.Book     = static_cast<uint8>(e.book);
+		item.BookType = e.booktype;
+
+		item.CastTime     = e.casttime;
+		item.CastTime_    = e.casttime_;
+		item.Click.Effect = e.clickeffect;
+		item.Click.Type   = static_cast<uint8>(e.clicktype);
+		item.Click.Level  = static_cast<uint8>(e.clicklevel);
+		item.Click.Level2 = static_cast<uint8>(e.clicklevel2);
+		strn0cpy(item.ClickName, e.clickname.c_str(), sizeof(item.ClickName));
+		item.RecastDelay = e.recastdelay;
+		item.RecastType  = e.recasttype;
+
+		item.Focus.Effect = disable_spell_focus_effects ? 0 : e.focuseffect;
+		item.Focus.Type   = disable_spell_focus_effects ? 0 : static_cast<uint8>(e.focustype);
+		item.Focus.Level  = disable_spell_focus_effects ? 0 : static_cast<uint8>(e.focuslevel);
+		item.Focus.Level2 = disable_spell_focus_effects ? 0 : static_cast<uint8>(e.focuslevel2);
+		strn0cpy(item.FocusName, disable_spell_focus_effects ? "" : e.focusname.c_str(), sizeof(item.FocusName));
+
+		item.Proc.Effect = e.proceffect;
+		item.Proc.Type   = static_cast<uint8>(e.proctype);
+		item.Proc.Level  = static_cast<uint8>(e.proclevel);
+		item.Proc.Level2 = static_cast<uint8>(e.proclevel2);
+		strn0cpy(item.ProcName, e.procname.c_str(), sizeof(item.ProcName));
+		item.ProcRate = e.procrate;
+
+		item.Scroll.Effect = e.scrolleffect;
+		item.Scroll.Type   = static_cast<uint8>(e.scrolltype);
+		item.Scroll.Level  = static_cast<uint8>(e.scrolllevel);
+		item.Scroll.Level2 = static_cast<uint8>(e.scrolllevel2);
+		strn0cpy(item.ScrollName, e.scrollname.c_str(), sizeof(item.ScrollName));
+
+		item.Worn.Effect = e.worneffect;
+		item.Worn.Type   = static_cast<uint8>(e.worntype);
+		item.Worn.Level  = static_cast<uint8>(e.wornlevel);
+		item.Worn.Level2 = static_cast<uint8>(e.wornlevel2);
+		strn0cpy(item.WornName, e.wornname.c_str(), sizeof(item.WornName));
+
+		item.EvolvingID    = e.evoid;
+		item.EvolvingItem  = static_cast<uint8>(e.evoitem);
+		item.EvolvingLevel = static_cast<uint8>(e.evolvinglevel);
+		item.EvolvingMax   = static_cast<uint8>(e.evomax);
+
+		item.CharmFileID = Strings::IsNumber(e.charmfileid) ? Strings::ToUnsignedInt(e.charmfileid) : 0;
+		strn0cpy(item.CharmFile, e.charmfile.c_str(), sizeof(item.CharmFile));
+		strn0cpy(item.Filename, e.filename.c_str(), sizeof(item.Filename));
+		item.ScriptFileID = e.scriptfileid;
+
+		return item;
+	}
+}
 
 bool SharedDatabase::SetHideMe(uint32 account_id, uint8 hideme)
 {
@@ -910,6 +1179,8 @@ bool SharedDatabase::LoadItems(const std::string &prefix) {
 		items_hash = std::make_unique<EQ::FixedMemoryHashSet<EQ::ItemData>>(static_cast<uint8*>(items_mmf->Get()), items_mmf->Size());
 		mutex.Unlock();
 
+		m_shared_items_load_time = std::time(nullptr);
+		ClearLiveItemCache();
 		LogInfo("Loaded [{}] items via shared memory", Strings::Commify(m_shared_items_count));
 	} catch(std::exception& ex) {
 		LogError("Error Loading Items: {}", ex.what());
@@ -1249,6 +1520,9 @@ void SharedDatabase::LoadItems(void *data, uint32 size, int32 items, uint32 max_
 			break;
 		}
 	}
+
+	m_shared_items_load_time = std::time(nullptr);
+	ClearLiveItemCache();
 }
 
 const EQ::ItemData *SharedDatabase::GetItem(uint32 id) const
@@ -1257,15 +1531,135 @@ const EQ::ItemData *SharedDatabase::GetItem(uint32 id) const
 		return nullptr;
 	}
 
-	if (!items_hash || id > items_hash->max_key()) {
+	const EQ::ItemData *shared_item = nullptr;
+
+	if (items_hash && id <= items_hash->max_key() && items_hash->exists(id)) {
+		shared_item = &(items_hash->at(id));
+	}
+
+	if (const auto *live_item = GetLiveItem(id, shared_item != nullptr)) {
+		return live_item;
+	}
+
+	return shared_item;
+}
+
+const EQ::ItemData *SharedDatabase::GetLiveItem(uint32 id, bool has_shared_item) const
+{
+	if (!IsLiveItemID(id)) {
 		return nullptr;
 	}
 
-	if (items_hash->exists(id)) {
-		return &(items_hash->at(id));
+	const auto now = std::time(nullptr);
+	const auto poll_interval = static_cast<time_t>(std::max(0, RuleI(Items, LiveItemPollIntervalSeconds)));
+
+	{
+		std::lock_guard<std::mutex> guard(live_items_cache_mutex);
+		const auto cached = live_items_cache.find(id);
+		if (
+			cached != live_items_cache.end() &&
+			cached->second.last_checked + poll_interval > now
+		) {
+			return cached->second.exists ? &cached->second.item : nullptr;
+		}
 	}
 
-	return nullptr;
+	auto *database = const_cast<SharedDatabase *>(this);
+	const auto item_record = ItemsRepository::FindOne(*database, id);
+
+	LiveItemCacheEntry cache_entry {};
+	cache_entry.updated      = item_record.updated;
+	cache_entry.last_checked = now;
+
+	if (item_record.id <= 0) {
+		LogDebug("Live item [{}] was not found in the database", id);
+
+		std::lock_guard<std::mutex> guard(live_items_cache_mutex);
+		live_items_cache[id] = cache_entry;
+		return nullptr;
+	}
+
+	const bool use_live_item = (
+		!has_shared_item ||
+		item_record.updated == 0 ||
+		item_record.updated >= m_shared_items_load_time
+	);
+
+	if (!use_live_item) {
+		LogDebug(
+			"Live item [{}] is using shared-memory data; item updated [{}], shared items loaded [{}]",
+			id,
+			item_record.updated,
+			m_shared_items_load_time
+		);
+
+		std::lock_guard<std::mutex> guard(live_items_cache_mutex);
+		live_items_cache[id] = cache_entry;
+		return nullptr;
+	}
+
+	cache_entry.item   = BuildLiveItemData(database, item_record);
+	cache_entry.exists = true;
+
+	LogDebug(
+		"Live item [{}] refreshed from the database as [{}] with updated timestamp [{}]",
+		id,
+		item_record.Name,
+		item_record.updated
+	);
+
+	std::lock_guard<std::mutex> guard(live_items_cache_mutex);
+	auto &cached = live_items_cache[id];
+	cached = cache_entry;
+	return &cached.item;
+}
+
+bool SharedDatabase::IsLiveItemID(uint32 id) const
+{
+	if (!id || !RuleB(Items, LiveItemLoading)) {
+		return false;
+	}
+
+	auto minimum = static_cast<uint32>(std::max(0, RuleI(Items, LiveItemMinID)));
+	auto maximum = static_cast<uint32>(std::max(0, RuleI(Items, LiveItemMaxID)));
+
+	if (minimum == 0 && maximum == 0) {
+		return true;
+	}
+
+	if (maximum == 0) {
+		return id >= minimum;
+	}
+
+	if (minimum > maximum) {
+		std::swap(minimum, maximum);
+	}
+
+	return id >= minimum && id <= maximum;
+}
+
+bool SharedDatabase::GetLiveItemCacheEntry(uint32 id, LiveItemCacheEntry &entry) const
+{
+	std::lock_guard<std::mutex> guard(live_items_cache_mutex);
+	const auto cached = live_items_cache.find(id);
+	if (cached == live_items_cache.end()) {
+		return false;
+	}
+
+	entry = cached->second;
+	return true;
+}
+
+void SharedDatabase::ClearLiveItemCache()
+{
+	std::lock_guard<std::mutex> guard(live_items_cache_mutex);
+	live_items_cache.clear();
+}
+
+bool SharedDatabase::ClearLiveItemCache(uint32 id)
+{
+	std::lock_guard<std::mutex> guard(live_items_cache_mutex);
+	return live_items_cache.erase(id) != 0;
 }
 
 const EQ::ItemData* SharedDatabase::IterateItems(uint32* id) const

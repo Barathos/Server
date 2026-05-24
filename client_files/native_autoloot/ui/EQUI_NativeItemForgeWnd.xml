@@ -1,0 +1,566 @@
+<?xml version="1.0"?>
+<XML ID="EQInterfaceDefinitionLanguage">
+	<Schema xmlns="EverQuestData" xmlns:dt="EverQuestDataTypes" />
+
+	<Button item="AIFW_FormTab">
+		<ScreenID>AIFW_FormTab</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>26</Y></Location>
+		<Size><CX>116</CX><CY>24</CY></Size>
+		<Text>Form</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="AIFW_StatsTab">
+		<ScreenID>AIFW_StatsTab</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>132</X><Y>26</Y></Location>
+		<Size><CX>116</CX><CY>24</CY></Size>
+		<Text>Stats</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="AIFW_CombatTab">
+		<ScreenID>AIFW_CombatTab</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>252</X><Y>26</Y></Location>
+		<Size><CX>116</CX><CY>24</CY></Size>
+		<Text>Combat</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="AIFW_ReviewTab">
+		<ScreenID>AIFW_ReviewTab</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>372</X><Y>26</Y></Location>
+		<Size><CX>116</CX><CY>24</CY></Size>
+		<Text>Review</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="AIFW_NameLabel">
+		<ScreenID>AIFW_NameLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>18</Y></Location>
+		<Size><CX>80</CX><CY>20</CY></Size>
+		<Text>Name</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Editbox item="AIFW_NameEdit">
+		<ScreenID>AIFW_NameEdit</ScreenID>
+		<DrawTemplate>WDT_Inner</DrawTemplate>
+		<RelativePosition>true</RelativePosition>
+		<Style_Border>true</Style_Border>
+		<Location><X>96</X><Y>14</Y></Location>
+		<Size><CX>330</CX><CY>24</CY></Size>
+		<Text>Forged Blade</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+	</Editbox>
+
+	<Label item="AIFW_TypeLabel">
+		<ScreenID>AIFW_TypeLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>58</Y></Location>
+		<Size><CX>150</CX><CY>20</CY></Size>
+		<Text>Item Form</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="AIFW_WeaponButton">
+		<ScreenID>AIFW_WeaponButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>84</Y></Location>
+		<Size><CX>98</CX><CY>26</CY></Size>
+		<Text>Weapon</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="AIFW_ArmorButton">
+		<ScreenID>AIFW_ArmorButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>118</X><Y>84</Y></Location>
+		<Size><CX>98</CX><CY>26</CY></Size>
+		<Text>Armor</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="AIFW_JewelryButton">
+		<ScreenID>AIFW_JewelryButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>222</X><Y>84</Y></Location>
+		<Size><CX>98</CX><CY>26</CY></Size>
+		<Text>Jewelry</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="AIFW_CharmButton">
+		<ScreenID>AIFW_CharmButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>326</X><Y>84</Y></Location>
+		<Size><CX>98</CX><CY>26</CY></Size>
+		<Text>Charm</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="AIFW_ShieldButton">
+		<ScreenID>AIFW_ShieldButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>430</X><Y>84</Y></Location>
+		<Size><CX>98</CX><CY>26</CY></Size>
+		<Text>Shield</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="AIFW_TypeHintLabel">
+		<ScreenID>AIFW_TypeHintLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>130</Y></Location>
+		<Size><CX>570</CX><CY>54</CY></Size>
+		<Text>Weapons equip primary or secondary and use damage, delay, and haste.</Text>
+		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
+		<NoWrap>false</NoWrap>
+	</Label>
+
+	<Label item="AIFW_HPLabel">
+		<ScreenID>AIFW_HPLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>28</Y></Location>
+		<Size><CX>110</CX><CY>20</CY></Size>
+		<Text>HP</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="AIFW_HPMinusButton">
+		<ScreenID>AIFW_HPMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>136</X><Y>24</Y></Location>
+		<Size><CX>34</CX><CY>26</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="AIFW_HPValueLabel">
+		<ScreenID>AIFW_HPValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>180</X><Y>28</Y></Location>
+		<Size><CX>80</CX><CY>20</CY></Size>
+		<Text>50</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="AIFW_HPPlusButton">
+		<ScreenID>AIFW_HPPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>270</X><Y>24</Y></Location>
+		<Size><CX>34</CX><CY>26</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="AIFW_ManaLabel">
+		<ScreenID>AIFW_ManaLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>74</Y></Location>
+		<Size><CX>110</CX><CY>20</CY></Size>
+		<Text>Mana</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="AIFW_ManaMinusButton">
+		<ScreenID>AIFW_ManaMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>136</X><Y>70</Y></Location>
+		<Size><CX>34</CX><CY>26</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="AIFW_ManaValueLabel">
+		<ScreenID>AIFW_ManaValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>180</X><Y>74</Y></Location>
+		<Size><CX>80</CX><CY>20</CY></Size>
+		<Text>25</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="AIFW_ManaPlusButton">
+		<ScreenID>AIFW_ManaPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>270</X><Y>70</Y></Location>
+		<Size><CX>34</CX><CY>26</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="AIFW_ACLabel">
+		<ScreenID>AIFW_ACLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>120</Y></Location>
+		<Size><CX>110</CX><CY>20</CY></Size>
+		<Text>AC</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="AIFW_ACMinusButton">
+		<ScreenID>AIFW_ACMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>136</X><Y>116</Y></Location>
+		<Size><CX>34</CX><CY>26</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="AIFW_ACValueLabel">
+		<ScreenID>AIFW_ACValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>180</X><Y>120</Y></Location>
+		<Size><CX>80</CX><CY>20</CY></Size>
+		<Text>5</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="AIFW_ACPlusButton">
+		<ScreenID>AIFW_ACPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>270</X><Y>116</Y></Location>
+		<Size><CX>34</CX><CY>26</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="AIFW_StatsHintLabel">
+		<ScreenID>AIFW_StatsHintLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>170</Y></Location>
+		<Size><CX>570</CX><CY>44</CY></Size>
+		<Text>Stat ranges: HP 0-500, Mana 0-500, AC 0-100.</Text>
+		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
+		<NoWrap>false</NoWrap>
+	</Label>
+
+	<Label item="AIFW_DamageLabel">
+		<ScreenID>AIFW_DamageLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>28</Y></Location>
+		<Size><CX>110</CX><CY>20</CY></Size>
+		<Text>Damage</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="AIFW_DamageMinusButton">
+		<ScreenID>AIFW_DamageMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>136</X><Y>24</Y></Location>
+		<Size><CX>34</CX><CY>26</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="AIFW_DamageValueLabel">
+		<ScreenID>AIFW_DamageValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>180</X><Y>28</Y></Location>
+		<Size><CX>80</CX><CY>20</CY></Size>
+		<Text>8</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="AIFW_DamagePlusButton">
+		<ScreenID>AIFW_DamagePlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>270</X><Y>24</Y></Location>
+		<Size><CX>34</CX><CY>26</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="AIFW_DelayLabel">
+		<ScreenID>AIFW_DelayLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>74</Y></Location>
+		<Size><CX>110</CX><CY>20</CY></Size>
+		<Text>Delay</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="AIFW_DelayMinusButton">
+		<ScreenID>AIFW_DelayMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>136</X><Y>70</Y></Location>
+		<Size><CX>34</CX><CY>26</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="AIFW_DelayValueLabel">
+		<ScreenID>AIFW_DelayValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>180</X><Y>74</Y></Location>
+		<Size><CX>80</CX><CY>20</CY></Size>
+		<Text>24</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="AIFW_DelayPlusButton">
+		<ScreenID>AIFW_DelayPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>270</X><Y>70</Y></Location>
+		<Size><CX>34</CX><CY>26</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="AIFW_HasteLabel">
+		<ScreenID>AIFW_HasteLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>120</Y></Location>
+		<Size><CX>110</CX><CY>20</CY></Size>
+		<Text>Haste</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="AIFW_HasteMinusButton">
+		<ScreenID>AIFW_HasteMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>136</X><Y>116</Y></Location>
+		<Size><CX>34</CX><CY>26</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="AIFW_HasteValueLabel">
+		<ScreenID>AIFW_HasteValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>180</X><Y>120</Y></Location>
+		<Size><CX>80</CX><CY>20</CY></Size>
+		<Text>0%</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="AIFW_HastePlusButton">
+		<ScreenID>AIFW_HastePlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>270</X><Y>116</Y></Location>
+		<Size><CX>34</CX><CY>26</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="AIFW_CombatHintLabel">
+		<ScreenID>AIFW_CombatHintLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>170</Y></Location>
+		<Size><CX>570</CX><CY>44</CY></Size>
+		<Text>Weapon values apply to blades. Other forms keep these at zero.</Text>
+		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
+		<NoWrap>false</NoWrap>
+	</Label>
+
+	<Label item="AIFW_ReviewTitleLabel">
+		<ScreenID>AIFW_ReviewTitleLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>18</Y></Location>
+		<Size><CX>180</CX><CY>20</CY></Size>
+		<Text>Item Preview</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="AIFW_ReviewNameLabel">
+		<ScreenID>AIFW_ReviewNameLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>48</Y></Location>
+		<Size><CX>570</CX><CY>22</CY></Size>
+		<Text>Forged Blade</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="AIFW_ReviewTypeLabel">
+		<ScreenID>AIFW_ReviewTypeLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>82</Y></Location>
+		<Size><CX>570</CX><CY>20</CY></Size>
+		<Text>Weapon item, summoned directly to your cursor.</Text>
+		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="AIFW_ReviewStatsLabel">
+		<ScreenID>AIFW_ReviewStatsLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>114</Y></Location>
+		<Size><CX>570</CX><CY>20</CY></Size>
+		<Text>HP 50, Mana 25, AC 5.</Text>
+		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="AIFW_ReviewCombatLabel">
+		<ScreenID>AIFW_ReviewCombatLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>146</Y></Location>
+		<Size><CX>570</CX><CY>20</CY></Size>
+		<Text>Damage 8, Delay 24, Haste 0%.</Text>
+		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="AIFW_CreateButton">
+		<ScreenID>AIFW_CreateButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>392</X><Y>226</Y></Location>
+		<Size><CX>150</CX><CY>30</CY></Size>
+		<Text>Create Item</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Screen item="AIFW_FormPage">
+		<ScreenID>AIFW_FormPage</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>58</Y></Location>
+		<Size><CX>596</CX><CY>280</CY></Size>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Titlebar>false</Style_Titlebar>
+		<Pieces>AIFW_NameLabel</Pieces>
+		<Pieces>AIFW_NameEdit</Pieces>
+		<Pieces>AIFW_TypeLabel</Pieces>
+		<Pieces>AIFW_WeaponButton</Pieces>
+		<Pieces>AIFW_ArmorButton</Pieces>
+		<Pieces>AIFW_JewelryButton</Pieces>
+		<Pieces>AIFW_CharmButton</Pieces>
+		<Pieces>AIFW_ShieldButton</Pieces>
+		<Pieces>AIFW_TypeHintLabel</Pieces>
+	</Screen>
+
+	<Screen item="AIFW_StatsPage">
+		<ScreenID>AIFW_StatsPage</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>58</Y></Location>
+		<Size><CX>596</CX><CY>280</CY></Size>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Titlebar>false</Style_Titlebar>
+		<Pieces>AIFW_HPLabel</Pieces>
+		<Pieces>AIFW_HPMinusButton</Pieces>
+		<Pieces>AIFW_HPValueLabel</Pieces>
+		<Pieces>AIFW_HPPlusButton</Pieces>
+		<Pieces>AIFW_ManaLabel</Pieces>
+		<Pieces>AIFW_ManaMinusButton</Pieces>
+		<Pieces>AIFW_ManaValueLabel</Pieces>
+		<Pieces>AIFW_ManaPlusButton</Pieces>
+		<Pieces>AIFW_ACLabel</Pieces>
+		<Pieces>AIFW_ACMinusButton</Pieces>
+		<Pieces>AIFW_ACValueLabel</Pieces>
+		<Pieces>AIFW_ACPlusButton</Pieces>
+		<Pieces>AIFW_StatsHintLabel</Pieces>
+	</Screen>
+
+	<Screen item="AIFW_CombatPage">
+		<ScreenID>AIFW_CombatPage</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>58</Y></Location>
+		<Size><CX>596</CX><CY>280</CY></Size>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Titlebar>false</Style_Titlebar>
+		<Pieces>AIFW_DamageLabel</Pieces>
+		<Pieces>AIFW_DamageMinusButton</Pieces>
+		<Pieces>AIFW_DamageValueLabel</Pieces>
+		<Pieces>AIFW_DamagePlusButton</Pieces>
+		<Pieces>AIFW_DelayLabel</Pieces>
+		<Pieces>AIFW_DelayMinusButton</Pieces>
+		<Pieces>AIFW_DelayValueLabel</Pieces>
+		<Pieces>AIFW_DelayPlusButton</Pieces>
+		<Pieces>AIFW_HasteLabel</Pieces>
+		<Pieces>AIFW_HasteMinusButton</Pieces>
+		<Pieces>AIFW_HasteValueLabel</Pieces>
+		<Pieces>AIFW_HastePlusButton</Pieces>
+		<Pieces>AIFW_CombatHintLabel</Pieces>
+	</Screen>
+
+	<Screen item="AIFW_ReviewPage">
+		<ScreenID>AIFW_ReviewPage</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>58</Y></Location>
+		<Size><CX>596</CX><CY>280</CY></Size>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Titlebar>false</Style_Titlebar>
+		<Pieces>AIFW_ReviewTitleLabel</Pieces>
+		<Pieces>AIFW_ReviewNameLabel</Pieces>
+		<Pieces>AIFW_ReviewTypeLabel</Pieces>
+		<Pieces>AIFW_ReviewStatsLabel</Pieces>
+		<Pieces>AIFW_ReviewCombatLabel</Pieces>
+		<Pieces>AIFW_CreateButton</Pieces>
+	</Screen>
+
+	<Label item="AIFW_StatusLabel">
+		<ScreenID>AIFW_StatusLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>358</Y></Location>
+		<Size><CX>590</CX><CY>36</CY></Size>
+		<Text>Choose an item form, then tune stats and combat values.</Text>
+		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
+		<NoWrap>false</NoWrap>
+	</Label>
+
+	<Screen item="NativeItemForgeWnd">
+		<ScreenID>NativeItemForgeWnd</ScreenID>
+		<RelativePosition>false</RelativePosition>
+		<Location><X>150</X><Y>120</Y></Location>
+		<Size><CX>620</CX><CY>410</CY></Size>
+		<Text>Item Forge</Text>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Titlebar>true</Style_Titlebar>
+		<Style_Closebox>true</Style_Closebox>
+		<Style_Minimizebox>false</Style_Minimizebox>
+		<Style_Border>true</Style_Border>
+		<Style_Sizable>false</Style_Sizable>
+		<DrawTemplate>WDT_Rounded</DrawTemplate>
+		<Pieces>AIFW_FormTab</Pieces>
+		<Pieces>AIFW_StatsTab</Pieces>
+		<Pieces>AIFW_CombatTab</Pieces>
+		<Pieces>AIFW_ReviewTab</Pieces>
+		<Pieces>AIFW_FormPage</Pieces>
+		<Pieces>AIFW_StatsPage</Pieces>
+		<Pieces>AIFW_CombatPage</Pieces>
+		<Pieces>AIFW_ReviewPage</Pieces>
+		<Pieces>AIFW_StatusLabel</Pieces>
+	</Screen>
+</XML>

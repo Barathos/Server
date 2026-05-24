@@ -152,7 +152,9 @@ namespace EQ
 		// Accessors
 		const uint32 GetID() const { return ((m_item) ? m_item->ID : 0); }
 		const uint32 GetItemScriptID() const { return ((m_item) ? m_item->ScriptFileID : 0); }
+		bool RefreshItemData(const ItemData *item);
 		const ItemData* GetItem() const;
+		const ItemData* GetClientItem() const;
 		const ItemData* GetUnscaledItem() const;
 
 		const uint8 GetItemType() const { return m_item ? m_item->ItemType : 255; } // Return 255 so you know there's no valid item
@@ -187,6 +189,13 @@ namespace EQ
 		void SetCustomData(const std::string &identifier, float value);
 		void SetCustomData(const std::string &identifier, bool value);
 		void DeleteCustomData(const std::string& identifier);
+		void SetDynamicItemModifier(const std::string &identifier, int value);
+		void SetDynamicItemData(const std::string &identifier, const std::string& value);
+		void SetDynamicItemData(const std::string &identifier, int value);
+		void DeleteDynamicItemModifier(const std::string& identifier);
+		void DeleteDynamicItemData(const std::string& identifier);
+		void ClearDynamicItemData();
+		bool HasDynamicItemData() const;
 
 		// Allows treatment of this object as though it were a pointer to m_item
 		operator bool() const { return (m_item != nullptr); }
@@ -220,12 +229,14 @@ namespace EQ
 
 		void Initialize(SharedDatabase *db = nullptr);
 		void ScaleItem();
+		void RebuildDynamicItemData();
 
 		std::string Serialize(int16 slot_id) const { InternalSerializedItem_Struct s; s.slot_id = slot_id; s.inst = (const void*)this; std::string ser; ser.assign((char*)&s, sizeof(InternalSerializedItem_Struct)); return ser; }
 		void Serialize(OutBuffer& ob, int16 slot_id) const { InternalSerializedItem_Struct isi; isi.slot_id = slot_id; isi.inst = (const void*)this; ob.write((const char*)&isi, sizeof(isi)); }
 
 		inline int32 GetSerialNumber() const { return m_SerialNumber; }
 		inline void SetSerialNumber(int32 id) { m_SerialNumber = id; }
+		void AssignNewSerialNumber();
 
 		std::map<std::string, ::Timer>& GetTimers() const { return m_timers; }
 		void SetTimer(std::string name, uint32 time);
@@ -357,6 +368,7 @@ namespace EQ
 		uint32           m_exp{0};
 		int8             m_evolveLvl{0};
 		ItemData *       m_scaledItem{nullptr};
+		ItemData *       m_dynamicItem{nullptr};
 		bool             m_scaling{false};
 		uint32           m_ornamenticon{0};
 		uint32           m_ornamentidfile{0};

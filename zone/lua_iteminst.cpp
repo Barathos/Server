@@ -248,6 +248,46 @@ void Lua_ItemInst::DeleteCustomData(const std::string& identifier) {
 	self->DeleteCustomData(identifier);
 }
 
+void Lua_ItemInst::SetDynamicItemModifier(const std::string& identifier, int value) {
+	Lua_Safe_Call_Void();
+	self->SetDynamicItemModifier(identifier, value);
+}
+
+void Lua_ItemInst::SetDynamicItemData(const std::string& identifier, const std::string& value) {
+	Lua_Safe_Call_Void();
+	self->SetDynamicItemData(identifier, value);
+}
+
+void Lua_ItemInst::SetDynamicItemData(const std::string& identifier, int value) {
+	Lua_Safe_Call_Void();
+	self->SetDynamicItemData(identifier, value);
+}
+
+void Lua_ItemInst::DeleteDynamicItemModifier(const std::string& identifier) {
+	Lua_Safe_Call_Void();
+	self->DeleteDynamicItemModifier(identifier);
+}
+
+void Lua_ItemInst::DeleteDynamicItemData(const std::string& identifier) {
+	Lua_Safe_Call_Void();
+	self->DeleteDynamicItemData(identifier);
+}
+
+void Lua_ItemInst::ClearDynamicItemData() {
+	Lua_Safe_Call_Void();
+	self->ClearDynamicItemData();
+}
+
+bool Lua_ItemInst::HasDynamicItemData() {
+	Lua_Safe_Call_Bool();
+	return self->HasDynamicItemData();
+}
+
+void Lua_ItemInst::RebuildDynamicItemData() {
+	Lua_Safe_Call_Void();
+	self->RebuildDynamicItemData();
+}
+
 void Lua_ItemInst::SetScale(double scale_factor) {
 	Lua_Safe_Call_Void();
 	self->SetExp((int)(scale_factor*10000+.5));
@@ -472,10 +512,13 @@ luabind::scope lua_register_iteminst() {
 	.def("AddExp", (void(Lua_ItemInst::*)(uint32))&Lua_ItemInst::AddExp)
 	.def("AddEvolveAmount", (void(Lua_ItemInst::*)(uint64))&Lua_ItemInst::AddEvolveAmount)
 	.def("ClearTimers", (void(Lua_ItemInst::*)(void))&Lua_ItemInst::ClearTimers)
+	.def("ClearDynamicItemData", (void(Lua_ItemInst::*)(void))&Lua_ItemInst::ClearDynamicItemData)
 	.def("Clone", (Lua_ItemInst(Lua_ItemInst::*)(void))&Lua_ItemInst::Clone)
 	.def("ContainsAugmentByID", (bool(Lua_ItemInst::*)(uint32))&Lua_ItemInst::ContainsAugmentByID)
 	.def("CountAugmentByID", (int(Lua_ItemInst::*)(uint32))&Lua_ItemInst::CountAugmentByID)
 	.def("DeleteCustomData", (void(Lua_ItemInst::*)(const std::string &))&Lua_ItemInst::DeleteCustomData)
+	.def("DeleteDynamicItemData", (void(Lua_ItemInst::*)(const std::string &))&Lua_ItemInst::DeleteDynamicItemData)
+	.def("DeleteDynamicItemModifier", (void(Lua_ItemInst::*)(const std::string &))&Lua_ItemInst::DeleteDynamicItemModifier)
 	.def("GetAugment", (Lua_ItemInst(Lua_ItemInst::*)(int))&Lua_ItemInst::GetAugment)
 	.def("GetAugmentEvolveUniqueID", (uint32(Lua_ItemInst::*)(uint8))&Lua_ItemInst::GetAugmentEvolveUniqueID)
 	.def("GetAugmentIDs", (luabind::object(Lua_ItemInst::*)(lua_State*))&Lua_ItemInst::GetAugmentIDs)
@@ -518,6 +561,7 @@ luabind::scope lua_register_iteminst() {
 	.def("IsEquipable", (bool(Lua_ItemInst::*)(uint16,uint16))&Lua_ItemInst::IsEquipable)
 	.def("IsEvolving", (bool(Lua_ItemInst::*)(void))&Lua_ItemInst::IsEvolving)
 	.def("IsExpendable", (bool(Lua_ItemInst::*)(void))&Lua_ItemInst::IsExpendable)
+	.def("HasDynamicItemData", (bool(Lua_ItemInst::*)(void))&Lua_ItemInst::HasDynamicItemData)
 	.def("IsInstNoDrop", (bool(Lua_ItemInst::*)(void))&Lua_ItemInst::IsInstNoDrop)
 	.def("IsStackable", (bool(Lua_ItemInst::*)(void))&Lua_ItemInst::IsStackable)
 	.def("IsType", (bool(Lua_ItemInst::*)(int))&Lua_ItemInst::IsType)
@@ -525,6 +569,7 @@ luabind::scope lua_register_iteminst() {
 	.def("ItemSay", (void(Lua_ItemInst::*)(const char*))&Lua_ItemInst::ItemSay)
 	.def("ItemSay", (void(Lua_ItemInst::*)(const char*, uint8))&Lua_ItemInst::ItemSay)
 	.def("RemoveTaskDeliveredItems", &Lua_ItemInst::RemoveTaskDeliveredItems)
+	.def("RebuildDynamicItemData", (void(Lua_ItemInst::*)(void))&Lua_ItemInst::RebuildDynamicItemData)
 	.def("SetAttuned", (void(Lua_ItemInst::*)(bool))&Lua_ItemInst::SetAttuned)
 	.def("SetCharges", (void(Lua_ItemInst::*)(int))&Lua_ItemInst::SetCharges)
 	.def("SetColor", (void(Lua_ItemInst::*)(uint32))&Lua_ItemInst::SetColor)
@@ -532,6 +577,9 @@ luabind::scope lua_register_iteminst() {
 	.def("SetCustomData", (void(Lua_ItemInst::*)(const std::string&,float))&Lua_ItemInst::SetCustomData)
 	.def("SetCustomData", (void(Lua_ItemInst::*)(const std::string&,int))&Lua_ItemInst::SetCustomData)
 	.def("SetCustomData", (void(Lua_ItemInst::*)(const std::string&,const std::string&))&Lua_ItemInst::SetCustomData)
+	.def("SetDynamicItemData", (void(Lua_ItemInst::*)(const std::string&,int))&Lua_ItemInst::SetDynamicItemData)
+	.def("SetDynamicItemData", (void(Lua_ItemInst::*)(const std::string&,const std::string&))&Lua_ItemInst::SetDynamicItemData)
+	.def("SetDynamicItemModifier", (void(Lua_ItemInst::*)(const std::string&,int))&Lua_ItemInst::SetDynamicItemModifier)
 	.def("SetEvolveAmount", (void(Lua_ItemInst::*)(uint64))&Lua_ItemInst::SetEvolveAmount)
 	.def("SetEvolveProgression", (void(Lua_ItemInst::*)(float))&Lua_ItemInst::SetEvolveProgression)
 	.def("SetExp", (void(Lua_ItemInst::*)(uint32))&Lua_ItemInst::SetExp)

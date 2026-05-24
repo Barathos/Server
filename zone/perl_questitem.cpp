@@ -123,6 +123,46 @@ void Perl_QuestItem_DeleteCustomData(EQ::ItemInstance* self, std::string identif
 	self->DeleteCustomData(identifier);
 }
 
+void Perl_QuestItem_SetDynamicItemModifier(EQ::ItemInstance* self, std::string identifier, int value)
+{
+	self->SetDynamicItemModifier(identifier, value);
+}
+
+void Perl_QuestItem_SetDynamicItemData(EQ::ItemInstance* self, std::string identifier, int value)
+{
+	self->SetDynamicItemData(identifier, value);
+}
+
+void Perl_QuestItem_SetDynamicItemData(EQ::ItemInstance* self, std::string identifier, std::string value)
+{
+	self->SetDynamicItemData(identifier, value);
+}
+
+void Perl_QuestItem_DeleteDynamicItemModifier(EQ::ItemInstance* self, std::string identifier)
+{
+	self->DeleteDynamicItemModifier(identifier);
+}
+
+void Perl_QuestItem_DeleteDynamicItemData(EQ::ItemInstance* self, std::string identifier)
+{
+	self->DeleteDynamicItemData(identifier);
+}
+
+void Perl_QuestItem_ClearDynamicItemData(EQ::ItemInstance* self)
+{
+	self->ClearDynamicItemData();
+}
+
+bool Perl_QuestItem_HasDynamicItemData(EQ::ItemInstance* self)
+{
+	return self->HasDynamicItemData();
+}
+
+void Perl_QuestItem_RebuildDynamicItemData(EQ::ItemInstance* self)
+{
+	self->RebuildDynamicItemData();
+}
+
 uint32 Perl_QuestItem_GetAugmentItemID(EQ::ItemInstance* self, uint8 slot_id)
 {
 	return self->GetAugmentItemID(slot_id);
@@ -395,7 +435,10 @@ void perl_register_questitem()
 	package.add("Clone", &Perl_QuestItem_Clone);
 	package.add("ContainsAugmentByID", &Perl_QuestItem_ContainsAugmentByID);
 	package.add("CountAugmentByID", &Perl_QuestItem_CountAugmentByID);
+	package.add("ClearDynamicItemData", &Perl_QuestItem_ClearDynamicItemData);
 	package.add("DeleteCustomData", &Perl_QuestItem_DeleteCustomData);
+	package.add("DeleteDynamicItemData", &Perl_QuestItem_DeleteDynamicItemData);
+	package.add("DeleteDynamicItemModifier", &Perl_QuestItem_DeleteDynamicItemModifier);
 	package.add("GetAugment", &Perl_QuestItem_GetAugment);
 	package.add("GetAugmentEvolveUniqueID", &Perl_QuestItem_GetAugmentEvolveUniqueID);
 	package.add("GetAugmentIDs", &Perl_QuestItem_GetAugmentIDs);
@@ -428,6 +471,7 @@ void perl_register_questitem()
 	package.add("GetTaskDeliveredCount", &Perl_QuestItem_GetTaskDeliveredCount);
 	package.add("GetTotalItemCount", &Perl_QuestItem_GetTotalItemCount);
 	package.add("GetUnscaledItem", &Perl_QuestItem_GetUnscaledItem);
+	package.add("HasDynamicItemData", &Perl_QuestItem_HasDynamicItemData);
 	package.add("IsAmmo", &Perl_QuestItem_IsAmmo);
 	package.add("IsAttuned", &Perl_QuestItem_IsAttuned);
 	package.add("IsAugmentable", &Perl_QuestItem_IsAugmentable);
@@ -443,6 +487,7 @@ void perl_register_questitem()
 	package.add("ItemSay", (void(*)(EQ::ItemInstance*, const char*))&Perl_QuestItem_ItemSay);
 	package.add("ItemSay", (void(*)(EQ::ItemInstance*, const char*, uint8))&Perl_QuestItem_ItemSay);
 	package.add("RemoveTaskDeliveredItems", &Perl_QuestItem_RemoveTaskDeliveredItems);
+	package.add("RebuildDynamicItemData", &Perl_QuestItem_RebuildDynamicItemData);
 	package.add("SetAttuned", &Perl_QuestItem_SetAttuned);
 	package.add("SetCharges", &Perl_QuestItem_SetCharges);
 	package.add("SetColor", &Perl_QuestItem_SetColor);
@@ -450,6 +495,9 @@ void perl_register_questitem()
 	package.add("SetCustomData", (void(*)(EQ::ItemInstance*, std::string, float))&Perl_QuestItem_SetCustomData);
 	package.add("SetCustomData", (void(*)(EQ::ItemInstance*, std::string, int))&Perl_QuestItem_SetCustomData);
 	package.add("SetCustomData", (void(*)(EQ::ItemInstance*, std::string, std::string))&Perl_QuestItem_SetCustomData);
+	package.add("SetDynamicItemData", (void(*)(EQ::ItemInstance*, std::string, int))&Perl_QuestItem_SetDynamicItemData);
+	package.add("SetDynamicItemData", (void(*)(EQ::ItemInstance*, std::string, std::string))&Perl_QuestItem_SetDynamicItemData);
+	package.add("SetDynamicItemModifier", &Perl_QuestItem_SetDynamicItemModifier);
 	package.add("SetEvolveAmount", &Perl_QuestItem_SetEvolveAmount);
 	package.add("SetEvolveProgression", &Perl_QuestItem_SetEvolveProgression);
 	package.add("SetEXP", &Perl_QuestItem_SetEXP);

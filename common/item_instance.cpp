@@ -23,10 +23,288 @@
 #include "common/shareddb.h"
 #include "common/strings.h"
 
+#include <algorithm>
 #include <climits>
+#include <cstring>
+#include <limits>
+#include <type_traits>
+#include <vector>
 
 int32 next_item_serial_number = 1;
 std::unordered_set<uint64> guids{};
+
+namespace {
+	constexpr const char *DynamicItemModPrefix = "dynamic_item.mod.";
+	constexpr const char *DynamicItemSetPrefix = "dynamic_item.set.";
+
+	bool HasPrefix(const std::string &value, const char *prefix)
+	{
+		return value.rfind(prefix, 0) == 0;
+	}
+
+	std::string NormalizeDynamicItemField(std::string field)
+	{
+		field = Strings::ToLower(field);
+		field.erase(
+			std::remove_if(
+				field.begin(),
+				field.end(),
+				[](const char c) { return c == '_' || c == '-' || c == ' ' || c == '.'; }
+			),
+			field.end()
+		);
+		return field;
+	}
+
+	bool IsDynamicItemDataIdentifier(const std::string &identifier)
+	{
+		const auto key = Strings::ToLower(identifier);
+		return HasPrefix(key, DynamicItemModPrefix) || HasPrefix(key, DynamicItemSetPrefix);
+	}
+
+	std::string GetDynamicItemKey(const char *prefix, const std::string &identifier)
+	{
+		return std::string(prefix) + NormalizeDynamicItemField(identifier);
+	}
+
+	template <typename T>
+	void ApplyDynamicItemNumber(T &target, int64 value, bool additive)
+	{
+		if constexpr (std::is_same_v<T, bool>) {
+			target = additive ? ((target ? 1 : 0) + value) != 0 : value != 0;
+		} else if constexpr (std::is_floating_point_v<T>) {
+			target = static_cast<T>((additive ? target : 0) + value);
+		} else {
+			const int64 current = additive ? static_cast<int64>(target) : 0;
+			int64 result = current + value;
+
+			if constexpr (std::is_signed_v<T>) {
+				result = std::max<int64>(std::numeric_limits<T>::min(), std::min<int64>(result, std::numeric_limits<T>::max()));
+			} else {
+				result = std::max<int64>(0, std::min<int64>(result, std::numeric_limits<T>::max()));
+			}
+
+			target = static_cast<T>(result);
+		}
+	}
+
+	bool ApplyDynamicItemStringField(EQ::ItemData &item, const std::string &field, const std::string &value)
+	{
+		if (field == "name") {
+			strn0cpy(item.Name, value.c_str(), sizeof(item.Name));
+			return true;
+		}
+
+		if (field == "lore") {
+			strn0cpy(item.Lore, value.c_str(), sizeof(item.Lore));
+			return true;
+		}
+
+		if (field == "idfile") {
+			strn0cpy(item.IDFile, value.c_str(), sizeof(item.IDFile));
+			return true;
+		}
+
+		if (field == "comment") {
+			strn0cpy(item.Comment, value.c_str(), sizeof(item.Comment));
+			return true;
+		}
+
+		if (field == "filename") {
+			strn0cpy(item.Filename, value.c_str(), sizeof(item.Filename));
+			return true;
+		}
+
+		if (field == "charmfile") {
+			strn0cpy(item.CharmFile, value.c_str(), sizeof(item.CharmFile));
+			return true;
+		}
+
+		if (field == "clickname") {
+			strn0cpy(item.ClickName, value.c_str(), sizeof(item.ClickName));
+			return true;
+		}
+
+		if (field == "procname") {
+			strn0cpy(item.ProcName, value.c_str(), sizeof(item.ProcName));
+			return true;
+		}
+
+		if (field == "wornname") {
+			strn0cpy(item.WornName, value.c_str(), sizeof(item.WornName));
+			return true;
+		}
+
+		if (field == "focusname") {
+			strn0cpy(item.FocusName, value.c_str(), sizeof(item.FocusName));
+			return true;
+		}
+
+		if (field == "scrollname") {
+			strn0cpy(item.ScrollName, value.c_str(), sizeof(item.ScrollName));
+			return true;
+		}
+
+		return false;
+	}
+
+	bool ApplyDynamicItemNumericField(EQ::ItemData &item, const std::string &field, const int64 value, const bool additive)
+	{
+		if (field == "ac") { ApplyDynamicItemNumber(item.AC, value, additive); return true; }
+		if (field == "agi" || field == "aagi") { ApplyDynamicItemNumber(item.AAgi, value, additive); return true; }
+		if (field == "cha" || field == "acha") { ApplyDynamicItemNumber(item.ACha, value, additive); return true; }
+		if (field == "dex" || field == "adex") { ApplyDynamicItemNumber(item.ADex, value, additive); return true; }
+		if (field == "int" || field == "aint") { ApplyDynamicItemNumber(item.AInt, value, additive); return true; }
+		if (field == "sta" || field == "asta") { ApplyDynamicItemNumber(item.ASta, value, additive); return true; }
+		if (field == "str" || field == "astr") { ApplyDynamicItemNumber(item.AStr, value, additive); return true; }
+		if (field == "wis" || field == "awis") { ApplyDynamicItemNumber(item.AWis, value, additive); return true; }
+		if (field == "hp") { ApplyDynamicItemNumber(item.HP, value, additive); return true; }
+		if (field == "mana") { ApplyDynamicItemNumber(item.Mana, value, additive); return true; }
+		if (field == "endur" || field == "endurance") { ApplyDynamicItemNumber(item.Endur, value, additive); return true; }
+		if (field == "regen") { ApplyDynamicItemNumber(item.Regen, value, additive); return true; }
+		if (field == "manaregen") { ApplyDynamicItemNumber(item.ManaRegen, value, additive); return true; }
+		if (field == "enduranceregen" || field == "endurregen") { ApplyDynamicItemNumber(item.EnduranceRegen, value, additive); return true; }
+		if (field == "cr") { ApplyDynamicItemNumber(item.CR, value, additive); return true; }
+		if (field == "dr") { ApplyDynamicItemNumber(item.DR, value, additive); return true; }
+		if (field == "fr") { ApplyDynamicItemNumber(item.FR, value, additive); return true; }
+		if (field == "mr") { ApplyDynamicItemNumber(item.MR, value, additive); return true; }
+		if (field == "pr") { ApplyDynamicItemNumber(item.PR, value, additive); return true; }
+		if (field == "svcorruption" || field == "corrup" || field == "corruption") { ApplyDynamicItemNumber(item.SVCorruption, value, additive); return true; }
+		if (field == "attack") { ApplyDynamicItemNumber(item.Attack, value, additive); return true; }
+		if (field == "accuracy") { ApplyDynamicItemNumber(item.Accuracy, value, additive); return true; }
+		if (field == "avoidance") { ApplyDynamicItemNumber(item.Avoidance, value, additive); return true; }
+		if (field == "combateffects") { ApplyDynamicItemNumber(item.CombatEffects, value, additive); return true; }
+		if (field == "shielding") { ApplyDynamicItemNumber(item.Shielding, value, additive); return true; }
+		if (field == "spellshield") { ApplyDynamicItemNumber(item.SpellShield, value, additive); return true; }
+		if (field == "stunresist") { ApplyDynamicItemNumber(item.StunResist, value, additive); return true; }
+		if (field == "strikethrough") { ApplyDynamicItemNumber(item.StrikeThrough, value, additive); return true; }
+		if (field == "dotshielding") { ApplyDynamicItemNumber(item.DotShielding, value, additive); return true; }
+		if (field == "damageshield") { ApplyDynamicItemNumber(item.DamageShield, value, additive); return true; }
+		if (field == "dsmitigation") { ApplyDynamicItemNumber(item.DSMitigation, value, additive); return true; }
+		if (field == "haste") { ApplyDynamicItemNumber(item.Haste, value, additive); return true; }
+		if (field == "healamt" || field == "healing") { ApplyDynamicItemNumber(item.HealAmt, value, additive); return true; }
+		if (field == "spelldmg" || field == "spelldamage") { ApplyDynamicItemNumber(item.SpellDmg, value, additive); return true; }
+		if (field == "clairvoyance") { ApplyDynamicItemNumber(item.Clairvoyance, value, additive); return true; }
+		if (field == "purity") { ApplyDynamicItemNumber(item.Purity, value, additive); return true; }
+		if (field == "damage") { ApplyDynamicItemNumber(item.Damage, value, additive); return true; }
+		if (field == "delay") { ApplyDynamicItemNumber(item.Delay, value, additive); return true; }
+		if (field == "range") { ApplyDynamicItemNumber(item.Range, value, additive); return true; }
+		if (field == "backstabdmg" || field == "backstabdamage") { ApplyDynamicItemNumber(item.BackstabDmg, value, additive); return true; }
+		if (field == "elemdmgtype" || field == "elementaldamagetype") { ApplyDynamicItemNumber(item.ElemDmgType, value, additive); return true; }
+		if (field == "elemdmgamt" || field == "elementaldamage") { ApplyDynamicItemNumber(item.ElemDmgAmt, value, additive); return true; }
+		if (field == "banedmgamt" || field == "banedamage") { ApplyDynamicItemNumber(item.BaneDmgAmt, value, additive); return true; }
+		if (field == "banedmgbody") { ApplyDynamicItemNumber(item.BaneDmgBody, value, additive); return true; }
+		if (field == "banedmgrace") { ApplyDynamicItemNumber(item.BaneDmgRace, value, additive); return true; }
+		if (field == "banedmgraceamt") { ApplyDynamicItemNumber(item.BaneDmgRaceAmt, value, additive); return true; }
+		if (field == "extradmgskill") { ApplyDynamicItemNumber(item.ExtraDmgSkill, value, additive); return true; }
+		if (field == "extradmgamt" || field == "extradamage") { ApplyDynamicItemNumber(item.ExtraDmgAmt, value, additive); return true; }
+		if (field == "skillmodtype") { ApplyDynamicItemNumber(item.SkillModType, value, additive); return true; }
+		if (field == "skillmodvalue") { ApplyDynamicItemNumber(item.SkillModValue, value, additive); return true; }
+		if (field == "skillmodmax") { ApplyDynamicItemNumber(item.SkillModMax, value, additive); return true; }
+		if (field == "bardtype") { ApplyDynamicItemNumber(item.BardType, value, additive); return true; }
+		if (field == "bardvalue") { ApplyDynamicItemNumber(item.BardValue, value, additive); return true; }
+		if (field == "weight") { ApplyDynamicItemNumber(item.Weight, value, additive); return true; }
+		if (field == "price") { ApplyDynamicItemNumber(item.Price, value, additive); return true; }
+		if (field == "favor") { ApplyDynamicItemNumber(item.Favor, value, additive); return true; }
+		if (field == "guildfavor") { ApplyDynamicItemNumber(item.GuildFavor, value, additive); return true; }
+		if (field == "pointtype") { ApplyDynamicItemNumber(item.PointType, value, additive); return true; }
+		if (field == "icon") { ApplyDynamicItemNumber(item.Icon, value, additive); return true; }
+		if (field == "color") { ApplyDynamicItemNumber(item.Color, value, additive); return true; }
+		if (field == "material") { ApplyDynamicItemNumber(item.Material, value, additive); return true; }
+		if (field == "elitematerial") { ApplyDynamicItemNumber(item.EliteMaterial, value, additive); return true; }
+		if (field == "herosforgemodel") { ApplyDynamicItemNumber(item.HerosForgeModel, value, additive); return true; }
+		if (field == "light") { ApplyDynamicItemNumber(item.Light, value, additive); return true; }
+		if (field == "size") { ApplyDynamicItemNumber(item.Size, value, additive); return true; }
+		if (field == "slots") { ApplyDynamicItemNumber(item.Slots, value, additive); return true; }
+		if (field == "classes") { ApplyDynamicItemNumber(item.Classes, value, additive); return true; }
+		if (field == "races") { ApplyDynamicItemNumber(item.Races, value, additive); return true; }
+		if (field == "deity") { ApplyDynamicItemNumber(item.Deity, value, additive); return true; }
+		if (field == "itemclass") { ApplyDynamicItemNumber(item.ItemClass, value, additive); return true; }
+		if (field == "itemtype") { ApplyDynamicItemNumber(item.ItemType, value, additive); return true; }
+		if (field == "subtype") { ApplyDynamicItemNumber(item.SubType, value, additive); return true; }
+		if (field == "reqlevel") { ApplyDynamicItemNumber(item.ReqLevel, value, additive); return true; }
+		if (field == "reclevel") { ApplyDynamicItemNumber(item.RecLevel, value, additive); return true; }
+		if (field == "recskill") { ApplyDynamicItemNumber(item.RecSkill, value, additive); return true; }
+		if (field == "maxcharges") { ApplyDynamicItemNumber(item.MaxCharges, value, additive); return true; }
+		if (field == "stacksize") { ApplyDynamicItemNumber(item.StackSize, value, additive); return true; }
+		if (field == "stackable") { ApplyDynamicItemNumber(item.Stackable, value, additive); return true; }
+		if (field == "magic") { ApplyDynamicItemNumber(item.Magic, value, additive); return true; }
+		if (field == "nodrop") { ApplyDynamicItemNumber(item.NoDrop, value, additive); return true; }
+		if (field == "norent") { ApplyDynamicItemNumber(item.NoRent, value, additive); return true; }
+		if (field == "attuneable") { ApplyDynamicItemNumber(item.Attuneable, value, additive); return true; }
+		if (field == "notransfer") { ApplyDynamicItemNumber(item.NoTransfer, value, additive); return true; }
+		if (field == "nopet") { ApplyDynamicItemNumber(item.NoPet, value, additive); return true; }
+		if (field == "questitemflag") { ApplyDynamicItemNumber(item.QuestItemFlag, value, additive); return true; }
+		if (field == "augtype") { ApplyDynamicItemNumber(item.AugType, value, additive); return true; }
+		if (field == "augrestrict") { ApplyDynamicItemNumber(item.AugRestrict, value, additive); return true; }
+		if (field == "augdistiller") { ApplyDynamicItemNumber(item.AugDistiller, value, additive); return true; }
+		if (field == "bagtype") { ApplyDynamicItemNumber(item.BagType, value, additive); return true; }
+		if (field == "bagslots") { ApplyDynamicItemNumber(item.BagSlots, value, additive); return true; }
+		if (field == "bagsize") { ApplyDynamicItemNumber(item.BagSize, value, additive); return true; }
+		if (field == "bagwr") { ApplyDynamicItemNumber(item.BagWR, value, additive); return true; }
+		if (field == "procrate") { ApplyDynamicItemNumber(item.ProcRate, value, additive); return true; }
+		if (field == "casttime") { ApplyDynamicItemNumber(item.CastTime, value, additive); return true; }
+		if (field == "casttime2") { ApplyDynamicItemNumber(item.CastTime_, value, additive); return true; }
+		if (field == "recastdelay") { ApplyDynamicItemNumber(item.RecastDelay, value, additive); return true; }
+		if (field == "recasttype") { ApplyDynamicItemNumber(item.RecastType, value, additive); return true; }
+		if (field == "charmfileid") { ApplyDynamicItemNumber(item.CharmFileID, value, additive); return true; }
+		if (field == "scriptfileid") { ApplyDynamicItemNumber(item.ScriptFileID, value, additive); return true; }
+		if (field == "evolvingitem") { ApplyDynamicItemNumber(item.EvolvingItem, value, additive); return true; }
+		if (field == "evolvingid") { ApplyDynamicItemNumber(item.EvolvingID, value, additive); return true; }
+		if (field == "evolvinglevel") { ApplyDynamicItemNumber(item.EvolvingLevel, value, additive); return true; }
+		if (field == "evolvingmax") { ApplyDynamicItemNumber(item.EvolvingMax, value, additive); return true; }
+		if (field == "hstr" || field == "heroicstr") { ApplyDynamicItemNumber(item.HeroicStr, value, additive); return true; }
+		if (field == "hint" || field == "heroicint") { ApplyDynamicItemNumber(item.HeroicInt, value, additive); return true; }
+		if (field == "hwis" || field == "heroicwis") { ApplyDynamicItemNumber(item.HeroicWis, value, additive); return true; }
+		if (field == "hagi" || field == "heroicagi") { ApplyDynamicItemNumber(item.HeroicAgi, value, additive); return true; }
+		if (field == "hdex" || field == "heroicdex") { ApplyDynamicItemNumber(item.HeroicDex, value, additive); return true; }
+		if (field == "hsta" || field == "heroicsta") { ApplyDynamicItemNumber(item.HeroicSta, value, additive); return true; }
+		if (field == "hcha" || field == "heroiccha") { ApplyDynamicItemNumber(item.HeroicCha, value, additive); return true; }
+		if (field == "hmr" || field == "heroicmr") { ApplyDynamicItemNumber(item.HeroicMR, value, additive); return true; }
+		if (field == "hfr" || field == "heroicfr") { ApplyDynamicItemNumber(item.HeroicFR, value, additive); return true; }
+		if (field == "hcr" || field == "heroiccr") { ApplyDynamicItemNumber(item.HeroicCR, value, additive); return true; }
+		if (field == "hdr" || field == "heroicdr") { ApplyDynamicItemNumber(item.HeroicDR, value, additive); return true; }
+		if (field == "hpr" || field == "heroicpr") { ApplyDynamicItemNumber(item.HeroicPR, value, additive); return true; }
+		if (field == "hsvcorruption" || field == "heroicsvcorruption" || field == "heroiccorrup") { ApplyDynamicItemNumber(item.HeroicSVCorrup, value, additive); return true; }
+		if (field == "clickeffect") { ApplyDynamicItemNumber(item.Click.Effect, value, additive); return true; }
+		if (field == "clicktype") { ApplyDynamicItemNumber(item.Click.Type, value, additive); return true; }
+		if (field == "clicklevel") { ApplyDynamicItemNumber(item.Click.Level, value, additive); return true; }
+		if (field == "clicklevel2") { ApplyDynamicItemNumber(item.Click.Level2, value, additive); return true; }
+		if (field == "proceffect") { ApplyDynamicItemNumber(item.Proc.Effect, value, additive); return true; }
+		if (field == "proctype") { ApplyDynamicItemNumber(item.Proc.Type, value, additive); return true; }
+		if (field == "proclevel") { ApplyDynamicItemNumber(item.Proc.Level, value, additive); return true; }
+		if (field == "proclevel2") { ApplyDynamicItemNumber(item.Proc.Level2, value, additive); return true; }
+		if (field == "worneffect") { ApplyDynamicItemNumber(item.Worn.Effect, value, additive); return true; }
+		if (field == "worntype") { ApplyDynamicItemNumber(item.Worn.Type, value, additive); return true; }
+		if (field == "wornlevel") { ApplyDynamicItemNumber(item.Worn.Level, value, additive); return true; }
+		if (field == "wornlevel2") { ApplyDynamicItemNumber(item.Worn.Level2, value, additive); return true; }
+		if (field == "focuseffect") { ApplyDynamicItemNumber(item.Focus.Effect, value, additive); return true; }
+		if (field == "focustype") { ApplyDynamicItemNumber(item.Focus.Type, value, additive); return true; }
+		if (field == "focuslevel") { ApplyDynamicItemNumber(item.Focus.Level, value, additive); return true; }
+		if (field == "focuslevel2") { ApplyDynamicItemNumber(item.Focus.Level2, value, additive); return true; }
+		if (field == "scrolleffect") { ApplyDynamicItemNumber(item.Scroll.Effect, value, additive); return true; }
+		if (field == "scrolltype") { ApplyDynamicItemNumber(item.Scroll.Type, value, additive); return true; }
+		if (field == "scrolllevel") { ApplyDynamicItemNumber(item.Scroll.Level, value, additive); return true; }
+		if (field == "scrolllevel2") { ApplyDynamicItemNumber(item.Scroll.Level2, value, additive); return true; }
+		if (field == "bardeffect") { ApplyDynamicItemNumber(item.Bard.Effect, value, additive); return true; }
+		if (field == "bardeffecttype") { ApplyDynamicItemNumber(item.Bard.Type, value, additive); return true; }
+		if (field == "bardlevel") { ApplyDynamicItemNumber(item.Bard.Level, value, additive); return true; }
+		if (field == "bardlevel2") { ApplyDynamicItemNumber(item.Bard.Level2, value, additive); return true; }
+
+		return false;
+	}
+
+	bool ApplyDynamicItemDataField(EQ::ItemData &item, const std::string &identifier, const std::string &value, const bool additive)
+	{
+		const auto field = NormalizeDynamicItemField(identifier);
+
+		if (!additive && ApplyDynamicItemStringField(item, field, value)) {
+			return true;
+		}
+
+		return ApplyDynamicItemNumericField(item, field, Strings::ToBigInt(value), additive);
+	}
+}
 
 static inline int32 GetNextItemInstSerialNumber()
 {
@@ -103,6 +381,11 @@ EQ::ItemInstance::ItemInstance(ItemInstTypes use_type) {
 	m_use_type     = use_type;
 }
 
+void EQ::ItemInstance::AssignNewSerialNumber()
+{
+	m_SerialNumber = GetNextItemInstSerialNumber();
+}
+
 // Make a copy of an EQ::ItemInstance object
 EQ::ItemInstance::ItemInstance(const ItemInstance& copy)
 {
@@ -154,6 +437,12 @@ EQ::ItemInstance::ItemInstance(const ItemInstance& copy)
 		m_scaledItem = nullptr;
 	}
 
+	if (copy.m_dynamicItem) {
+		m_dynamicItem = new ItemData(*copy.m_dynamicItem);
+	} else {
+		m_dynamicItem = nullptr;
+	}
+
 	m_evolving_details    = copy.m_evolving_details;
 	m_scaling             = copy.m_scaling;
 	m_ornamenticon        = copy.m_ornamenticon;
@@ -169,6 +458,7 @@ EQ::ItemInstance::~ItemInstance()
 	Clear();
 	safe_delete(m_item);
 	safe_delete(m_scaledItem);
+	safe_delete(m_dynamicItem);
 }
 
 // Query item type
@@ -789,13 +1079,50 @@ bool EQ::ItemInstance::IsAmmo() const
 
 }
 
+bool EQ::ItemInstance::RefreshItemData(const ItemData *item)
+{
+	if (!m_item || !item || item->ID != m_item->ID) {
+		return false;
+	}
+
+	if (std::memcmp(m_item, item, sizeof(ItemData)) == 0) {
+		return false;
+	}
+
+	auto *mutable_item = const_cast<ItemData *>(m_item);
+	std::memcpy(mutable_item, item, sizeof(ItemData));
+
+	m_scaling = m_item->CharmFileID != 0;
+	if (m_scaling) {
+		ScaleItem();
+	} else {
+		safe_delete(m_scaledItem);
+		RebuildDynamicItemData();
+	}
+
+	AssignNewSerialNumber();
+
+	return true;
+}
+
 const EQ::ItemData* EQ::ItemInstance::GetItem() const
 {
 	if (!m_item)
 		return nullptr;
 
+	if (m_dynamicItem)
+		return m_dynamicItem;
+
 	if (m_scaledItem)
 		return m_scaledItem;
+
+	return m_item;
+}
+
+const EQ::ItemData* EQ::ItemInstance::GetClientItem() const
+{
+	if (m_dynamicItem)
+		return m_dynamicItem;
 
 	return m_item;
 }
@@ -817,17 +1144,19 @@ std::string EQ::ItemInstance::GetCustomDataString() const {
 		ret_val += "^";
 		ret_val += iter->second;
 		++iter;
-
-		if (ret_val.length() > 0) {
-			ret_val += "^";
-		}
 	}
 	return ret_val;
 }
 
 void EQ::ItemInstance::SetCustomDataString(const std::string& str)
 {
-	auto components = Strings::Split(str, "^");
+	std::vector<std::string> components;
+	for (const auto &component : Strings::Split(str, "^")) {
+		if (!component.empty()) {
+			components.push_back(component);
+		}
+	}
+
 	auto value_count = components.size() / 2;
 
 	for (auto i = 0; i < value_count; i++) {
@@ -836,6 +1165,8 @@ void EQ::ItemInstance::SetCustomDataString(const std::string& str)
 
 		SetCustomData(identifier, value);
 	}
+
+	RebuildDynamicItemData();
 }
 
 std::string EQ::ItemInstance::GetCustomData(const std::string& identifier) {
@@ -848,36 +1179,116 @@ std::string EQ::ItemInstance::GetCustomData(const std::string& identifier) {
 }
 
 void EQ::ItemInstance::SetCustomData(const std::string& identifier, const std::string& value) {
-	DeleteCustomData(identifier);
+	const bool is_dynamic = IsDynamicItemDataIdentifier(identifier);
+	m_custom_data.erase(identifier);
 	m_custom_data[identifier] = value;
+
+	if (is_dynamic) {
+		RebuildDynamicItemData();
+		AssignNewSerialNumber();
+	}
 }
 
 void EQ::ItemInstance::SetCustomData(const std::string& identifier, int value) {
-	DeleteCustomData(identifier);
+	const bool is_dynamic = IsDynamicItemDataIdentifier(identifier);
+	m_custom_data.erase(identifier);
 	std::stringstream ss;
 	ss << value;
 	m_custom_data[identifier] = ss.str();
+
+	if (is_dynamic) {
+		RebuildDynamicItemData();
+		AssignNewSerialNumber();
+	}
 }
 
 void EQ::ItemInstance::SetCustomData(const std::string& identifier, float value) {
-	DeleteCustomData(identifier);
+	const bool is_dynamic = IsDynamicItemDataIdentifier(identifier);
+	m_custom_data.erase(identifier);
 	std::stringstream ss;
 	ss << value;
 	m_custom_data[identifier] = ss.str();
+
+	if (is_dynamic) {
+		RebuildDynamicItemData();
+		AssignNewSerialNumber();
+	}
 }
 
 void EQ::ItemInstance::SetCustomData(const std::string& identifier, bool value) {
-	DeleteCustomData(identifier);
+	const bool is_dynamic = IsDynamicItemDataIdentifier(identifier);
+	m_custom_data.erase(identifier);
 	std::stringstream ss;
 	ss << value;
 	m_custom_data[identifier] = ss.str();
+
+	if (is_dynamic) {
+		RebuildDynamicItemData();
+		AssignNewSerialNumber();
+	}
 }
 
 void EQ::ItemInstance::DeleteCustomData(const std::string& identifier) {
 	auto iter = m_custom_data.find(identifier);
 	if (iter != m_custom_data.end()) {
+		const bool is_dynamic = IsDynamicItemDataIdentifier(identifier);
 		m_custom_data.erase(iter);
+
+		if (is_dynamic) {
+			RebuildDynamicItemData();
+			AssignNewSerialNumber();
+		}
 	}
+}
+
+void EQ::ItemInstance::SetDynamicItemModifier(const std::string &identifier, int value)
+{
+	SetCustomData(GetDynamicItemKey(DynamicItemModPrefix, identifier), value);
+}
+
+void EQ::ItemInstance::SetDynamicItemData(const std::string &identifier, const std::string& value)
+{
+	SetCustomData(GetDynamicItemKey(DynamicItemSetPrefix, identifier), value);
+}
+
+void EQ::ItemInstance::SetDynamicItemData(const std::string &identifier, int value)
+{
+	SetCustomData(GetDynamicItemKey(DynamicItemSetPrefix, identifier), value);
+}
+
+void EQ::ItemInstance::DeleteDynamicItemModifier(const std::string& identifier)
+{
+	DeleteCustomData(GetDynamicItemKey(DynamicItemModPrefix, identifier));
+}
+
+void EQ::ItemInstance::DeleteDynamicItemData(const std::string& identifier)
+{
+	DeleteCustomData(GetDynamicItemKey(DynamicItemSetPrefix, identifier));
+}
+
+void EQ::ItemInstance::ClearDynamicItemData()
+{
+	std::vector<std::string> identifiers;
+
+	for (const auto &entry : m_custom_data) {
+		if (IsDynamicItemDataIdentifier(entry.first)) {
+			identifiers.push_back(entry.first);
+		}
+	}
+
+	for (const auto &identifier : identifiers) {
+		m_custom_data.erase(identifier);
+	}
+
+	if (!identifiers.empty()) {
+		RebuildDynamicItemData();
+		AssignNewSerialNumber();
+	}
+}
+
+bool EQ::ItemInstance::HasDynamicItemData() const
+{
+	return m_dynamicItem != nullptr;
 }
 
 // Clone a type of EQ::ItemInstance object
@@ -946,6 +1357,40 @@ void EQ::ItemInstance::Initialize(SharedDatabase *db) {
 	// initialize evolving items
 	else if (db && m_item->LoreGroup >= 1000) {
 		// not complete yet
+	}
+}
+
+void EQ::ItemInstance::RebuildDynamicItemData()
+{
+	safe_delete(m_dynamicItem);
+
+	if (!m_item) {
+		return;
+	}
+
+	const ItemData *source_item = m_scaledItem ? m_scaledItem : m_item;
+
+	auto apply_dynamic_data = [this, source_item](const char *prefix, bool additive) {
+		for (const auto &entry : m_custom_data) {
+			const auto key = Strings::ToLower(entry.first);
+			if (!HasPrefix(key, prefix)) {
+				continue;
+			}
+
+			if (!m_dynamicItem) {
+				m_dynamicItem = new ItemData(*source_item);
+			}
+
+			ApplyDynamicItemDataField(*m_dynamicItem, entry.first.substr(std::strlen(prefix)), entry.second, additive);
+		}
+	};
+
+	apply_dynamic_data(DynamicItemSetPrefix, false);
+	apply_dynamic_data(DynamicItemModPrefix, true);
+
+	if (m_dynamicItem) {
+		m_dynamicItem->CharmFileID = 0;
+		m_dynamicItem->CharmFile[0] = '\0';
 	}
 }
 
@@ -1031,6 +1476,7 @@ void EQ::ItemInstance::ScaleItem() {
 	m_scaledItem->Clairvoyance = (uint32)((float)m_item->Clairvoyance*Mult);
 
 	m_scaledItem->CharmFileID = 0;	// this stops the client from trying to scale the item itself.
+	RebuildDynamicItemData();
 }
 
 void EQ::ItemInstance::SetTimer(std::string name, uint32 time) {

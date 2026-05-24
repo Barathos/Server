@@ -166,11 +166,14 @@ int command_init(void)
 		command_add("interrupt", "[Message ID] [Color] - Interrupt your casting. Arguments are optional.", AccountStatus::Guide, command_interrupt) ||
 		command_add("invsnapshot", "Manipulates inventory snapshots for your current target", AccountStatus::QuestTroupe, command_invsnapshot) ||
 		command_add("ipban", "[IP] - Ban IP", AccountStatus::GMMgmt, command_ipban) ||
+		command_add("itemedit", "[set|add|clear|proc] - Edit the item currently held on your cursor", AccountStatus::GMMgmt, command_itemedit) ||
+		command_add("itemforge", "[dialog|craft] - Open or use the player item forge", AccountStatus::Player, command_itemforge) ||
 		command_add("kick", "[Character Name] - Disconnect a player by name", AccountStatus::GMLeadAdmin, command_kick) ||
 		command_add("kill", "Kill your target", AccountStatus::GMAdmin, command_kill) ||
 		command_add("killallnpcs", "[npc_name] - Kills all npcs by search name, leave blank for all attackable NPC's", AccountStatus::GMMgmt, command_killallnpcs) ||
 		command_add("list", "[npcs|players|corpses|doors|objects] [search] - Search entities", AccountStatus::ApprenticeGuide, command_list) ||
 		command_add("lootfilter", "[include|exclude|remove|list|mode] - Manage AutoLoot item filters", AccountStatus::Player, command_lootfilter) ||
+		command_add("liveitem", "[status|clear|clone|summon|bump] - Manage live database item testing and cache state", AccountStatus::GMMgmt, command_liveitem) ||
 		command_add("lootsim", "[npc_type_id] [loottable_id] [iterations] - Runs benchmark simulations using real loot logic to report numbers and data", AccountStatus::GMImpossible, command_lootsim) ||
 		command_add("load_shared_memory", "[shared_memory_name] - Reloads shared memory and uses the input as output", AccountStatus::GMImpossible, command_load_shared_memory) ||
 		command_add("loc", "Print out your or your target's current location and heading", AccountStatus::Player, command_loc) ||

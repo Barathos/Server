@@ -461,10 +461,12 @@ set(gm_command_sources
     gm_commands/interrupt.cpp
     gm_commands/invsnapshot.cpp
     gm_commands/ipban.cpp
+    gm_commands/itemedit.cpp
     gm_commands/kick.cpp
     gm_commands/kill.cpp
     gm_commands/killallnpcs.cpp
     gm_commands/list.cpp
+    gm_commands/liveitem.cpp
     gm_commands/loc.cpp
     gm_commands/logs.cpp
     gm_commands/lootsim.cpp
