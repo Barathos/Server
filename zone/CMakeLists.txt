@@ -7,6 +7,7 @@ set(zone_sources
     aggromanager.cpp
     api_service.cpp
     attack.cpp
+    autoloot_manager.cpp
     aura.cpp
     beacon.cpp
     bonuses.cpp
@@ -122,6 +123,7 @@ set(zone_headers
     aggromanager.h
     api_service.h
     aura.h
+    autoloot_manager.h
     beacon.h
     bot.h
     bot_command.h
@@ -375,6 +377,7 @@ set(gm_command_sources
     gm_commands/appearance.cpp
     gm_commands/appearanceeffects.cpp
     gm_commands/attack.cpp
+    gm_commands/autoloot.cpp
     gm_commands/augmentitem.cpp
     gm_commands/ban.cpp
     gm_commands/bugs.cpp

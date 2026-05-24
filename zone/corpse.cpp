@@ -65,6 +65,292 @@ void Corpse::SendLootReqErrorPacket(Client *client, LootResponse response)
 	safe_delete(outapp);
 }
 
+CorpseAutoLootResult Corpse::AutoLootItem(Client *c, uint16 lootslot, bool send_messages)
+{
+	CorpseAutoLootResult result;
+
+	if (!c || IsPlayerCorpse()) {
+		return result;
+	}
+
+	LootItem *item_data = nullptr;
+	LootItem *bag_item_data[EQ::invbag::SLOT_COUNT] = {};
+
+	item_data = GetItem(lootslot, bag_item_data);
+	if (!item_data) {
+		return result;
+	}
+
+	const EQ::ItemData *item = database.GetItem(item_data->item_id);
+	if (!item) {
+		return result;
+	}
+
+	EQ::ItemInstance *inst = database.CreateItem(
+		item,
+		item_data->charges,
+		item_data->aug_1,
+		item_data->aug_2,
+		item_data->aug_3,
+		item_data->aug_4,
+		item_data->aug_5,
+		item_data->aug_6,
+		item_data->attuned,
+		item_data->custom_data,
+		item_data->ornamenticon,
+		item_data->ornamentidfile,
+		item_data->ornament_hero_model
+	);
+
+	if (!inst) {
+		return result;
+	}
+
+	result.item_id    = item->ID;
+	result.item_name  = item->Name;
+	result.item_count = inst->IsStackable() ? inst->GetCharges() : 1;
+
+	if (c->CheckLoreConflict(item)) {
+		result.code = CorpseAutoLootResultCode::LoreConflict;
+		if (send_messages) {
+			c->MessageString(Chat::White, LOOT_LORE_ERROR);
+		}
+		safe_delete(inst);
+		return result;
+	}
+
+	if (inst->IsAugmented()) {
+		for (int i = EQ::invaug::SOCKET_BEGIN; i <= EQ::invaug::SOCKET_END; i++) {
+			EQ::ItemInstance *augment = inst->GetAugment(i);
+			if (augment && c->CheckLoreConflict(augment->GetItem())) {
+				result.code = CorpseAutoLootResultCode::LoreConflict;
+				if (send_messages) {
+					c->MessageString(Chat::White, LOOT_LORE_ERROR);
+				}
+				safe_delete(inst);
+				return result;
+			}
+		}
+	}
+
+	bool prevent_loot = false;
+	bool dz_denied    = false;
+
+	if (RuleB(Zone, UseZoneController)) {
+		auto controller = entity_list.GetNPCByNPCTypeID(ZONE_CONTROLLER_NPC_ID);
+		if (controller && parse->HasQuestSub(ZONE_CONTROLLER_NPC_ID, EVENT_LOOT_ZONE)) {
+			const auto &export_string = fmt::format(
+				"{} {} {} {}",
+				inst->GetItem()->ID,
+				inst->GetCharges(),
+				EntityList::RemoveNumbers(corpse_name),
+				GetID()
+			);
+
+			std::vector<std::any> args = {inst, this};
+			if (parse->EventNPC(EVENT_LOOT_ZONE, controller, c, export_string, 0, &args) != 0) {
+				prevent_loot = true;
+			}
+		}
+	}
+
+	if (parse->PlayerHasQuestSub(EVENT_LOOT)) {
+		const auto &export_string = fmt::format(
+			"{} {} {} {}",
+			inst->GetItem()->ID,
+			inst->GetCharges(),
+			EntityList::RemoveNumbers(corpse_name),
+			GetID()
+		);
+
+		std::vector<std::any> args = {inst, this};
+		if (parse->EventPlayer(EVENT_LOOT, c, export_string, 0, &args) != 0) {
+			prevent_loot = true;
+		}
+	}
+
+	if (parse->ZoneHasQuestSub(EVENT_LOOT_ZONE)) {
+		const auto &export_string = fmt::format(
+			"{} {} {} {}",
+			inst->GetItem()->ID,
+			inst->GetCharges(),
+			EntityList::RemoveNumbers(corpse_name),
+			GetID()
+		);
+
+		std::vector<std::any> args = {inst, this, c};
+		if (parse->EventZone(EVENT_LOOT_ZONE, zone, export_string, 0, &args) != 0) {
+			prevent_loot = true;
+		}
+	}
+
+	auto dz = zone ? zone->GetDynamicZone() : nullptr;
+	if (dz && !dz->CanClientLootCorpse(c, GetNPCTypeID(), GetID())) {
+		prevent_loot = true;
+		dz_denied    = true;
+		if (send_messages) {
+			c->MessageString(Chat::Loot, LOOT_NOT_ALLOWED, inst->GetItem()->Name);
+		}
+	}
+
+	if (parse->ItemHasQuestSub(inst, EVENT_LOOT)) {
+		const auto &export_string = fmt::format(
+			"{} {} {} {}",
+			inst->GetItem()->ID,
+			inst->GetCharges(),
+			EntityList::RemoveNumbers(corpse_name),
+			GetID()
+		);
+
+		std::vector<std::any> args = {inst, this};
+		if (parse->EventItem(EVENT_LOOT, c, inst, this, export_string, 0, &args) != 0) {
+			prevent_loot = true;
+		}
+	}
+
+	if (prevent_loot) {
+		result.code = dz_denied ? CorpseAutoLootResultCode::DynamicZoneDenied : CorpseAutoLootResultCode::LootPrevented;
+		safe_delete(inst);
+		return result;
+	}
+
+	auto record_loot_event = [&](uint32 charges) {
+		if (PlayerEventLogs::Instance()->IsEventEnabled(PlayerEvent::LOOT_ITEM)) {
+			auto e = PlayerEvent::LootItemEvent{
+				.item_id      = inst->GetItem()->ID,
+				.item_name    = inst->GetItem()->Name,
+				.charges      = static_cast<int16>(charges),
+				.augment_1_id = inst->GetAugmentItemID(0),
+				.augment_2_id = inst->GetAugmentItemID(1),
+				.augment_3_id = inst->GetAugmentItemID(2),
+				.augment_4_id = inst->GetAugmentItemID(3),
+				.augment_5_id = inst->GetAugmentItemID(4),
+				.augment_6_id = inst->GetAugmentItemID(5),
+				.npc_id       = GetNPCTypeID(),
+				.corpse_name  = EntityList::RemoveNumbers(corpse_name)
+			};
+
+			RecordPlayerEventLogWithClient(c, PlayerEvent::LOOT_ITEM, e);
+		}
+	};
+
+	auto record_success_side_effects = [&]() {
+		c->CheckItemDiscoverability(inst->GetID());
+
+		if (zone && zone->adv_data) {
+			auto *ad = (ServerZoneAdventureDataReply_Struct *) zone->adv_data;
+			if (ad->type == Adventure_Collect && ad->data_id == inst->GetItem()->ID) {
+				zone->DoAdventureCountIncrease();
+			}
+		}
+	};
+
+	const uint32 original_count = inst->IsStackable() ? inst->GetCharges() : 1;
+
+	auto timestamps = database.GetItemRecastTimestamps(c->CharacterID());
+	const auto *d = inst->GetItem();
+	if (d->RecastDelay) {
+		if (d->RecastType != RECAST_TYPE_UNLINKED_ITEM) {
+			inst->SetRecastTimestamp(timestamps.count(d->RecastType) ? timestamps.at(d->RecastType) : 0);
+		}
+		else {
+			inst->SetRecastTimestamp(timestamps.count(d->ID) ? timestamps.at(d->ID) : 0);
+		}
+	}
+
+	if (!c->AutoPutLootInInventory(*inst, true, false, bag_item_data)) {
+		if (inst->IsStackable() && inst->GetCharges() < original_count) {
+			const uint32 transferred_count = original_count - inst->GetCharges();
+			item_data->charges = inst->GetCharges();
+			m_is_corpse_changed = true;
+
+			if (RuleB(TaskSystem, EnableTaskSystem) && IsNPCCorpse()) {
+				c->UpdateTasksOnLoot(this, item->ID, transferred_count);
+			}
+
+			record_success_side_effects();
+			record_loot_event(transferred_count);
+
+			result.code            = CorpseAutoLootResultCode::PartialStacked;
+			result.item_count      = transferred_count;
+			result.remaining_count = inst->GetCharges();
+		}
+		else {
+			result.code = CorpseAutoLootResultCode::InventoryFull;
+		}
+
+		safe_delete(inst);
+		return result;
+	}
+
+	if (RuleB(TaskSystem, EnableTaskSystem) && IsNPCCorpse()) {
+		c->UpdateTasksOnLoot(this, item->ID, original_count);
+	}
+
+	record_success_side_effects();
+	record_loot_event(original_count);
+
+	database.DeleteItemOffCharacterCorpse(
+		m_corpse_db_id,
+		item_data->equip_slot,
+		item_data->item_id
+	);
+	RemoveItem(item_data->lootslot);
+
+	if (item->IsClassBag()) {
+		for (int i = EQ::invbag::SLOT_BEGIN; i <= EQ::invbag::SLOT_END; i++) {
+			if (bag_item_data[i]) {
+				database.DeleteItemOffCharacterCorpse(
+					m_corpse_db_id,
+					bag_item_data[i]->equip_slot,
+					bag_item_data[i]->item_id
+				);
+				RemoveItem(bag_item_data[i]);
+			}
+		}
+	}
+
+	EQ::SayLinkEngine linker;
+	linker.SetLinkType(EQ::saylink::SayLinkItemInst);
+	linker.SetItemInst(inst);
+	linker.GenerateLink();
+
+	if (send_messages) {
+		c->MessageString(Chat::Loot, LOOTED_MESSAGE, linker.Link().c_str());
+
+		Group *g = c->GetGroup();
+		if (g) {
+			g->GroupMessageString(
+				c,
+				Chat::Loot,
+				OTHER_LOOTED_MESSAGE,
+				c->GetName(),
+				linker.Link().c_str()
+			);
+		}
+		else {
+			Raid *r = c->GetRaid();
+			if (r) {
+				r->RaidMessageString(
+					c,
+					Chat::Loot,
+					OTHER_LOOTED_MESSAGE,
+					c->GetName(),
+					linker.Link().c_str()
+				);
+			}
+		}
+	}
+
+	c->SendItemLink(inst, true);
+
+	result.code       = CorpseAutoLootResultCode::Success;
+	result.item_count = original_count;
+
+	safe_delete(inst);
+	return result;
+}
+
 Corpse::Corpse(
 	NPC *npc,
 	LootItems *item_list,
