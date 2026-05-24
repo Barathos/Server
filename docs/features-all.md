@@ -24,14 +24,17 @@ The combined custom database manifest uses:
 
 ## Native Client Assets
 
-This bundle includes the feature-owned XML windows:
+This bundle includes the native DLL runtime plus the feature-owned XML windows:
+
+- `client_files/native_autoloot/eq-core-dll/bin/dinput8.dll`
+- `client_files/native_autoloot/eq-core-dll/`
 
 - `EQUI_NativeAutoLootWnd.xml`
 - `EQUI_NativeItemForgeWnd.xml`
 - `EQUI_NativeSpellForgeWnd.xml`
 - `EQUI_NativeAchievementWnd.xml`
 
-The C++ native DLL runtime is still shared lab code and should be split next into a reusable `native-client-base` plus feature-specific modules. Until that split lands, this branch is the clean server/source bundle plus native XML assets.
+The runtime handles `AUTOLOOT|`, `LIVEITEM|`, `LIVESPELL|`, and `ACH|` transport lines. It is no longer only lab code, but it is still monolithic internally: most feature-specific client behavior lives in `client_files/native_autoloot/eq-core-dll/src/core_autoloot_native.h`. The next cleanup is splitting that into a reusable native-client base plus feature-specific native modules.
 
 ## Verification
 
@@ -41,5 +44,7 @@ Use:
 cmake --preset win-msvc
 cmake --build build\win-msvc --config Release --target zone -- /m
 cmake --build build\win-msvc --config Release --target world -- /m
-git diff --check
+& 'C:\Program Files\Microsoft Visual Studio\2022\Community\Msbuild\Current\Bin\MSBuild.exe' client_files\native_autoloot\eq-core-dll\eq-core-dll-visualstudio2022.sln /p:Configuration=Release /p:Platform=Win32 /m
 ```
+
+Run scoped `git diff --check` on changed first-party docs/server files. The native runtime includes inherited vendor/MQ/DX scaffolding with existing whitespace, so a full-tree check is noisy until that client code is cleaned up.
