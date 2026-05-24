@@ -28,6 +28,7 @@
 #include "zone/mob.h"
 #include "zone/queryserv.h"
 #include "zone/quest_parser_collection.h"
+#include "zone/achievement_manager.h"
 #include "zone/raids.h"
 #include "zone/string_ids.h"
 #include "zone/worldserver.h"
@@ -994,6 +995,8 @@ void Client::SetLevel(uint8 set_level, bool command)
 	UpdateMercLevel();
 
 	Save();
+
+	achievement_manager.ProcessLevel(this);
 }
 
 // Note: The client calculates exp separately, we cant change this function

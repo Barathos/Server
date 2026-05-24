@@ -1,0 +1,138 @@
+<?xml version="1.0"?>
+<XML ID="EQInterfaceDefinitionLanguage">
+	<Schema xmlns="EverQuestData" xmlns:dt="EverQuestDataTypes" />
+
+	<Label item="NAW_SummaryLabel">
+		<ScreenID>NAW_SummaryLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>18</Y></Location>
+		<Size><CX>520</CX><CY>20</CY></Size>
+		<Text>Achievements 0/0 complete  Points 0  Categories 0</Text>
+		<TextColor><R>220</R><G>230</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="NAW_RefreshButton">
+		<ScreenID>NAW_RefreshButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>578</X><Y>14</Y></Location>
+		<Size><CX>72</CX><CY>22</CY></Size>
+		<Text>Refresh</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="NAW_CheckButton">
+		<ScreenID>NAW_CheckButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>656</X><Y>14</Y></Location>
+		<Size><CX>72</CX><CY>22</CY></Size>
+		<Text>Check</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Listbox item="NAW_CategoryList">
+		<ScreenID>NAW_CategoryList</ScreenID>
+		<DrawTemplate>WDT_Inner</DrawTemplate>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>46</Y></Location>
+		<Size><CX>220</CX><CY>412</CY></Size>
+		<Style_Border>true</Style_Border>
+		<Style_VScroll>true</Style_VScroll>
+		<Style_HScroll>false</Style_HScroll>
+		<Style_Transparent>false</Style_Transparent>
+		<Columns><Width>126</Width><Heading>Category</Heading></Columns>
+		<Columns><Width>56</Width><Heading>Done</Heading></Columns>
+		<Columns><Width>38</Width><Heading>Pts</Heading></Columns>
+	</Listbox>
+
+	<Listbox item="NAW_AchievementList">
+		<ScreenID>NAW_AchievementList</ScreenID>
+		<DrawTemplate>WDT_Inner</DrawTemplate>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>240</X><Y>46</Y></Location>
+		<Size><CX>488</CX><CY>210</CY></Size>
+		<Style_Border>true</Style_Border>
+		<Style_VScroll>true</Style_VScroll>
+		<Style_HScroll>false</Style_HScroll>
+		<Style_Transparent>false</Style_Transparent>
+		<Columns><Width>54</Width><Heading>State</Heading></Columns>
+		<Columns><Width>194</Width><Heading>Achievement</Heading></Columns>
+		<Columns><Width>42</Width><Heading>Pts</Heading></Columns>
+		<Columns><Width>198</Width><Heading>Description</Heading></Columns>
+	</Listbox>
+
+	<Label item="NAW_DetailTitleLabel">
+		<ScreenID>NAW_DetailTitleLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>240</X><Y>264</Y></Location>
+		<Size><CX>488</CX><CY>22</CY></Size>
+		<Text>Select an achievement</Text>
+		<TextColor><R>255</R><G>235</G><B>160</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="NAW_DetailDescriptionLabel">
+		<ScreenID>NAW_DetailDescriptionLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>240</X><Y>288</Y></Location>
+		<Size><CX>488</CX><CY>42</CY></Size>
+		<Text></Text>
+		<TextColor><R>210</R><G>220</G><B>235</B></TextColor>
+		<NoWrap>false</NoWrap>
+	</Label>
+
+	<Listbox item="NAW_ObjectiveList">
+		<ScreenID>NAW_ObjectiveList</ScreenID>
+		<DrawTemplate>WDT_Inner</DrawTemplate>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>240</X><Y>336</Y></Location>
+		<Size><CX>488</CX><CY>122</CY></Size>
+		<Style_Border>true</Style_Border>
+		<Style_VScroll>true</Style_VScroll>
+		<Style_HScroll>false</Style_HScroll>
+		<Style_Transparent>false</Style_Transparent>
+		<Columns><Width>54</Width><Heading>State</Heading></Columns>
+		<Columns><Width>340</Width><Heading>Objective</Heading></Columns>
+		<Columns><Width>94</Width><Heading>Progress</Heading></Columns>
+	</Listbox>
+
+	<Label item="NAW_StatusLabel">
+		<ScreenID>NAW_StatusLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>466</Y></Location>
+		<Size><CX>716</CX><CY>36</CY></Size>
+		<Text>Open with /achievement, /ach, #achievement, or #ach.</Text>
+		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
+		<NoWrap>false</NoWrap>
+	</Label>
+
+	<Screen item="NativeAchievementWnd">
+		<ScreenID>NativeAchievementWnd</ScreenID>
+		<RelativePosition>false</RelativePosition>
+		<Location><X>90</X><Y>70</Y></Location>
+		<Size><CX>740</CX><CY>520</CY></Size>
+		<Text>Achievements</Text>
+		<DrawTemplate>WDT_Def</DrawTemplate>
+		<Style_Titlebar>true</Style_Titlebar>
+		<Style_Closebox>true</Style_Closebox>
+		<Style_Minimizebox>true</Style_Minimizebox>
+		<Style_Border>true</Style_Border>
+		<Style_Sizable>false</Style_Sizable>
+		<Style_Transparent>false</Style_Transparent>
+		<Pieces>NAW_SummaryLabel</Pieces>
+		<Pieces>NAW_RefreshButton</Pieces>
+		<Pieces>NAW_CheckButton</Pieces>
+		<Pieces>NAW_CategoryList</Pieces>
+		<Pieces>NAW_AchievementList</Pieces>
+		<Pieces>NAW_DetailTitleLabel</Pieces>
+		<Pieces>NAW_DetailDescriptionLabel</Pieces>
+		<Pieces>NAW_ObjectiveList</Pieces>
+		<Pieces>NAW_StatusLabel</Pieces>
+	</Screen>
+</XML>
