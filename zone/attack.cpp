@@ -23,6 +23,7 @@
 #include "common/rulesys.h"
 #include "common/spdat.h"
 #include "common/strings.h"
+#include "zone/achievement_manager.h"
 #include "zone/bot.h"
 #include "zone/fastmath.h"
 #include "zone/lua_parser.h"
@@ -2708,6 +2709,10 @@ bool NPC::Death(Mob* killer_mob, int64 damage, uint16 spell, EQ::skills::SkillTy
 						);
 					}
 
+					if (!is_ldon_treasure && MerchantType == 0) {
+						achievement_manager.ProcessKill(m.member, this);
+					}
+
 					player_count++;
 				}
 			}
@@ -2739,6 +2744,10 @@ bool NPC::Death(Mob* killer_mob, int64 damage, uint16 spell, EQ::skills::SkillTy
 							c->GetBaseRace(),
 							c->GetDeity()
 						);
+					}
+
+					if (!is_ldon_treasure && MerchantType == 0) {
+						achievement_manager.ProcessKill(c, this);
 					}
 
 					player_count++;
@@ -2773,6 +2782,10 @@ bool NPC::Death(Mob* killer_mob, int64 damage, uint16 spell, EQ::skills::SkillTy
 					give_exp_client->GetBaseRace(),
 					give_exp_client->GetDeity()
 				);
+			}
+
+			if (!is_ldon_treasure && MerchantType == 0) {
+				achievement_manager.ProcessKill(give_exp_client, this);
 			}
 		}
 	}

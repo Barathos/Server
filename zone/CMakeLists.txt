@@ -7,6 +7,7 @@ set(zone_sources
     aggromanager.cpp
     api_service.cpp
     attack.cpp
+    achievement_manager.cpp
     aura.cpp
     beacon.cpp
     bonuses.cpp
@@ -121,6 +122,7 @@ set(zone_headers
     aa_ability.h
     aggromanager.h
     api_service.h
+    achievement_manager.h
     aura.h
     beacon.h
     bot.h
@@ -369,6 +371,7 @@ set(gm_command_sources
     bot_commands/bot_view_combos.cpp
     command.cpp
     gm_commands/acceptrules.cpp
+    gm_commands/achievements.cpp
     gm_commands/advnpcspawn.cpp
     gm_commands/aggrozone.cpp
     gm_commands/ai.cpp
