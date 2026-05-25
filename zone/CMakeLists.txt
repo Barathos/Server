@@ -52,6 +52,7 @@ set(zone_sources
     heal_rotation.cpp
     horse.cpp
     inventory.cpp
+    item_rarity_manager.cpp
     loot.cpp
     main.cpp
     map.cpp
@@ -151,6 +152,7 @@ set(zone_headers
     hate_list.h
     heal_rotation.h
     horse.h
+    item_rarity_manager.h
     lua_bit.h
     lua_bot.h
     lua_buff.h
@@ -445,6 +447,7 @@ set(gm_command_sources
     gm_commands/forage.cpp
     gm_commands/gearup.cpp
     gm_commands/giveitem.cpp
+    gm_commands/itemrarity.cpp
     gm_commands/givemoney.cpp
     gm_commands/gmzone.cpp
     gm_commands/goto.cpp

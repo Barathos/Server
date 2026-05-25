@@ -30,6 +30,7 @@
 #include "zone/dynamic_zone.h"
 #include "zone/entity.h"
 #include "zone/groups.h"
+#include "zone/item_rarity_manager.h"
 #include "zone/mob.h"
 #include "zone/queryserv.h"
 #include "zone/quest_parser_collection.h"
@@ -1743,6 +1744,7 @@ void Corpse::LootCorpseItem(Client *c, const EQApplicationPacket *app)
 		linker.GenerateLink();
 
 		c->MessageString(Chat::Loot, LOOTED_MESSAGE, linker.Link().c_str());
+		ItemRarityManager::SendLootedItemMessage(c, inst, linker.Link());
 
 		if (!IsPlayerCorpse()) {
 			Group *g = c->GetGroup();
