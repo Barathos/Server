@@ -7,7 +7,7 @@ display support:
 
 - parses `ITEMRARITY|...` server transport chat lines
 - caches item ID to rarity tier mappings
-- adds a colored rarity header to item inspect/link windows
+- recolors tagged item names in item inspect/link windows
 
 Build `Release|Win32` from:
 

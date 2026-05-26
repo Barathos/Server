@@ -17,11 +17,18 @@ namespace {
 	constexpr std::uintptr_t kEqImageBase = 0x400000;
 	constexpr std::uintptr_t kCEverQuestDspChat = 0x51F1A0;
 	constexpr std::uintptr_t kCItemDisplayWndUpdateStrings = 0x69AE30;
+	constexpr std::uintptr_t kCLabelDraw = 0x6B4D40;
 	constexpr std::uintptr_t kCStmlWndAppendSTML = 0x886720;
 	constexpr std::uintptr_t kCStmlWndSetSTMLText = 0x883E10;
 	constexpr std::uintptr_t kCStmlWndForceParseNow = 0x887070;
+	constexpr std::uintptr_t kCTextureFontDrawWrappedText = 0x889B70;
 	constexpr std::uintptr_t kCXStrCtorCString = 0x805C20;
 	constexpr std::uintptr_t kCXStrDtor = 0x465AE0;
+
+	constexpr std::size_t kCXWndColorOffset = 0x12C;
+	constexpr std::size_t kCXWndWindowTextOffset = 0x1A8;
+	constexpr std::size_t kItemDisplayLabelsOffset = 0x314;
+	constexpr std::size_t kItemDisplayLabelCount = 12;
 
 	using DirectInput8CreateProc = HRESULT(WINAPI *)(HINSTANCE, DWORD, REFIID, LPVOID *, LPUNKNOWN);
 	using DllCanUnloadNowProc = HRESULT(WINAPI *)();
@@ -60,7 +67,11 @@ namespace {
 
 	InlineHook g_chat_hook;
 	InlineHook g_item_display_hook;
+	InlineHook g_label_draw_hook;
 	InlineHook g_stml_set_hook;
+	InlineHook g_draw_text_hook;
+	bool g_logged_label_recolor = false;
+	bool g_logged_draw_recolor = false;
 
 	void Trace(const char *format, ...)
 	{
@@ -299,13 +310,15 @@ namespace {
 	};
 
 	struct ItemDisplayWindow {
-		BYTE pad_to_display_wnd[0x21C];
+		BYTE pad_to_display_wnd[0x220];
 		void *display_wnd;
-		BYTE pad_to_item_info[0x70];
+		BYTE pad_to_item_info[0x6C];
 		void *item_info;
 		void *window_title;
 		BYTE pad_to_item[0x14];
 		Contents *item;
+		BYTE pad_to_item_info_labels[0x64];
+		void *item_info_labels[kItemDisplayLabelCount];
 	};
 #pragma pack(pop)
 
@@ -313,10 +326,11 @@ namespace {
 	static_assert(offsetof(ItemInfo, item_number) == 0xEC, "ItemInfo item_number offset mismatch");
 	static_assert(offsetof(Contents, item1) == 0x9C, "Contents item1 offset mismatch");
 	static_assert(offsetof(Contents, item2) == 0x144, "Contents item2 offset mismatch");
-	static_assert(offsetof(ItemDisplayWindow, display_wnd) == 0x21C, "ItemDisplayWindow display_wnd offset mismatch");
+	static_assert(offsetof(ItemDisplayWindow, display_wnd) == 0x220, "ItemDisplayWindow display_wnd offset mismatch");
 	static_assert(offsetof(ItemDisplayWindow, item_info) == 0x290, "ItemDisplayWindow item_info offset mismatch");
 	static_assert(offsetof(ItemDisplayWindow, window_title) == 0x294, "ItemDisplayWindow window_title offset mismatch");
 	static_assert(offsetof(ItemDisplayWindow, item) == 0x2AC, "ItemDisplayWindow item offset mismatch");
+	static_assert(offsetof(ItemDisplayWindow, item_info_labels) == 0x314, "ItemDisplayWindow item info labels offset mismatch");
 
 	ItemInfo *GetItemInfo(Contents *contents)
 	{
@@ -375,6 +389,25 @@ namespace {
 		}
 
 		return rep->text;
+	}
+
+	const char *GetWindowText(void *window)
+	{
+		if (!window) {
+			return nullptr;
+		}
+
+		auto *bytes = static_cast<BYTE *>(window);
+		return GetCXStrText(*reinterpret_cast<void **>(bytes + kCXWndWindowTextOffset));
+	}
+
+	void SetWindowColor(void *window, DWORD argb)
+	{
+		if (!window) {
+			return;
+		}
+
+		*reinterpret_cast<DWORD *>(static_cast<BYTE *>(window) + kCXWndColorOffset) = argb;
 	}
 
 	std::string ColorizeFirstItemName(const char *stml, const char *item_name, const RarityInfo &rarity)
@@ -440,6 +473,34 @@ namespace {
 		return false;
 	}
 
+	bool LookupRarityForRenderedText(const char *rendered_text, std::string &matched_name, RarityInfo &rarity)
+	{
+		if (!rendered_text || !rendered_text[0] || !g_rarity_lock_ready) {
+			return false;
+		}
+
+		EnterCriticalSection(&g_rarity_lock);
+		const auto exact = g_rarity_by_name.find(rendered_text);
+		if (exact != g_rarity_by_name.end()) {
+			matched_name = exact->first;
+			rarity = exact->second;
+			LeaveCriticalSection(&g_rarity_lock);
+			return true;
+		}
+
+		for (const auto &entry : g_rarity_by_name) {
+			if (!entry.first.empty() && strstr(rendered_text, entry.first.c_str())) {
+				matched_name = entry.first;
+				rarity = entry.second;
+				LeaveCriticalSection(&g_rarity_lock);
+				return true;
+			}
+		}
+		LeaveCriticalSection(&g_rarity_lock);
+
+		return false;
+	}
+
 	std::size_t CachedNameCount()
 	{
 		if (!g_rarity_lock_ready) {
@@ -452,13 +513,68 @@ namespace {
 		return count;
 	}
 
+	DWORD RarityARGB(const RarityInfo &rarity)
+	{
+		if (!rarity.hex || rarity.hex[0] != '#') {
+			return 0xFFFFFFFF;
+		}
+
+		return 0xFF000000 | static_cast<DWORD>(strtoul(rarity.hex + 1, nullptr, 16));
+	}
+
 	using DspChatProc = void(__thiscall *)(void *, const char *, DWORD, bool, bool);
 	using ItemDisplayUpdateProc = void(__thiscall *)(void *);
+	using LabelDrawProc = int(__thiscall *)(void *);
 	using AppendSTMLProc = void(__thiscall *)(void *, CXStr);
 	using SetSTMLTextProc = void(__thiscall *)(void *, CXStr, bool, void *);
 	using ForceParseNowProc = void(__thiscall *)(void *);
 	using CXStrCtorCStringProc = CXStr *(__thiscall *)(CXStr *, const char *);
 	using CXStrDtorProc = void(__thiscall *)(CXStr *);
+	using DrawWrappedTextProc = int(__thiscall *)(void *, CXStr *, int, int, int, void *, DWORD, unsigned short, int);
+
+	bool ApplyRarityToLabel(void *label, const char *source)
+	{
+		const char *label_text = GetWindowText(label);
+		std::string item_name;
+		RarityInfo rarity;
+		if (!LookupRarityForRenderedText(label_text, item_name, rarity)) {
+			return false;
+		}
+
+		const DWORD rarity_argb = RarityARGB(rarity);
+		SetWindowColor(label, rarity_argb);
+
+		if (!g_logged_label_recolor) {
+			g_logged_label_recolor = true;
+			Trace(
+				"label recolored source=%s matched=%s rendered=%s tier=%d argb=0x%08X",
+				source ? source : "unknown",
+				item_name.c_str(),
+				label_text ? label_text : "",
+				rarity.tier,
+				rarity_argb
+			);
+		}
+
+		return true;
+	}
+
+	int ApplyRarityToItemDisplayLabels(void *self)
+	{
+		if (!self) {
+			return 0;
+		}
+
+		int recolored = 0;
+		auto **labels = reinterpret_cast<void **>(static_cast<BYTE *>(self) + kItemDisplayLabelsOffset);
+		for (std::size_t index = 0; index < kItemDisplayLabelCount; ++index) {
+			if (ApplyRarityToLabel(labels[index], "item_display")) {
+				++recolored;
+			}
+		}
+
+		return recolored;
+	}
 
 	bool AppendSTML(void *stml_wnd, const char *text)
 	{
@@ -530,55 +646,47 @@ namespace {
 		reinterpret_cast<DspChatProc>(g_chat_hook.gateway)(self, message, color, eq_log, do_percent_subst);
 	}
 
+	int __fastcall DrawWrappedTextDetour(void *self, void *, CXStr *text, int x, int y, int width, void *clip_rect, DWORD argb, unsigned short flags, int unknown)
+	{
+		const char *rendered_text = text ? GetCXStrText(text->ptr) : nullptr;
+		std::string item_name;
+		RarityInfo rarity;
+		if (LookupRarityForRenderedText(rendered_text, item_name, rarity)) {
+			const DWORD rarity_argb = RarityARGB(rarity);
+			if (!g_logged_draw_recolor) {
+				g_logged_draw_recolor = true;
+				Trace("draw text recolored matched=%s rendered=%s tier=%d argb=0x%08X", item_name.c_str(), rendered_text, rarity.tier, rarity_argb);
+			}
+
+			argb = rarity_argb;
+		}
+
+		return reinterpret_cast<DrawWrappedTextProc>(g_draw_text_hook.gateway)(
+			self,
+			text,
+			x,
+			y,
+			width,
+			clip_rect,
+			argb,
+			flags,
+			unknown
+		);
+	}
+
+	int __fastcall LabelDrawDetour(void *self, void *)
+	{
+		ApplyRarityToLabel(self, "label_draw");
+		return reinterpret_cast<LabelDrawProc>(g_label_draw_hook.gateway)(self);
+	}
+
 	void __fastcall ItemDisplayUpdateDetour(void *self, void *)
 	{
 		reinterpret_cast<ItemDisplayUpdateProc>(g_item_display_hook.gateway)(self);
 
-		auto *window = static_cast<ItemDisplayWindow *>(self);
-		if (!window || !window->display_wnd) {
-			return;
-		}
-
-		ItemInfo *item = GetItemInfo(window->item);
-		if (!item || (!item->item_number && !item->name[0])) {
-			return;
-		}
-
-		RarityInfo rarity;
-		if (!LookupRarity(item->item_number, rarity) && !LookupRarityByName(item->name, rarity)) {
-			return;
-		}
-
-		const char *item_name = item->name[0] ? item->name : "Unknown Item";
-		const char *item_stml = GetCXStrText(window->item_info);
-		const auto colorized = ColorizeFirstItemName(item_stml, item_name, rarity);
-		if (!colorized.empty() && SetSTMLText(window->display_wnd, colorized.c_str())) {
-			Trace(
-				"item display recolored name item=%u tier=%d name=%s",
-				item->item_number,
-				rarity.tier,
-				item_name
-			);
-			return;
-		}
-
-		char stml[256] {};
-		sprintf_s(
-			stml,
-			"<BR><c \"%s\">%s item: %s</c><BR>",
-			rarity.hex,
-			rarity.name,
-			item_name
-		);
-
-		if (AppendSTML(window->display_wnd, stml)) {
-			Trace(
-				"item display appended fallback item=%u tier=%d name=%s has_stml=%d",
-				item->item_number,
-				rarity.tier,
-				item_name,
-				item_stml ? 1 : 0
-			);
+		const int labels_recolored = ApplyRarityToItemDisplayLabels(self);
+		if (labels_recolored > 0) {
+			Trace("item display labels recolored count=%d", labels_recolored);
 		}
 	}
 
@@ -588,13 +696,17 @@ namespace {
 
 		const auto chat = reinterpret_cast<void *>(Rebase(kCEverQuestDspChat));
 		const auto item_display = reinterpret_cast<void *>(Rebase(kCItemDisplayWndUpdateStrings));
+		const auto label_draw = reinterpret_cast<void *>(Rebase(kCLabelDraw));
 		const auto stml_set = reinterpret_cast<void *>(Rebase(kCStmlWndSetSTMLText));
+		const auto draw_text = reinterpret_cast<void *>(Rebase(kCTextureFontDrawWrappedText));
 
 		const bool chat_ok = InstallHook(g_chat_hook, chat, reinterpret_cast<void *>(&DspChatDetour), 6);
 		const bool item_ok = InstallHook(g_item_display_hook, item_display, reinterpret_cast<void *>(&ItemDisplayUpdateDetour), 6);
+		const bool label_ok = InstallHook(g_label_draw_hook, label_draw, reinterpret_cast<void *>(&LabelDrawDetour), 7);
 		const bool stml_ok = InstallHook(g_stml_set_hook, stml_set, reinterpret_cast<void *>(&SetSTMLTextDetour), 6);
+		const bool draw_ok = InstallHook(g_draw_text_hook, draw_text, reinterpret_cast<void *>(&DrawWrappedTextDetour), 7);
 
-		Trace("item rarity native hooks installed chat=%d item_display=%d stml_set=%d", chat_ok ? 1 : 0, item_ok ? 1 : 0, stml_ok ? 1 : 0);
+		Trace("item rarity native hooks installed chat=%d item_display=%d label_draw=%d stml_set=%d draw_text=%d", chat_ok ? 1 : 0, item_ok ? 1 : 0, label_ok ? 1 : 0, stml_ok ? 1 : 0, draw_ok ? 1 : 0);
 		return 0;
 	}
 
@@ -633,7 +745,9 @@ BOOL WINAPI DllMain(HMODULE module, DWORD reason, LPVOID)
 			CreateThread(nullptr, 0, InitThread, nullptr, 0, nullptr);
 			break;
 		case DLL_PROCESS_DETACH:
+			RemoveHook(g_draw_text_hook);
 			RemoveHook(g_stml_set_hook);
+			RemoveHook(g_label_draw_hook);
 			RemoveHook(g_chat_hook);
 			RemoveHook(g_item_display_hook);
 			if (g_rarity_lock_ready) {

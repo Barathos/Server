@@ -26,8 +26,7 @@ From `D:\Codex\Apps\EQEmu-feature-workspaces`:
 
 No native client XML window is required. This feature owns a small native
 `dinput8.dll` under `client_files/item_rarity` that parses `ITEMRARITY|...`
-server transport lines and adds a rarity-colored header to item inspect/link
-windows.
+server transport lines and recolors tagged item names in inspect/link windows.
 
 Build `Release|Win32` from:
 

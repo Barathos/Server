@@ -12,8 +12,8 @@ Item Rarity adds explicit rarity tags for item IDs without altering the stock
 - Tagged items can be injected into targeted NPC or corpse loot for testing.
 - When a tagged item is looted, the normal EQ loot message is preserved and an
   additional rarity-colored loot line is sent to the looter.
-- The feature-owned native DLL caches rarity transports and adds a colored
-  rarity header when tagged items are inspected from item links.
+- The feature-owned native DLL caches rarity transports and recolors the item
+  name label when tagged items are inspected.
 
 The server uses normal EQ item say links and chat colors. The native client
 slice is owned under `client_files/item_rarity` and must be installed only to
@@ -72,8 +72,8 @@ For loot testing, target an NPC or corpse:
 If the target is an NPC, kill it and loot the item. If the target is a corpse,
 open the corpse after adding the item. Tagged loot should show the normal loot
 message plus a rarity-colored line such as `Rare loot: <item link>`. With the
-item-rarity `dinput8.dll` installed, clicking a tagged link should also show a
-colored rarity header in the item inspect window.
+item-rarity `dinput8.dll` installed, inspecting a tagged item should also show
+the item name in its rarity color.
 
 ## Native Client
 
