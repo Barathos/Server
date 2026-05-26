@@ -167,9 +167,8 @@ void command_itemrarity(Client *c, const Seperator *sep)
 			ItemRarityManager::RarityChatColor(rarity),
 			"%s",
 			fmt::format(
-				"Tagged {} as {}.",
-				ItemRarityManager::BuildItemLink(item_id),
-				ItemRarityManager::RarityName(rarity)
+				"Tagged {}.",
+				ItemRarityManager::BuildDecoratedLink(item_id, rarity)
 			).c_str()
 		);
 		return;

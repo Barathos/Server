@@ -17,6 +17,8 @@ namespace {
 	constexpr std::uintptr_t kCEverQuestDspChat = 0x51F1A0;
 	constexpr std::uintptr_t kCItemDisplayWndUpdateStrings = 0x69AE30;
 	constexpr std::uintptr_t kCStmlWndAppendSTML = 0x886720;
+	constexpr std::uintptr_t kCStmlWndForceParseNow = 0x887070;
+	constexpr std::uintptr_t kCXStrCtorCString = 0x805C20;
 
 	using DirectInput8CreateProc = HRESULT(WINAPI *)(HINSTANCE, DWORD, REFIID, LPVOID *, LPUNKNOWN);
 	using DllCanUnloadNowProc = HRESULT(WINAPI *)();
@@ -174,7 +176,7 @@ namespace {
 		static const RarityInfo kRarities[] = {
 			{0, "Common", "#F0F0F0"},
 			{1, "Uncommon", "#66FF66"},
-			{2, "Rare", "#66A3FF"},
+			{2, "Rare", "#00FFFF"},
 			{3, "Legendary", "#FFD15C"},
 			{4, "Unique", "#C080FF"}
 		};
@@ -246,6 +248,10 @@ namespace {
 	}
 
 #pragma pack(push, 1)
+	struct CXStr {
+		void *ptr;
+	};
+
 	struct ItemInfo {
 		char name[0x40];
 		BYTE pad_to_item_number[0xAC];
@@ -262,15 +268,21 @@ namespace {
 	struct ItemDisplayWindow {
 		BYTE pad_to_display_wnd[0x21C];
 		void *display_wnd;
-		BYTE pad_to_item[0x8C];
+		BYTE pad_to_item_info[0x70];
+		void *item_info;
+		void *window_title;
+		BYTE pad_to_item[0x14];
 		Contents *item;
 	};
 #pragma pack(pop)
 
+	static_assert(sizeof(CXStr) == 0x4, "CXStr wrapper size mismatch");
 	static_assert(offsetof(ItemInfo, item_number) == 0xEC, "ItemInfo item_number offset mismatch");
 	static_assert(offsetof(Contents, item1) == 0x9C, "Contents item1 offset mismatch");
 	static_assert(offsetof(Contents, item2) == 0x144, "Contents item2 offset mismatch");
 	static_assert(offsetof(ItemDisplayWindow, display_wnd) == 0x21C, "ItemDisplayWindow display_wnd offset mismatch");
+	static_assert(offsetof(ItemDisplayWindow, item_info) == 0x290, "ItemDisplayWindow item_info offset mismatch");
+	static_assert(offsetof(ItemDisplayWindow, window_title) == 0x294, "ItemDisplayWindow window_title offset mismatch");
 	static_assert(offsetof(ItemDisplayWindow, item) == 0x2AC, "ItemDisplayWindow item offset mismatch");
 
 	ItemInfo *GetItemInfo(Contents *contents)
@@ -302,7 +314,26 @@ namespace {
 
 	using DspChatProc = void(__thiscall *)(void *, const char *, DWORD, bool, bool);
 	using ItemDisplayUpdateProc = void(__thiscall *)(void *);
-	using AppendSTMLProc = void(__thiscall *)(void *, char *);
+	using AppendSTMLProc = void(__thiscall *)(void *, CXStr);
+	using ForceParseNowProc = void(__thiscall *)(void *);
+	using CXStrCtorCStringProc = CXStr *(__thiscall *)(CXStr *, const char *);
+
+	bool AppendSTML(void *stml_wnd, const char *text)
+	{
+		if (!stml_wnd || !text || !text[0]) {
+			return false;
+		}
+
+		CXStr value {};
+		const auto ctor = reinterpret_cast<CXStrCtorCStringProc>(Rebase(kCXStrCtorCString));
+		const auto append_stml = reinterpret_cast<AppendSTMLProc>(Rebase(kCStmlWndAppendSTML));
+		const auto force_parse = reinterpret_cast<ForceParseNowProc>(Rebase(kCStmlWndForceParseNow));
+
+		ctor(&value, text);
+		append_stml(stml_wnd, value);
+		force_parse(stml_wnd);
+		return true;
+	}
 
 	void __fastcall DspChatDetour(void *self, void *, const char *message, DWORD color, bool eq_log, bool do_percent_subst)
 	{
@@ -341,8 +372,14 @@ namespace {
 			item->name[0] ? item->name : "Unknown Item"
 		);
 
-		const auto append_stml = reinterpret_cast<AppendSTMLProc>(Rebase(kCStmlWndAppendSTML));
-		append_stml(window->display_wnd, stml);
+		if (AppendSTML(window->display_wnd, stml)) {
+			Trace(
+				"item display rarity item=%u tier=%d name=%s",
+				item->item_number,
+				rarity.tier,
+				item->name[0] ? item->name : "Unknown Item"
+			);
+		}
 	}
 
 	DWORD WINAPI InitThread(LPVOID)

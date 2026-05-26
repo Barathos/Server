@@ -45,6 +45,25 @@ namespace {
 
 		return static_cast<ItemRarity>(rarity);
 	}
+
+	std::string ItemName(uint32 item_id)
+	{
+		const auto *item = database.GetItem(item_id);
+		if (!item) {
+			return fmt::format("Item {}", item_id);
+		}
+
+		return item->Name;
+	}
+
+	std::string ItemName(const EQ::ItemInstance *inst)
+	{
+		if (!inst || !inst->GetItem()) {
+			return "Unknown Item";
+		}
+
+		return inst->GetItem()->Name;
+	}
 }
 
 bool ItemRarityManager::EnsureSchema()
@@ -142,7 +161,7 @@ const char *ItemRarityManager::RarityColorHex(ItemRarity rarity)
 		case ItemRarity::Uncommon:
 			return "#66FF66";
 		case ItemRarity::Rare:
-			return "#66A3FF";
+			return "#00FFFF";
 		case ItemRarity::Legendary:
 			return "#FFD15C";
 		case ItemRarity::Unique:
@@ -160,7 +179,7 @@ uint16 ItemRarityManager::RarityChatColor(ItemRarity rarity)
 		case ItemRarity::Uncommon:
 			return Chat::Green;
 		case ItemRarity::Rare:
-			return Chat::BrightBlue;
+			return Chat::Cyan;
 		case ItemRarity::Legendary:
 			return Chat::Yellow;
 		case ItemRarity::Unique:
@@ -239,6 +258,11 @@ bool ItemRarityManager::ClearRarity(uint32 item_id)
 
 std::string ItemRarityManager::BuildItemLink(uint32 item_id)
 {
+	return BuildItemLink(item_id, nullptr);
+}
+
+std::string ItemRarityManager::BuildItemLink(uint32 item_id, const char *link_text)
+{
 	const auto *item = database.GetItem(item_id);
 	if (!item) {
 		return fmt::format("Item {}", item_id);
@@ -247,11 +271,19 @@ std::string ItemRarityManager::BuildItemLink(uint32 item_id)
 	EQ::SayLinkEngine linker;
 	linker.SetLinkType(EQ::saylink::SayLinkItemData);
 	linker.SetItemData(item);
+	if (link_text && link_text[0]) {
+		linker.SetProxyText(link_text);
+	}
 
 	return linker.GenerateLink();
 }
 
 std::string ItemRarityManager::BuildItemLink(const EQ::ItemInstance *inst)
+{
+	return BuildItemLink(inst, nullptr);
+}
+
+std::string ItemRarityManager::BuildItemLink(const EQ::ItemInstance *inst, const char *link_text)
 {
 	if (!inst || !inst->GetItem()) {
 		return "Unknown Item";
@@ -260,6 +292,9 @@ std::string ItemRarityManager::BuildItemLink(const EQ::ItemInstance *inst)
 	EQ::SayLinkEngine linker;
 	linker.SetLinkType(EQ::saylink::SayLinkItemInst);
 	linker.SetItemInst(inst);
+	if (link_text && link_text[0]) {
+		linker.SetProxyText(link_text);
+	}
 
 	return linker.GenerateLink();
 }
@@ -267,18 +302,20 @@ std::string ItemRarityManager::BuildItemLink(const EQ::ItemInstance *inst)
 std::string ItemRarityManager::BuildDecoratedLink(uint32 item_id, ItemRarity rarity)
 {
 	return fmt::format(
-		"[{}] {}",
+		"[{}] {} ({})",
 		RarityName(rarity),
-		BuildItemLink(item_id)
+		ItemName(item_id),
+		BuildItemLink(item_id, "inspect")
 	);
 }
 
 std::string ItemRarityManager::BuildDecoratedLink(const EQ::ItemInstance *inst, ItemRarity rarity)
 {
 	return fmt::format(
-		"[{}] {}",
+		"[{}] {} ({})",
 		RarityName(rarity),
-		BuildItemLink(inst)
+		ItemName(inst),
+		BuildItemLink(inst, "inspect")
 	);
 }
 
@@ -343,7 +380,7 @@ void ItemRarityManager::SendRarityItemLink(Client *client, uint32 item_id)
 	);
 }
 
-void ItemRarityManager::SendLootedItemMessage(Client *client, const EQ::ItemInstance *inst, const std::string &item_link)
+void ItemRarityManager::SendLootedItemMessage(Client *client, const EQ::ItemInstance *inst, const std::string &)
 {
 	if (!client || !inst || !inst->GetItem()) {
 		return;
@@ -359,9 +396,8 @@ void ItemRarityManager::SendLootedItemMessage(Client *client, const EQ::ItemInst
 		RarityChatColor(rarity),
 		"%s",
 		fmt::format(
-			"{} loot: {}",
-			RarityName(rarity),
-			item_link
+			"Looted {}",
+			BuildDecoratedLink(inst, rarity)
 		).c_str()
 	);
 }

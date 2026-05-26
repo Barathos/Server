@@ -50,7 +50,9 @@ public:
 	static bool ClearRarity(uint32 item_id);
 
 	static std::string BuildItemLink(uint32 item_id);
+	static std::string BuildItemLink(uint32 item_id, const char *link_text);
 	static std::string BuildItemLink(const EQ::ItemInstance *inst);
+	static std::string BuildItemLink(const EQ::ItemInstance *inst, const char *link_text);
 	static std::string BuildDecoratedLink(uint32 item_id, ItemRarity rarity);
 	static std::string BuildDecoratedLink(const EQ::ItemInstance *inst, ItemRarity rarity);
 
