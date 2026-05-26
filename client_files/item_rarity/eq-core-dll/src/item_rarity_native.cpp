@@ -21,6 +21,7 @@ namespace {
 	constexpr std::uintptr_t kCStmlWndSetSTMLText = 0x883E10;
 	constexpr std::uintptr_t kCStmlWndForceParseNow = 0x887070;
 	constexpr std::uintptr_t kCXStrCtorCString = 0x805C20;
+	constexpr std::uintptr_t kCXStrDtor = 0x465AE0;
 
 	using DirectInput8CreateProc = HRESULT(WINAPI *)(HINSTANCE, DWORD, REFIID, LPVOID *, LPUNKNOWN);
 	using DllCanUnloadNowProc = HRESULT(WINAPI *)();
@@ -59,6 +60,7 @@ namespace {
 
 	InlineHook g_chat_hook;
 	InlineHook g_item_display_hook;
+	InlineHook g_stml_set_hook;
 
 	void Trace(const char *format, ...)
 	{
@@ -412,12 +414,51 @@ namespace {
 		return result;
 	}
 
+	bool LooksLikeItemDisplaySTML(const char *stml)
+	{
+		return stml && strstr(stml, "Class:") && strstr(stml, "Race:");
+	}
+
+	bool ColorizeCachedItemName(const char *stml, std::string &colorized, std::string &matched_name, RarityInfo &rarity)
+	{
+		if (!LooksLikeItemDisplaySTML(stml) || !g_rarity_lock_ready) {
+			return false;
+		}
+
+		EnterCriticalSection(&g_rarity_lock);
+		for (const auto &entry : g_rarity_by_name) {
+			colorized = ColorizeFirstItemName(stml, entry.first.c_str(), entry.second);
+			if (!colorized.empty()) {
+				matched_name = entry.first;
+				rarity = entry.second;
+				LeaveCriticalSection(&g_rarity_lock);
+				return true;
+			}
+		}
+		LeaveCriticalSection(&g_rarity_lock);
+
+		return false;
+	}
+
+	std::size_t CachedNameCount()
+	{
+		if (!g_rarity_lock_ready) {
+			return 0;
+		}
+
+		EnterCriticalSection(&g_rarity_lock);
+		const auto count = g_rarity_by_name.size();
+		LeaveCriticalSection(&g_rarity_lock);
+		return count;
+	}
+
 	using DspChatProc = void(__thiscall *)(void *, const char *, DWORD, bool, bool);
 	using ItemDisplayUpdateProc = void(__thiscall *)(void *);
 	using AppendSTMLProc = void(__thiscall *)(void *, CXStr);
 	using SetSTMLTextProc = void(__thiscall *)(void *, CXStr, bool, void *);
 	using ForceParseNowProc = void(__thiscall *)(void *);
 	using CXStrCtorCStringProc = CXStr *(__thiscall *)(CXStr *, const char *);
+	using CXStrDtorProc = void(__thiscall *)(CXStr *);
 
 	bool AppendSTML(void *stml_wnd, const char *text)
 	{
@@ -444,13 +485,40 @@ namespace {
 
 		CXStr value {};
 		const auto ctor = reinterpret_cast<CXStrCtorCStringProc>(Rebase(kCXStrCtorCString));
-		const auto set_stml = reinterpret_cast<SetSTMLTextProc>(Rebase(kCStmlWndSetSTMLText));
+		const auto set_stml = reinterpret_cast<SetSTMLTextProc>(
+			g_stml_set_hook.installed && g_stml_set_hook.gateway ? g_stml_set_hook.gateway : reinterpret_cast<void *>(Rebase(kCStmlWndSetSTMLText))
+		);
 		const auto force_parse = reinterpret_cast<ForceParseNowProc>(Rebase(kCStmlWndForceParseNow));
 
 		ctor(&value, text);
 		set_stml(stml_wnd, value, false, nullptr);
 		force_parse(stml_wnd);
 		return true;
+	}
+
+	void __fastcall SetSTMLTextDetour(void *self, void *, CXStr value, bool add_to_history, void *link_info)
+	{
+		const char *text = GetCXStrText(value.ptr);
+		std::string colorized;
+		std::string item_name;
+		RarityInfo rarity;
+		if (ColorizeCachedItemName(text, colorized, item_name, rarity)) {
+			CXStr replacement {};
+			const auto ctor = reinterpret_cast<CXStrCtorCStringProc>(Rebase(kCXStrCtorCString));
+			const auto dtor = reinterpret_cast<CXStrDtorProc>(Rebase(kCXStrDtor));
+
+			ctor(&replacement, colorized.c_str());
+			reinterpret_cast<SetSTMLTextProc>(g_stml_set_hook.gateway)(self, replacement, add_to_history, link_info);
+			dtor(&value);
+			Trace("stml set recolored item name=%s tier=%d", item_name.c_str(), rarity.tier);
+			return;
+		}
+
+		if (LooksLikeItemDisplaySTML(text)) {
+			Trace("stml item display observed without rarity match cached_names=%u", static_cast<unsigned>(CachedNameCount()));
+		}
+
+		reinterpret_cast<SetSTMLTextProc>(g_stml_set_hook.gateway)(self, value, add_to_history, link_info);
 	}
 
 	void __fastcall DspChatDetour(void *self, void *, const char *message, DWORD color, bool eq_log, bool do_percent_subst)
@@ -520,11 +588,13 @@ namespace {
 
 		const auto chat = reinterpret_cast<void *>(Rebase(kCEverQuestDspChat));
 		const auto item_display = reinterpret_cast<void *>(Rebase(kCItemDisplayWndUpdateStrings));
+		const auto stml_set = reinterpret_cast<void *>(Rebase(kCStmlWndSetSTMLText));
 
 		const bool chat_ok = InstallHook(g_chat_hook, chat, reinterpret_cast<void *>(&DspChatDetour), 6);
 		const bool item_ok = InstallHook(g_item_display_hook, item_display, reinterpret_cast<void *>(&ItemDisplayUpdateDetour), 6);
+		const bool stml_ok = InstallHook(g_stml_set_hook, stml_set, reinterpret_cast<void *>(&SetSTMLTextDetour), 6);
 
-		Trace("item rarity native hooks installed chat=%d item_display=%d", chat_ok ? 1 : 0, item_ok ? 1 : 0);
+		Trace("item rarity native hooks installed chat=%d item_display=%d stml_set=%d", chat_ok ? 1 : 0, item_ok ? 1 : 0, stml_ok ? 1 : 0);
 		return 0;
 	}
 
@@ -563,6 +633,7 @@ BOOL WINAPI DllMain(HMODULE module, DWORD reason, LPVOID)
 			CreateThread(nullptr, 0, InitThread, nullptr, 0, nullptr);
 			break;
 		case DLL_PROCESS_DETACH:
+			RemoveHook(g_stml_set_hook);
 			RemoveHook(g_chat_hook);
 			RemoveHook(g_item_display_hook);
 			if (g_rarity_lock_ready) {
