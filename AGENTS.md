@@ -8,6 +8,8 @@ This repository is the standalone `item-rarity` feature checkout.
 - Matching database: `eqemu_item_rarity`
 - Use D:\Codex\Apps\EQEmu-feature-workspaces for cross-feature validation and packaging.
 - No native UI XML is registered for this feature yet.
+- Native rarity inspect/link support is owned by this checkout under
+  `client_files/item_rarity`.
 
 ## Native Client Ownership
 
@@ -39,5 +41,6 @@ After user-requested code changes, run .\verify-feature.ps1 item-rarity from the
 After a successful build, run .\install-server-runtime.ps1 item-rarity,
 .\run-db-updates.ps1 item-rarity, and .\validate-install.ps1 item-rarity. The
 runtime install script refreshes Windows firewall allow rules for the copied
-server binaries. No client file install is required until this feature owns a
-native client project.
+server binaries. If the native DLL was rebuilt, install this checkout's
+`client_files/item_rarity/eq-core-dll/bin/dinput8.dll` only to
+`D:\EQClients\EQClient-Item-Rarity`.

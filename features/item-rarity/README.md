@@ -24,8 +24,22 @@ From `D:\Codex\Apps\EQEmu-feature-workspaces`:
 
 ## Client UI
 
-No native client XML window is required for this first test slice. Rarity is
-shown through server chat colors and normal clickable EQ item links.
+No native client XML window is required. This feature owns a small native
+`dinput8.dll` under `client_files/item_rarity` that parses `ITEMRARITY|...`
+server transport lines and adds a rarity-colored header to item inspect/link
+windows.
+
+Build `Release|Win32` from:
+
+~~~text
+client_files/item_rarity/eq-core-dll/item-rarity-dll.sln
+~~~
+
+Install the resulting DLL only to:
+
+~~~text
+D:\EQClients\EQClient-Item-Rarity\dinput8.dll
+~~~
 
 ## Commands
 
@@ -41,11 +55,11 @@ shown through server chat colors and normal clickable EQ item links.
 - `#itemrarity loot <item_id> <rarity> [charges]` tags the item and adds it as test loot to the targeted NPC or corpse.
 
 When a tagged item is looted from a corpse, the server keeps the normal EQ loot
-message and adds a second rarity-colored line such as `Rare loot: <item link>`.
+message, sends the native rarity transport for the item-rarity DLL, and adds a
+second rarity-colored line such as `Rare loot: <item link>`.
 
 ## Development Notes
 
-The first implementation stores rarity separately from the stock `items` table in
-`item_rarity`, keeping the feature portable and easy to remove. Native client
-work can later expand this into colored names inside item inspect/link windows,
-but the current server slice already exercises loot drops, chat, and links.
+The implementation stores rarity separately from the stock `items` table in
+`item_rarity`, keeping the feature portable and easy to remove. Rarity-specific
+native client logic lives only in this checkout.

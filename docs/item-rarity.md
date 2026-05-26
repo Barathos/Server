@@ -12,10 +12,12 @@ Item Rarity adds explicit rarity tags for item IDs without altering the stock
 - Tagged items can be injected into targeted NPC or corpse loot for testing.
 - When a tagged item is looted, the normal EQ loot message is preserved and an
   additional rarity-colored loot line is sent to the looter.
+- The feature-owned native DLL caches rarity transports and adds a colored
+  rarity header when tagged items are inspected from item links.
 
-The current slice uses normal EQ item say links and chat colors. A future native
-client slice can make the item name itself render in rarity colors inside item
-inspect/link UI windows.
+The server uses normal EQ item say links and chat colors. The native client
+slice is owned under `client_files/item_rarity` and must be installed only to
+`D:\EQClients\EQClient-Item-Rarity`.
 
 ## Schema
 
@@ -69,13 +71,35 @@ For loot testing, target an NPC or corpse:
 
 If the target is an NPC, kill it and loot the item. If the target is a corpse,
 open the corpse after adding the item. Tagged loot should show the normal loot
-message plus a rarity-colored line such as `Rare loot: <item link>`.
+message plus a rarity-colored line such as `Rare loot: <item link>`. With the
+item-rarity `dinput8.dll` installed, clicking a tagged link should also show a
+colored rarity header in the item inspect window.
+
+## Native Client
+
+Build the feature-owned DLL:
+
+```text
+client_files/item_rarity/eq-core-dll/item-rarity-dll.sln
+```
+
+Use `Release|Win32`. The output is:
+
+```text
+client_files/item_rarity/eq-core-dll/bin/dinput8.dll
+```
+
+Install only this DLL to:
+
+```text
+D:\EQClients\EQClient-Item-Rarity\dinput8.dll
+```
 
 ## Local Verification
 
 - Build: `.\verify-feature.ps1 item-rarity`
+- Build native DLL: `MSBuild client_files/item_rarity/eq-core-dll/item-rarity-dll.sln /p:Configuration=Release /p:Platform=Win32`
+- Install client DLL only to `D:\EQClients\EQClient-Item-Rarity\dinput8.dll`
 - Install runtime: `.\install-server-runtime.ps1 item-rarity`
 - Run DB updates: `.\run-db-updates.ps1 item-rarity`
 - Validate install: `.\validate-install.ps1 item-rarity`
-
-No client file install is required for the current server-side slice.

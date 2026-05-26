@@ -54,6 +54,8 @@ public:
 	static std::string BuildDecoratedLink(uint32 item_id, ItemRarity rarity);
 	static std::string BuildDecoratedLink(const EQ::ItemInstance *inst, ItemRarity rarity);
 
+	static void SendNativeRarity(Client *client, uint32 item_id, ItemRarity rarity);
+	static void SendNativeRarityClear(Client *client, uint32 item_id);
 	static void SendRarityItemLink(Client *client, uint32 item_id);
 	static void SendLootedItemMessage(Client *client, const EQ::ItemInstance *inst, const std::string &item_link);
 };

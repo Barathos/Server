@@ -282,6 +282,39 @@ std::string ItemRarityManager::BuildDecoratedLink(const EQ::ItemInstance *inst, 
 	);
 }
 
+void ItemRarityManager::SendNativeRarity(Client *client, uint32 item_id, ItemRarity rarity)
+{
+	if (!client || !item_id) {
+		return;
+	}
+
+	client->Message(
+		Chat::Black,
+		"%s",
+		fmt::format(
+			"ITEMRARITY|set|item_id={}|rarity={}",
+			item_id,
+			static_cast<uint8>(rarity)
+		).c_str()
+	);
+}
+
+void ItemRarityManager::SendNativeRarityClear(Client *client, uint32 item_id)
+{
+	if (!client || !item_id) {
+		return;
+	}
+
+	client->Message(
+		Chat::Black,
+		"%s",
+		fmt::format(
+			"ITEMRARITY|clear|item_id={}",
+			item_id
+		).c_str()
+	);
+}
+
 void ItemRarityManager::SendRarityItemLink(Client *client, uint32 item_id)
 {
 	if (!client) {
@@ -302,6 +335,7 @@ void ItemRarityManager::SendRarityItemLink(Client *client, uint32 item_id)
 		return;
 	}
 
+	SendNativeRarity(client, item_id, rarity);
 	client->Message(
 		RarityChatColor(rarity),
 		"%s",
@@ -320,6 +354,7 @@ void ItemRarityManager::SendLootedItemMessage(Client *client, const EQ::ItemInst
 		return;
 	}
 
+	SendNativeRarity(client, inst->GetItem()->ID, rarity);
 	client->Message(
 		RarityChatColor(rarity),
 		"%s",

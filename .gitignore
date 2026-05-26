@@ -55,6 +55,20 @@ bin/
 /x64
 /client_files/**/CMakeFiles/
 
+# Feature-owned native client package artifacts
+!client_files/item_rarity/
+!client_files/item_rarity/README.md
+!client_files/item_rarity/eq-core-dll/
+!client_files/item_rarity/eq-core-dll/item-rarity-dll.sln
+!client_files/item_rarity/eq-core-dll/bin/
+client_files/item_rarity/eq-core-dll/bin/*
+!client_files/item_rarity/eq-core-dll/bin/dinput8.dll
+!client_files/item_rarity/eq-core-dll/src/
+client_files/item_rarity/eq-core-dll/src/Release/
+!client_files/item_rarity/eq-core-dll/src/dinput8.def
+!client_files/item_rarity/eq-core-dll/src/item-rarity-dll.vcxproj
+!client_files/item_rarity/eq-core-dll/src/item_rarity_native.cpp
+
 .idea
 
 # Clangd Generated Files.

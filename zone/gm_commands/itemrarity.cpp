@@ -162,6 +162,7 @@ void command_itemrarity(Client *c, const Seperator *sep)
 			return;
 		}
 
+		ItemRarityManager::SendNativeRarity(c, item_id, rarity);
 		c->Message(
 			ItemRarityManager::RarityChatColor(rarity),
 			"%s",
@@ -190,6 +191,7 @@ void command_itemrarity(Client *c, const Seperator *sep)
 			return;
 		}
 
+		ItemRarityManager::SendNativeRarityClear(c, item_id);
 		c->Message(
 			Chat::White,
 			"%s",
@@ -213,6 +215,11 @@ void command_itemrarity(Client *c, const Seperator *sep)
 		}
 
 		if (is_view) {
+			ItemRarity rarity = ItemRarity::Common;
+			if (ItemRarityManager::TryGetRarity(item_id, rarity)) {
+				ItemRarityManager::SendNativeRarity(c, item_id, rarity);
+			}
+
 			SendItemView(c, item_id);
 		}
 
@@ -255,6 +262,7 @@ void command_itemrarity(Client *c, const Seperator *sep)
 			target->CastToCorpse()->AddItem(item_id, charges);
 		}
 
+		ItemRarityManager::SendNativeRarity(c, item_id, rarity);
 		c->Message(
 			ItemRarityManager::RarityChatColor(rarity),
 			"%s",
