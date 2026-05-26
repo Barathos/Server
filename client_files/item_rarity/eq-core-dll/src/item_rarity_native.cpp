@@ -47,7 +47,8 @@ namespace {
 	struct InlineHook {
 		void *target = nullptr;
 		void *gateway = nullptr;
-		BYTE original[5] {};
+		BYTE original[16] {};
+		std::size_t stolen_length = 0;
 		bool installed = false;
 	};
 
@@ -102,40 +103,46 @@ namespace {
 		return base + (preferred_address - kEqImageBase);
 	}
 
-	bool InstallHook(InlineHook &hook, void *target, void *detour)
+	bool InstallHook(InlineHook &hook, void *target, void *detour, std::size_t stolen_length)
 	{
 		if (hook.installed) {
 			return true;
 		}
 
-		hook.target = target;
-		memcpy(hook.original, target, sizeof(hook.original));
+		if (stolen_length < 5 || stolen_length > sizeof(hook.original)) {
+			return false;
+		}
 
-		auto *gateway = static_cast<BYTE *>(VirtualAlloc(nullptr, 10, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
+		hook.target = target;
+		hook.stolen_length = stolen_length;
+		memcpy(hook.original, target, hook.stolen_length);
+
+		auto *gateway = static_cast<BYTE *>(VirtualAlloc(nullptr, hook.stolen_length + 5, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 		if (!gateway) {
 			return false;
 		}
 
-		memcpy(gateway, hook.original, sizeof(hook.original));
-		gateway[5] = 0xE9;
-		*reinterpret_cast<std::int32_t *>(gateway + 6) = static_cast<std::int32_t>(
-			(reinterpret_cast<std::uintptr_t>(target) + 5) - (reinterpret_cast<std::uintptr_t>(gateway) + 10)
+		memcpy(gateway, hook.original, hook.stolen_length);
+		gateway[hook.stolen_length] = 0xE9;
+		*reinterpret_cast<std::int32_t *>(gateway + hook.stolen_length + 1) = static_cast<std::int32_t>(
+			(reinterpret_cast<std::uintptr_t>(target) + hook.stolen_length) - (reinterpret_cast<std::uintptr_t>(gateway) + hook.stolen_length + 5)
 		);
 
 		DWORD old_protect = 0;
-		if (!VirtualProtect(target, 5, PAGE_EXECUTE_READWRITE, &old_protect)) {
+		if (!VirtualProtect(target, hook.stolen_length, PAGE_EXECUTE_READWRITE, &old_protect)) {
 			VirtualFree(gateway, 0, MEM_RELEASE);
 			return false;
 		}
 
 		auto *patch = static_cast<BYTE *>(target);
+		memset(patch, 0x90, hook.stolen_length);
 		patch[0] = 0xE9;
 		*reinterpret_cast<std::int32_t *>(patch + 1) = static_cast<std::int32_t>(
 			reinterpret_cast<std::uintptr_t>(detour) - reinterpret_cast<std::uintptr_t>(target) - 5
 		);
 
-		VirtualProtect(target, 5, old_protect, &old_protect);
-		FlushInstructionCache(GetCurrentProcess(), target, 5);
+		VirtualProtect(target, hook.stolen_length, old_protect, &old_protect);
+		FlushInstructionCache(GetCurrentProcess(), target, hook.stolen_length);
 
 		hook.gateway = gateway;
 		hook.installed = true;
@@ -149,10 +156,10 @@ namespace {
 		}
 
 		DWORD old_protect = 0;
-		if (VirtualProtect(hook.target, 5, PAGE_EXECUTE_READWRITE, &old_protect)) {
-			memcpy(hook.target, hook.original, sizeof(hook.original));
-			VirtualProtect(hook.target, 5, old_protect, &old_protect);
-			FlushInstructionCache(GetCurrentProcess(), hook.target, 5);
+		if (VirtualProtect(hook.target, hook.stolen_length, PAGE_EXECUTE_READWRITE, &old_protect)) {
+			memcpy(hook.target, hook.original, hook.stolen_length);
+			VirtualProtect(hook.target, hook.stolen_length, old_protect, &old_protect);
+			FlushInstructionCache(GetCurrentProcess(), hook.target, hook.stolen_length);
 		}
 
 		if (hook.gateway) {
@@ -345,8 +352,8 @@ namespace {
 		const auto chat = reinterpret_cast<void *>(Rebase(kCEverQuestDspChat));
 		const auto item_display = reinterpret_cast<void *>(Rebase(kCItemDisplayWndUpdateStrings));
 
-		const bool chat_ok = InstallHook(g_chat_hook, chat, reinterpret_cast<void *>(&DspChatDetour));
-		const bool item_ok = InstallHook(g_item_display_hook, item_display, reinterpret_cast<void *>(&ItemDisplayUpdateDetour));
+		const bool chat_ok = InstallHook(g_chat_hook, chat, reinterpret_cast<void *>(&DspChatDetour), 6);
+		const bool item_ok = InstallHook(g_item_display_hook, item_display, reinterpret_cast<void *>(&ItemDisplayUpdateDetour), 6);
 
 		Trace("item rarity native hooks installed chat=%d item_display=%d", chat_ok ? 1 : 0, item_ok ? 1 : 0);
 		return 0;
