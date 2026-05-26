@@ -325,13 +325,15 @@ void ItemRarityManager::SendNativeRarity(Client *client, uint32 item_id, ItemRar
 		return;
 	}
 
+	const auto *item = database.GetItem(item_id);
 	client->Message(
 		Chat::Black,
 		"%s",
 		fmt::format(
-			"ITEMRARITY|set|item_id={}|rarity={}",
+			"ITEMRARITY|set|item_id={}|rarity={}|name={}",
 			item_id,
-			static_cast<uint8>(rarity)
+			static_cast<uint8>(rarity),
+			item ? item->Name : ""
 		).c_str()
 	);
 }
@@ -342,12 +344,14 @@ void ItemRarityManager::SendNativeRarityClear(Client *client, uint32 item_id)
 		return;
 	}
 
+	const auto *item = database.GetItem(item_id);
 	client->Message(
 		Chat::Black,
 		"%s",
 		fmt::format(
-			"ITEMRARITY|clear|item_id={}",
-			item_id
+			"ITEMRARITY|clear|item_id={}|name={}",
+			item_id,
+			item ? item->Name : ""
 		).c_str()
 	);
 }

@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <string>
 #include <unordered_map>
 
 namespace {
@@ -17,6 +18,7 @@ namespace {
 	constexpr std::uintptr_t kCEverQuestDspChat = 0x51F1A0;
 	constexpr std::uintptr_t kCItemDisplayWndUpdateStrings = 0x69AE30;
 	constexpr std::uintptr_t kCStmlWndAppendSTML = 0x886720;
+	constexpr std::uintptr_t kCStmlWndSetSTMLText = 0x883E10;
 	constexpr std::uintptr_t kCStmlWndForceParseNow = 0x887070;
 	constexpr std::uintptr_t kCXStrCtorCString = 0x805C20;
 
@@ -45,6 +47,7 @@ namespace {
 	};
 
 	std::unordered_map<std::uint32_t, RarityInfo> g_rarity_by_item;
+	std::unordered_map<std::string, RarityInfo> g_rarity_by_name;
 
 	struct InlineHook {
 		void *target = nullptr;
@@ -211,6 +214,17 @@ namespace {
 		return true;
 	}
 
+	std::string ReadPairStringToEnd(const char *message, const char *key)
+	{
+		const char *found = strstr(message, key);
+		if (!found) {
+			return {};
+		}
+
+		found += strlen(key);
+		return found;
+	}
+
 	bool ParseRarityTransport(const char *message)
 	{
 		if (!StartsWith(message, "ITEMRARITY|")) {
@@ -223,12 +237,16 @@ namespace {
 		}
 
 		if (StartsWith(message, "ITEMRARITY|clear|")) {
+			const auto item_name = ReadPairStringToEnd(message, "name=");
 			if (g_rarity_lock_ready) {
 				EnterCriticalSection(&g_rarity_lock);
 				g_rarity_by_item.erase(item_id);
+				if (!item_name.empty()) {
+					g_rarity_by_name.erase(item_name);
+				}
 				LeaveCriticalSection(&g_rarity_lock);
 			}
-			Trace("cleared rarity cache for item %u", item_id);
+			Trace("cleared rarity cache for item %u name=%s", item_id, item_name.c_str());
 			return true;
 		}
 
@@ -237,19 +255,32 @@ namespace {
 			return true;
 		}
 
+		const auto item_name = ReadPairStringToEnd(message, "name=");
 		if (g_rarity_lock_ready) {
 			EnterCriticalSection(&g_rarity_lock);
 			g_rarity_by_item[item_id] = RarityForTier(static_cast<int>(tier));
+			if (!item_name.empty()) {
+				g_rarity_by_name[item_name] = RarityForTier(static_cast<int>(tier));
+			}
 			LeaveCriticalSection(&g_rarity_lock);
 		}
 
-		Trace("cached rarity item=%u tier=%u", item_id, tier);
+		Trace("cached rarity item=%u tier=%u name=%s", item_id, tier, item_name.c_str());
 		return true;
 	}
 
 #pragma pack(push, 1)
 	struct CXStr {
 		void *ptr;
+	};
+
+	struct CXStrRep {
+		DWORD font;
+		DWORD max_length;
+		DWORD length;
+		BOOL encoding;
+		CRITICAL_SECTION *lock;
+		char text[1];
 	};
 
 	struct ItemInfo {
@@ -312,9 +343,79 @@ namespace {
 		return found;
 	}
 
+	bool LookupRarityByName(const char *item_name, RarityInfo &rarity)
+	{
+		if (!item_name || !item_name[0] || !g_rarity_lock_ready) {
+			return false;
+		}
+
+		bool found = false;
+		EnterCriticalSection(&g_rarity_lock);
+		const auto iter = g_rarity_by_name.find(item_name);
+		if (iter != g_rarity_by_name.end()) {
+			rarity = iter->second;
+			found = true;
+		}
+		LeaveCriticalSection(&g_rarity_lock);
+
+		return found;
+	}
+
+	const char *GetCXStrText(void *cxstr)
+	{
+		if (!cxstr) {
+			return nullptr;
+		}
+
+		auto *rep = static_cast<CXStrRep *>(cxstr);
+		if (!rep->text[0] || rep->encoding) {
+			return nullptr;
+		}
+
+		return rep->text;
+	}
+
+	std::string ColorizeFirstItemName(const char *stml, const char *item_name, const RarityInfo &rarity)
+	{
+		if (!stml || !stml[0] || !item_name || !item_name[0]) {
+			return {};
+		}
+
+		const std::string text(stml);
+		const std::string name(item_name);
+		const auto name_pos = text.find(name);
+		if (name_pos == std::string::npos) {
+			return {};
+		}
+
+		const auto tag_start = text.rfind("<c ", name_pos);
+		if (tag_start != std::string::npos) {
+			const auto tag_end = text.find('>', tag_start);
+			const auto close_before_name = text.rfind("</c>", name_pos);
+			if (tag_end != std::string::npos && tag_end < name_pos && (close_before_name == std::string::npos || close_before_name < tag_start)) {
+				std::string result = text.substr(0, tag_start);
+				result += "<c \"";
+				result += rarity.hex;
+				result += "\">";
+				result += text.substr(tag_end + 1);
+				return result;
+			}
+		}
+
+		std::string result = text.substr(0, name_pos);
+		result += "<c \"";
+		result += rarity.hex;
+		result += "\">";
+		result += name;
+		result += "</c>";
+		result += text.substr(name_pos + name.length());
+		return result;
+	}
+
 	using DspChatProc = void(__thiscall *)(void *, const char *, DWORD, bool, bool);
 	using ItemDisplayUpdateProc = void(__thiscall *)(void *);
 	using AppendSTMLProc = void(__thiscall *)(void *, CXStr);
+	using SetSTMLTextProc = void(__thiscall *)(void *, CXStr, bool, void *);
 	using ForceParseNowProc = void(__thiscall *)(void *);
 	using CXStrCtorCStringProc = CXStr *(__thiscall *)(CXStr *, const char *);
 
@@ -331,6 +432,23 @@ namespace {
 
 		ctor(&value, text);
 		append_stml(stml_wnd, value);
+		force_parse(stml_wnd);
+		return true;
+	}
+
+	bool SetSTMLText(void *stml_wnd, const char *text)
+	{
+		if (!stml_wnd || !text || !text[0]) {
+			return false;
+		}
+
+		CXStr value {};
+		const auto ctor = reinterpret_cast<CXStrCtorCStringProc>(Rebase(kCXStrCtorCString));
+		const auto set_stml = reinterpret_cast<SetSTMLTextProc>(Rebase(kCStmlWndSetSTMLText));
+		const auto force_parse = reinterpret_cast<ForceParseNowProc>(Rebase(kCStmlWndForceParseNow));
+
+		ctor(&value, text);
+		set_stml(stml_wnd, value, false, nullptr);
 		force_parse(stml_wnd);
 		return true;
 	}
@@ -354,12 +472,25 @@ namespace {
 		}
 
 		ItemInfo *item = GetItemInfo(window->item);
-		if (!item || !item->item_number) {
+		if (!item || (!item->item_number && !item->name[0])) {
 			return;
 		}
 
 		RarityInfo rarity;
-		if (!LookupRarity(item->item_number, rarity)) {
+		if (!LookupRarity(item->item_number, rarity) && !LookupRarityByName(item->name, rarity)) {
+			return;
+		}
+
+		const char *item_name = item->name[0] ? item->name : "Unknown Item";
+		const char *item_stml = GetCXStrText(window->item_info);
+		const auto colorized = ColorizeFirstItemName(item_stml, item_name, rarity);
+		if (!colorized.empty() && SetSTMLText(window->display_wnd, colorized.c_str())) {
+			Trace(
+				"item display recolored name item=%u tier=%d name=%s",
+				item->item_number,
+				rarity.tier,
+				item_name
+			);
 			return;
 		}
 
@@ -369,15 +500,16 @@ namespace {
 			"<BR><c \"%s\">%s item: %s</c><BR>",
 			rarity.hex,
 			rarity.name,
-			item->name[0] ? item->name : "Unknown Item"
+			item_name
 		);
 
 		if (AppendSTML(window->display_wnd, stml)) {
 			Trace(
-				"item display rarity item=%u tier=%d name=%s",
+				"item display appended fallback item=%u tier=%d name=%s has_stml=%d",
 				item->item_number,
 				rarity.tier,
-				item->name[0] ? item->name : "Unknown Item"
+				item_name,
+				item_stml ? 1 : 0
 			);
 		}
 	}
