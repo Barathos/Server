@@ -44,7 +44,23 @@ The custom migration manifest creates and seeds:
 | File | Purpose |
 | --- | --- |
 | `client_files/native_autoloot/ui/EQUI_NativeAchievementWnd.xml` | Native SIDL window layout for Achievement browsing. |
-| `client_files/native_autoloot/eq-core-dll/src/core_autoloot_native.h` | Not included in this proof branch. The current implementation is still shared runtime code and needs a `native-client-base` split. |
+| `features/achievements/patcher.yml` | Feature-owned client patch manifest for external/test-client sync. |
+
+## Client Patcher Manifest
+
+Client patch syncing is owned by `features/achievements/patcher.yml`.
+
+Current files:
+
+- `client_files/native_autoloot/ui/EQUI_NativeAchievementWnd.xml` -> `uifiles/default/EQUI_NativeAchievementWnd.xml`
+
+Generated client state:
+
+- `eqhost`
+- `EQUI.xml`
+- `EQUI_NativeAchievementWnd.xml` include
+
+When this feature owns a DLL or other client-facing file, add it to `patcher.yml`. Missing files are release blockers for real external syncs.
 
 ## Commands
 

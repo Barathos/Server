@@ -45,6 +45,28 @@ Live Item rewards are queued as requests in `custom_achievement_live_item_reques
 
 ## Client Assets
 
-Deploy `client_files/native_autoloot/ui/EQUI_NativeAchievementWnd.xml` to the target client UI folder and include it from `EQUI.xml`.
+Client patch syncing is owned by `features/achievements/patcher.yml`.
+
+The patcher manifest maps repo files to paths inside the EverQuest client folder. The current client-facing file is:
+
+- `client_files/native_autoloot/ui/EQUI_NativeAchievementWnd.xml` -> `uifiles/default/EQUI_NativeAchievementWnd.xml`
+
+The manifest also requests generated `eqhost`, generated `EQUI.xml`, and an include for `EQUI_NativeAchievementWnd.xml`.
 
 The XML is standalone. Feature-specific native DLL work belongs in this checkout and should deploy only to the matching Achievements client folder.
+
+If this feature adds a `dinput8.dll`, config file, patch notes, zone asset, or other external/test-client file, add it to `features/achievements/patcher.yml`. Missing files in the manifest are release blockers for real external syncs; use `-AllowMissingClientFiles` only for partial local testing.
+
+Patcher feed regeneration is done from the patcher project:
+
+```powershell
+cd D:\Codex\Apps\EQEmu-feature-patcher\features\patcher\eqemupatcher\service
+.\New-WorkspacePatcherDeployment.ps1 -Project achievements -BaseUrl http://<patch-host>:8091/patcher/
+.\Test-WorkspacePatcherDeployment.ps1 -Project achievements -BaseUrl http://<patch-host>:8091/patcher/
+```
+
+The feed is published at:
+
+```text
+http://<patch-host>:8091/patcher/achievements/
+```
