@@ -14,7 +14,7 @@ This manifest lists the files and hook points that make up the standalone Achiev
 | File | Purpose |
 | --- | --- |
 | `common/database/database_update_manifest_custom.h` | Add achievements-only custom DB migrations and seed data. |
-| `common/version.h` | Set `CUSTOM_BINARY_DATABASE_VERSION` to `3`. |
+| `common/version.h` | Set `CUSTOM_BINARY_DATABASE_VERSION` to `4`. |
 | `zone/CMakeLists.txt` | Build achievement manager and command source. |
 | `zone/command.cpp` | Register achievement command aliases. |
 | `zone/command.h` | Declare the achievement command handler. |
@@ -34,6 +34,10 @@ The custom migration manifest creates and seeds:
 - `custom_character_achievement_progress`
 - `custom_character_achievements`
 - `custom_achievement_audit`
+- `custom_achievement_rewards`
+- `custom_character_achievement_rewards`
+- `custom_achievement_live_item_requests`
+- `custom_account_achievement_unlocks`
 
 ## Native Client Assets
 
@@ -50,6 +54,8 @@ The custom migration manifest creates and seeds:
 - `#ach categories`
 - `#ach category [category_id]`
 - `#ach detail [achievement_id]`
+- `#ach rewards`
+- `#ach claim [reward_id|all]`
 - `#ach check`
 
 ## Native Transport
@@ -58,5 +64,6 @@ The custom migration manifest creates and seeds:
 - `ACH|category|...`
 - `ACH|achievement|...`
 - `ACH|objective|...`
+- `ACH|reward|...`
 
 The server owns progress, completion, and validation. The native window is only a display/input surface.

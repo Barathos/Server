@@ -1987,6 +1987,364 @@ ON DUPLICATE KEY UPDATE
 R"()",
 		.content_schema_update = false,
 	},
+	ManifestEntry{
+		.version = 4,
+		.description = "2026_05_27_custom_achievement_rewards",
+		.check = "SHOW TABLES LIKE 'custom_achievement_rewards'",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+CREATE TABLE IF NOT EXISTS `custom_achievement_rewards` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `achievement_id` INT UNSIGNED NOT NULL,
+  `reward_type` VARCHAR(32) NOT NULL DEFAULT '',
+  `reward_id` INT UNSIGNED NOT NULL DEFAULT 0,
+  `amount` INT UNSIGNED NOT NULL DEFAULT 1,
+  `chance` INT UNSIGNED NOT NULL DEFAULT 10000,
+  `tier` VARCHAR(32) NOT NULL DEFAULT '',
+  `claim_once` TINYINT(1) NOT NULL DEFAULT 1,
+  `auto_claim` TINYINT(1) NOT NULL DEFAULT 0,
+  `preview_text` VARCHAR(255) NOT NULL DEFAULT '',
+  `data_text` VARCHAR(255) NOT NULL DEFAULT '',
+  `enabled` TINYINT(1) NOT NULL DEFAULT 1,
+  `sort_order` INT NOT NULL DEFAULT 0,
+  `created_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_reward_identity` (`achievement_id`, `reward_type`, `reward_id`, `amount`, `preview_text`(96), `data_text`(96)),
+  KEY `idx_achievement_sort` (`achievement_id`, `sort_order`, `id`),
+  KEY `idx_type_tier` (`reward_type`, `tier`)
+);
+
+CREATE TABLE IF NOT EXISTS `custom_character_achievement_rewards` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `character_id` INT UNSIGNED NOT NULL,
+  `achievement_id` INT UNSIGNED NOT NULL,
+  `reward_definition_id` BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  `reward_type` VARCHAR(32) NOT NULL DEFAULT '',
+  `reward_id` INT UNSIGNED NOT NULL DEFAULT 0,
+  `amount` INT UNSIGNED NOT NULL DEFAULT 1,
+  `auto_claim` TINYINT(1) NOT NULL DEFAULT 0,
+  `tier` VARCHAR(32) NOT NULL DEFAULT '',
+  `preview_text` VARCHAR(255) NOT NULL DEFAULT '',
+  `data_text` VARCHAR(255) NOT NULL DEFAULT '',
+  `status` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  `completion_count` INT UNSIGNED NOT NULL DEFAULT 1,
+  `created_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  `claimed_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  `result_text` VARCHAR(255) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_character_reward` (`character_id`, `achievement_id`, `reward_definition_id`, `reward_type`, `reward_id`, `completion_count`),
+  KEY `idx_character_status` (`character_id`, `status`, `created_at`),
+  KEY `idx_achievement` (`achievement_id`)
+);
+
+CREATE TABLE IF NOT EXISTS `custom_achievement_live_item_requests` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `character_id` INT UNSIGNED NOT NULL,
+  `achievement_id` INT UNSIGNED NOT NULL,
+  `reward_queue_id` BIGINT UNSIGNED NOT NULL,
+  `level_band` INT UNSIGNED NOT NULL DEFAULT 0,
+  `tier` VARCHAR(32) NOT NULL DEFAULT '',
+  `item_slot` INT UNSIGNED NOT NULL DEFAULT 0,
+  `theme` VARCHAR(255) NOT NULL DEFAULT '',
+  `status` VARCHAR(32) NOT NULL DEFAULT 'pending',
+  `created_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  `fulfilled_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  `generated_item_id` INT UNSIGNED NOT NULL DEFAULT 0,
+  `result_text` VARCHAR(255) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_reward_queue` (`reward_queue_id`),
+  KEY `idx_character_status` (`character_id`, `status`, `created_at`),
+  KEY `idx_achievement` (`achievement_id`)
+);
+
+CREATE TABLE IF NOT EXISTS `custom_account_achievement_unlocks` (
+  `account_id` INT UNSIGNED NOT NULL,
+  `achievement_id` INT UNSIGNED NOT NULL,
+  `reward_definition_id` BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  `unlock_type` VARCHAR(32) NOT NULL DEFAULT '',
+  `created_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`account_id`, `achievement_id`, `reward_definition_id`, `unlock_type`)
+);
+
+INSERT INTO `custom_achievement_categories`
+(`id`, `parent_id`, `name`, `description`, `sort_order`, `icon_id`, `enabled`)
+VALUES
+(900, 0, 'Meta', 'Cross-category achievement collections and prestige rewards.', 900, 0, 1)
+ON DUPLICATE KEY UPDATE
+`name` = VALUES(`name`),
+`description` = VALUES(`description`),
+`sort_order` = VALUES(`sort_order`),
+`enabled` = VALUES(`enabled`);
+
+INSERT INTO `custom_achievements`
+(`id`, `category_id`, `slug`, `name`, `description`, `points`, `hidden`, `repeatable`, `sort_order`, `created_at`, `enabled`)
+VALUES
+(900001, 900, 'meta_classic_explorer', 'Classic Explorer', 'Complete every Classic exploration achievement.', 50, 0, 0, 10, UNIX_TIMESTAMP(), 1),
+(900002, 900, 'meta_norrathian_slayer', 'Norrathian Slayer', 'Complete every veteran creature slayer achievement.', 75, 0, 0, 20, UNIX_TIMESTAMP(), 1),
+(900003, 900, 'meta_journeyman_artisan', 'Journeyman Artisan', 'Raise the seven primary tradeskills to 200.', 40, 0, 0, 30, UNIX_TIMESTAMP(), 1),
+(900004, 900, 'meta_master_artisan', 'Master Artisan', 'Raise the seven primary tradeskills to 300.', 75, 0, 0, 40, UNIX_TIMESTAMP(), 1)
+ON DUPLICATE KEY UPDATE
+`category_id` = VALUES(`category_id`),
+`name` = VALUES(`name`),
+`description` = VALUES(`description`),
+`points` = VALUES(`points`),
+`sort_order` = VALUES(`sort_order`),
+`enabled` = VALUES(`enabled`);
+
+INSERT INTO `custom_achievement_objectives`
+(`id`, `achievement_id`, `objective_index`, `objective_type`, `target_type`, `target_id`, `target_name`, `required_count`, `zone_id`, `class_mask`, `optional`)
+SELECT
+19000000 + z.`zoneidnumber`,
+900001,
+z.`zoneidnumber`,
+'achievement_complete',
+'achievement',
+200000 + z.`zoneidnumber`,
+LEFT(CONCAT('Explorer: ', z.`long_name`), 128),
+1,
+z.`zoneidnumber`,
+0,
+0
+FROM `zone` z
+WHERE z.`version` = 0
+AND z.`min_status` = 0
+AND z.`zoneidnumber` > 0
+AND z.`expansion` = 0
+AND COALESCE(z.`short_name`, '') <> ''
+AND COALESCE(z.`long_name`, '') <> ''
+ON DUPLICATE KEY UPDATE
+`achievement_id` = VALUES(`achievement_id`),
+`objective_index` = VALUES(`objective_index`),
+`objective_type` = VALUES(`objective_type`),
+`target_type` = VALUES(`target_type`),
+`target_id` = VALUES(`target_id`),
+`target_name` = VALUES(`target_name`),
+`zone_id` = VALUES(`zone_id`);
+
+INSERT INTO `custom_achievement_objectives`
+(`id`, `achievement_id`, `objective_index`, `objective_type`, `target_type`, `target_id`, `target_name`, `required_count`, `zone_id`, `class_mask`, `optional`)
+SELECT
+19100000 + a.`id`,
+900002,
+a.`id`,
+'achievement_complete',
+'achievement',
+a.`id`,
+LEFT(a.`name`, 128),
+1,
+0,
+0,
+0
+FROM `custom_achievements` a
+WHERE a.`slug` LIKE 'race_slayer\_%\_250'
+ON DUPLICATE KEY UPDATE
+`achievement_id` = VALUES(`achievement_id`),
+`objective_index` = VALUES(`objective_index`),
+`objective_type` = VALUES(`objective_type`),
+`target_type` = VALUES(`target_type`),
+`target_id` = VALUES(`target_id`),
+`target_name` = VALUES(`target_name`);
+
+INSERT INTO `custom_achievement_objectives`
+(`id`, `achievement_id`, `objective_index`, `objective_type`, `target_type`, `target_id`, `target_name`, `required_count`, `zone_id`, `class_mask`, `optional`)
+SELECT
+19200000 + s.`skill_id`,
+900003,
+s.`skill_id`,
+'achievement_complete',
+'achievement',
+400000 + s.`skill_id` * 1000 + 200,
+CONCAT(s.`name`, ' 200'),
+1,
+0,
+0,
+0
+FROM (
+SELECT 60 AS `skill_id`, 'Baking' AS `name` UNION ALL
+SELECT 61, 'Tailoring' UNION ALL
+SELECT 63, 'Blacksmithing' UNION ALL
+SELECT 64, 'Fletching' UNION ALL
+SELECT 65, 'Brewing' UNION ALL
+SELECT 68, 'Jewelcrafting' UNION ALL
+SELECT 69, 'Pottery'
+) s
+ON DUPLICATE KEY UPDATE
+`achievement_id` = VALUES(`achievement_id`),
+`objective_type` = VALUES(`objective_type`),
+`target_id` = VALUES(`target_id`),
+`target_name` = VALUES(`target_name`);
+
+INSERT INTO `custom_achievement_objectives`
+(`id`, `achievement_id`, `objective_index`, `objective_type`, `target_type`, `target_id`, `target_name`, `required_count`, `zone_id`, `class_mask`, `optional`)
+SELECT
+19300000 + s.`skill_id`,
+900004,
+s.`skill_id`,
+'achievement_complete',
+'achievement',
+400000 + s.`skill_id` * 1000 + 300,
+CONCAT(s.`name`, ' 300'),
+1,
+0,
+0,
+0
+FROM (
+SELECT 60 AS `skill_id`, 'Baking' AS `name` UNION ALL
+SELECT 61, 'Tailoring' UNION ALL
+SELECT 63, 'Blacksmithing' UNION ALL
+SELECT 64, 'Fletching' UNION ALL
+SELECT 65, 'Brewing' UNION ALL
+SELECT 68, 'Jewelcrafting' UNION ALL
+SELECT 69, 'Pottery'
+) s
+ON DUPLICATE KEY UPDATE
+`achievement_id` = VALUES(`achievement_id`),
+`objective_type` = VALUES(`objective_type`),
+`target_id` = VALUES(`target_id`),
+`target_name` = VALUES(`target_name`);
+
+INSERT INTO `custom_achievement_rewards`
+(`achievement_id`, `reward_type`, `reward_id`, `amount`, `chance`, `tier`, `claim_once`, `auto_claim`, `preview_text`, `data_text`, `enabled`, `sort_order`, `created_at`)
+VALUES
+(1001, 'coin', 0, 1000, 10000, 'minor', 1, 1, 'Starter purse: 1 platinum', '', 1, 10, UNIX_TIMESTAMP()),
+(1002, 'title_text', 0, 1, 10000, 'title', 1, 1, 'Title: Adventurer', 'Adventurer', 1, 20, UNIX_TIMESTAMP()),
+(1003, 'coin', 0, 5000, 10000, 'minor', 1, 1, 'Travel purse: 5 platinum', '', 1, 30, UNIX_TIMESTAMP()),
+(1004, 'title_text', 0, 1, 10000, 'title', 1, 1, 'Title: Pathfinder', 'Pathfinder', 1, 40, UNIX_TIMESTAMP()),
+(1005, 'live_item_request', 0, 50, 10000, 'major', 1, 0, 'Leveled item cache: level 50 adventurer', 'level milestone', 1, 50, UNIX_TIMESTAMP()),
+(1006, 'title_text', 0, 1, 10000, 'title', 1, 1, 'Title: Veteran', 'Veteran', 1, 60, UNIX_TIMESTAMP()),
+(1007, 'live_item_request', 0, 65, 10000, 'heroic', 1, 0, 'Leveled item cache: level 65 veteran', 'level milestone', 1, 65, UNIX_TIMESTAMP()),
+(1008, 'title_text', 0, 1, 10000, 'title', 1, 1, 'Title: Champion', 'Champion', 1, 70, UNIX_TIMESTAMP()),
+(1008, 'live_item_request', 0, 70, 10000, 'legendary', 1, 0, 'Leveled item cache: level 70 champion', 'level milestone', 1, 71, UNIX_TIMESTAMP()),
+(900001, 'title_text', 0, 1, 10000, 'title', 1, 1, 'Title: Classic Explorer', 'Classic Explorer', 1, 10, UNIX_TIMESTAMP()),
+(900001, 'live_item_request', 0, 50, 10000, 'utility', 1, 0, 'Journeyman compass-style travel reward request', 'exploration utility', 1, 20, UNIX_TIMESTAMP()),
+(900002, 'title_text', 0, 1, 10000, 'title', 1, 1, 'Title: Norrathian Slayer', 'Norrathian Slayer', 1, 10, UNIX_TIMESTAMP()),
+(900002, 'live_item_request', 0, 70, 10000, 'legendary', 1, 0, 'Legendary hunter reward request', 'slayer trophy', 1, 20, UNIX_TIMESTAMP()),
+(900003, 'title_text', 0, 1, 10000, 'title', 1, 1, 'Title: Journeyman Artisan', 'Journeyman Artisan', 1, 10, UNIX_TIMESTAMP()),
+(900004, 'title_text', 0, 1, 10000, 'title', 1, 1, 'Title: Master Artisan', 'Master Artisan', 1, 10, UNIX_TIMESTAMP()),
+(900004, 'live_item_request', 0, 70, 10000, 'heroic', 1, 0, 'Master artisan tool reward request', 'tradeskill tool', 1, 20, UNIX_TIMESTAMP())
+ON DUPLICATE KEY UPDATE
+`reward_type` = VALUES(`reward_type`),
+`reward_id` = VALUES(`reward_id`),
+`amount` = VALUES(`amount`),
+`chance` = VALUES(`chance`),
+`tier` = VALUES(`tier`),
+`claim_once` = VALUES(`claim_once`),
+`auto_claim` = VALUES(`auto_claim`),
+`preview_text` = VALUES(`preview_text`),
+`data_text` = VALUES(`data_text`),
+`enabled` = VALUES(`enabled`),
+`sort_order` = VALUES(`sort_order`);
+
+INSERT INTO `custom_achievement_rewards`
+(`achievement_id`, `reward_type`, `reward_id`, `amount`, `chance`, `tier`, `claim_once`, `auto_claim`, `preview_text`, `data_text`, `enabled`, `sort_order`, `created_at`)
+SELECT
+a.`id`,
+'title_text',
+0,
+1,
+10000,
+'title',
+1,
+1,
+CONCAT('Title: ', t.`title_name`),
+t.`title_name`,
+1,
+100 + t.`threshold`,
+UNIX_TIMESTAMP()
+FROM `custom_achievements` a
+JOIN (
+SELECT 55 AS `skill_id`, 100 AS `threshold`, 'Apprentice Fisherman' AS `title_name` UNION ALL
+SELECT 55, 200, 'Journeyman Fisherman' UNION ALL
+SELECT 55, 250, 'Expert Fisherman' UNION ALL
+SELECT 55, 300, 'Master Fisherman' UNION ALL
+SELECT 60, 100, 'Apprentice Chef' UNION ALL
+SELECT 60, 200, 'Journeyman Chef' UNION ALL
+SELECT 60, 250, 'Expert Chef' UNION ALL
+SELECT 60, 300, 'Master Chef' UNION ALL
+SELECT 61, 100, 'Apprentice Tailor' UNION ALL
+SELECT 61, 200, 'Journeyman Tailor' UNION ALL
+SELECT 61, 250, 'Expert Tailor' UNION ALL
+SELECT 61, 300, 'Master Tailor' UNION ALL
+SELECT 63, 100, 'Apprentice Smith' UNION ALL
+SELECT 63, 200, 'Journeyman Smith' UNION ALL
+SELECT 63, 250, 'Expert Smith' UNION ALL
+SELECT 63, 300, 'Master Smith' UNION ALL
+SELECT 64, 100, 'Apprentice Fletcher' UNION ALL
+SELECT 64, 200, 'Journeyman Fletcher' UNION ALL
+SELECT 64, 250, 'Expert Fletcher' UNION ALL
+SELECT 64, 300, 'Master Fletcher' UNION ALL
+SELECT 65, 100, 'Apprentice Brewer' UNION ALL
+SELECT 65, 200, 'Journeyman Brewer' UNION ALL
+SELECT 65, 250, 'Expert Brewer' UNION ALL
+SELECT 65, 300, 'Master Brewer' UNION ALL
+SELECT 68, 100, 'Apprentice Jeweler' UNION ALL
+SELECT 68, 200, 'Journeyman Jeweler' UNION ALL
+SELECT 68, 250, 'Expert Jeweler' UNION ALL
+SELECT 68, 300, 'Master Jeweler' UNION ALL
+SELECT 69, 100, 'Apprentice Potter' UNION ALL
+SELECT 69, 200, 'Journeyman Potter' UNION ALL
+SELECT 69, 250, 'Expert Potter' UNION ALL
+SELECT 69, 300, 'Master Potter'
+) t
+ON a.`slug` = CONCAT('skill_', t.`skill_id`, '_', t.`threshold`)
+ON DUPLICATE KEY UPDATE
+`preview_text` = VALUES(`preview_text`),
+`data_text` = VALUES(`data_text`),
+`enabled` = VALUES(`enabled`),
+`sort_order` = VALUES(`sort_order`);
+
+INSERT INTO `custom_achievement_rewards`
+(`achievement_id`, `reward_type`, `reward_id`, `amount`, `chance`, `tier`, `claim_once`, `auto_claim`, `preview_text`, `data_text`, `enabled`, `sort_order`, `created_at`)
+SELECT
+a.`id`,
+'title_text',
+0,
+1,
+10000,
+'title',
+1,
+1,
+CONCAT('Title: ', r.`title_name`),
+r.`title_name`,
+1,
+250,
+UNIX_TIMESTAMP()
+FROM `custom_achievements` a
+JOIN (
+SELECT 13 AS `race_id`, 'Aviak Slayer' AS `title_name` UNION ALL
+SELECT 17, 'Golem Slayer' UNION ALL
+SELECT 18, 'Giant Slayer' UNION ALL
+SELECT 21, 'Evil Eye Slayer' UNION ALL
+SELECT 25, 'Fairy Slayer' UNION ALL
+SELECT 26, 'Frog Slayer' UNION ALL
+SELECT 33, 'Ghoul Slayer' UNION ALL
+SELECT 38, 'Spider Killer' UNION ALL
+SELECT 39, 'Gnoll Slayer' UNION ALL
+SELECT 40, 'Goblin Slayer' UNION ALL
+SELECT 42, 'Wolf' UNION ALL
+SELECT 43, 'Bear Slayer' UNION ALL
+SELECT 48, 'Kobold Slayer' UNION ALL
+SELECT 51, 'Lizard Man Slayer' UNION ALL
+SELECT 53, 'Minotaur Slayer' UNION ALL
+SELECT 54, 'Orc Slayer' UNION ALL
+SELECT 60, 'Skeleton Slayer' UNION ALL
+SELECT 65, 'Vampire Slayer' UNION ALL
+SELECT 70, 'Zombie Slayer' UNION ALL
+SELECT 75, 'Elemental Slayer' UNION ALL
+SELECT 79, 'Bixie Slayer' UNION ALL
+SELECT 88, 'Clockwork Slayer' UNION ALL
+SELECT 89, 'Drakebane'
+) r
+ON a.`slug` = CONCAT('race_slayer_', r.`race_id`, '_250')
+ON DUPLICATE KEY UPDATE
+`preview_text` = VALUES(`preview_text`),
+`data_text` = VALUES(`data_text`),
+`enabled` = VALUES(`enabled`),
+`sort_order` = VALUES(`sort_order`);
+)",
+		.content_schema_update = false,
+	},
 };
 
 // see struct definitions for what each field does

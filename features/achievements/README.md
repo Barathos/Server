@@ -1,6 +1,6 @@
 # Achievements Feature Pack
 
-Status: `draft`, `shared-runtime`, `proved-build`
+Status: `draft`, `feature-owned-runtime`, `proved-build`
 
 This pack describes the custom Achievement system: database-backed achievement categories/objectives/progress, player-facing commands, gameplay progress hooks, and the native Achievement window transport.
 
@@ -8,6 +8,7 @@ This pack describes the custom Achievement system: database-backed achievement c
 
 - Custom achievement database schema and seed catalog.
 - Character achievement progress and completion tracking.
+- Achievement reward definitions, claim queues, and Live Item reward requests.
 - Level, zone visit, task completion, skill, and kill objective processing.
 - `#ach`, `#achievement`, and `#achievements` command aliases.
 - Native Achievement window transport using `ACH|...` lines.
@@ -23,8 +24,8 @@ This pack describes the custom Achievement system: database-backed achievement c
 
 - EQEmu source rebuild.
 - Custom database migrations in `common/database/database_update_manifest_custom.h`.
-- `CUSTOM_BINARY_DATABASE_VERSION 3` in `common/version.h`.
-- The native client DLL host if the operator wants the in-client Achievement window.
+- `CUSTOM_BINARY_DATABASE_VERSION 4` in `common/version.h`.
+- This feature checkout's own native client DLL host if the operator wants the in-client Achievement window.
 
 ## Install Outline
 
@@ -33,6 +34,7 @@ This pack describes the custom Achievement system: database-backed achievement c
 3. Rebuild `zone` and `world`.
 4. Deploy `EQUI_NativeAchievementWnd.xml` and include it from the target client's `EQUI.xml`.
 5. Log in and run `#ach window` or `#ach status`.
+6. Run `#ach rewards` and `#ach claim all` after completing a rewarded achievement.
 
 ## Smoke Test
 
@@ -41,7 +43,8 @@ This pack describes the custom Achievement system: database-backed achievement c
 3. Zone once and confirm zone visit objectives can update.
 4. Complete a task or use a known seeded objective trigger.
 5. Open `#ach window` and confirm the native client receives `ACH|...` lines.
+6. Complete level or tradeskill milestones and confirm title/coin rewards auto-claim while Live Item requests enter `custom_achievement_live_item_requests`.
 
-## Current Shared-Runtime Caveat
+## Native Runtime Boundary
 
-This branch includes the native Achievement XML only. The C++ DLL implementation that listens for `ACH|...` is still in the lab branch's shared native-client runtime header and should be split into `native-client-base` plus feature-specific native window code.
+This branch includes the native Achievement XML. Any C++ DLL implementation that listens for `ACH|...` must live in this feature checkout and deploy only to the matching Achievements client folder.

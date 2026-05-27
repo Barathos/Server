@@ -56,11 +56,25 @@ private:
 		bool completed = false;
 	};
 
+	struct RewardSummary {
+		uint64 queue_id = 0;
+		uint64 definition_id = 0;
+		uint32 achievement_id = 0;
+		uint32 reward_id = 0;
+		uint32 amount = 0;
+		bool auto_claim = false;
+		std::string type;
+		std::string tier;
+		std::string preview_text;
+		std::string data_text;
+	};
+
 	void SendHelp(Client *client);
 	void SendStatus(Client *client);
 	void SendCategories(Client *client);
 	void SendCategory(Client *client, uint32 category_id);
 	void SendDetail(Client *client, uint32 achievement_id);
+	void SendRewardQueue(Client *client);
 	void SendNativeWindow(Client *client, uint32 category_id = 0, uint32 achievement_id = 0);
 	void SendNativeCategory(Client *client, uint32 category_id, uint32 achievement_id = 0);
 	void SendNativeDetail(Client *client, uint32 achievement_id);
@@ -69,11 +83,18 @@ private:
 	std::vector<CategorySummary> LoadCategorySummaries(uint32 character_id);
 	std::vector<AchievementSummary> LoadAchievements(uint32 character_id, uint32 category_id);
 	std::vector<ObjectiveSummary> LoadObjectives(uint32 character_id, uint32 achievement_id);
+	std::vector<RewardSummary> LoadRewardPreview(uint32 achievement_id);
+	std::vector<RewardSummary> LoadQueuedRewards(uint32 character_id, uint64 queue_id = 0, bool auto_claim_only = false);
 	uint32 LoadAchievementCategory(uint32 achievement_id);
 
 	void ProcessMatchedObjectives(Client *client, const std::string &match_sql, uint32 progress, bool absolute_progress);
 	void UpdateObjectiveProgress(uint32 character_id, uint32 objective_id, uint32 count, bool completed);
 	void TryCompleteAchievement(Client *client, uint32 achievement_id);
+	void QueueAchievementRewards(Client *client, uint32 achievement_id);
+	void QueueLegacyAchievementRewards(Client *client, uint32 achievement_id);
+	void ClaimPendingRewards(Client *client, uint64 queue_id = 0, bool auto_claim_only = false);
+	bool AwardQueuedReward(Client *client, const RewardSummary &reward, std::string &result);
+	void MarkQueuedReward(uint64 queue_id, uint32 status, const std::string &result);
 	bool HasCompletedAchievement(uint32 character_id, uint32 achievement_id);
 };
 

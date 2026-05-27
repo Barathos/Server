@@ -14,19 +14,35 @@
 #include "common/strings.h"
 #include "zone/client.h"
 #include "zone/npc.h"
+#include "zone/titles.h"
 #include "zone/zone.h"
 #include "zone/zonedb.h"
 
 #include "fmt/format.h"
 
+#include <algorithm>
 #include <cstring>
 
 AchievementManager achievement_manager;
 
 namespace {
+	constexpr uint32 RewardStatusPending = 0;
+	constexpr uint32 RewardStatusClaimed = 1;
+	constexpr uint32 RewardStatusFailed = 2;
+
 	uint32 ToUInt(const char *value)
 	{
 		return value ? Strings::ToUnsignedInt(value) : 0;
+	}
+
+	uint64 ToUInt64(const char *value)
+	{
+		return value ? Strings::ToUnsignedBigInt(value) : 0;
+	}
+
+	std::string SqlString(const std::string &value)
+	{
+		return fmt::format("'{}'", Strings::Escape(value));
 	}
 
 	std::string ObjectiveDisplayName(const std::string &type, const std::string &target_name, uint32 required_count)
@@ -61,6 +77,49 @@ namespace {
 		}
 
 		return value;
+	}
+
+	std::string RewardDisplayName(
+		const std::string &type,
+		const std::string &preview_text,
+		const std::string &data_text,
+		uint32 reward_id,
+		uint32 amount
+	)
+	{
+		if (!preview_text.empty()) {
+			return preview_text;
+		}
+
+		if (Strings::EqualFold(type, "title_text")) {
+			return fmt::format("Title: {}", data_text);
+		}
+
+		if (Strings::EqualFold(type, "title_suffix")) {
+			return fmt::format("Suffix: {}", data_text);
+		}
+
+		if (Strings::EqualFold(type, "title_set")) {
+			return fmt::format("Title set {}", reward_id);
+		}
+
+		if (Strings::EqualFold(type, "item")) {
+			return fmt::format("Item {}", reward_id);
+		}
+
+		if (Strings::EqualFold(type, "currency")) {
+			return fmt::format("{} currency {}", amount, reward_id);
+		}
+
+		if (Strings::EqualFold(type, "coin")) {
+			return fmt::format("{} copper", amount);
+		}
+
+		if (Strings::EqualFold(type, "live_item_request")) {
+			return "Leveled item request";
+		}
+
+		return type;
 	}
 }
 
@@ -131,6 +190,7 @@ void AchievementManager::HandleCommand(Client *client, const Seperator *sep)
 			}
 
 			client->Message(Chat::White, "ACH|objectives|clear");
+			client->Message(Chat::White, "ACH|rewards|clear");
 			SendNativeDetail(client, Strings::ToUnsignedInt(sep->arg[3]));
 			client->Message(Chat::White, "ACH|window|show");
 			return;
@@ -173,6 +233,21 @@ void AchievementManager::HandleCommand(Client *client, const Seperator *sep)
 		}
 
 		SendDetail(client, Strings::ToUnsignedInt(sep->arg[2]));
+		return;
+	}
+
+	if (!strcasecmp(sep->arg[1], "rewards") || !strcasecmp(sep->arg[1], "reward")) {
+		SendRewardQueue(client);
+		return;
+	}
+
+	if (!strcasecmp(sep->arg[1], "claim")) {
+		if (sep->argnum >= 2 && sep->IsNumber(2)) {
+			ClaimPendingRewards(client, Strings::ToUnsignedBigInt(sep->arg[2]));
+			return;
+		}
+
+		ClaimPendingRewards(client);
 		return;
 	}
 
@@ -306,6 +381,8 @@ void AchievementManager::SendHelp(Client *client)
 	client->Message(Chat::White, "#ach categories - List achievement categories.");
 	client->Message(Chat::White, "#ach category [id] - List achievements in a category.");
 	client->Message(Chat::White, "#ach detail [id] - Show achievement objectives.");
+	client->Message(Chat::White, "#ach rewards - List pending achievement rewards.");
+	client->Message(Chat::White, "#ach claim [reward_id|all] - Claim pending achievement rewards.");
 	client->Message(Chat::White, "#ach check - Recheck automatic achievements for your character.");
 }
 
@@ -319,6 +396,34 @@ void AchievementManager::RecheckAutomatic(Client *client)
 	ProcessZoneVisit(client);
 	for (int skill_id = 0; skill_id <= EQ::skills::HIGHEST_SKILL; ++skill_id) {
 		ProcessSkill(client, skill_id, client->GetRawSkill(static_cast<EQ::skills::SkillType>(skill_id)));
+	}
+
+	auto completed = database.QueryDatabase(
+		fmt::format(
+			"SELECT `achievement_id` FROM `custom_character_achievements` WHERE `character_id` = {}",
+			client->CharacterID()
+		)
+	);
+
+	if (!completed.Success()) {
+		return;
+	}
+
+	for (auto row = completed.begin(); row != completed.end(); ++row) {
+		const uint32 achievement_id = ToUInt(row[0]);
+		if (!achievement_id) {
+			continue;
+		}
+
+		ProcessMatchedObjectives(
+			client,
+			fmt::format(
+				"o.`objective_type` = 'achievement_complete' AND o.`target_id` = {}",
+				achievement_id
+			),
+			1,
+			true
+		);
 	}
 }
 
@@ -458,6 +563,49 @@ void AchievementManager::SendDetail(Client *client, uint32 achievement_id)
 			).c_str()
 		);
 	}
+
+	const auto rewards = LoadRewardPreview(achievement_id);
+	if (!rewards.empty()) {
+		client->Message(Chat::White, "Rewards:");
+		for (const auto &reward : rewards) {
+			client->Message(
+				Chat::White,
+				fmt::format(
+					" - {}{}",
+					RewardDisplayName(reward.type, reward.preview_text, reward.data_text, reward.reward_id, reward.amount),
+					reward.auto_claim ? " (auto-claim)" : ""
+				).c_str()
+			);
+		}
+	}
+}
+
+void AchievementManager::SendRewardQueue(Client *client)
+{
+	if (!client) {
+		return;
+	}
+
+	const auto rewards = LoadQueuedRewards(client->CharacterID());
+	if (rewards.empty()) {
+		client->Message(Chat::White, "You have no pending achievement rewards.");
+		return;
+	}
+
+	client->Message(Chat::White, "Pending achievement rewards:");
+	for (const auto &reward : rewards) {
+		client->Message(
+			Chat::White,
+			fmt::format(
+				"[{}] Achievement {} - {}",
+				reward.queue_id,
+				reward.achievement_id,
+				RewardDisplayName(reward.type, reward.preview_text, reward.data_text, reward.reward_id, reward.amount)
+			).c_str()
+		);
+	}
+
+	client->Message(Chat::White, "Use #ach claim [reward_id] or #ach claim all.");
 }
 
 void AchievementManager::SendNativeWindow(Client *client, uint32 category_id, uint32 achievement_id)
@@ -688,6 +836,7 @@ void AchievementManager::SendNativeDetail(Client *client, uint32 achievement_id)
 
 	auto achievement = achievement_results.begin();
 	const uint32 completed_at = ToUInt(achievement[3]);
+	client->Message(Chat::White, "ACH|rewards|clear");
 	client->Message(
 		Chat::White,
 		fmt::format(
@@ -712,6 +861,23 @@ void AchievementManager::SendNativeDetail(Client *client, uint32 achievement_id)
 				objective.current_count,
 				objective.required_count,
 				ProtocolValue(ObjectiveDisplayName(objective.type, objective.target_name, objective.required_count), 120)
+			).c_str()
+		);
+	}
+
+	const auto rewards = LoadRewardPreview(achievement_id);
+	for (const auto &reward : rewards) {
+		client->Message(
+			Chat::White,
+			fmt::format(
+				"ACH|reward|definition={}|type={}|id={}|amount={}|auto={}|tier={}|name={}",
+				reward.definition_id,
+				ProtocolValue(reward.type, 32),
+				reward.reward_id,
+				reward.amount,
+				reward.auto_claim ? 1 : 0,
+				ProtocolValue(reward.tier, 32),
+				ProtocolValue(RewardDisplayName(reward.type, reward.preview_text, reward.data_text, reward.reward_id, reward.amount), 160)
 			).c_str()
 		);
 	}
@@ -825,6 +991,148 @@ std::vector<AchievementManager::ObjectiveSummary> AchievementManager::LoadObject
 	}
 
 	return objectives;
+}
+
+std::vector<AchievementManager::RewardSummary> AchievementManager::LoadRewardPreview(uint32 achievement_id)
+{
+	std::vector<RewardSummary> rewards;
+	if (!achievement_id) {
+		return rewards;
+	}
+
+	auto reward_results = database.QueryDatabase(
+		fmt::format(
+			"SELECT `id`, `reward_type`, `reward_id`, `amount`, `auto_claim`, `tier`, `preview_text`, `data_text` "
+			"FROM `custom_achievement_rewards` "
+			"WHERE `achievement_id` = {} AND `enabled` = 1 "
+			"ORDER BY `sort_order`, `id`",
+			achievement_id
+		)
+	);
+
+	if (reward_results.Success()) {
+		for (auto row = reward_results.begin(); row != reward_results.end(); ++row) {
+			RewardSummary reward;
+			reward.definition_id = ToUInt64(row[0]);
+			reward.achievement_id = achievement_id;
+			reward.type = row[1] ? row[1] : "";
+			reward.reward_id = ToUInt(row[2]);
+			reward.amount = ToUInt(row[3]);
+			reward.auto_claim = ToUInt(row[4]) != 0;
+			reward.tier = row[5] ? row[5] : "";
+			reward.preview_text = row[6] ? row[6] : "";
+			reward.data_text = row[7] ? row[7] : "";
+			rewards.push_back(reward);
+		}
+	}
+
+	auto legacy_results = database.QueryDatabase(
+		fmt::format(
+			"SELECT `reward_title_set`, `reward_item_id`, `reward_currency_id`, `reward_currency_amount` "
+			"FROM `custom_achievements` WHERE `id` = {} AND `enabled` = 1 LIMIT 1",
+			achievement_id
+		)
+	);
+
+	if (legacy_results.Success() && legacy_results.RowCount()) {
+		auto row = legacy_results.begin();
+		const uint32 title_set = ToUInt(row[0]);
+		const uint32 item_id = ToUInt(row[1]);
+		const uint32 currency_id = ToUInt(row[2]);
+		const uint32 currency_amount = ToUInt(row[3]);
+
+		if (title_set) {
+			RewardSummary reward;
+			reward.achievement_id = achievement_id;
+			reward.type = "title_set";
+			reward.reward_id = title_set;
+			reward.amount = 1;
+			reward.auto_claim = true;
+			reward.preview_text = fmt::format("Title set {}", title_set);
+			rewards.push_back(reward);
+		}
+
+		if (item_id) {
+			RewardSummary reward;
+			reward.achievement_id = achievement_id;
+			reward.type = "item";
+			reward.reward_id = item_id;
+			reward.amount = 1;
+			reward.preview_text = fmt::format("Item {}", item_id);
+			rewards.push_back(reward);
+		}
+
+		if (currency_id && currency_amount) {
+			RewardSummary reward;
+			reward.achievement_id = achievement_id;
+			reward.type = "currency";
+			reward.reward_id = currency_id;
+			reward.amount = currency_amount;
+			reward.auto_claim = true;
+			reward.preview_text = fmt::format("{} currency {}", currency_amount, currency_id);
+			rewards.push_back(reward);
+		}
+	}
+
+	return rewards;
+}
+
+std::vector<AchievementManager::RewardSummary> AchievementManager::LoadQueuedRewards(
+	uint32 character_id,
+	uint64 queue_id,
+	bool auto_claim_only
+)
+{
+	std::vector<RewardSummary> rewards;
+	if (!character_id) {
+		return rewards;
+	}
+
+	std::string filter = fmt::format(
+		"`character_id` = {} AND `status` = {}",
+		character_id,
+		RewardStatusPending
+	);
+
+	if (queue_id) {
+		filter += fmt::format(" AND `id` = {}", queue_id);
+	}
+
+	if (auto_claim_only) {
+		filter += " AND `auto_claim` = 1";
+	}
+
+	auto results = database.QueryDatabase(
+		fmt::format(
+			"SELECT `id`, `achievement_id`, `reward_definition_id`, `reward_type`, `reward_id`, "
+			"`amount`, `auto_claim`, `tier`, `preview_text`, `data_text` "
+			"FROM `custom_character_achievement_rewards` "
+			"WHERE {} "
+			"ORDER BY `created_at`, `id`",
+			filter
+		)
+	);
+
+	if (!results.Success()) {
+		return rewards;
+	}
+
+	for (auto row = results.begin(); row != results.end(); ++row) {
+		RewardSummary reward;
+		reward.queue_id = ToUInt64(row[0]);
+		reward.achievement_id = ToUInt(row[1]);
+		reward.definition_id = ToUInt64(row[2]);
+		reward.type = row[3] ? row[3] : "";
+		reward.reward_id = ToUInt(row[4]);
+		reward.amount = ToUInt(row[5]);
+		reward.auto_claim = ToUInt(row[6]) != 0;
+		reward.tier = row[7] ? row[7] : "";
+		reward.preview_text = row[8] ? row[8] : "";
+		reward.data_text = row[9] ? row[9] : "";
+		rewards.push_back(reward);
+	}
+
+	return rewards;
 }
 
 uint32 AchievementManager::LoadAchievementCategory(uint32 achievement_id)
@@ -970,6 +1278,307 @@ void AchievementManager::TryCompleteAchievement(Client *client, uint32 achieveme
 			).c_str()
 		);
 	}
+
+	QueueAchievementRewards(client, achievement_id);
+	ClaimPendingRewards(client, 0, true);
+
+	ProcessMatchedObjectives(
+		client,
+		fmt::format(
+			"o.`objective_type` = 'achievement_complete' AND o.`target_id` = {}",
+			achievement_id
+		),
+		1,
+		true
+	);
+}
+
+void AchievementManager::QueueAchievementRewards(Client *client, uint32 achievement_id)
+{
+	if (!client || !achievement_id) {
+		return;
+	}
+
+	const uint32 character_id = client->CharacterID();
+	database.QueryDatabase(
+		fmt::format(
+			"INSERT INTO `custom_character_achievement_rewards` "
+			"(`character_id`, `achievement_id`, `reward_definition_id`, `reward_type`, `reward_id`, "
+			"`amount`, `auto_claim`, `tier`, `preview_text`, `data_text`, `status`, `completion_count`, `created_at`) "
+			"SELECT {}, r.`achievement_id`, r.`id`, r.`reward_type`, r.`reward_id`, "
+			"GREATEST(r.`amount`, 1), r.`auto_claim`, r.`tier`, r.`preview_text`, r.`data_text`, {}, "
+			"ca.`completion_count`, UNIX_TIMESTAMP() "
+			"FROM `custom_achievement_rewards` r "
+			"JOIN `custom_character_achievements` ca "
+			"ON ca.`achievement_id` = r.`achievement_id` AND ca.`character_id` = {} "
+			"WHERE r.`achievement_id` = {} AND r.`enabled` = 1 "
+			"AND (r.`chance` >= 10000 OR FLOOR(RAND() * 10000) < r.`chance`) "
+			"ON DUPLICATE KEY UPDATE `id` = `id`",
+			character_id,
+			RewardStatusPending,
+			character_id,
+			achievement_id
+		)
+	);
+
+	QueueLegacyAchievementRewards(client, achievement_id);
+}
+
+void AchievementManager::QueueLegacyAchievementRewards(Client *client, uint32 achievement_id)
+{
+	if (!client || !achievement_id) {
+		return;
+	}
+
+	auto legacy_results = database.QueryDatabase(
+		fmt::format(
+			"SELECT a.`reward_title_set`, a.`reward_item_id`, a.`reward_currency_id`, a.`reward_currency_amount`, "
+			"ca.`completion_count` "
+			"FROM `custom_achievements` a "
+			"JOIN `custom_character_achievements` ca "
+			"ON ca.`achievement_id` = a.`id` AND ca.`character_id` = {} "
+			"WHERE a.`id` = {} AND a.`enabled` = 1 LIMIT 1",
+			client->CharacterID(),
+			achievement_id
+		)
+	);
+
+	if (!legacy_results.Success() || !legacy_results.RowCount()) {
+		return;
+	}
+
+	auto row = legacy_results.begin();
+	const uint32 title_set = ToUInt(row[0]);
+	const uint32 item_id = ToUInt(row[1]);
+	const uint32 currency_id = ToUInt(row[2]);
+	const uint32 currency_amount = ToUInt(row[3]);
+	const uint32 completion_count = ToUInt(row[4]) ? ToUInt(row[4]) : 1;
+
+	auto queue_reward = [this, client, achievement_id, completion_count](
+		const std::string &type,
+		uint32 reward_id,
+		uint32 amount,
+		bool auto_claim,
+		const std::string &preview_text
+	) {
+		database.QueryDatabase(
+			fmt::format(
+				"INSERT INTO `custom_character_achievement_rewards` "
+				"(`character_id`, `achievement_id`, `reward_definition_id`, `reward_type`, `reward_id`, "
+				"`amount`, `auto_claim`, `tier`, `preview_text`, `data_text`, `status`, `completion_count`, `created_at`) "
+				"VALUES ({}, {}, 0, {}, {}, {}, {}, 'legacy', {}, '', {}, {}, UNIX_TIMESTAMP()) "
+				"ON DUPLICATE KEY UPDATE `id` = `id`",
+				client->CharacterID(),
+				achievement_id,
+				SqlString(type),
+				reward_id,
+				amount ? amount : 1,
+				auto_claim ? 1 : 0,
+				SqlString(preview_text),
+				RewardStatusPending,
+				completion_count
+			)
+		);
+	};
+
+	if (title_set) {
+		queue_reward("title_set", title_set, 1, true, fmt::format("Title set {}", title_set));
+	}
+
+	if (item_id) {
+		queue_reward("item", item_id, 1, false, fmt::format("Item {}", item_id));
+	}
+
+	if (currency_id && currency_amount) {
+		queue_reward(
+			"currency",
+			currency_id,
+			currency_amount,
+			true,
+			fmt::format("{} currency {}", currency_amount, currency_id)
+		);
+	}
+}
+
+void AchievementManager::ClaimPendingRewards(Client *client, uint64 queue_id, bool auto_claim_only)
+{
+	if (!client) {
+		return;
+	}
+
+	const auto rewards = LoadQueuedRewards(client->CharacterID(), queue_id, auto_claim_only);
+	if (rewards.empty()) {
+		if (!auto_claim_only) {
+			client->Message(Chat::White, "No pending achievement rewards were found.");
+		}
+
+		return;
+	}
+
+	uint32 claimed = 0;
+	uint32 failed = 0;
+	for (const auto &reward : rewards) {
+		std::string result;
+		const bool success = AwardQueuedReward(client, reward, result);
+		MarkQueuedReward(reward.queue_id, success ? RewardStatusClaimed : RewardStatusFailed, result);
+
+		if (success) {
+			++claimed;
+			client->Message(
+				Chat::Yellow,
+				fmt::format(
+					"Achievement reward claimed: {}",
+					RewardDisplayName(reward.type, reward.preview_text, reward.data_text, reward.reward_id, reward.amount)
+				).c_str()
+			);
+		}
+		else {
+			++failed;
+			client->Message(
+				Chat::Red,
+				fmt::format(
+					"Achievement reward failed: {} ({})",
+					RewardDisplayName(reward.type, reward.preview_text, reward.data_text, reward.reward_id, reward.amount),
+					result
+				).c_str()
+			);
+		}
+	}
+
+	if (!auto_claim_only) {
+		client->Message(
+			Chat::White,
+			fmt::format("Achievement reward claim complete: {} claimed, {} failed.", claimed, failed).c_str()
+		);
+	}
+}
+
+bool AchievementManager::AwardQueuedReward(Client *client, const RewardSummary &reward, std::string &result)
+{
+	if (!client) {
+		result = "No client.";
+		return false;
+	}
+
+	const uint32 amount = reward.amount ? reward.amount : 1;
+
+	if (Strings::EqualFold(reward.type, "title_text")) {
+		const std::string title = !reward.data_text.empty() ? reward.data_text : reward.preview_text;
+		if (title.empty()) {
+			result = "Missing title text.";
+			return false;
+		}
+
+		title_manager.CreateNewPlayerTitle(client, title);
+		result = fmt::format("Granted title {}", title);
+		return true;
+	}
+
+	if (Strings::EqualFold(reward.type, "title_suffix")) {
+		const std::string suffix = !reward.data_text.empty() ? reward.data_text : reward.preview_text;
+		if (suffix.empty()) {
+			result = "Missing suffix text.";
+			return false;
+		}
+
+		title_manager.CreateNewPlayerSuffix(client, suffix);
+		result = fmt::format("Granted suffix {}", suffix);
+		return true;
+	}
+
+	if (Strings::EqualFold(reward.type, "title_set")) {
+		if (!reward.reward_id) {
+			result = "Missing title set.";
+			return false;
+		}
+
+		client->EnableTitle(reward.reward_id);
+		result = fmt::format("Granted title set {}", reward.reward_id);
+		return true;
+	}
+
+	if (Strings::EqualFold(reward.type, "item")) {
+		if (!reward.reward_id) {
+			result = "Missing item id.";
+			return false;
+		}
+
+		const int16 charges = amount > 1 ? static_cast<int16>(std::min<uint32>(amount, 32767)) : static_cast<int16>(-1);
+		const bool success = client->SummonItem(reward.reward_id, charges);
+		result = success ? fmt::format("Granted item {}", reward.reward_id) : "Item could not be summoned.";
+		return success;
+	}
+
+	if (Strings::EqualFold(reward.type, "currency")) {
+		if (!reward.reward_id) {
+			result = "Missing currency id.";
+			return false;
+		}
+
+		const int new_value = client->AddAlternateCurrencyValue(reward.reward_id, static_cast<int>(amount), true);
+		if (new_value <= 0) {
+			result = "Currency id is unavailable.";
+			return false;
+		}
+
+		result = fmt::format("Granted {} currency {}", amount, reward.reward_id);
+		return true;
+	}
+
+	if (Strings::EqualFold(reward.type, "coin")) {
+		client->AddMoneyToPP(static_cast<uint64>(amount), true);
+		result = fmt::format("Granted {} copper.", amount);
+		return true;
+	}
+
+	if (Strings::EqualFold(reward.type, "live_item_request")) {
+		auto request = database.QueryDatabase(
+			fmt::format(
+				"INSERT INTO `custom_achievement_live_item_requests` "
+				"(`character_id`, `achievement_id`, `reward_queue_id`, `level_band`, `tier`, `item_slot`, `theme`, `status`, `created_at`) "
+				"VALUES ({}, {}, {}, {}, {}, {}, {}, 'pending', UNIX_TIMESTAMP()) "
+				"ON DUPLICATE KEY UPDATE `id` = LAST_INSERT_ID(`id`)",
+				client->CharacterID(),
+				reward.achievement_id,
+				reward.queue_id,
+				amount,
+				SqlString(reward.tier),
+				reward.reward_id,
+				SqlString(reward.data_text)
+			)
+		);
+
+		if (!request.Success()) {
+			result = "Live item request could not be queued.";
+			return false;
+		}
+
+		result = "Queued a leveled item request.";
+		return true;
+	}
+
+	result = fmt::format("Unknown reward type {}", reward.type);
+	return false;
+}
+
+void AchievementManager::MarkQueuedReward(uint64 queue_id, uint32 status, const std::string &result)
+{
+	if (!queue_id) {
+		return;
+	}
+
+	database.QueryDatabase(
+		fmt::format(
+			"UPDATE `custom_character_achievement_rewards` "
+			"SET `status` = {}, `claimed_at` = IF({} = {}, UNIX_TIMESTAMP(), `claimed_at`), `result_text` = {} "
+			"WHERE `id` = {}",
+			status,
+			status,
+			RewardStatusClaimed,
+			SqlString(result),
+			queue_id
+		)
+	);
 }
 
 bool AchievementManager::HasCompletedAchievement(uint32 character_id, uint32 achievement_id)
