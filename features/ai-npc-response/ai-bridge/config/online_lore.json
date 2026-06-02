@@ -1,0 +1,22 @@
+{
+  "enabled": true,
+  "max_snippets": 2,
+  "sources": [
+    {
+      "name": "EverQuest Wiki",
+      "type": "mediawiki",
+      "api_url": "https://everquest.fandom.com/api.php",
+      "page_url_template": "https://everquest.fandom.com/wiki/{title}",
+      "allowed_hosts": ["everquest.fandom.com"],
+      "search_limit": 1
+    },
+    {
+      "name": "EverQuest II Wiki",
+      "type": "mediawiki",
+      "api_url": "https://eq2.fandom.com/api.php",
+      "page_url_template": "https://eq2.fandom.com/wiki/{title}",
+      "allowed_hosts": ["eq2.fandom.com"],
+      "search_limit": 1
+    }
+  ]
+}

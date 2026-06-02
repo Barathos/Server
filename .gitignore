@@ -69,3 +69,10 @@ compile_flags.txt
 # CMake Files
 cmake-build-relwithdebinfo/*
 skill-caps.diff
+
+# Local code index and AI NPC bridge runtime artifacts
+.codegraph/
+features/ai-npc-response/ai-bridge/.venv/
+features/ai-npc-response/ai-bridge/runtime/
+features/ai-npc-response/ai-bridge/ollama-models/
+features/ai-npc-response/ai-bridge/**/__pycache__/

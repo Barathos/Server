@@ -1,14 +1,10 @@
 # Client patch feed for ai-npc-response.
-# source paths are relative to this repo; destination paths are relative to the EQ client root.
-# Missing listed files are release blockers for external syncs.
-files:
-  - source: client_files/native_autoloot/eq-core-dll/bin/dinput8.dll
-    destination: dinput8.dll
-  - source: client_files/native_autoloot/ui/EQUI_NativeAiNpcResponseWnd.xml
-    destination: uifiles/default/EQUI_NativeAiNpcResponseWnd.xml
+# The current AI NPC bridge prototype has no client-facing files.
+# Add XML, DLLs, config, assets, or patch notes here only when they are part of
+# the feature source of truth.
+files: []
 
 generated:
-  eqhost: true
-  equiXml: true
-  equiIncludes:
-    - EQUI_NativeAiNpcResponseWnd.xml
+  eqhost: false
+  equiXml: false
+  equiIncludes: []

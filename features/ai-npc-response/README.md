@@ -1,35 +1,66 @@
 # AI NPC response
 
-Standalone EQEmu feature branch for `ai-npc-response`.
+Standalone source for the `ai-npc-response` EQEmu prototype.
 
-## Test Target
+The current prototype connects an EQEmu Perl quest NPC to a local-only FastAPI
+bridge, which calls Ollama and returns short in-character speech.
 
-- Server: `D:\EQServers\EQServer-Ai-Npc-Response`
-- Client: `D:\EQClients\EQClient-Ai-Npc-Response`
-- Database: `eqemu_ai_npc_response`
+## Contents
 
-## First Build Loop
+- `ai-bridge/`: FastAPI bridge, config, startup scripts, and latency tests.
+- `quests/tutorialb/900903.pl`: async/polling quest script for Sage Aurelian.
+- `sql/001_sage_aurelian_tutorialb.sql`: idempotent seed for the Tutorial B
+  test NPC and spawn.
+- `patcher.yml`: currently empty because this phase has no client-facing files.
 
-From `D:\Codex\Apps\EQEmu-feature-workspaces`:
+## Testbed Target
 
-~~~powershell
-.\verify-feature.ps1 ai-npc-response
-.\install-server-runtime.ps1 ai-npc-response
-.\install-client-files.ps1 ai-npc-response
-.\run-db-updates.ps1 ai-npc-response
-.\validate-install.ps1 ai-npc-response
-~~~
+- Bridge install: `D:\EQEmu\Testbed\ai-bridge`
+- EQEmu server: `D:\EQEmu\Testbed\server`
+- Quest target: `D:\EQEmu\Testbed\server\quests\tutorialb\900903.pl`
+- Bridge endpoint: `http://127.0.0.1:18080`
+- Ollama endpoint: `http://127.0.0.1:11434`
 
-`install-server-runtime.ps1` also refreshes Windows firewall allow rules for the copied server binaries.
+Keep both Ollama and the bridge bound to localhost. Do not expose the bridge
+publicly.
 
-## Client UI
+## Prototype NPC
 
-Native XML `EQUI_NativeAiNpcResponseWnd.xml` is installed into the prepared client and included from `uifiles/default/EQUI.xml` by the workspace client install scripts.
+- NPC type id: `900903`
+- Name: `Sage_Aurelian`
+- Zone: `tutorialb`
+- Location: near Orin Augspinner and Vedra Forgecall
 
-## Client Patcher Feed
+The quest script uses `POST /eqemu/npc-chat/start` and polls
+`GET /eqemu/npc-chat/result/{job_id}` so deeper lore lookups do not hold the
+zone process for the full model/search latency.
 
-External/test-client patch syncing is owned by `features/ai-npc-response/patcher.yml`. Do not add files directly to `D:\EQClients\EQClient-Ai-Npc-Response` as the source of truth. Add any client-facing XML, DLL, config, zone asset, patch note, status file, or other tester-facing file to this repo and list it there before publishing a patcher feed.
+## Model Notes
 
-## Development Notes
+`scripts/Start-AiBridge.ps1` currently defaults the testbed to
+`qwen2.5:0.5b` for very fast iteration. The bridge code default is
+`qwen2.5:3b` if launched without that script, and the model can be overridden:
 
-Replace this section with feature behavior, commands, SQL, client files, operator install notes, and known test cases as the feature takes shape.
+```powershell
+.\scripts\Start-AiBridge.ps1 -Model qwen2.5:3b
+```
+
+The richer model is better for flavor; the smaller model is useful while
+testing guardrails and latency.
+
+## Validation
+
+From the bridge install directory on the VM:
+
+```powershell
+.\scripts\Setup-AiBridge.ps1
+.\scripts\Start-OllamaLocal.ps1 -Background
+.\scripts\Test-Ollama.ps1
+.\scripts\Start-AiBridge.ps1 -Background
+Invoke-RestMethod http://127.0.0.1:18080/health
+.\scripts\Test-BridgeLatency.ps1 -Count 5
+```
+
+For the EQEmu side, apply the SQL seed, copy the quest script into the
+Tutorial B quest folder, then use in-game quest reload/repop tools. This does
+not require an EQEmu service restart.

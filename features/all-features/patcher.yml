@@ -19,8 +19,6 @@ files:
     destination: uifiles/default/EQUI_NativeTradeskillsWnd.xml
   - source: client_files/native_autoloot/ui/EQUI_NativeHpFixWnd.xml
     destination: uifiles/default/EQUI_NativeHpFixWnd.xml
-  - source: client_files/native_autoloot/ui/EQUI_NativeAiNpcResponseWnd.xml
-    destination: uifiles/default/EQUI_NativeAiNpcResponseWnd.xml
   - source: client_files/native_autoloot/ui/EQUI_NativeAugsInAugsWnd.xml
     destination: uifiles/default/EQUI_NativeAugsInAugsWnd.xml
   - source: client_files/native_autoloot/ui/EQUI_NativeDynamicQuestsWnd.xml
@@ -36,6 +34,5 @@ generated:
     - EQUI_NativeMulticlassWnd.xml
     - EQUI_NativeTradeskillsWnd.xml
     - EQUI_NativeHpFixWnd.xml
-    - EQUI_NativeAiNpcResponseWnd.xml
     - EQUI_NativeAugsInAugsWnd.xml
     - EQUI_NativeDynamicQuestsWnd.xml

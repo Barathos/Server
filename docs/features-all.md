@@ -28,8 +28,11 @@ The combined custom database manifest uses:
 - Custom version `2`: Achievement schema.
 - Custom version `3`: Achievement catalog seed.
 - Custom version `4`: Live hunter achievement seed.
+- Custom version `5`: Gearscore item power schema.
+- Custom version `6`: Item rarity schema.
+- Custom version `7`: Multiclass schema.
 
-`common/version.h` sets `CUSTOM_BINARY_DATABASE_VERSION` to `4`.
+`common/version.h` sets `CUSTOM_BINARY_DATABASE_VERSION` to `7`.
 
 ## Native Client Assets
 
@@ -48,11 +51,27 @@ client DLL.
 - `EQUI_NativeMulticlassWnd.xml`
 - `EQUI_NativeTradeskillsWnd.xml`
 - `EQUI_NativeHpFixWnd.xml`
-- `EQUI_NativeAiNpcResponseWnd.xml`
 - `EQUI_NativeAugsInAugsWnd.xml`
 - `EQUI_NativeDynamicQuestsWnd.xml`
 
-The runtime handles `AUTOLOOT|`, `LIVEITEM|`, `LIVESPELL|`, and `ACH|` transport lines. It is no longer only lab code, but it is still monolithic internally: most feature-specific client behavior lives in `client_files/native_autoloot/eq-core-dll/src/core_autoloot_native.h`. The next cleanup is splitting that into a reusable native-client base plus feature-specific native modules.
+The runtime handles `AUTOLOOT|`, `LIVEITEM|`, `LIVESPELL|`, `ACH|`, `HPFIX|`,
+`ITEMPOWER|`, and `ITEMRARITY|` transport lines. It is no longer only lab code,
+but it is still monolithic internally: most feature-specific client behavior
+lives in `client_files/native_autoloot/eq-core-dll/src/core_autoloot_native.h`.
+The next cleanup is splitting that into a reusable native-client base plus
+feature-specific native modules.
+
+## AI NPC Response
+
+The AI NPC Response prototype is included as a feature payload under
+`features/ai-npc-response/`. It contains a localhost-only FastAPI/Ollama bridge,
+a Tutorial B Perl quest for Sage Aurelian, and an idempotent SQL seed for NPC
+and spawn id `900903`.
+
+This prototype currently has no client-facing files. Its standalone
+`features/ai-npc-response/patcher.yml` is intentionally empty, so the
+all-features client patcher does not publish an AI NPC native XML window until
+that feature commits one as source of truth.
 
 The expanded all-features target stages additional feature payloads in this checkout
 first, then wires server/native behavior here. Standalone feature projects remain in
