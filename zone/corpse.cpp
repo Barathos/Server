@@ -30,6 +30,7 @@
 #include "zone/dynamic_zone.h"
 #include "zone/entity.h"
 #include "zone/groups.h"
+#include "zone/item_rarity_manager.h"
 #include "zone/mob.h"
 #include "zone/queryserv.h"
 #include "zone/quest_parser_collection.h"
@@ -316,7 +317,13 @@ CorpseAutoLootResult Corpse::AutoLootItem(Client *c, uint16 lootslot, bool send_
 	linker.GenerateLink();
 
 	if (send_messages) {
+		ItemRarity rarity = ItemRarity::Common;
+		if (ItemRarityManager::TryGetRarity(inst->GetItem()->ID, rarity)) {
+			ItemRarityManager::SendNativeRarity(c, inst->GetItem()->ID, rarity);
+		}
+
 		c->MessageString(Chat::Loot, LOOTED_MESSAGE, linker.Link().c_str());
+		ItemRarityManager::SendLootedItemMessage(c, inst, linker.Link());
 
 		Group *g = c->GetGroup();
 		if (g) {
@@ -2028,7 +2035,13 @@ void Corpse::LootCorpseItem(Client *c, const EQApplicationPacket *app)
 
 		linker.GenerateLink();
 
+		ItemRarity rarity = ItemRarity::Common;
+		if (ItemRarityManager::TryGetRarity(inst->GetItem()->ID, rarity)) {
+			ItemRarityManager::SendNativeRarity(c, inst->GetItem()->ID, rarity);
+		}
+
 		c->MessageString(Chat::Loot, LOOTED_MESSAGE, linker.Link().c_str());
+		ItemRarityManager::SendLootedItemMessage(c, inst, linker.Link());
 
 		if (!IsPlayerCorpse()) {
 			Group *g = c->GetGroup();

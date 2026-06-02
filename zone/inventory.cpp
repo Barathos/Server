@@ -20,6 +20,7 @@
 #include "common/eqemu_logsys.h"
 #include "common/events/player_event_logs.h"
 #include "common/evolving_items.h"
+#include "common/item_power.h"
 #include "common/repositories/character_corpse_items_repository.h"
 #include "common/strings.h"
 #include "zone/bot.h"
@@ -1586,6 +1587,25 @@ bool Client::RefreshLiveItemTree(EQ::ItemInstance* inst)
 	return refreshed;
 }
 
+void Client::SendItemPowerTransport(const EQ::ItemInstance* inst)
+{
+	if (!inst || !inst->GetItem()) {
+		return;
+	}
+
+	std::string item_power_transport;
+	if (EQ::ItemPower::TryBuildTransportMessage(database, *inst->GetItem(), item_power_transport, true)) {
+		Message(Chat::White, "%s", item_power_transport.c_str());
+	}
+
+	for (uint16 bag_slot = EQ::invbag::SLOT_BEGIN; bag_slot < EQ::invbag::SLOT_COUNT; ++bag_slot) {
+		const auto *bag_inst = inst->GetItem(static_cast<uint8>(bag_slot));
+		if (bag_inst) {
+			SendItemPowerTransport(bag_inst);
+		}
+	}
+}
+
 bool Client::IsValidSlot(uint32 slot) {
 	if (slot <= EQ::invslot::POSSESSIONS_END && slot >= EQ::invslot::POSSESSIONS_BEGIN) {
 		return ((((uint64)1 << slot) & GetInv().GetLookup()->PossessionsBitmask) != 0);
@@ -3042,6 +3062,7 @@ void Client::SendItemPacket(int16 slot_id, const EQ::ItemInstance* inst, ItemPac
 	}
 
 	RefreshLiveItemTree(const_cast<EQ::ItemInstance *>(inst));
+	SendItemPowerTransport(inst);
 
 	// Serialize item into |-delimited string (Titanium- uses '|' delimiter .. newer clients use pure data serialization)
 	std::string packet = inst->Serialize(slot_id);

@@ -1159,6 +1159,7 @@ public:
 	void SendItemPacket(int16 slot_id, const EQ::ItemInstance* inst, ItemPacketType packet_type);
 	bool RefreshLiveItem(EQ::ItemInstance* inst);
 	bool RefreshLiveItemTree(EQ::ItemInstance* inst);
+	void SendItemPowerTransport(const EQ::ItemInstance* inst);
 	bool IsValidSlot(uint32 slot);
 	bool IsBankSlot(uint32 slot);
 

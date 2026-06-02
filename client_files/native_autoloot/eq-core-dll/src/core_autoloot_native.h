@@ -1,11 +1,13 @@
 #ifndef CORE_AUTOLOOT_NATIVE_H
 #define CORE_AUTOLOOT_NATIVE_H
 
+#include <cctype>
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 static void NativeAutoLootTrace(const char* format, ...)
@@ -61,6 +63,15 @@ static void NativeSpellForgeShowWindow(const std::string& payload);
 static void NativeItemForgeShowWindow(const std::string& payload);
 static void NativeAchievementEnsureWindow(bool show);
 static bool NativeAchievementParseTransport(const char* message);
+static void NativeUIShowcaseEnsureWindow(bool show);
+static void NativeHpFixEnsureWindow(bool show);
+static void NativeMulticlassEnsureWindow(bool show);
+static void NativeMulticlassEnsurePetWindow(bool show);
+static void NativeMulticlassEnsureMelodyWindow(bool show);
+static void NativeMulticlassEnsureDisciplineWindow(bool show);
+static bool NativeMulticlassParseTransport(const char* message);
+static void NativeMulticlassInstallContextMenuHook();
+static void NativeMulticlassMaintainPresentationUI();
 
 class NativeAutoLootWnd : public CCustomWnd
 {
@@ -230,6 +241,7 @@ static bool gNativeAutoLootHooksInstalled = false;
 static bool gNativeAutoLootChatHookInstalled = false;
 static bool gNativeAutoLootCommandHookInstalled = false;
 static bool gNativeAutoLootPulseHookInstalled = false;
+static bool gNativeAutoLootUiResetHookInstalled = false;
 static bool gNativeAutoLootRequestedInitialStatus = false;
 static bool gNativeAutoLootPulseHookEnabled = false;
 static bool gNativeAutoLootEnabled = false;
@@ -239,6 +251,7 @@ static int gNativeAutoLootInGamePulses = 0;
 static int gNativeAutoLootKeepCount = 0;
 static int gNativeAutoLootIgnoreCount = 0;
 static bool gNativeLiveSpellSentReady = false;
+static bool gNativeHpFixSentReady = false;
 static bool gNativeAutoLootPulseFaulted = false;
 static std::string gNativeAutoLootGroupMode = "solo";
 static std::string gNativeAutoLootAssigned = "none";
@@ -388,6 +401,15 @@ static int NativeToInt(const std::string& value, int fallback = 0)
 	return atoi(value.c_str());
 }
 
+static long long NativeToInt64(const std::string& value, long long fallback = 0)
+{
+	if (value.empty()) {
+		return fallback;
+	}
+
+	return _strtoi64(value.c_str(), nullptr, 10);
+}
+
 static bool NativeToBool(const std::string& value)
 {
 	return NativeToInt(value) != 0 || value == "true" || value == "on";
@@ -402,11 +424,1948 @@ static float NativeToFloat(const std::string& value, float fallback = 0.0f)
 	return static_cast<float>(atof(value.c_str()));
 }
 
+struct NativeItemPowerInfo
+{
+	int item_id = 0;
+	int item_level = 0;
+	int score = 0;
+	int version = 0;
+	std::string role;
+	std::string source;
+	std::string name;
+	DWORD last_seen = 0;
+};
+
+struct NativeItemRarityInfo
+{
+	int item_id = 0;
+	int rarity = 0;
+	std::string name;
+	DWORD last_seen = 0;
+};
+
+static std::unordered_map<int, NativeItemPowerInfo> gNativeItemPowerById;
+static std::unordered_map<int, NativeItemRarityInfo> gNativeItemRarityById;
+
+static bool NativeItemPowerParseTransport(const char* message)
+{
+	if (!message || !NativeStartsWith(message, "ITEMPOWER|")) {
+		return false;
+	}
+
+	const std::string payload(message);
+	const int item_id = NativeToInt(NativeGetPairValue(payload, "item_id"));
+	if (item_id <= 0) {
+		return true;
+	}
+
+	if (NativeStartsWith(message, "ITEMPOWER|clear|")) {
+		gNativeItemPowerById.erase(item_id);
+		NativeAutoLootTrace("ItemPower cleared item_id=%d", item_id);
+		return true;
+	}
+
+	NativeItemPowerInfo info;
+	info.item_id = item_id;
+	info.item_level = NativeToInt(NativeGetPairValue(payload, "ilvl"));
+	info.score = NativeToInt(NativeGetPairValue(payload, "score"));
+	info.version = NativeToInt(NativeGetPairValue(payload, "version"));
+	info.role = NativeGetPairValue(payload, "role");
+	info.source = NativeGetPairValue(payload, "source");
+	info.name = NativeGetPairValue(payload, "name");
+	info.last_seen = GetTickCount();
+
+	if (info.item_level > 0 || info.score > 0) {
+		gNativeItemPowerById[item_id] = info;
+		NativeAutoLootTrace(
+			"ItemPower cached item_id=%d ilvl=%d score=%d role=%s source=%s",
+			info.item_id,
+			info.item_level,
+			info.score,
+			info.role.c_str(),
+			info.source.c_str()
+		);
+	}
+
+	return true;
+}
+
+static bool NativeItemRarityParseTransport(const char* message)
+{
+	if (!message || !NativeStartsWith(message, "ITEMRARITY|")) {
+		return false;
+	}
+
+	const std::string payload(message);
+	const int item_id = NativeToInt(NativeGetPairValue(payload, "item_id"));
+	if (item_id <= 0) {
+		return true;
+	}
+
+	if (NativeStartsWith(message, "ITEMRARITY|clear|")) {
+		gNativeItemRarityById.erase(item_id);
+		NativeAutoLootTrace("ItemRarity cleared item_id=%d", item_id);
+		return true;
+	}
+
+	NativeItemRarityInfo info;
+	info.item_id = item_id;
+	info.rarity = NativeToInt(NativeGetPairValue(payload, "rarity"));
+	info.name = NativeGetPairValue(payload, "name");
+	info.last_seen = GetTickCount();
+	if (info.rarity >= 0 && info.rarity <= 4) {
+		gNativeItemRarityById[item_id] = info;
+		NativeAutoLootTrace("ItemRarity cached item_id=%d rarity=%d name=%s", item_id, info.rarity, info.name.c_str());
+	}
+
+	return true;
+}
+
 template <size_t Size>
 static void NativeCopyText(char (&destination)[Size], const std::string& source)
 {
 	memset(destination, 0, Size);
 	strncpy_s(destination, source.c_str(), Size - 1);
+}
+
+struct NativeMulticlassClassDef
+{
+	int id = 0;
+	const char* name = "";
+};
+
+static const NativeMulticlassClassDef gNativeMulticlassClassDefs[] = {
+	{1, "Warrior"},
+	{2, "Cleric"},
+	{3, "Paladin"},
+	{4, "Ranger"},
+	{5, "Shadow Knight"},
+	{6, "Druid"},
+	{7, "Monk"},
+	{8, "Bard"},
+	{9, "Rogue"},
+	{10, "Shaman"},
+	{11, "Necromancer"},
+	{12, "Wizard"},
+	{13, "Magician"},
+	{14, "Enchanter"},
+	{15, "Beastlord"},
+	{16, "Berserker"}
+};
+
+struct NativeMulticlassPetRow
+{
+	int id = 0;
+	int hp = 0;
+	int mana = 0;
+	bool taunt = false;
+	bool hold = false;
+	bool spellhold = false;
+	bool focused = false;
+	std::string name = "Pet";
+	std::string order = "follow";
+	std::string target = "-";
+};
+
+struct NativeMulticlassMelodySlot
+{
+	int slot = 0;
+	int spell_id = 0;
+	int level = 0;
+	std::string name = "-";
+	std::string state = "empty";
+};
+
+struct NativeMulticlassMelodySong
+{
+	int spell_id = 0;
+	int level = 0;
+	bool allowed = false;
+	std::string name = "Song";
+	std::string reason;
+};
+
+struct NativeMulticlassDisciplineRow
+{
+	int slot = 0;
+	int spell_id = 0;
+	int level = 0;
+	int timer = 0;
+	int timer_total = 0;
+	DWORD timer_received_ms = 0;
+	bool ready = false;
+	std::string name = "Discipline";
+	std::string state = "Blocked";
+};
+
+struct NativeMulticlassState
+{
+	bool has_profile = false;
+	bool locked = false;
+	bool can_choose = false;
+	bool multiple_pets = false;
+	int class1 = 0;
+	int class2 = 0;
+	int class3 = 0;
+	int presentation = 0;
+	int base = 0;
+	int reweaves = 0;
+	int selected_slot2 = 0;
+	int selected_slot3 = 0;
+	int roster_count = 0;
+	int roster_limit = 1;
+	int focus_id = 0;
+	int mana = 0;
+	int max_mana = 0;
+	int endurance = 0;
+	int max_endurance = 0;
+	int class_mask = 0;
+	int aa_mask = 0;
+	std::string profile_name = "Unchosen Trio";
+	std::string resonance_key;
+	std::string class1_name = "Base";
+	std::string class2_name = "Unchosen";
+	std::string class3_name = "Unchosen";
+	std::string presentation_name = "Unknown";
+	std::string base_name = "Unknown";
+	std::string roles = "-";
+	std::string resonance = "Trio Notes";
+	std::string summary = "Waiting for Multiclass profile.";
+	std::string skill_summary = "Skills: waiting for profile.";
+	std::string bonus_summary = "Resonance bonuses: waiting for profile.";
+	std::string selection_status = "Waiting for Multiclass profile...";
+	std::string pet_policy = "single-pet";
+	std::string pet_control = "Pet console pending.";
+	bool has_bard = false;
+	std::string melody_status = "Bard Melody: waiting for profile.";
+	std::string discipline_status = "Disciplines: waiting for profile.";
+};
+
+class NativeMulticlassWnd;
+class NativeMulticlassPetWnd;
+class NativeMulticlassMelodyWnd;
+class NativeMulticlassDisciplineWnd;
+
+static NativeMulticlassWnd* gNativeMulticlassWnd = nullptr;
+static NativeMulticlassPetWnd* gNativeMulticlassPetWnd = nullptr;
+static NativeMulticlassMelodyWnd* gNativeMulticlassMelodyWnd = nullptr;
+static NativeMulticlassDisciplineWnd* gNativeMulticlassDisciplineWnd = nullptr;
+static NativeMulticlassState gNativeMulticlassState;
+static std::vector<NativeMulticlassPetRow> gNativeMulticlassPets;
+static std::vector<NativeMulticlassMelodySlot> gNativeMulticlassMelodySlots;
+static std::vector<NativeMulticlassMelodySong> gNativeMulticlassMelodySongs;
+static std::vector<NativeMulticlassDisciplineRow> gNativeMulticlassDisciplineRows;
+static bool gNativeMulticlassSentStatus = false;
+static bool gNativeMulticlassContextMenuHookInstalled = false;
+static bool gNativeMulticlassContextMenuHookEnabled = true;
+static bool gNativeMulticlassSpellLevelsLoading = false;
+static int gNativeMulticlassSpellLevelPatchCount = 0;
+static int gNativeMulticlassShowCasterUiPulses = 0;
+static std::unordered_map<int, int> gNativeMulticlassSpellLevelsById;
+static std::unordered_map<std::string, int> gNativeMulticlassSpellLevelsByName;
+
+static void NativeMulticlassRefreshWindows();
+static void NativeMulticlassNormalizeSelections();
+static bool NativeMulticlassRewriteSpellMenuText(const char* text, std::string& rewritten);
+
+static bool NativeMulticlassIsPlayerClass(int class_id)
+{
+	return class_id >= 1 && class_id <= 16;
+}
+
+static const char* NativeMulticlassClassName(int class_id)
+{
+	for (const auto& class_def : gNativeMulticlassClassDefs) {
+		if (class_def.id == class_id) {
+			return class_def.name;
+		}
+	}
+
+	return "Unchosen";
+}
+
+static DWORD NativeMulticlassToDword(int value)
+{
+	return value > 0 ? (DWORD)value : 0;
+}
+
+static bool NativeMulticlassPresentationUsesMana(int class_id)
+{
+	switch (class_id) {
+		case 2:  // Cleric
+		case 3:  // Paladin
+		case 4:  // Ranger
+		case 5:  // Shadow Knight
+		case 6:  // Druid
+		case 8:  // Bard
+		case 10: // Shaman
+		case 11: // Necromancer
+		case 12: // Wizard
+		case 13: // Magician
+		case 14: // Enchanter
+		case 15: // Beastlord
+			return true;
+		default:
+			return false;
+	}
+}
+
+static void NativeMulticlassScheduleCasterUI()
+{
+	if (
+		gNativeMulticlassState.has_profile &&
+		NativeMulticlassPresentationUsesMana(gNativeMulticlassState.presentation)
+	) {
+		gNativeMulticlassShowCasterUiPulses = 240;
+	}
+}
+
+static void NativeMulticlassPatchPlayerData(EQPlayer* player)
+{
+	if (!player) {
+		return;
+	}
+
+	if (NativeMulticlassIsPlayerClass(gNativeMulticlassState.presentation)) {
+		player->Data.Class = (BYTE)gNativeMulticlassState.presentation;
+	}
+
+	if (gNativeMulticlassState.max_mana > 0) {
+		player->Data.ManaCurrent = NativeMulticlassToDword(gNativeMulticlassState.mana);
+		player->Data.ManaMax = NativeMulticlassToDword(gNativeMulticlassState.max_mana);
+	}
+
+	if (gNativeMulticlassState.max_endurance > 0) {
+		player->Data.EnduranceMax = NativeMulticlassToDword(gNativeMulticlassState.max_endurance);
+	}
+}
+
+static void NativeMulticlassPatchLocalVitals()
+{
+	if (
+		!gNativeMulticlassState.has_profile ||
+		!NativeMulticlassPresentationUsesMana(gNativeMulticlassState.presentation) ||
+		!ppCharData ||
+		!pCharData
+	) {
+		return;
+	}
+
+	__try {
+		PCHARINFO2 char_info = GetCharInfo2();
+		if (char_info) {
+			if (NativeMulticlassIsPlayerClass(gNativeMulticlassState.presentation)) {
+				char_info->Class = (DWORD)gNativeMulticlassState.presentation;
+			}
+			if (gNativeMulticlassState.max_mana > 0) {
+				char_info->Mana = NativeMulticlassToDword(gNativeMulticlassState.mana);
+			}
+			if (gNativeMulticlassState.max_endurance > 0) {
+				char_info->Endurance = NativeMulticlassToDword(gNativeMulticlassState.endurance);
+			}
+		}
+
+		if (ppLocalPlayer) {
+			NativeMulticlassPatchPlayerData(pLocalPlayer);
+		}
+		if (ppCharSpawn && pCharSpawn && (!ppLocalPlayer || pCharSpawn != pLocalPlayer)) {
+			NativeMulticlassPatchPlayerData(pCharSpawn);
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+	}
+}
+
+static void NativeMulticlassShowPlayerManaPiece(const char* child_name)
+{
+	if (!child_name || !pPlayerWnd) {
+		return;
+	}
+
+	CXWnd* child = nullptr;
+	__try {
+		child = pPlayerWnd->GetChildItem((char*)child_name);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+		child = nullptr;
+	}
+
+	if (child) {
+		child->Show(1, 1);
+	}
+}
+
+static void NativeMulticlassShowSpellGemWindow()
+{
+	if (!ppCastSpellWnd || !pCastSpellWnd) {
+		return;
+	}
+
+	__try {
+		CXWnd* spell_window = (CXWnd*)pCastSpellWnd;
+		if (spell_window) {
+			spell_window->Show(1, 1);
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+	}
+}
+
+static void NativeMulticlassMaintainPresentationUI()
+{
+	if (
+		!gNativeMulticlassState.has_profile ||
+		!NativeMulticlassPresentationUsesMana(gNativeMulticlassState.presentation) ||
+		!pPlayerWnd
+	) {
+		return;
+	}
+
+	NativeMulticlassPatchLocalVitals();
+	NativeMulticlassShowPlayerManaPiece("Player_Mana");
+	NativeMulticlassShowPlayerManaPiece("PlayerMana");
+	NativeMulticlassShowPlayerManaPiece("Player_ManaLabel");
+	NativeMulticlassShowPlayerManaPiece("ManaLabel");
+	NativeMulticlassShowPlayerManaPiece("Player_ManaPercLabel");
+	NativeMulticlassShowPlayerManaPiece("ManPercLabel");
+
+	if (gNativeMulticlassShowCasterUiPulses > 0) {
+		--gNativeMulticlassShowCasterUiPulses;
+		NativeMulticlassShowSpellGemWindow();
+	}
+}
+
+static std::string NativeMulticlassNormalizedName(const std::string& value)
+{
+	std::string normalized;
+	normalized.reserve(value.size());
+	bool previous_space = false;
+	for (char c : value) {
+		const unsigned char ch = static_cast<unsigned char>(c);
+		if (isspace(ch)) {
+			if (!normalized.empty() && !previous_space) {
+				normalized.push_back(' ');
+			}
+			previous_space = true;
+			continue;
+		}
+
+		normalized.push_back(static_cast<char>(tolower(ch)));
+		previous_space = false;
+	}
+
+	while (!normalized.empty() && normalized[normalized.size() - 1] == ' ') {
+		normalized.resize(normalized.size() - 1);
+	}
+
+	return normalized;
+}
+
+static void NativeMulticlassSetLabel(CXWnd* label, const char* text)
+{
+	if (label) {
+		CXStr value(text ? text : "");
+		label->SetWindowTextA(value);
+	}
+}
+
+static void NativeMulticlassSetButtonText(CButtonWnd* button, const char* text)
+{
+	if (button) {
+		CXStr value(text ? text : "");
+		((CXWnd*)button)->SetWindowTextA(value);
+	}
+}
+
+static void NativeMulticlassSetVisible(CXWnd* wnd, bool visible)
+{
+	if (wnd) {
+		wnd->Show(visible ? 1 : 0, 1);
+	}
+}
+
+static bool NativeMulticlassClassAvailableForSlot(int class_id, int slot)
+{
+	if (!NativeMulticlassIsPlayerClass(class_id)) {
+		return false;
+	}
+
+	if (class_id == gNativeMulticlassState.class1) {
+		return false;
+	}
+
+	if (slot == 2 && class_id == gNativeMulticlassState.selected_slot3) {
+		return false;
+	}
+
+	if (slot == 3 && class_id == gNativeMulticlassState.selected_slot2) {
+		return false;
+	}
+
+	return true;
+}
+
+static int NativeMulticlassNextClass(int current, int direction, int slot)
+{
+	if (direction == 0) {
+		direction = 1;
+	}
+
+	int candidate = NativeMulticlassIsPlayerClass(current) ? current : 1;
+	for (int step = 0; step < 16; ++step) {
+		candidate += direction > 0 ? 1 : -1;
+		if (candidate > 16) {
+			candidate = 1;
+		}
+		else if (candidate < 1) {
+			candidate = 16;
+		}
+
+		if (NativeMulticlassClassAvailableForSlot(candidate, slot)) {
+			return candidate;
+		}
+	}
+
+	return current;
+}
+
+static void NativeMulticlassNormalizeSelections()
+{
+	if (gNativeMulticlassState.locked) {
+		gNativeMulticlassState.selected_slot2 = gNativeMulticlassState.class2;
+		gNativeMulticlassState.selected_slot3 = gNativeMulticlassState.class3;
+		return;
+	}
+
+	if (!NativeMulticlassClassAvailableForSlot(gNativeMulticlassState.selected_slot2, 2)) {
+		gNativeMulticlassState.selected_slot2 = NativeMulticlassNextClass(gNativeMulticlassState.class1, 1, 2);
+	}
+
+	if (!NativeMulticlassClassAvailableForSlot(gNativeMulticlassState.selected_slot3, 3)) {
+		gNativeMulticlassState.selected_slot3 = NativeMulticlassNextClass(gNativeMulticlassState.selected_slot2, 1, 3);
+	}
+}
+
+static NativeMulticlassPetRow* NativeMulticlassFindPet(int pet_id)
+{
+	if (pet_id <= 0) {
+		return nullptr;
+	}
+
+	for (auto& pet : gNativeMulticlassPets) {
+		if (pet.id == pet_id) {
+			return &pet;
+		}
+	}
+
+	return nullptr;
+}
+
+static bool NativeMulticlassApplySpellLevelPatch(const std::string& payload)
+{
+	const int spell_id = NativeToInt(NativeGetPairValue(payload, "id"));
+	const int level = NativeToInt(NativeGetPairValue(payload, "level"), 255);
+	const int presentation = NativeToInt(NativeGetPairValue(payload, "presentation"));
+
+	if (!pSpellMgr || spell_id <= 0 || spell_id >= TOTAL_SPELL_COUNT || level <= 0 || level > 254 || presentation < 1 || presentation > 16) {
+		NativeAutoLootTrace("multiclass rejected spell level patch: id=%d level=%d presentation=%d", spell_id, level, presentation);
+		return true;
+	}
+
+	PSPELLMGR spell_mgr = (PSPELLMGR)pSpellMgr;
+	PSPELL spell = spell_mgr->Spells[spell_id];
+	if (!spell) {
+		NativeAutoLootTrace("multiclass spell level patch missing spell: id=%d", spell_id);
+		return true;
+	}
+
+	spell->Level[presentation - 1] = static_cast<BYTE>(level);
+	gNativeMulticlassSpellLevelsById[spell_id] = level;
+
+	if (spell->Name[0]) {
+		gNativeMulticlassSpellLevelsByName[NativeMulticlassNormalizedName(spell->Name)] = level;
+	}
+
+	++gNativeMulticlassSpellLevelPatchCount;
+	return true;
+}
+
+static bool NativeMulticlassRewriteSpellMenuText(const char* text, unsigned int menu_id, std::string& rewritten)
+{
+	if (!text || !text[0] || (gNativeMulticlassSpellLevelsByName.empty() && gNativeMulticlassSpellLevelsById.empty())) {
+		return false;
+	}
+
+	const char* cursor = text;
+	while (*cursor == ' ' || *cursor == '\t') {
+		++cursor;
+	}
+
+	if (!isdigit(static_cast<unsigned char>(*cursor))) {
+		return false;
+	}
+
+	int displayed_level = 0;
+	while (isdigit(static_cast<unsigned char>(*cursor))) {
+		displayed_level = (displayed_level * 10) + (*cursor - '0');
+		++cursor;
+	}
+
+	if (cursor[0] != ' ' || cursor[1] != '-' || cursor[2] != ' ') {
+		return false;
+	}
+
+	cursor += 3;
+	int approved_level = 0;
+	const auto found_by_id = gNativeMulticlassSpellLevelsById.find(static_cast<int>(menu_id));
+	if (found_by_id != gNativeMulticlassSpellLevelsById.end()) {
+		approved_level = found_by_id->second;
+	}
+
+	if (!approved_level) {
+		const std::string spell_name = NativeMulticlassNormalizedName(cursor);
+		const auto found_by_name = gNativeMulticlassSpellLevelsByName.find(spell_name);
+		if (found_by_name != gNativeMulticlassSpellLevelsByName.end()) {
+			approved_level = found_by_name->second;
+		}
+	}
+
+	if (approved_level <= 0 || approved_level == displayed_level) {
+		return false;
+	}
+
+	char buffer[256];
+	sprintf_s(buffer, "%d - %s", approved_level, cursor);
+	rewritten = buffer;
+	return true;
+}
+
+class NativeMulticlassWnd : public CCustomWnd
+{
+public:
+	NativeMulticlassWnd() : CCustomWnd((char*)"NativeMulticlassWnd")
+	{
+		CloseOnESC = 1;
+		SetWndNotification(NativeMulticlassWnd);
+
+		StatusLabel = GetChildItem("MCW_StatusLabel");
+		RefreshButton = (CButtonWnd*)GetChildItem("MCW_RefreshButton");
+		TrioLabel = GetChildItem("MCW_TrioLabel");
+		PresentationLabel = GetChildItem("MCW_PresentationLabel");
+		Slot2Label = GetChildItem("MCW_Slot2Label");
+		Slot2PrevButton = (CButtonWnd*)GetChildItem("MCW_Slot2PrevButton");
+		Slot2ValueLabel = GetChildItem("MCW_Slot2ValueLabel");
+		Slot2NextButton = (CButtonWnd*)GetChildItem("MCW_Slot2NextButton");
+		Slot3Label = GetChildItem("MCW_Slot3Label");
+		Slot3PrevButton = (CButtonWnd*)GetChildItem("MCW_Slot3PrevButton");
+		Slot3ValueLabel = GetChildItem("MCW_Slot3ValueLabel");
+		Slot3NextButton = (CButtonWnd*)GetChildItem("MCW_Slot3NextButton");
+		MelodyButton = (CButtonWnd*)GetChildItem("MCW_MelodyButton");
+		DiscsButton = (CButtonWnd*)GetChildItem("MCW_DiscsButton");
+		PetsButton = (CButtonWnd*)GetChildItem("MCW_PetsButton");
+		LockButton = (CButtonWnd*)GetChildItem("MCW_LockButton");
+		InfoHeaderLabel = GetChildItem("MCW_InfoHeaderLabel");
+		InfoLabel = GetChildItem("MCW_InfoLabel");
+
+		Layout();
+		Refresh();
+	}
+
+	int WndNotification(CXWnd* pWnd, unsigned int Message, void* unknown)
+	{
+		if (Message == XWM_CLOSE) {
+			pXWnd()->Show(0, 1);
+			return 1;
+		}
+
+		if (Message == XWM_LCLICK) {
+			if (pWnd == (CXWnd*)RefreshButton) {
+				NativeAutoLootSendCommand("/say #mc refresh");
+				SetStatus("Refreshing Multiclass profile...");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)PetsButton) {
+				NativeMulticlassEnsurePetWindow(true);
+				NativeAutoLootSendCommand("/say #mc pets");
+				SetStatus("Opening pet console...");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)MelodyButton) {
+				NativeMulticlassEnsureMelodyWindow(true);
+				NativeAutoLootSendCommand("/say #mc melody open");
+				SetStatus("Opening Bard Melody...");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)DiscsButton) {
+				NativeMulticlassEnsureDisciplineWindow(true);
+				NativeAutoLootSendCommand("/say #mc disc open");
+				SetStatus("Opening discipline tools...");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)Slot2PrevButton || pWnd == (CXWnd*)Slot2NextButton) {
+				if (!gNativeMulticlassState.locked && gNativeMulticlassState.can_choose) {
+					gNativeMulticlassState.selected_slot2 = NativeMulticlassNextClass(gNativeMulticlassState.selected_slot2, pWnd == (CXWnd*)Slot2NextButton ? 1 : -1, 2);
+					NativeMulticlassNormalizeSelections();
+					Refresh();
+				}
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)Slot3PrevButton || pWnd == (CXWnd*)Slot3NextButton) {
+				if (!gNativeMulticlassState.locked && gNativeMulticlassState.can_choose) {
+					gNativeMulticlassState.selected_slot3 = NativeMulticlassNextClass(gNativeMulticlassState.selected_slot3, pWnd == (CXWnd*)Slot3NextButton ? 1 : -1, 3);
+					NativeMulticlassNormalizeSelections();
+					Refresh();
+				}
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)LockButton) {
+				if (gNativeMulticlassState.locked) {
+					SetStatus("This trio is already locked.");
+					return 1;
+				}
+
+				NativeMulticlassNormalizeSelections();
+				if (!NativeMulticlassIsPlayerClass(gNativeMulticlassState.selected_slot2) || !NativeMulticlassIsPlayerClass(gNativeMulticlassState.selected_slot3)) {
+					SetStatus("Choose two added classes before locking.");
+					return 1;
+				}
+
+				char command[128];
+				sprintf_s(command, "/say #mc choose %d %d", gNativeMulticlassState.selected_slot2, gNativeMulticlassState.selected_slot3);
+				NativeAutoLootSendCommand(command);
+				SetStatus("Locking trio...");
+				return 1;
+			}
+		}
+
+		return CSidlScreenWnd::WndNotification(pWnd, Message, unknown);
+	}
+
+	void Layout()
+	{
+	}
+
+	void SetStatus(const char* text)
+	{
+		NativeMulticlassSetLabel(StatusLabel, text);
+	}
+
+	void Refresh()
+	{
+		NativeMulticlassNormalizeSelections();
+
+		NativeMulticlassSetLabel(StatusLabel, gNativeMulticlassState.selection_status.c_str());
+
+		char trio[192];
+		sprintf_s(
+			trio,
+			"%s / %s / %s [%s]",
+			gNativeMulticlassState.class1_name.c_str(),
+			gNativeMulticlassState.class2_name.c_str(),
+			gNativeMulticlassState.class3_name.c_str(),
+			gNativeMulticlassState.profile_name.c_str()
+		);
+		NativeMulticlassSetLabel(TrioLabel, trio);
+
+		char presentation[256];
+		if (gNativeMulticlassState.max_mana > 0) {
+			sprintf_s(
+				presentation,
+				"Presentation: %s. Base: %s. Mana: %d/%d. Pets: %s. Reweaves: %d.",
+				gNativeMulticlassState.presentation_name.c_str(),
+				gNativeMulticlassState.base_name.c_str(),
+				gNativeMulticlassState.mana,
+				gNativeMulticlassState.max_mana,
+				gNativeMulticlassState.multiple_pets ? "enabled" : "disabled",
+				gNativeMulticlassState.reweaves
+			);
+		}
+		else {
+			sprintf_s(
+				presentation,
+				"Presentation: %s. Base: %s. Pets: %s. Reweaves: %d.",
+				gNativeMulticlassState.presentation_name.c_str(),
+				gNativeMulticlassState.base_name.c_str(),
+				gNativeMulticlassState.multiple_pets ? "enabled" : "disabled",
+				gNativeMulticlassState.reweaves
+			);
+		}
+		NativeMulticlassSetLabel(PresentationLabel, presentation);
+
+		NativeMulticlassSetLabel(Slot2Label, "Second Class");
+		NativeMulticlassSetLabel(Slot3Label, "Third Class");
+		NativeMulticlassSetLabel(Slot2ValueLabel, NativeMulticlassClassName(gNativeMulticlassState.selected_slot2));
+		NativeMulticlassSetLabel(Slot3ValueLabel, NativeMulticlassClassName(gNativeMulticlassState.selected_slot3));
+
+		const bool editable = !gNativeMulticlassState.locked && gNativeMulticlassState.can_choose;
+		NativeMulticlassSetVisible((CXWnd*)Slot2PrevButton, editable);
+		NativeMulticlassSetVisible((CXWnd*)Slot2NextButton, editable);
+		NativeMulticlassSetVisible((CXWnd*)Slot3PrevButton, editable);
+		NativeMulticlassSetVisible((CXWnd*)Slot3NextButton, editable);
+		NativeMulticlassSetVisible((CXWnd*)MelodyButton, gNativeMulticlassState.has_bard);
+		NativeMulticlassSetVisible((CXWnd*)DiscsButton, gNativeMulticlassState.locked);
+		NativeMulticlassSetButtonText(LockButton, gNativeMulticlassState.locked ? "Locked" : "Lock Trio");
+
+		char info_header[192];
+		sprintf_s(info_header, "Trio Notes - %s", gNativeMulticlassState.resonance.c_str());
+		NativeMulticlassSetLabel(InfoHeaderLabel, info_header);
+
+		char info[768];
+		sprintf_s(
+			info,
+			"%s Roles: %s. %s %s",
+			gNativeMulticlassState.summary.c_str(),
+			gNativeMulticlassState.roles.c_str(),
+			gNativeMulticlassState.skill_summary.c_str(),
+			gNativeMulticlassState.bonus_summary.c_str()
+		);
+		NativeMulticlassSetLabel(InfoLabel, info);
+	}
+
+private:
+	CXWnd* StatusLabel = nullptr;
+	CButtonWnd* RefreshButton = nullptr;
+	CXWnd* TrioLabel = nullptr;
+	CXWnd* PresentationLabel = nullptr;
+	CXWnd* Slot2Label = nullptr;
+	CButtonWnd* Slot2PrevButton = nullptr;
+	CXWnd* Slot2ValueLabel = nullptr;
+	CButtonWnd* Slot2NextButton = nullptr;
+	CXWnd* Slot3Label = nullptr;
+	CButtonWnd* Slot3PrevButton = nullptr;
+	CXWnd* Slot3ValueLabel = nullptr;
+	CButtonWnd* Slot3NextButton = nullptr;
+	CButtonWnd* MelodyButton = nullptr;
+	CButtonWnd* DiscsButton = nullptr;
+	CButtonWnd* PetsButton = nullptr;
+	CButtonWnd* LockButton = nullptr;
+	CXWnd* InfoHeaderLabel = nullptr;
+	CXWnd* InfoLabel = nullptr;
+};
+
+class NativeMulticlassPetWnd : public CCustomWnd
+{
+public:
+	NativeMulticlassPetWnd() : CCustomWnd((char*)"NativeMulticlassPetWnd")
+	{
+		CloseOnESC = 1;
+		SetWndNotification(NativeMulticlassPetWnd);
+
+		StatusLabel = GetChildItem("MCPW_StatusLabel");
+		RefreshButton = (CButtonWnd*)GetChildItem("MCPW_RefreshButton");
+		PetList = (CListWnd*)GetChildItem("MCPW_PetList");
+		AttackButton = (CButtonWnd*)GetChildItem("MCPW_PetAttackButton");
+		BackButton = (CButtonWnd*)GetChildItem("MCPW_PetBackButton");
+		FollowButton = (CButtonWnd*)GetChildItem("MCPW_PetFollowButton");
+		GuardButton = (CButtonWnd*)GetChildItem("MCPW_PetGuardButton");
+		HealthButton = (CButtonWnd*)GetChildItem("MCPW_PetHealthButton");
+		TauntButton = (CButtonWnd*)GetChildItem("MCPW_PetTauntButton");
+		SitButton = (CButtonWnd*)GetChildItem("MCPW_PetSitButton");
+		HoldButton = (CButtonWnd*)GetChildItem("MCPW_PetHoldButton");
+		SpellHoldButton = (CButtonWnd*)GetChildItem("MCPW_PetSpellHoldButton");
+		DismissButton = (CButtonWnd*)GetChildItem("MCPW_PetDismissButton");
+
+		Layout();
+		RefreshRows();
+	}
+
+	int WndNotification(CXWnd* pWnd, unsigned int Message, void* unknown)
+	{
+		if (Message == XWM_CLOSE) {
+			pXWnd()->Show(0, 1);
+			return 1;
+		}
+
+		if (Message == XWM_LCLICK) {
+			if (pWnd == (CXWnd*)PetList) {
+				const int selected_pet_id = SelectedPetID();
+				if (selected_pet_id > 0) {
+					char command[128];
+					sprintf_s(command, "/say #mc pet focus %d", selected_pet_id);
+					NativeAutoLootSendCommand(command);
+					SetStatus("Focusing pet...");
+				}
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)RefreshButton) {
+				NativeAutoLootSendCommand("/say #mc pet refresh");
+				SetStatus("Refreshing pet roster...");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)AttackButton) {
+				SendAction("attack", true);
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)BackButton) {
+				SendAction("back", true);
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)FollowButton) {
+				SendAction("follow", true);
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)GuardButton) {
+				SendAction("guard", true);
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)HealthButton) {
+				SendAction("health", true);
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)TauntButton) {
+				SendAction("taunt", false);
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)SitButton) {
+				SendAction("sit", false);
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)HoldButton) {
+				SendAction("hold", false);
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)SpellHoldButton) {
+				SendAction("spellhold", false);
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)DismissButton) {
+				SendAction("dismiss", false);
+				return 1;
+			}
+		}
+
+		return CSidlScreenWnd::WndNotification(pWnd, Message, unknown);
+	}
+
+	void Layout()
+	{
+	}
+
+	void SetStatus(const char* text)
+	{
+		NativeMulticlassSetLabel(StatusLabel, text);
+	}
+
+	void RefreshRows()
+	{
+		if (!PetList) {
+			return;
+		}
+
+		PetList->DeleteAll();
+
+		if (SelectedPetIDValue <= 0) {
+			SelectedPetIDValue = gNativeMulticlassState.focus_id;
+		}
+
+		if (!NativeMulticlassFindPet(SelectedPetIDValue) && !gNativeMulticlassPets.empty()) {
+			SelectedPetIDValue = gNativeMulticlassState.focus_id > 0 ? gNativeMulticlassState.focus_id : gNativeMulticlassPets.front().id;
+		}
+
+		int selected_row = -1;
+		for (const auto& pet : gNativeMulticlassPets) {
+			char name[128];
+			sprintf_s(name, "%s%s", pet.focused ? "* " : "", pet.name.c_str());
+			CXStr name_text(name);
+			const COLORREF row_color = pet.id == SelectedPetIDValue ? 0xFFFF4040 : 0xFFFFFFFF;
+			const int row = PetList->AddString(name_text, row_color, (uint32_t)pet.id, nullptr, nullptr);
+
+			char hp_mp[32];
+			sprintf_s(hp_mp, "%d/%d", pet.hp, pet.mana);
+			char toggles[32];
+			sprintf_s(toggles, "%c/%c/%c", pet.taunt ? 'Y' : '-', pet.hold ? 'Y' : '-', pet.spellhold ? 'Y' : '-');
+			CXStr order(pet.order.c_str());
+			CXStr hpmp(hp_mp);
+			CXStr toggle_text(toggles);
+			PetList->SetItemText(row, 1, &order);
+			PetList->SetItemText(row, 2, &hpmp);
+			PetList->SetItemText(row, 3, &toggle_text);
+
+			if (pet.id == SelectedPetIDValue) {
+				selected_row = row;
+			}
+		}
+
+		if (gNativeMulticlassPets.empty()) {
+			CXStr dash("-");
+			const int row = PetList->AddString(dash, 0xFFB0B0B0, 0, nullptr, nullptr);
+			CXStr empty("No active roster.");
+			PetList->SetItemText(row, 1, &empty);
+			PetList->SetItemText(row, 2, &dash);
+			PetList->SetItemText(row, 3, &dash);
+		}
+		else if (selected_row >= 0) {
+			PetList->SetCurSel(selected_row);
+		}
+
+		char status[160];
+		const NativeMulticlassPetRow* focused = NativeMulticlassFindPet(gNativeMulticlassState.focus_id);
+		sprintf_s(
+			status,
+			"Pets %d/%d. Focus: %s.",
+			gNativeMulticlassState.roster_count,
+			gNativeMulticlassState.roster_limit,
+			focused ? focused->name.c_str() : "-"
+		);
+		SetStatus(status);
+	}
+
+private:
+	int SelectedPetID()
+	{
+		if (!PetList) {
+			return SelectedPetIDValue;
+		}
+
+		const int selected = PetList->GetCurSel();
+		if (selected < 0) {
+			return SelectedPetIDValue;
+		}
+
+		const int pet_id = (int)PetList->GetItemData(selected);
+		if (pet_id > 0) {
+			SelectedPetIDValue = pet_id;
+		}
+
+		return SelectedPetIDValue;
+	}
+
+	void SendAction(const char* action, bool all_pets)
+	{
+		if (!action || !action[0]) {
+			return;
+		}
+
+		char command[160];
+		if (all_pets) {
+			sprintf_s(command, "/say #mc pet %s all", action);
+		}
+		else {
+			const int pet_id = SelectedPetID();
+			if (pet_id > 0) {
+				sprintf_s(command, "/say #mc pet %s %d", action, pet_id);
+			}
+			else {
+				sprintf_s(command, "/say #mc pet %s", action);
+			}
+		}
+
+		NativeAutoLootSendCommand(command);
+		SetStatus("Sending pet command...");
+	}
+
+	CXWnd* StatusLabel = nullptr;
+	CButtonWnd* RefreshButton = nullptr;
+	CListWnd* PetList = nullptr;
+	CButtonWnd* AttackButton = nullptr;
+	CButtonWnd* BackButton = nullptr;
+	CButtonWnd* FollowButton = nullptr;
+	CButtonWnd* GuardButton = nullptr;
+	CButtonWnd* HealthButton = nullptr;
+	CButtonWnd* TauntButton = nullptr;
+	CButtonWnd* SitButton = nullptr;
+	CButtonWnd* HoldButton = nullptr;
+	CButtonWnd* SpellHoldButton = nullptr;
+	CButtonWnd* DismissButton = nullptr;
+	int SelectedPetIDValue = 0;
+};
+
+class NativeMulticlassMelodyWnd : public CCustomWnd
+{
+public:
+	NativeMulticlassMelodyWnd() : CCustomWnd((char*)"NativeMulticlassMelodyWnd")
+	{
+		CloseOnESC = 1;
+		SetWndNotification(NativeMulticlassMelodyWnd);
+
+		StatusLabel = GetChildItem("MCMW_StatusLabel");
+		RefreshButton = (CButtonWnd*)GetChildItem("MCMW_RefreshButton");
+		SlotList = (CListWnd*)GetChildItem("MCMW_SlotList");
+		SongList = (CListWnd*)GetChildItem("MCMW_SongList");
+		PrevButton = (CButtonWnd*)GetChildItem("MCMW_PrevButton");
+		NextButton = (CButtonWnd*)GetChildItem("MCMW_NextButton");
+		ClearSlotButton = (CButtonWnd*)GetChildItem("MCMW_ClearSlotButton");
+		ClearAllButton = (CButtonWnd*)GetChildItem("MCMW_ClearAllButton");
+		FooterLabel = GetChildItem("MCMW_FooterLabel");
+
+		Layout();
+		RefreshRows();
+	}
+
+	int WndNotification(CXWnd* pWnd, unsigned int Message, void* unknown)
+	{
+		if (Message == XWM_CLOSE) {
+			pXWnd()->Show(0, 1);
+			return 1;
+		}
+
+		if (Message == XWM_LCLICK) {
+			if (pWnd == (CXWnd*)RefreshButton) {
+				NativeAutoLootSendCommand("/say #mc melody refresh");
+				SetStatus("Refreshing Bard Melody...");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)SlotList) {
+				SelectedSlot();
+				RefreshRows();
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)SongList) {
+				const int spell_id = SelectedSongID();
+				const int slot = SelectedSlot();
+				if (slot > 0 && spell_id > 0) {
+					SendSet(slot, spell_id);
+				}
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)PrevButton) {
+				CycleSong(-1);
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)NextButton) {
+				CycleSong(1);
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)ClearSlotButton) {
+				const int slot = SelectedSlot();
+				if (slot > 0) {
+					char command[128];
+					sprintf_s(command, "/say #mc melody clear %d", slot);
+					NativeAutoLootSendCommand(command);
+					SetStatus("Clearing melody slot...");
+				}
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)ClearAllButton) {
+				NativeAutoLootSendCommand("/say #mc melody clear");
+				SetStatus("Clearing Bard Melody...");
+				return 1;
+			}
+		}
+
+		return CSidlScreenWnd::WndNotification(pWnd, Message, unknown);
+	}
+
+	void Layout()
+	{
+	}
+
+	void SetStatus(const char* text)
+	{
+		NativeMulticlassSetLabel(StatusLabel, text);
+	}
+
+	void RefreshRows()
+	{
+		if (!SlotList || !SongList) {
+			return;
+		}
+
+		SlotList->DeleteAll();
+		SongList->DeleteAll();
+
+		if (SelectedSlotValue < 1 || SelectedSlotValue > 4) {
+			SelectedSlotValue = 1;
+		}
+
+		int selected_slot_row = -1;
+		for (int slot_id = 1; slot_id <= 4; ++slot_id) {
+			const NativeMulticlassMelodySlot* slot = FindSlot(slot_id);
+			char label[24];
+			sprintf_s(label, "Slot %d", slot_id);
+			CXStr slot_text(label);
+			const COLORREF row_color = slot_id == SelectedSlotValue ? 0xFFFF4040 : 0xFFFFFFFF;
+			const int row = SlotList->AddString(slot_text, row_color, (uint32_t)slot_id, nullptr, nullptr);
+
+			CXStr song(slot ? slot->name.c_str() : "-");
+			char level[32];
+			sprintf_s(level, "%d", slot ? slot->level : 0);
+			CXStr level_text(slot && slot->level > 0 ? level : "-");
+			CXStr state(slot ? slot->state.c_str() : "empty");
+			SlotList->SetItemText(row, 1, &song);
+			SlotList->SetItemText(row, 2, &level_text);
+			SlotList->SetItemText(row, 3, &state);
+
+			if (slot_id == SelectedSlotValue) {
+				selected_slot_row = row;
+			}
+		}
+
+		if (selected_slot_row >= 0) {
+			SlotList->SetCurSel(selected_slot_row);
+		}
+
+		int selected_song_row = -1;
+		for (const auto& song : gNativeMulticlassMelodySongs) {
+			CXStr name(song.name.c_str());
+			const COLORREF row_color = song.allowed ? 0xFFFFFFFF : 0xFF909090;
+			const int row = SongList->AddString(name, row_color, (uint32_t)song.spell_id, nullptr, nullptr);
+
+			char level[32];
+			sprintf_s(level, "%d", song.level);
+			CXStr level_text(level);
+			CXStr state(song.allowed ? "Ready" : "Blocked");
+			CXStr reason(song.reason.empty() ? "-" : song.reason.c_str());
+			SongList->SetItemText(row, 1, &level_text);
+			SongList->SetItemText(row, 2, &state);
+			SongList->SetItemText(row, 3, &reason);
+
+			if (song.spell_id == SelectedSongIDValue) {
+				selected_song_row = row;
+			}
+		}
+
+		if (gNativeMulticlassMelodySongs.empty()) {
+			CXStr dash("-");
+			const int row = SongList->AddString(dash, 0xFFB0B0B0, 0, nullptr, nullptr);
+			CXStr empty(gNativeMulticlassState.has_bard ? "No scribed Bard songs." : "Bard not in trio.");
+			SongList->SetItemText(row, 1, &dash);
+			SongList->SetItemText(row, 2, &empty);
+			SongList->SetItemText(row, 3, &dash);
+		}
+		else if (selected_song_row >= 0) {
+			SongList->SetCurSel(selected_song_row);
+		}
+
+		SetStatus(gNativeMulticlassState.melody_status.c_str());
+		NativeMulticlassSetLabel(FooterLabel, "Select a slot, then choose a scribed Bard song. Spell gems stay free.");
+	}
+
+private:
+	const NativeMulticlassMelodySlot* FindSlot(int slot_id) const
+	{
+		for (const auto& slot : gNativeMulticlassMelodySlots) {
+			if (slot.slot == slot_id) {
+				return &slot;
+			}
+		}
+
+		return nullptr;
+	}
+
+	int SelectedSlot()
+	{
+		if (!SlotList) {
+			return SelectedSlotValue;
+		}
+
+		const int selected = SlotList->GetCurSel();
+		if (selected >= 0) {
+			const int slot_id = (int)SlotList->GetItemData(selected);
+			if (slot_id >= 1 && slot_id <= 4) {
+				SelectedSlotValue = slot_id;
+			}
+		}
+
+		return SelectedSlotValue;
+	}
+
+	int SelectedSongID()
+	{
+		if (!SongList) {
+			return SelectedSongIDValue;
+		}
+
+		const int selected = SongList->GetCurSel();
+		if (selected >= 0) {
+			const int spell_id = (int)SongList->GetItemData(selected);
+			if (spell_id > 0) {
+				SelectedSongIDValue = spell_id;
+			}
+		}
+
+		return SelectedSongIDValue;
+	}
+
+	void SendSet(int slot_id, int spell_id)
+	{
+		char command[160];
+		sprintf_s(command, "/say #mc melody set %d %d", slot_id, spell_id);
+		NativeAutoLootSendCommand(command);
+		SetStatus("Setting melody slot...");
+	}
+
+	void CycleSong(int direction)
+	{
+		if (gNativeMulticlassMelodySongs.empty()) {
+			SetStatus("No Bard songs are available.");
+			return;
+		}
+
+		std::vector<int> allowed_indices;
+		for (size_t i = 0; i < gNativeMulticlassMelodySongs.size(); ++i) {
+			if (gNativeMulticlassMelodySongs[i].allowed) {
+				allowed_indices.push_back((int)i);
+			}
+		}
+
+		if (allowed_indices.empty()) {
+			SetStatus("No Bard songs are ready for Melody.");
+			return;
+		}
+
+		int current_allowed_index = -1;
+		for (size_t i = 0; i < allowed_indices.size(); ++i) {
+			if (gNativeMulticlassMelodySongs[allowed_indices[i]].spell_id == SelectedSongIDValue) {
+				current_allowed_index = (int)i;
+				break;
+			}
+		}
+
+		if (current_allowed_index < 0) {
+			current_allowed_index = 0;
+		}
+		else {
+			current_allowed_index += direction;
+			if (current_allowed_index < 0) {
+				current_allowed_index = (int)allowed_indices.size() - 1;
+			}
+			if (current_allowed_index >= (int)allowed_indices.size()) {
+				current_allowed_index = 0;
+			}
+		}
+
+		const auto& song = gNativeMulticlassMelodySongs[allowed_indices[current_allowed_index]];
+		SelectedSongIDValue = song.spell_id;
+		SendSet(SelectedSlot(), song.spell_id);
+		RefreshRows();
+	}
+
+	CXWnd* StatusLabel = nullptr;
+	CButtonWnd* RefreshButton = nullptr;
+	CListWnd* SlotList = nullptr;
+	CListWnd* SongList = nullptr;
+	CButtonWnd* PrevButton = nullptr;
+	CButtonWnd* NextButton = nullptr;
+	CButtonWnd* ClearSlotButton = nullptr;
+	CButtonWnd* ClearAllButton = nullptr;
+	CXWnd* FooterLabel = nullptr;
+	int SelectedSlotValue = 1;
+	int SelectedSongIDValue = 0;
+};
+
+class NativeMulticlassDisciplineWnd : public CCustomWnd
+{
+public:
+	NativeMulticlassDisciplineWnd() : CCustomWnd((char*)"NativeMulticlassDisciplineWnd")
+	{
+		CloseOnESC = 1;
+		SetWndNotification(NativeMulticlassDisciplineWnd);
+
+		StatusLabel = GetChildItem("MCDW_StatusLabel");
+		RefreshButton = (CButtonWnd*)GetChildItem("MCDW_RefreshButton");
+		ActiveEffectLabel = GetChildItem("MCDW_ActiveEffectLabel");
+		ActiveEffectGauge = (CGaugeWnd*)GetChildItem("MCDW_ActiveEffectGauge");
+		ReuseLabel = GetChildItem("MCDW_ReuseLabel");
+		DisciplineList = (CListWnd*)GetChildItem("MCDW_DisciplineList");
+		UseButton = (CButtonWnd*)GetChildItem("MCDW_UseButton");
+		HotkeyButton = (CButtonWnd*)GetChildItem("MCDW_HotkeyButton");
+		FooterLabel = GetChildItem("MCDW_FooterLabel");
+
+		Layout();
+		RefreshRows();
+	}
+
+	int WndNotification(CXWnd* pWnd, unsigned int Message, void* unknown)
+	{
+		if (Message == XWM_CLOSE) {
+			pXWnd()->Show(0, 1);
+			return 1;
+		}
+
+		if (Message == XWM_LCLICK) {
+			if (pWnd == (CXWnd*)RefreshButton) {
+				NativeAutoLootSendCommand("/say #mc disc refresh");
+				SetStatus("Refreshing disciplines...");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)DisciplineList) {
+				SelectedSpellID();
+				RefreshRows();
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)UseButton) {
+				SendUse();
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)HotkeyButton) {
+				CreateHotkey();
+				return 1;
+			}
+		}
+
+		return CSidlScreenWnd::WndNotification(pWnd, Message, unknown);
+	}
+
+	void Layout()
+	{
+		// Resize is handled by SIDL AutoStretch anchors. Keep the method so
+		// every native Multiclass window has a pulse-time resize hook.
+		DWORD now = GetTickCount();
+		if (now - LastTimerRefreshMs >= 1000) {
+			LastTimerRefreshMs = now;
+			if (HasActiveReuseTimer()) {
+				RefreshRows();
+			}
+			else {
+				UpdateTimerLabels();
+			}
+		}
+	}
+
+	void SetStatus(const char* text)
+	{
+		NativeMulticlassSetLabel(StatusLabel, text);
+	}
+
+	void RefreshRows()
+	{
+		if (!DisciplineList) {
+			return;
+		}
+
+		DisciplineList->DeleteAll();
+
+		if (SelectedSpellIDValue > 0 && !FindDiscipline(SelectedSpellIDValue)) {
+			SelectedSpellIDValue = 0;
+		}
+
+		if (SelectedSpellIDValue <= 0 && !gNativeMulticlassDisciplineRows.empty()) {
+			SelectedSpellIDValue = gNativeMulticlassDisciplineRows.front().spell_id;
+		}
+
+		int selected_row = -1;
+		for (const auto& disc : gNativeMulticlassDisciplineRows) {
+			CXStr name(disc.name.c_str());
+			COLORREF row_color = disc.ready ? 0xFFFFFFFF : 0xFFB0B0B0;
+			if (disc.spell_id == SelectedSpellIDValue) {
+				row_color = 0xFFFF4040;
+			}
+
+			const int row = DisciplineList->AddString(name, row_color, (uint32_t)disc.spell_id, nullptr, nullptr);
+
+			char level[32];
+			sprintf_s(level, "%d", disc.level);
+			char timer[32];
+			const int remaining_timer = CurrentTimerSeconds(disc);
+			const bool locally_ready = disc.ready || (disc.timer > 0 && remaining_timer <= 0);
+			if (remaining_timer > 0) {
+				const std::string formatted_timer = FormatTimer(remaining_timer);
+				strcpy_s(timer, sizeof(timer), formatted_timer.c_str());
+			}
+			else {
+				sprintf_s(timer, "-");
+			}
+
+			CXStr level_text(level);
+			CXStr timer_text(timer);
+			const std::string state = locally_ready ? "Ready" : (remaining_timer > 0 ? "Reuse" : disc.state);
+			CXStr state_text(state.c_str());
+			DisciplineList->SetItemText(row, 1, &level_text);
+			DisciplineList->SetItemText(row, 2, &timer_text);
+			DisciplineList->SetItemText(row, 3, &state_text);
+
+			if (disc.spell_id == SelectedSpellIDValue) {
+				selected_row = row;
+			}
+		}
+
+		if (gNativeMulticlassDisciplineRows.empty()) {
+			CXStr dash("-");
+			const int row = DisciplineList->AddString(dash, 0xFFB0B0B0, 0, nullptr, nullptr);
+			CXStr empty("No learned disciplines.");
+			DisciplineList->SetItemText(row, 1, &dash);
+			DisciplineList->SetItemText(row, 2, &dash);
+			DisciplineList->SetItemText(row, 3, &empty);
+		}
+		else if (selected_row >= 0) {
+			DisciplineList->SetCurSel(selected_row);
+		}
+
+		SetStatus(gNativeMulticlassState.discipline_status.c_str());
+		UpdateTimerLabels();
+		NativeMulticlassSetLabel(FooterLabel, "Use activates selected disc. Hotkey creates a /mc disc button.");
+	}
+
+private:
+	const NativeMulticlassDisciplineRow* FindDiscipline(int spell_id) const
+	{
+		for (const auto& disc : gNativeMulticlassDisciplineRows) {
+			if (disc.spell_id == spell_id) {
+				return &disc;
+			}
+		}
+
+		return nullptr;
+	}
+
+	int SelectedSpellID()
+	{
+		if (!DisciplineList) {
+			return SelectedSpellIDValue;
+		}
+
+		const int selected = DisciplineList->GetCurSel();
+		if (selected >= 0) {
+			const int spell_id = (int)DisciplineList->GetItemData(selected);
+			if (spell_id > 0) {
+				SelectedSpellIDValue = spell_id;
+			}
+		}
+
+		return SelectedSpellIDValue;
+	}
+
+	void SendUse()
+	{
+		const int spell_id = SelectedSpellID();
+		if (spell_id <= 0) {
+			SetStatus("Select a discipline first.");
+			return;
+		}
+
+		char command[128];
+		sprintf_s(command, "/say #mc disc use %d", spell_id);
+		NativeAutoLootSendCommand(command);
+		SetStatus("Using discipline...");
+	}
+
+	void CreateHotkey()
+	{
+		const int spell_id = SelectedSpellID();
+		const auto* disc = FindDiscipline(spell_id);
+		if (!disc) {
+			SetStatus("Select a discipline first.");
+			return;
+		}
+
+		const std::string label = HotkeyLabel(disc->name, spell_id);
+		char command[256];
+		sprintf_s(command, "/hotbutton %s /mc disc use %d", label.c_str(), spell_id);
+		NativeAutoLootSendCommand(command);
+
+		char status[256];
+		sprintf_s(status, "Created hotkey for %.180s.", disc->name.c_str());
+		SetStatus(status);
+	}
+
+	static int CurrentTimerSeconds(const NativeMulticlassDisciplineRow& disc)
+	{
+		if (disc.timer <= 0) {
+			return 0;
+		}
+
+		const DWORD elapsed_ms = disc.timer_received_ms ? (GetTickCount() - disc.timer_received_ms) : 0;
+		const int elapsed_seconds = static_cast<int>(elapsed_ms / 1000);
+		if (elapsed_seconds >= disc.timer) {
+			return 0;
+		}
+
+		return disc.timer - elapsed_seconds;
+	}
+
+	static std::string FormatTimer(int seconds)
+	{
+		if (seconds <= 0) {
+			return "-";
+		}
+
+		char buffer[32];
+		if (seconds >= 3600) {
+			sprintf_s(buffer, "%d:%02d:%02d", seconds / 3600, (seconds / 60) % 60, seconds % 60);
+		}
+		else if (seconds >= 60) {
+			sprintf_s(buffer, "%d:%02d", seconds / 60, seconds % 60);
+		}
+		else {
+			sprintf_s(buffer, "%ds", seconds);
+		}
+
+		return buffer;
+	}
+
+	static std::string ReuseBar(int remaining, int total)
+	{
+		if (remaining <= 0 || total <= 0) {
+			return "Ready";
+		}
+
+		const int width = 12;
+		int filled = (remaining * width + total - 1) / total;
+		if (filled < 1) {
+			filled = 1;
+		}
+		if (filled > width) {
+			filled = width;
+		}
+
+		std::string bar = "[";
+		for (int i = 0; i < width; ++i) {
+			bar.push_back(i < filled ? '#' : '-');
+		}
+		bar.push_back(']');
+		return bar;
+	}
+
+	static std::string HotkeyLabel(const std::string& name, int spell_id)
+	{
+		std::string label;
+		label.reserve(16);
+		for (char c : name) {
+			if (label.size() >= 15) {
+				break;
+			}
+
+			const unsigned char ch = static_cast<unsigned char>(c);
+			if (isalnum(ch)) {
+				label.push_back(static_cast<char>(c));
+			}
+			else if ((isspace(ch) || c == '-' || c == '_') && !label.empty() && label.back() != '_') {
+				label.push_back('_');
+			}
+		}
+
+		while (!label.empty() && label.back() == '_') {
+			label.resize(label.size() - 1);
+		}
+
+		if (label.empty()) {
+			char fallback[32];
+			sprintf_s(fallback, "Disc%d", spell_id);
+			label = fallback;
+		}
+
+		return label;
+	}
+
+	bool HasActiveReuseTimer() const
+	{
+		for (const auto& disc : gNativeMulticlassDisciplineRows) {
+			if (CurrentTimerSeconds(disc) > 0) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	void UpdateTimerLabels()
+	{
+		NativeMulticlassSetLabel(ActiveEffectLabel, "Active:");
+		const auto* disc = FindDiscipline(SelectedSpellIDValue);
+		if (!disc) {
+			NativeMulticlassSetLabel(ReuseLabel, "Reuse: -");
+			return;
+		}
+
+		const int remaining = CurrentTimerSeconds(*disc);
+		const int total = disc->timer_total > 0 ? disc->timer_total : disc->timer;
+		const std::string reuse = remaining > 0 ?
+			("Reuse: " + ReuseBar(remaining, total) + " " + FormatTimer(remaining)) :
+			"Reuse: ready";
+		NativeMulticlassSetLabel(ReuseLabel, reuse.c_str());
+	}
+
+	CXWnd* StatusLabel = nullptr;
+	CButtonWnd* RefreshButton = nullptr;
+	CXWnd* ActiveEffectLabel = nullptr;
+	CGaugeWnd* ActiveEffectGauge = nullptr;
+	CXWnd* ReuseLabel = nullptr;
+	CListWnd* DisciplineList = nullptr;
+	CButtonWnd* UseButton = nullptr;
+	CButtonWnd* HotkeyButton = nullptr;
+	CXWnd* FooterLabel = nullptr;
+	int SelectedSpellIDValue = 0;
+	DWORD LastTimerRefreshMs = 0;
+};
+
+static void NativeMulticlassRefreshWindows()
+{
+	if (gNativeMulticlassWnd) {
+		gNativeMulticlassWnd->Refresh();
+	}
+
+	if (gNativeMulticlassPetWnd) {
+		gNativeMulticlassPetWnd->RefreshRows();
+	}
+
+	if (gNativeMulticlassMelodyWnd) {
+		gNativeMulticlassMelodyWnd->RefreshRows();
+	}
+
+	if (gNativeMulticlassDisciplineWnd) {
+		gNativeMulticlassDisciplineWnd->RefreshRows();
+	}
+}
+
+static void NativeMulticlassEnsureWindow(bool show)
+{
+	if (!pSidlMgr || !pWndMgr) {
+		return;
+	}
+
+	if (!gNativeMulticlassWnd) {
+		NativeAutoLootTrace("creating Multiclass window");
+		NativeMulticlassWnd* created_window = nullptr;
+		__try {
+			created_window = new NativeMulticlassWnd();
+		} __except(EXCEPTION_EXECUTE_HANDLER) {
+			NativeAutoLootTrace("Multiclass window construction faulted; check EQUI_NativeMulticlassWnd.xml");
+			created_window = nullptr;
+		}
+
+		if (!created_window) {
+			return;
+		}
+
+		gNativeMulticlassWnd = created_window;
+		NativeAutoLootTrace("Multiclass window created");
+	}
+
+	gNativeMulticlassWnd->Refresh();
+	if (show && gNativeMulticlassWnd) {
+		gNativeMulticlassWnd->pXWnd()->Show(1, 1);
+	}
+}
+
+static void NativeMulticlassEnsurePetWindow(bool show)
+{
+	if (!pSidlMgr || !pWndMgr) {
+		return;
+	}
+
+	if (!gNativeMulticlassPetWnd) {
+		NativeAutoLootTrace("creating Multiclass pet window");
+		NativeMulticlassPetWnd* created_window = nullptr;
+		__try {
+			created_window = new NativeMulticlassPetWnd();
+		} __except(EXCEPTION_EXECUTE_HANDLER) {
+			NativeAutoLootTrace("Multiclass pet window construction faulted; check EQUI_NativeMulticlassWnd.xml");
+			created_window = nullptr;
+		}
+
+		if (!created_window) {
+			return;
+		}
+
+		gNativeMulticlassPetWnd = created_window;
+		NativeAutoLootTrace("Multiclass pet window created");
+	}
+
+	gNativeMulticlassPetWnd->RefreshRows();
+	if (show && gNativeMulticlassPetWnd) {
+		gNativeMulticlassPetWnd->pXWnd()->Show(1, 1);
+	}
+}
+
+static void NativeMulticlassEnsureMelodyWindow(bool show)
+{
+	if (!pSidlMgr || !pWndMgr) {
+		return;
+	}
+
+	if (!gNativeMulticlassMelodyWnd) {
+		NativeAutoLootTrace("creating Multiclass melody window");
+		NativeMulticlassMelodyWnd* created_window = nullptr;
+		__try {
+			created_window = new NativeMulticlassMelodyWnd();
+		} __except(EXCEPTION_EXECUTE_HANDLER) {
+			NativeAutoLootTrace("Multiclass melody window construction faulted; check EQUI_NativeMulticlassWnd.xml");
+			created_window = nullptr;
+		}
+
+		if (!created_window) {
+			return;
+		}
+
+		gNativeMulticlassMelodyWnd = created_window;
+		NativeAutoLootTrace("Multiclass melody window created");
+	}
+
+	gNativeMulticlassMelodyWnd->RefreshRows();
+	if (show && gNativeMulticlassMelodyWnd) {
+		gNativeMulticlassMelodyWnd->pXWnd()->Show(1, 1);
+	}
+}
+
+static void NativeMulticlassEnsureDisciplineWindow(bool show)
+{
+	if (!pSidlMgr || !pWndMgr) {
+		return;
+	}
+
+	if (!gNativeMulticlassDisciplineWnd) {
+		NativeAutoLootTrace("creating Multiclass discipline window");
+		NativeMulticlassDisciplineWnd* created_window = nullptr;
+		__try {
+			created_window = new NativeMulticlassDisciplineWnd();
+		} __except(EXCEPTION_EXECUTE_HANDLER) {
+			NativeAutoLootTrace("Multiclass discipline window construction faulted; check EQUI_NativeMulticlassWnd.xml");
+			created_window = nullptr;
+		}
+
+		if (!created_window) {
+			return;
+		}
+
+		gNativeMulticlassDisciplineWnd = created_window;
+		NativeAutoLootTrace("Multiclass discipline window created");
+	}
+
+	gNativeMulticlassDisciplineWnd->RefreshRows();
+	if (show && gNativeMulticlassDisciplineWnd) {
+		gNativeMulticlassDisciplineWnd->pXWnd()->Show(1, 1);
+	}
+}
+
+static void NativeMulticlassHideRuntimeWindows()
+{
+	__try {
+		if (gNativeMulticlassWnd) {
+			gNativeMulticlassWnd->pXWnd()->Show(0, 1);
+		}
+		if (gNativeMulticlassPetWnd) {
+			gNativeMulticlassPetWnd->pXWnd()->Show(0, 1);
+		}
+		if (gNativeMulticlassMelodyWnd) {
+			gNativeMulticlassMelodyWnd->pXWnd()->Show(0, 1);
+		}
+		if (gNativeMulticlassDisciplineWnd) {
+			gNativeMulticlassDisciplineWnd->pXWnd()->Show(0, 1);
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+	}
+}
+
+static void NativeMulticlassDestroyRuntimeWindows()
+{
+	if (gNativeMulticlassWnd) {
+		NativeMulticlassWnd* window = gNativeMulticlassWnd;
+		gNativeMulticlassWnd = nullptr;
+		__try {
+			window->pXWnd()->Show(0, 1);
+			delete window;
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			NativeAutoLootTrace("Multiclass window release faulted during UI reset");
+		}
+	}
+
+	if (gNativeMulticlassPetWnd) {
+		NativeMulticlassPetWnd* window = gNativeMulticlassPetWnd;
+		gNativeMulticlassPetWnd = nullptr;
+		__try {
+			window->pXWnd()->Show(0, 1);
+			delete window;
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			NativeAutoLootTrace("Multiclass pet window release faulted during UI reset");
+		}
+	}
+
+	if (gNativeMulticlassMelodyWnd) {
+		NativeMulticlassMelodyWnd* window = gNativeMulticlassMelodyWnd;
+		gNativeMulticlassMelodyWnd = nullptr;
+		__try {
+			window->pXWnd()->Show(0, 1);
+			delete window;
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			NativeAutoLootTrace("Multiclass melody window release faulted during UI reset");
+		}
+	}
+
+	if (gNativeMulticlassDisciplineWnd) {
+		NativeMulticlassDisciplineWnd* window = gNativeMulticlassDisciplineWnd;
+		gNativeMulticlassDisciplineWnd = nullptr;
+		__try {
+			window->pXWnd()->Show(0, 1);
+			delete window;
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			NativeAutoLootTrace("Multiclass discipline window release faulted during UI reset");
+		}
+	}
+}
+
+static void NativeMulticlassResetSessionState(bool hide_windows)
+{
+	if (hide_windows) {
+		NativeMulticlassHideRuntimeWindows();
+	}
+
+	gNativeMulticlassState = NativeMulticlassState();
+	gNativeMulticlassPets.clear();
+	gNativeMulticlassMelodySlots.clear();
+	gNativeMulticlassMelodySongs.clear();
+	gNativeMulticlassDisciplineRows.clear();
+	gNativeMulticlassSpellLevelsById.clear();
+	gNativeMulticlassSpellLevelsByName.clear();
+	gNativeMulticlassSpellLevelPatchCount = 0;
+	gNativeMulticlassSpellLevelsLoading = false;
+	gNativeMulticlassShowCasterUiPulses = 0;
+}
+
+class NativeMulticlassContextMenuHook
+{
+public:
+	int Trampoline(const CXStr& text, unsigned int menu_id, bool checked, DWORD color, bool enabled);
+	int Detour(const CXStr& text, unsigned int menu_id, bool checked, DWORD color, bool enabled)
+	{
+		const char* raw_text = text.Ptr ? text.Ptr->Text : "";
+		std::string rewritten;
+		if (NativeMulticlassRewriteSpellMenuText(raw_text, menu_id, rewritten)) {
+			CXStr value(rewritten.c_str());
+			return Trampoline(value, menu_id, checked, color, enabled);
+		}
+
+		return Trampoline(text, menu_id, checked, color, enabled);
+	}
+};
+
+DETOUR_TRAMPOLINE_EMPTY(int NativeMulticlassContextMenuHook::Trampoline(const CXStr& text, unsigned int menu_id, bool checked, DWORD color, bool enabled));
+
+static DWORD NativeMulticlassContextMenuAddMenuItemAddress()
+{
+	return (((DWORD)0x0085B7B0 - 0x400000) + baseAddress);
+}
+
+static void NativeMulticlassInstallContextMenuHook()
+{
+	if (!gNativeMulticlassContextMenuHookEnabled || gNativeMulticlassContextMenuHookInstalled) {
+		return;
+	}
+
+	NativeAutoLootTrace("installing Multiclass context menu hook");
+	EzDetour(NativeMulticlassContextMenuAddMenuItemAddress(), &NativeMulticlassContextMenuHook::Detour, &NativeMulticlassContextMenuHook::Trampoline);
+	gNativeMulticlassContextMenuHookInstalled = true;
 }
 
 static bool NativeIsKeepRule(const std::string& rule)
@@ -1747,6 +3706,884 @@ static void NativeItemForgeShowWindow(const std::string& payload)
 	gNativeItemForgeWnd->Open(payload);
 }
 
+class NativeUIShowcaseWnd : public CCustomWnd
+{
+public:
+	NativeUIShowcaseWnd() : CCustomWnd((char*)"NativeUIShowcaseWnd")
+	{
+		NativeAutoLootTrace("UI showcase constructor body entered");
+		CloseOnESC = 1;
+		SetWndNotification(NativeUIShowcaseWnd);
+
+		InputsTab = (CButtonWnd*)GetChildItem("NUIS_InputsTab");
+		DataTab = (CButtonWnd*)GetChildItem("NUIS_DataTab");
+		TextTab = (CButtonWnd*)GetChildItem("NUIS_TextTab");
+		InputsPage = GetChildItem("NUIS_InputsPage");
+		DataPage = GetChildItem("NUIS_DataPage");
+		TextPage = GetChildItem("NUIS_TextPage");
+
+		NameEdit = (CEditWnd*)GetChildItem("NUIS_NameEdit");
+		ModeCombo = (CComboWnd*)GetChildItem("NUIS_ModeCombo");
+		PreviewCheck = (CButtonWnd*)GetChildItem("NUIS_EnablePreviewCheck");
+		AutoApplyCheck = (CButtonWnd*)GetChildItem("NUIS_AutoApplyCheck");
+		GoldRadio = (CButtonWnd*)GetChildItem("NUIS_GoldRadio");
+		GreenRadio = (CButtonWnd*)GetChildItem("NUIS_GreenRadio");
+		RedRadio = (CButtonWnd*)GetChildItem("NUIS_RedRadio");
+		DensitySlider = (CSliderWnd*)GetChildItem("NUIS_DensitySlider");
+		DensityMinusButton = (CButtonWnd*)GetChildItem("NUIS_DensityMinusButton");
+		DensityPlusButton = (CButtonWnd*)GetChildItem("NUIS_DensityPlusButton");
+		DensityValueLabel = GetChildItem("NUIS_DensityValueLabel");
+		ApplyButton = (CButtonWnd*)GetChildItem("NUIS_ApplyButton");
+		ResetButton = (CButtonWnd*)GetChildItem("NUIS_ResetButton");
+		InputPreviewLabel = GetChildItem("NUIS_InputPreviewLabel");
+
+		ControlList = (CListWnd*)GetChildItem("NUIS_ControlList");
+		SelectFirstButton = (CButtonWnd*)GetChildItem("NUIS_SelectFirstButton");
+		AddRowButton = (CButtonWnd*)GetChildItem("NUIS_AddRowButton");
+		DataStatusLabel = GetChildItem("NUIS_DataStatusLabel");
+
+		StoryText = (CStmlWnd*)GetChildItem("NUIS_StoryText");
+		STMLPlainButton = (CButtonWnd*)GetChildItem("NUIS_STMLPlainButton");
+		STMLColorButton = (CButtonWnd*)GetChildItem("NUIS_STMLColorButton");
+		STMLAppendButton = (CButtonWnd*)GetChildItem("NUIS_STMLAppendButton");
+		StatusLabel = GetChildItem("NUIS_StatusLabel");
+		NativeAutoLootTrace("UI showcase child controls resolved");
+
+		PopulateCombo();
+		PopulateControlList();
+		ResetDemo();
+		ShowPage(PageInputs);
+		SetSTMLPlain();
+	}
+
+	int WndNotification(CXWnd* pWnd, unsigned int Message, void* unknown)
+	{
+		if (Message == XWM_CLOSE) {
+			pXWnd()->Show(0, 1);
+			return 1;
+		}
+
+		if (pWnd == (CXWnd*)DensitySlider && (Message == XWM_NEWVALUE || Message == XWM_LMOUSEUP || Message == XWM_LCLICK)) {
+			if (DensitySlider) {
+				Density = ClampInt(DensitySlider->GetValue(), 0, 10);
+				UpdateView();
+				SetStatus("Slider changed.");
+			}
+			return 1;
+		}
+
+		if (pWnd == (CXWnd*)ModeCombo && (Message == XWM_NEWVALUE || Message == XWM_LCLICK)) {
+			if (ModeCombo) {
+				const int choice = ModeCombo->GetCurChoice();
+				if (choice >= 0 && choice <= 3) {
+					ModeIndex = choice;
+					UpdateView();
+					SetStatus("Dropdown selection changed.");
+				}
+			}
+			return 1;
+		}
+
+		if (Message == XWM_LCLICK) {
+			if (pWnd == (CXWnd*)InputsTab) {
+				ShowPage(PageInputs);
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)DataTab) {
+				ShowPage(PageData);
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)TextTab) {
+				ShowPage(PageText);
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)PreviewCheck) {
+				PreviewEnabled = !PreviewEnabled;
+				UpdateView();
+				SetStatus("Checkbox toggled.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)AutoApplyCheck) {
+				AutoApply = !AutoApply;
+				UpdateView();
+				SetStatus("Second checkbox toggled.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)GoldRadio) {
+				AccentIndex = 0;
+				UpdateView();
+				SetStatus("Radio group set to gold.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)GreenRadio) {
+				AccentIndex = 1;
+				UpdateView();
+				SetStatus("Radio group set to green.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)RedRadio) {
+				AccentIndex = 2;
+				UpdateView();
+				SetStatus("Radio group set to red.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)DensityMinusButton) {
+				Density = ClampInt(Density - 1, 0, 10);
+				UpdateView();
+				SetStatus("Stepper decreased the slider value.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)DensityPlusButton) {
+				Density = ClampInt(Density + 1, 0, 10);
+				UpdateView();
+				SetStatus("Stepper increased the slider value.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)ApplyButton) {
+				UpdateView();
+				SetStatus("Applied the current input state locally.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)ResetButton) {
+				ResetDemo();
+				SetStatus("Showcase controls reset.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)ControlList) {
+				UpdateSelectedListStatus();
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)SelectFirstButton) {
+				if (ControlList) {
+					ControlList->SetCurSel(0);
+				}
+				UpdateSelectedListStatus();
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)AddRowButton) {
+				AddSampleRow();
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)STMLPlainButton) {
+				SetSTMLPlain();
+				SetStatus("STML text reset to the plain sample.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)STMLColorButton) {
+				SetSTMLColor();
+				SetStatus("STML text swapped to the color sample.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)STMLAppendButton) {
+				AppendSTMLLine();
+				SetStatus("Appended an STML log line.");
+				return 1;
+			}
+		}
+
+		return CSidlScreenWnd::WndNotification(pWnd, Message, unknown);
+	}
+
+	void Open()
+	{
+		pXWnd()->Show(1, 1);
+		SetStatus("Native UI Showcase opened. Try the tabs, dropdown, checks, list, slider, gauge, and STML pane.");
+		UpdateView();
+	}
+
+	void Layout()
+	{
+	}
+
+	void ResetDemo()
+	{
+		ModeIndex = 1;
+		AccentIndex = 0;
+		Density = 5;
+		PreviewEnabled = true;
+		AutoApply = false;
+		SetEditText("Prototype Panel");
+		UpdateView();
+	}
+
+	void SetStatus(const char* text)
+	{
+		SetLabel(StatusLabel, text);
+	}
+
+private:
+	enum ShowcasePage {
+		PageInputs = 0,
+		PageData = 1,
+		PageText = 2
+	};
+
+	static int ClampInt(int value, int minimum, int maximum)
+	{
+		if (value < minimum) {
+			return minimum;
+		}
+
+		if (value > maximum) {
+			return maximum;
+		}
+
+		return value;
+	}
+
+	void SetVisible(CXWnd* wnd, bool visible)
+	{
+		if (wnd) {
+			wnd->Show(visible ? 1 : 0, 1);
+		}
+	}
+
+	void SetLabel(CXWnd* label, const char* text)
+	{
+		if (label) {
+			CXStr value(text ? text : "");
+			label->SetWindowTextA(value);
+		}
+	}
+
+	void SetButtonText(CButtonWnd* button, const char* text)
+	{
+		if (button) {
+			CXStr value(text ? text : "");
+			((CXWnd*)button)->SetWindowTextA(value);
+		}
+	}
+
+	void SetButtonCheck(CButtonWnd* button, bool checked)
+	{
+		if (button) {
+			button->Checked = checked ? 1 : 0;
+			button->SetCheck(checked);
+		}
+	}
+
+	void SetEditText(const char* text)
+	{
+		if (!NameEdit) {
+			return;
+		}
+
+		char buffer[96] = { 0 };
+		strcpy_s(buffer, text && text[0] ? text : "Prototype Panel");
+		SetCXStr(&NameEdit->InputText, buffer);
+		CXStr value(buffer);
+		((CXWnd*)NameEdit)->SetWindowTextA(value);
+	}
+
+	std::string ReadName() const
+	{
+		char text[96] = { 0 };
+		if (NameEdit && NameEdit->InputText) {
+			GetCXStr(NameEdit->InputText, text, sizeof(text));
+		}
+
+		if (!text[0]) {
+			return "Prototype Panel";
+		}
+
+		return text;
+	}
+
+	const char* ModeLabel() const
+	{
+		switch (ModeIndex) {
+		case 0:
+			return "Compact";
+		case 2:
+			return "Dense Operations";
+		case 3:
+			return "Read Only";
+		default:
+			return "Comfortable";
+		}
+	}
+
+	const char* AccentLabel() const
+	{
+		switch (AccentIndex) {
+		case 1:
+			return "Green";
+		case 2:
+			return "Red";
+		default:
+			return "Gold";
+		}
+	}
+
+	COLORREF AccentColor() const
+	{
+		switch (AccentIndex) {
+		case 1:
+			return 0xFF66FF66;
+		case 2:
+			return 0xFFFF8080;
+		default:
+			return 0xFFFFFF80;
+		}
+	}
+
+	void PopulateCombo()
+	{
+		if (!ModeCombo) {
+			return;
+		}
+
+		ModeCombo->DeleteAll();
+		ModeCombo->InsertChoice((char*)"Compact");
+		ModeCombo->InsertChoice((char*)"Comfortable");
+		ModeCombo->InsertChoice((char*)"Dense Operations");
+		ModeCombo->InsertChoice((char*)"Read Only");
+		ModeCombo->SetChoice(ModeIndex);
+	}
+
+	void AddListRow(const char* control, const char* pattern, const char* notes, COLORREF color, uint32_t data)
+	{
+		if (!ControlList) {
+			return;
+		}
+
+		CXStr control_text(control);
+		const int row = ControlList->AddString(control_text, color, data, nullptr, nullptr);
+		CXStr pattern_text(pattern);
+		CXStr notes_text(notes);
+		ControlList->SetItemText(row, 1, &pattern_text);
+		ControlList->SetItemText(row, 2, &notes_text);
+		ControlList->SetItemColor(row, 2, color);
+	}
+
+	void PopulateControlList()
+	{
+		if (!ControlList) {
+			return;
+		}
+
+		ControlList->DeleteAll();
+		AddListRow("Button", "command", "click actions", 0xFFFFFFFF, 1);
+		AddListRow("Checkbox", "toggle", "local bool state", 0xFF66FF66, 2);
+		AddListRow("Radio", "choice set", "one active option", 0xFFFFFF80, 3);
+		AddListRow("Combobox", "dropdown", "single selection", 0xFF80C0FF, 4);
+		AddListRow("Slider", "numeric", "drag or stepper", 0xFFFFC080, 5);
+		AddListRow("Listbox", "table", "rows and columns", 0xFFFFFFFF, 6);
+		AddListRow("Gauge", "EQType", "bound client value", 0xFFFFFF80, 7);
+		AddListRow("STMLbox", "rich text", "colored help/logs", 0xFF66FF66, 8);
+		ControlList->SetCurSel(0);
+		UpdateSelectedListStatus();
+	}
+
+	void AddSampleRow()
+	{
+		++SampleRows;
+		char control[64];
+		sprintf_s(control, "Sample %d", SampleRows);
+		AddListRow(control, "runtime", "added from C++", AccentColor(), 100 + SampleRows);
+		if (ControlList) {
+			ControlList->SetCurSel(7 + SampleRows);
+		}
+		SetLabel(DataStatusLabel, "Added a runtime row with hidden item data and accent coloring.");
+	}
+
+	void UpdateSelectedListStatus()
+	{
+		if (!ControlList) {
+			return;
+		}
+
+		const int selected = ControlList->GetCurSel();
+		if (selected < 0) {
+			SetLabel(DataStatusLabel, "Select a row to see listbox selection handling.");
+			return;
+		}
+
+		const uint32_t data = ControlList->GetItemData(selected);
+		char text[160];
+		sprintf_s(text, "Selected row %d with hidden data %u. List rows can carry text, colors, selection, and item data.", selected + 1, data);
+		SetLabel(DataStatusLabel, text);
+	}
+
+	void ShowPage(ShowcasePage page)
+	{
+		CurrentPage = page;
+		SetVisible(InputsPage, CurrentPage == PageInputs);
+		SetVisible(DataPage, CurrentPage == PageData);
+		SetVisible(TextPage, CurrentPage == PageText);
+		UpdateTabs();
+	}
+
+	void UpdateTabs()
+	{
+		SetButtonText(InputsTab, CurrentPage == PageInputs ? "> Inputs <" : "Inputs");
+		SetButtonText(DataTab, CurrentPage == PageData ? "> Data <" : "Data Views");
+		SetButtonText(TextTab, CurrentPage == PageText ? "> Text <" : "Rich Text");
+	}
+
+	void UpdateView()
+	{
+		UpdateTabs();
+
+		if (ModeCombo) {
+			ModeCombo->SetChoice(ModeIndex);
+		}
+
+		if (DensitySlider) {
+			DensitySlider->SetNumTicks(10);
+			DensitySlider->SetValue(Density);
+		}
+
+		SetButtonCheck(PreviewCheck, PreviewEnabled);
+		SetButtonCheck(AutoApplyCheck, AutoApply);
+		SetButtonCheck(GoldRadio, AccentIndex == 0);
+		SetButtonCheck(GreenRadio, AccentIndex == 1);
+		SetButtonCheck(RedRadio, AccentIndex == 2);
+
+		SetButtonText(PreviewCheck, PreviewEnabled ? "Preview: On" : "Preview: Off");
+		SetButtonText(AutoApplyCheck, AutoApply ? "Auto Apply: On" : "Auto Apply: Off");
+		SetButtonText(GoldRadio, AccentIndex == 0 ? "* Gold" : "Gold");
+		SetButtonText(GreenRadio, AccentIndex == 1 ? "* Green" : "Green");
+		SetButtonText(RedRadio, AccentIndex == 2 ? "* Red" : "Red");
+
+		char value[32];
+		sprintf_s(value, "%d", Density);
+		SetLabel(DensityValueLabel, value);
+
+		char preview[384];
+		sprintf_s(
+			preview,
+			"Name: %s\nMode: %s\nPreview: %s  Auto Apply: %s  Accent: %s  Density: %d\nThis is a local-only playground for native EQ controls before we commit to a feature workflow.",
+			ReadName().c_str(),
+			ModeLabel(),
+			PreviewEnabled ? "on" : "off",
+			AutoApply ? "on" : "off",
+			AccentLabel(),
+			Density
+		);
+		SetLabel(InputPreviewLabel, preview);
+	}
+
+	void SetSTML(const char* text)
+	{
+		if (StoryText) {
+			CXStr value(text ? text : "");
+			StoryText->SetSTMLText(value, false, nullptr);
+			StoryText->ForceParseNow();
+		}
+	}
+
+	void SetSTMLPlain()
+	{
+		SetSTML(
+			"Native UI STML sample<br>"
+			"<br>"
+			"Use this for help panes, compact summaries, changelogs, walkthroughs, or output logs.<br>"
+			"Buttons below swap the content or append a new line without recreating the window."
+		);
+	}
+
+	void SetSTMLColor()
+	{
+		SetSTML(
+			"<c \"#66ff66\">Green:</c> success or enabled state<br>"
+			"<c \"#ffff80\">Gold:</c> warning, pending, or important metadata<br>"
+			"<c \"#ff8080\">Red:</c> blocked or destructive action<br>"
+			"<br>"
+			"STML is a useful middle ground between plain labels and a full list view."
+		);
+	}
+
+	void AppendSTMLLine()
+	{
+		if (!StoryText) {
+			return;
+		}
+
+		++LogLine;
+		char line[128];
+		sprintf_s(line, "<br>Appended runtime line %d with density %d and %s accent.", LogLine, Density, AccentLabel());
+		CXStr value(line);
+		StoryText->AppendSTML(value);
+		StoryText->ForceParseNow();
+	}
+
+	ShowcasePage CurrentPage = PageInputs;
+	int ModeIndex = 1;
+	int AccentIndex = 0;
+	int Density = 5;
+	int SampleRows = 0;
+	int LogLine = 0;
+	bool PreviewEnabled = true;
+	bool AutoApply = false;
+
+	CButtonWnd* InputsTab = nullptr;
+	CButtonWnd* DataTab = nullptr;
+	CButtonWnd* TextTab = nullptr;
+	CXWnd* InputsPage = nullptr;
+	CXWnd* DataPage = nullptr;
+	CXWnd* TextPage = nullptr;
+	CEditWnd* NameEdit = nullptr;
+	CComboWnd* ModeCombo = nullptr;
+	CButtonWnd* PreviewCheck = nullptr;
+	CButtonWnd* AutoApplyCheck = nullptr;
+	CButtonWnd* GoldRadio = nullptr;
+	CButtonWnd* GreenRadio = nullptr;
+	CButtonWnd* RedRadio = nullptr;
+	CSliderWnd* DensitySlider = nullptr;
+	CButtonWnd* DensityMinusButton = nullptr;
+	CButtonWnd* DensityPlusButton = nullptr;
+	CXWnd* DensityValueLabel = nullptr;
+	CButtonWnd* ApplyButton = nullptr;
+	CButtonWnd* ResetButton = nullptr;
+	CXWnd* InputPreviewLabel = nullptr;
+	CListWnd* ControlList = nullptr;
+	CButtonWnd* SelectFirstButton = nullptr;
+	CButtonWnd* AddRowButton = nullptr;
+	CXWnd* DataStatusLabel = nullptr;
+	CStmlWnd* StoryText = nullptr;
+	CButtonWnd* STMLPlainButton = nullptr;
+	CButtonWnd* STMLColorButton = nullptr;
+	CButtonWnd* STMLAppendButton = nullptr;
+	CXWnd* StatusLabel = nullptr;
+};
+
+static NativeUIShowcaseWnd* gNativeUIShowcaseWnd = nullptr;
+
+static bool NativeUIShowcaseFileExists(const char* path)
+{
+	FILE* file = nullptr;
+	if (fopen_s(&file, path, "r") || !file) {
+		return false;
+	}
+
+	fclose(file);
+	return true;
+}
+
+static bool NativeUIShowcaseFileContains(const char* path, const char* needle)
+{
+	FILE* file = nullptr;
+	if (fopen_s(&file, path, "r") || !file) {
+		return false;
+	}
+
+	char line[1024];
+	while (fgets(line, sizeof(line), file)) {
+		if (strstr(line, needle)) {
+			fclose(file);
+			return true;
+		}
+	}
+
+	fclose(file);
+	return false;
+}
+
+struct NativeHpFixState
+{
+	bool has_payload = false;
+	long long current = 0;
+	long long maximum = 0;
+	float percent = 0.0f;
+};
+
+static NativeHpFixState gNativeHpFixState;
+
+static std::string NativeHpFixFormatInteger(long long value)
+{
+	char raw[64];
+	sprintf_s(raw, "%lld", value);
+
+	std::string text(raw);
+	const bool negative = !text.empty() && text[0] == '-';
+	int insert_at = static_cast<int>(text.size()) - 3;
+	const int first_digit = negative ? 1 : 0;
+
+	while (insert_at > first_digit) {
+		text.insert(static_cast<size_t>(insert_at), ",");
+		insert_at -= 3;
+	}
+
+	return text;
+}
+
+static void NativeHpFixSetLabel(CXWnd* label, const char* text)
+{
+	if (label) {
+		CXStr value(text ? text : "");
+		label->SetWindowTextA(value);
+	}
+}
+
+class NativeHpFixWnd : public CCustomWnd
+{
+public:
+	NativeHpFixWnd() : CCustomWnd((char*)"NativeHpFixWnd")
+	{
+		CloseOnESC = 1;
+		SetWndNotification(NativeHpFixWnd);
+
+		StatusLabel = GetChildItem("HPFIX_StatusLabel");
+		CurrentLabel = GetChildItem("HPFIX_CurrentLabel");
+		MaxLabel = GetChildItem("HPFIX_MaxLabel");
+		PercentLabel = GetChildItem("HPFIX_PercentLabel");
+		DetailLabel = GetChildItem("HPFIX_DetailLabel");
+
+		SetStatus("Waiting for native HPFIX payload...");
+		Refresh();
+	}
+
+	int WndNotification(CXWnd* pWnd, unsigned int Message, void* unknown)
+	{
+		if (Message == XWM_CLOSE) {
+			pXWnd()->Show(0, 1);
+			return 1;
+		}
+
+		return CSidlScreenWnd::WndNotification(pWnd, Message, unknown);
+	}
+
+	void Open()
+	{
+		pXWnd()->Show(1, 1);
+		Refresh();
+	}
+
+	void Refresh()
+	{
+		if (!gNativeHpFixState.has_payload) {
+			NativeHpFixSetLabel(CurrentLabel, "Current: pending");
+			NativeHpFixSetLabel(MaxLabel, "Maximum: pending");
+			NativeHpFixSetLabel(PercentLabel, "Percent: pending");
+			NativeHpFixSetLabel(DetailLabel, "The server will send authoritative self HP after the DLL handshake.");
+			return;
+		}
+
+		const std::string current = "Current: " + NativeHpFixFormatInteger(gNativeHpFixState.current);
+		const std::string maximum = "Maximum: " + NativeHpFixFormatInteger(gNativeHpFixState.maximum);
+
+		char percent[64];
+		sprintf_s(percent, "Percent: %.2f%%", gNativeHpFixState.percent);
+
+		NativeHpFixSetLabel(CurrentLabel, current.c_str());
+		NativeHpFixSetLabel(MaxLabel, maximum.c_str());
+		NativeHpFixSetLabel(PercentLabel, percent);
+		NativeHpFixSetLabel(DetailLabel, "Overlay uses server-authoritative HP and leaves OP_HPUpdate unchanged.");
+	}
+
+	void SetStatus(const char* text)
+	{
+		NativeHpFixSetLabel(StatusLabel, text);
+	}
+
+private:
+	CXWnd* StatusLabel = nullptr;
+	CXWnd* CurrentLabel = nullptr;
+	CXWnd* MaxLabel = nullptr;
+	CXWnd* PercentLabel = nullptr;
+	CXWnd* DetailLabel = nullptr;
+};
+
+static NativeHpFixWnd* gNativeHpFixWnd = nullptr;
+
+static bool NativeHpFixClientFilesReady()
+{
+	char xml_path[MAX_PATH];
+	char equi_path[MAX_PATH];
+	if (gszEQPath[0]) {
+		sprintf_s(xml_path, "%s\\uifiles\\default\\EQUI_NativeHpFixWnd.xml", gszEQPath);
+		sprintf_s(equi_path, "%s\\uifiles\\default\\EQUI.xml", gszEQPath);
+	}
+	else {
+		strcpy_s(xml_path, "uifiles\\default\\EQUI_NativeHpFixWnd.xml");
+		strcpy_s(equi_path, "uifiles\\default\\EQUI.xml");
+	}
+
+	if (!NativeUIShowcaseFileExists(xml_path)) {
+		NativeAutoLootTrace("HPFIX XML missing: %s", xml_path);
+		return false;
+	}
+
+	if (!NativeUIShowcaseFileContains(equi_path, "EQUI_NativeHpFixWnd.xml")) {
+		NativeAutoLootTrace("HPFIX XML is not included by EQUI.xml: %s", equi_path);
+		return false;
+	}
+
+	return true;
+}
+
+static void NativeHpFixEnsureWindow(bool show)
+{
+	if (!pSidlMgr || !pWndMgr) {
+		return;
+	}
+
+	if (!gNativeHpFixWnd) {
+		if (!NativeHpFixClientFilesReady()) {
+			return;
+		}
+
+		NativeAutoLootTrace("creating HPFIX window");
+		NativeHpFixWnd* created_window = nullptr;
+		__try {
+			created_window = new NativeHpFixWnd();
+		} __except(EXCEPTION_EXECUTE_HANDLER) {
+			NativeAutoLootTrace("HPFIX window construction faulted; check EQUI_NativeHpFixWnd.xml");
+			created_window = nullptr;
+		}
+
+		if (!created_window) {
+			return;
+		}
+
+		gNativeHpFixWnd = created_window;
+		NativeAutoLootTrace("HPFIX window created");
+	}
+
+	if (show && gNativeHpFixWnd) {
+		gNativeHpFixWnd->Open();
+	}
+}
+
+static void NativeHpFixTryUpdatePlayerWindowLabel()
+{
+	if (!ppPlayerWnd || !pPlayerWnd || !gNativeHpFixState.has_payload) {
+		return;
+	}
+
+	CXWnd* hp_label = nullptr;
+	__try {
+		hp_label = ((CXWnd*)pPlayerWnd)->GetChildItem("Player_HPLabel");
+	} __except(EXCEPTION_EXECUTE_HANDLER) {
+		NativeAutoLootTrace("HPFIX could not query Player_HPLabel");
+		hp_label = nullptr;
+	}
+
+	if (!hp_label) {
+		return;
+	}
+
+	char text[128];
+	sprintf_s(
+		text,
+		"%s / %s",
+		NativeHpFixFormatInteger(gNativeHpFixState.current).c_str(),
+		NativeHpFixFormatInteger(gNativeHpFixState.maximum).c_str()
+	);
+	NativeHpFixSetLabel(hp_label, text);
+}
+
+static bool NativeHpFixApplyPayload(const std::string& payload)
+{
+	const long long current = NativeToInt64(NativeGetPairValue(payload, "current"), -1);
+	const long long maximum = NativeToInt64(NativeGetPairValue(payload, "max"), -1);
+	if (current < 0 || maximum <= 0) {
+		NativeAutoLootTrace("HPFIX ignored invalid payload: %s", payload.c_str());
+		return true;
+	}
+
+	gNativeHpFixState.has_payload = true;
+	gNativeHpFixState.current = current;
+	gNativeHpFixState.maximum = maximum;
+	gNativeHpFixState.percent = NativeToFloat(
+		NativeGetPairValue(payload, "percent"),
+		maximum > 0 ? static_cast<float>((static_cast<double>(current) * 100.0) / static_cast<double>(maximum)) : 0.0f
+	);
+
+	NativeHpFixEnsureWindow(true);
+	if (gNativeHpFixWnd) {
+		gNativeHpFixWnd->SetStatus("Authoritative HP received.");
+		gNativeHpFixWnd->Refresh();
+	}
+
+	NativeHpFixTryUpdatePlayerWindowLabel();
+	NativeAutoLootTrace(
+		"HPFIX update current=%lld maximum=%lld percent=%.2f",
+		gNativeHpFixState.current,
+		gNativeHpFixState.maximum,
+		gNativeHpFixState.percent
+	);
+	return true;
+}
+
+static bool NativeUIShowcaseClientFilesReady()
+{
+	char xml_path[MAX_PATH];
+	char equi_path[MAX_PATH];
+	if (gszEQPath[0]) {
+		sprintf_s(xml_path, "%s\\uifiles\\default\\EQUI_NativeUIShowcaseWnd.xml", gszEQPath);
+		sprintf_s(equi_path, "%s\\uifiles\\default\\EQUI.xml", gszEQPath);
+	}
+	else {
+		strcpy_s(xml_path, "uifiles\\default\\EQUI_NativeUIShowcaseWnd.xml");
+		strcpy_s(equi_path, "uifiles\\default\\EQUI.xml");
+	}
+
+	if (!NativeUIShowcaseFileExists(xml_path)) {
+		NativeAutoLootTrace("UI showcase XML missing: %s", xml_path);
+		return false;
+	}
+
+	if (!NativeUIShowcaseFileContains(equi_path, "EQUI_NativeUIShowcaseWnd.xml")) {
+		NativeAutoLootTrace("UI showcase XML is not included by EQUI.xml: %s", equi_path);
+		return false;
+	}
+
+	return true;
+}
+
+static void NativeUIShowcaseEnsureWindow(bool show)
+{
+	if (!pSidlMgr || !pWndMgr) {
+		return;
+	}
+
+	if (!gNativeUIShowcaseWnd) {
+		if (!NativeUIShowcaseClientFilesReady()) {
+			NativeAutoLootTrace("UI showcase window not created because client files are incomplete");
+			return;
+		}
+
+		NativeAutoLootTrace("creating UI showcase window");
+		NativeUIShowcaseWnd* created_window = nullptr;
+		__try {
+			created_window = new NativeUIShowcaseWnd();
+		} __except(EXCEPTION_EXECUTE_HANDLER) {
+			NativeAutoLootTrace("UI showcase window construction faulted; check EQUI_NativeUIShowcaseWnd.xml");
+			created_window = nullptr;
+		}
+
+		if (!created_window) {
+			return;
+		}
+
+		gNativeUIShowcaseWnd = created_window;
+		NativeAutoLootTrace("UI showcase window created");
+	}
+
+	if (show && gNativeUIShowcaseWnd) {
+		gNativeUIShowcaseWnd->Open();
+	}
+}
+
 void NativeAchievementWnd::RefreshCategoryList()
 {
 	if (!CategoryList) {
@@ -2310,6 +5147,231 @@ static bool NativeCommandMatch(const char* line, const char* command, const char
 	return true;
 }
 
+static bool NativeUIShowcaseHandleCommand(const char* line)
+{
+	if (!line) {
+		return false;
+	}
+
+	while (*line == ' ' || *line == '\t') {
+		++line;
+	}
+
+	const char* arguments = nullptr;
+	if (
+		!NativeCommandMatch(line, "/nativeui", &arguments) &&
+		!NativeCommandMatch(line, "/uishowcase", &arguments) &&
+		!NativeCommandMatch(line, "/showcase", &arguments)
+	) {
+		return false;
+	}
+
+	if (arguments && NativeCommandMatch(arguments, "close", nullptr)) {
+		if (gNativeUIShowcaseWnd) {
+			gNativeUIShowcaseWnd->pXWnd()->Show(0, 1);
+		}
+		return true;
+	}
+
+	NativeUIShowcaseEnsureWindow(true);
+	if (gNativeUIShowcaseWnd) {
+		if (arguments && NativeCommandMatch(arguments, "reset", nullptr)) {
+			gNativeUIShowcaseWnd->ResetDemo();
+			gNativeUIShowcaseWnd->SetStatus("Showcase opened and reset.");
+		}
+	}
+
+	return true;
+}
+
+static bool NativeMulticlassRewriteCommand(const char* line, char* output, size_t output_size)
+{
+	if (!line || !output || !output_size) {
+		return false;
+	}
+
+	while (*line == ' ' || *line == '\t') {
+		++line;
+	}
+
+	const char* arguments = nullptr;
+	if (
+		NativeCommandMatch(line, "/mc", &arguments) ||
+		NativeCommandMatch(line, "/multiclass", &arguments) ||
+		NativeCommandMatch(line, "/multiclassui", &arguments)
+	) {
+		if (!arguments || !arguments[0]) {
+			strcpy_s(output, output_size, "/say #mc open");
+			return true;
+		}
+
+		if (
+			NativeCommandMatch(arguments, "open", nullptr) ||
+			NativeCommandMatch(arguments, "window", nullptr) ||
+			NativeCommandMatch(arguments, "ui", nullptr) ||
+			NativeCommandMatch(arguments, "panel", nullptr)
+		) {
+			strcpy_s(output, output_size, "/say #mc open");
+			return true;
+		}
+
+		if (
+			NativeCommandMatch(arguments, "refresh", nullptr) ||
+			NativeCommandMatch(arguments, "status", nullptr)
+		) {
+			strcpy_s(output, output_size, "/say #mc refresh");
+			return true;
+		}
+
+		if (
+			NativeCommandMatch(arguments, "pets", nullptr) ||
+			NativeCommandMatch(arguments, "petui", nullptr) ||
+			NativeCommandMatch(arguments, "petwindow", nullptr)
+		) {
+			strcpy_s(output, output_size, "/say #mc pets");
+			return true;
+		}
+
+		const char* disc_arguments = nullptr;
+		if (
+			NativeCommandMatch(arguments, "disc", &disc_arguments) ||
+			NativeCommandMatch(arguments, "discs", &disc_arguments) ||
+			NativeCommandMatch(arguments, "discipline", &disc_arguments) ||
+			NativeCommandMatch(arguments, "disciplines", &disc_arguments)
+		) {
+			if (!disc_arguments || !disc_arguments[0]) {
+				strcpy_s(output, output_size, "/say #mc disc open");
+			}
+			else {
+				sprintf_s(output, output_size, "/say #mc disc %s", disc_arguments);
+			}
+			return true;
+		}
+
+		const char* melody_arguments = nullptr;
+		if (
+			NativeCommandMatch(arguments, "melody", &melody_arguments) ||
+			NativeCommandMatch(arguments, "bardmelody", &melody_arguments) ||
+			NativeCommandMatch(arguments, "songui", &melody_arguments)
+		) {
+			if (!melody_arguments || !melody_arguments[0]) {
+				strcpy_s(output, output_size, "/say #mc melody open");
+			}
+			else {
+				sprintf_s(output, output_size, "/say #mc melody %s", melody_arguments);
+			}
+			return true;
+		}
+
+		sprintf_s(output, output_size, "/say #mc %s", arguments);
+		return true;
+	}
+
+	if (
+		NativeCommandMatch(line, "/mcpets", &arguments) ||
+		NativeCommandMatch(line, "/multiclasspets", &arguments) ||
+		NativeCommandMatch(line, "/petui", &arguments)
+	) {
+		if (!arguments || !arguments[0]) {
+			strcpy_s(output, output_size, "/say #mc pets");
+			return true;
+		}
+
+		if (
+			NativeCommandMatch(arguments, "open", nullptr) ||
+			NativeCommandMatch(arguments, "window", nullptr) ||
+			NativeCommandMatch(arguments, "ui", nullptr) ||
+			NativeCommandMatch(arguments, "panel", nullptr)
+		) {
+			strcpy_s(output, output_size, "/say #mc pets");
+			return true;
+		}
+
+		if (
+			NativeCommandMatch(arguments, "refresh", nullptr) ||
+			NativeCommandMatch(arguments, "status", nullptr)
+		) {
+			strcpy_s(output, output_size, "/say #mc pet refresh");
+			return true;
+		}
+
+		sprintf_s(output, output_size, "/say #mc pet %s", arguments);
+		return true;
+	}
+
+	if (
+		NativeCommandMatch(line, "/disc", &arguments) ||
+		NativeCommandMatch(line, "/discs", &arguments) ||
+		NativeCommandMatch(line, "/discipline", &arguments) ||
+		NativeCommandMatch(line, "/disciplines", &arguments) ||
+		NativeCommandMatch(line, "/discwindow", &arguments) ||
+		NativeCommandMatch(line, "/combatability", &arguments) ||
+		NativeCommandMatch(line, "/combatabilities", &arguments) ||
+		NativeCommandMatch(line, "/combatdisc", &arguments)
+	) {
+		if (!arguments || !arguments[0]) {
+			strcpy_s(output, output_size, "/say #mc disc open");
+			return true;
+		}
+
+		if (
+			NativeCommandMatch(arguments, "open", nullptr) ||
+			NativeCommandMatch(arguments, "window", nullptr) ||
+			NativeCommandMatch(arguments, "ui", nullptr) ||
+			NativeCommandMatch(arguments, "panel", nullptr) ||
+			NativeCommandMatch(arguments, "list", nullptr)
+		) {
+			strcpy_s(output, output_size, "/say #mc disc open");
+			return true;
+		}
+
+		if (
+			NativeCommandMatch(arguments, "refresh", nullptr) ||
+			NativeCommandMatch(arguments, "status", nullptr)
+		) {
+			strcpy_s(output, output_size, "/say #mc disc refresh");
+			return true;
+		}
+
+		sprintf_s(output, output_size, "/say #mc disc %s", arguments);
+		return true;
+	}
+
+	if (
+		NativeCommandMatch(line, "/mcmelody", &arguments) ||
+		NativeCommandMatch(line, "/multiclassmelody", &arguments) ||
+		NativeCommandMatch(line, "/melodyui", &arguments)
+	) {
+		if (!arguments || !arguments[0]) {
+			strcpy_s(output, output_size, "/say #mc melody open");
+			return true;
+		}
+
+		if (
+			NativeCommandMatch(arguments, "open", nullptr) ||
+			NativeCommandMatch(arguments, "window", nullptr) ||
+			NativeCommandMatch(arguments, "ui", nullptr) ||
+			NativeCommandMatch(arguments, "panel", nullptr)
+		) {
+			strcpy_s(output, output_size, "/say #mc melody open");
+			return true;
+		}
+
+		if (
+			NativeCommandMatch(arguments, "refresh", nullptr) ||
+			NativeCommandMatch(arguments, "status", nullptr)
+		) {
+			strcpy_s(output, output_size, "/say #mc melody refresh");
+			return true;
+		}
+
+		sprintf_s(output, output_size, "/say #mc melody %s", arguments);
+		return true;
+	}
+
+	return false;
+}
+
 static bool NativeAchievementRewriteCommand(const char* line, char* output, size_t output_size)
 {
 	if (!line || !output || !output_size) {
@@ -2356,7 +5418,20 @@ public:
 	VOID Trampoline(EQPlayer* player, PCHAR line);
 	VOID Detour(EQPlayer* player, PCHAR line)
 	{
+		if (NativeUIShowcaseHandleCommand(line)) {
+			NativeAutoLootTrace("handled local UI showcase command: %s", line ? line : "");
+			return;
+		}
+
 		char rewritten[256];
+
+
+		if (NativeMulticlassRewriteCommand(line, rewritten, sizeof(rewritten))) {
+			NativeAutoLootTrace("rewrite command: %s -> %s", line ? line : "", rewritten);
+			Trampoline(player, rewritten);
+			return;
+		}
+
 		if (NativeAchievementRewriteCommand(line, rewritten, sizeof(rewritten))) {
 			NativeAutoLootTrace("rewrite command: %s -> %s", line ? line : "", rewritten);
 			Trampoline(player, rewritten);
@@ -2468,6 +5543,351 @@ static bool NativeApplyLiveSpellPatch(const std::string& payload)
 	char command[128];
 	sprintf_s(command, "/say #livespell ack %d %d", spell_id, version);
 	NativeAutoLootSendCommand(command);
+	return true;
+}
+
+static bool NativeMulticlassParseTransport(const char* message)
+{
+	if (!message || !message[0] || !NativeStartsWith(message, "MULTICLASS|")) {
+		return false;
+	}
+
+	if (NativeStartsWith(message, "MULTICLASS|window|clear")) {
+		gNativeMulticlassPets.clear();
+		gNativeMulticlassMelodySlots.clear();
+		gNativeMulticlassMelodySongs.clear();
+		gNativeMulticlassDisciplineRows.clear();
+		gNativeMulticlassState.selection_status = "Refreshing Multiclass profile...";
+		gNativeMulticlassState.skill_summary = "Skills: refreshing...";
+		gNativeMulticlassState.bonus_summary = "Resonance bonuses: refreshing...";
+		gNativeMulticlassState.melody_status = "Bard Melody: refreshing...";
+		gNativeMulticlassState.discipline_status = "Disciplines: refreshing...";
+		NativeMulticlassRefreshWindows();
+		return true;
+	}
+
+	if (NativeStartsWith(message, "MULTICLASS|profile|")) {
+		const std::string payload(message + strlen("MULTICLASS|profile|"));
+		gNativeMulticlassState.has_profile = true;
+		gNativeMulticlassState.profile_name = NativeGetPairValue(payload, "name");
+		gNativeMulticlassState.resonance_key = NativeGetPairValue(payload, "resonance");
+		gNativeMulticlassState.class1 = NativeToInt(NativeGetPairValue(payload, "class1"));
+		gNativeMulticlassState.class2 = NativeToInt(NativeGetPairValue(payload, "class2"));
+		gNativeMulticlassState.class3 = NativeToInt(NativeGetPairValue(payload, "class3"));
+		gNativeMulticlassState.presentation = NativeToInt(NativeGetPairValue(payload, "presentation"));
+		gNativeMulticlassState.base = NativeToInt(NativeGetPairValue(payload, "base"));
+		gNativeMulticlassState.multiple_pets = NativeToBool(NativeGetPairValue(payload, "pets"));
+		gNativeMulticlassState.locked = NativeToBool(NativeGetPairValue(payload, "locked"));
+		gNativeMulticlassState.reweaves = NativeToInt(NativeGetPairValue(payload, "reweaves"));
+		gNativeMulticlassState.class1_name = NativeGetPairValue(payload, "class1_name");
+		gNativeMulticlassState.class2_name = NativeGetPairValue(payload, "class2_name");
+		gNativeMulticlassState.class3_name = NativeGetPairValue(payload, "class3_name");
+		gNativeMulticlassState.presentation_name = NativeGetPairValue(payload, "presentation_name");
+		gNativeMulticlassState.base_name = NativeGetPairValue(payload, "base_name");
+
+		if (gNativeMulticlassState.profile_name.empty()) {
+			gNativeMulticlassState.profile_name = "Multiclass Trio";
+		}
+		if (gNativeMulticlassState.class1_name.empty()) {
+			gNativeMulticlassState.class1_name = NativeMulticlassClassName(gNativeMulticlassState.class1);
+		}
+		if (gNativeMulticlassState.class2_name.empty()) {
+			gNativeMulticlassState.class2_name = NativeMulticlassClassName(gNativeMulticlassState.class2);
+		}
+		if (gNativeMulticlassState.class3_name.empty()) {
+			gNativeMulticlassState.class3_name = NativeMulticlassClassName(gNativeMulticlassState.class3);
+		}
+		if (gNativeMulticlassState.presentation_name.empty()) {
+			gNativeMulticlassState.presentation_name = NativeMulticlassClassName(gNativeMulticlassState.presentation);
+		}
+		if (gNativeMulticlassState.base_name.empty()) {
+			gNativeMulticlassState.base_name = NativeMulticlassClassName(gNativeMulticlassState.base);
+		}
+
+		if (NativeMulticlassIsPlayerClass(gNativeMulticlassState.class2)) {
+			gNativeMulticlassState.selected_slot2 = gNativeMulticlassState.class2;
+		}
+		if (NativeMulticlassIsPlayerClass(gNativeMulticlassState.class3)) {
+			gNativeMulticlassState.selected_slot3 = gNativeMulticlassState.class3;
+		}
+
+		NativeMulticlassNormalizeSelections();
+		NativeMulticlassScheduleCasterUI();
+		NativeMulticlassRefreshWindows();
+		return true;
+	}
+
+	if (NativeStartsWith(message, "MULTICLASS|vitals|")) {
+		const std::string payload(message + strlen("MULTICLASS|vitals|"));
+		gNativeMulticlassState.mana = NativeToInt(NativeGetPairValue(payload, "mana"));
+		gNativeMulticlassState.max_mana = NativeToInt(NativeGetPairValue(payload, "max_mana"));
+		gNativeMulticlassState.endurance = NativeToInt(NativeGetPairValue(payload, "endurance"));
+		gNativeMulticlassState.max_endurance = NativeToInt(NativeGetPairValue(payload, "max_endurance"));
+		gNativeMulticlassState.class_mask = NativeToInt(NativeGetPairValue(payload, "class_mask"));
+		gNativeMulticlassState.aa_mask = NativeToInt(NativeGetPairValue(payload, "aa_mask"));
+		const int presentation = NativeToInt(NativeGetPairValue(payload, "presentation"));
+		const int base = NativeToInt(NativeGetPairValue(payload, "base"));
+		if (NativeMulticlassIsPlayerClass(presentation)) {
+			gNativeMulticlassState.presentation = presentation;
+			gNativeMulticlassState.presentation_name = NativeMulticlassClassName(presentation);
+		}
+		if (NativeMulticlassIsPlayerClass(base)) {
+			gNativeMulticlassState.base = base;
+			gNativeMulticlassState.base_name = NativeMulticlassClassName(base);
+		}
+		NativeMulticlassScheduleCasterUI();
+		NativeMulticlassPatchLocalVitals();
+		NativeMulticlassRefreshWindows();
+		return true;
+	}
+
+	if (NativeStartsWith(message, "MULTICLASS|trio|")) {
+		const std::string payload(message + strlen("MULTICLASS|trio|"));
+		gNativeMulticlassState.roles = NativeGetPairValue(payload, "roles");
+		gNativeMulticlassState.resonance = NativeGetPairValue(payload, "resonance");
+		gNativeMulticlassState.summary = NativeGetPairValue(payload, "summary");
+		if (gNativeMulticlassState.roles.empty()) {
+			gNativeMulticlassState.roles = "-";
+		}
+		if (gNativeMulticlassState.resonance.empty()) {
+			gNativeMulticlassState.resonance = "Trio Notes";
+		}
+		if (gNativeMulticlassState.summary.empty()) {
+			gNativeMulticlassState.summary = "Fixed trio identity.";
+		}
+		NativeMulticlassRefreshWindows();
+		return true;
+	}
+
+	if (NativeStartsWith(message, "MULTICLASS|skills|")) {
+		const std::string payload(message + strlen("MULTICLASS|skills|"));
+		gNativeMulticlassState.skill_summary = NativeGetPairValue(payload, "summary");
+		if (gNativeMulticlassState.skill_summary.empty()) {
+			gNativeMulticlassState.skill_summary = "Skills: waiting for profile.";
+		}
+		NativeMulticlassRefreshWindows();
+		return true;
+	}
+
+	if (NativeStartsWith(message, "MULTICLASS|bonuses|")) {
+		const std::string payload(message + strlen("MULTICLASS|bonuses|"));
+		gNativeMulticlassState.bonus_summary = NativeGetPairValue(payload, "summary");
+		if (gNativeMulticlassState.bonus_summary.empty()) {
+			gNativeMulticlassState.bonus_summary = "Resonance bonuses: waiting for profile.";
+		}
+		NativeMulticlassRefreshWindows();
+		return true;
+	}
+
+	if (NativeStartsWith(message, "MULTICLASS|selection|")) {
+		const std::string payload(message + strlen("MULTICLASS|selection|"));
+		gNativeMulticlassState.can_choose = NativeToBool(NativeGetPairValue(payload, "can_choose"));
+		gNativeMulticlassState.selection_status = NativeGetPairValue(payload, "status");
+		if (gNativeMulticlassState.selection_status.empty()) {
+			gNativeMulticlassState.selection_status = gNativeMulticlassState.locked ? "Trio locked." : "Choose two added classes.";
+		}
+		NativeMulticlassNormalizeSelections();
+		NativeMulticlassRefreshWindows();
+		return true;
+	}
+
+	if (NativeStartsWith(message, "MULTICLASS|spell_levels|begin")) {
+		gNativeMulticlassSpellLevelsLoading = true;
+		gNativeMulticlassSpellLevelPatchCount = 0;
+		gNativeMulticlassSpellLevelsById.clear();
+		gNativeMulticlassSpellLevelsByName.clear();
+		return true;
+	}
+
+	if (NativeStartsWith(message, "MULTICLASS|spell_level|")) {
+		return NativeMulticlassApplySpellLevelPatch(std::string(message + strlen("MULTICLASS|spell_level|")));
+	}
+
+	if (NativeStartsWith(message, "MULTICLASS|spell_levels|end")) {
+		const std::string payload(message + strlen("MULTICLASS|spell_levels|end"));
+		const int expected_count = NativeToInt(NativeGetPairValue(payload, "count"), gNativeMulticlassSpellLevelPatchCount);
+		gNativeMulticlassSpellLevelsLoading = false;
+		NativeAutoLootTrace("Multiclass spellbook levels patched: %d/%d", gNativeMulticlassSpellLevelPatchCount, expected_count);
+		return true;
+	}
+
+	if (NativeStartsWith(message, "MULTICLASS|pet_roster|")) {
+		const std::string payload(message + strlen("MULTICLASS|pet_roster|"));
+		gNativeMulticlassPets.clear();
+		gNativeMulticlassState.roster_count = NativeToInt(NativeGetPairValue(payload, "count"));
+		gNativeMulticlassState.roster_limit = NativeToInt(NativeGetPairValue(payload, "limit"), 1);
+		gNativeMulticlassState.focus_id = NativeToInt(NativeGetPairValue(payload, "focus"));
+		gNativeMulticlassState.pet_policy = NativeGetPairValue(payload, "policy");
+		gNativeMulticlassState.pet_control = NativeGetPairValue(payload, "control");
+		if (gNativeMulticlassState.pet_policy.empty()) {
+			gNativeMulticlassState.pet_policy = "single-pet";
+		}
+		if (gNativeMulticlassState.pet_control.empty()) {
+			gNativeMulticlassState.pet_control = "Attack/Back/Follow/Guard affect all pets; toggles affect focus.";
+		}
+		NativeMulticlassRefreshWindows();
+		return true;
+	}
+
+	if (NativeStartsWith(message, "MULTICLASS|pet|")) {
+		const std::string payload(message + strlen("MULTICLASS|pet|"));
+		NativeMulticlassPetRow row;
+		row.id = NativeToInt(NativeGetPairValue(payload, "id"));
+		row.name = NativeGetPairValue(payload, "name");
+		row.hp = NativeToInt(NativeGetPairValue(payload, "hp"));
+		row.mana = NativeToInt(NativeGetPairValue(payload, "mana"));
+		row.target = NativeGetPairValue(payload, "target");
+		row.taunt = NativeToBool(NativeGetPairValue(payload, "taunt"));
+		row.hold = NativeToBool(NativeGetPairValue(payload, "hold"));
+		row.spellhold = NativeToBool(NativeGetPairValue(payload, "spellhold"));
+		row.order = NativeGetPairValue(payload, "order");
+		row.focused = NativeToBool(NativeGetPairValue(payload, "focused"));
+		if (row.name.empty()) {
+			row.name = "Pet";
+		}
+		if (row.target.empty()) {
+			row.target = "-";
+		}
+		if (row.order.empty()) {
+			row.order = "follow";
+		}
+		if (row.focused) {
+			gNativeMulticlassState.focus_id = row.id;
+		}
+		if (row.id > 0) {
+			gNativeMulticlassPets.push_back(row);
+		}
+		NativeMulticlassRefreshWindows();
+		return true;
+	}
+
+	if (NativeStartsWith(message, "MULTICLASS|melody|")) {
+		const std::string payload(message + strlen("MULTICLASS|melody|"));
+		gNativeMulticlassState.has_bard = NativeToBool(NativeGetPairValue(payload, "has_bard"));
+		gNativeMulticlassState.melody_status = NativeGetPairValue(payload, "status");
+		if (gNativeMulticlassState.melody_status.empty()) {
+			gNativeMulticlassState.melody_status = gNativeMulticlassState.has_bard ? "Bard Melody: ready." : "Bard Melody: Bard not in trio.";
+		}
+		gNativeMulticlassMelodySlots.clear();
+		gNativeMulticlassMelodySongs.clear();
+		NativeMulticlassRefreshWindows();
+		return true;
+	}
+
+	if (NativeStartsWith(message, "MULTICLASS|melody_slot|")) {
+		const std::string payload(message + strlen("MULTICLASS|melody_slot|"));
+		NativeMulticlassMelodySlot row;
+		row.slot = NativeToInt(NativeGetPairValue(payload, "slot"));
+		row.spell_id = NativeToInt(NativeGetPairValue(payload, "id"));
+		row.name = NativeGetPairValue(payload, "name");
+		row.level = NativeToInt(NativeGetPairValue(payload, "level"));
+		row.state = NativeGetPairValue(payload, "state");
+		if (row.name.empty()) {
+			row.name = "-";
+		}
+		if (row.state.empty()) {
+			row.state = row.spell_id > 0 ? "selected" : "empty";
+		}
+		if (row.slot >= 1 && row.slot <= 4) {
+			gNativeMulticlassMelodySlots.push_back(row);
+		}
+		NativeMulticlassRefreshWindows();
+		return true;
+	}
+
+	if (NativeStartsWith(message, "MULTICLASS|melody_song|")) {
+		const std::string payload(message + strlen("MULTICLASS|melody_song|"));
+		NativeMulticlassMelodySong row;
+		row.spell_id = NativeToInt(NativeGetPairValue(payload, "id"));
+		row.name = NativeGetPairValue(payload, "name");
+		row.level = NativeToInt(NativeGetPairValue(payload, "level"));
+		row.allowed = NativeToBool(NativeGetPairValue(payload, "allowed"));
+		row.reason = NativeGetPairValue(payload, "reason");
+		if (row.name.empty()) {
+			row.name = "Song";
+		}
+		if (row.spell_id > 0) {
+			gNativeMulticlassMelodySongs.push_back(row);
+		}
+		NativeMulticlassRefreshWindows();
+		return true;
+	}
+
+	if (NativeStartsWith(message, "MULTICLASS|melody_songs|end")) {
+		NativeMulticlassRefreshWindows();
+		return true;
+	}
+
+	if (NativeStartsWith(message, "MULTICLASS|disciplines|clear")) {
+		gNativeMulticlassDisciplineRows.clear();
+		gNativeMulticlassState.discipline_status = "Disciplines: refreshing...";
+		NativeMulticlassRefreshWindows();
+		return true;
+	}
+
+	if (NativeStartsWith(message, "MULTICLASS|disciplines|summary|")) {
+		const std::string payload(message + strlen("MULTICLASS|disciplines|summary|"));
+		gNativeMulticlassState.discipline_status = NativeGetPairValue(payload, "status");
+		if (gNativeMulticlassState.discipline_status.empty()) {
+			gNativeMulticlassState.discipline_status = "Disciplines: ready.";
+		}
+		NativeMulticlassRefreshWindows();
+		return true;
+	}
+
+	if (NativeStartsWith(message, "MULTICLASS|discipline|")) {
+		const std::string payload(message + strlen("MULTICLASS|discipline|"));
+		NativeMulticlassDisciplineRow row;
+		row.slot = NativeToInt(NativeGetPairValue(payload, "slot"));
+		row.spell_id = NativeToInt(NativeGetPairValue(payload, "id"));
+		row.name = NativeGetPairValue(payload, "name");
+		row.level = NativeToInt(NativeGetPairValue(payload, "level"));
+		row.timer = NativeToInt(NativeGetPairValue(payload, "timer"));
+		row.timer_total = NativeToInt(NativeGetPairValue(payload, "total"));
+		if (row.timer_total <= 0) {
+			row.timer_total = row.timer;
+		}
+		row.timer_received_ms = GetTickCount();
+		row.ready = NativeToBool(NativeGetPairValue(payload, "ready"));
+		row.state = NativeGetPairValue(payload, "state");
+		if (row.name.empty()) {
+			row.name = "Discipline";
+		}
+		if (row.state.empty()) {
+			row.state = row.ready ? "Ready" : "Blocked";
+		}
+		if (row.spell_id > 0) {
+			gNativeMulticlassDisciplineRows.push_back(row);
+		}
+		NativeMulticlassRefreshWindows();
+		return true;
+	}
+
+	if (NativeStartsWith(message, "MULTICLASS|disciplines|end")) {
+		NativeMulticlassRefreshWindows();
+		return true;
+	}
+
+	if (NativeStartsWith(message, "MULTICLASS|window|show")) {
+		NativeMulticlassEnsureWindow(true);
+		return true;
+	}
+
+	if (NativeStartsWith(message, "MULTICLASS|pet_window|show")) {
+		NativeMulticlassEnsurePetWindow(true);
+		return true;
+	}
+
+	if (NativeStartsWith(message, "MULTICLASS|melody_window|show")) {
+		NativeMulticlassEnsureMelodyWindow(true);
+		return true;
+	}
+
+	if (NativeStartsWith(message, "MULTICLASS|discipline_window|show")) {
+		NativeMulticlassEnsureDisciplineWindow(true);
+		return true;
+	}
+
 	return true;
 }
 
@@ -2636,7 +6056,44 @@ static bool NativeAutoLootParseTransport(const char* message)
 		return false;
 	}
 
+	if (NativeStartsWith(message, "SHOWCASE|window|show")) {
+		NativeUIShowcaseEnsureWindow(true);
+		return true;
+	}
+
+	if (NativeStartsWith(message, "SHOWCASE|")) {
+		return true;
+	}
+
 	if (NativeAchievementParseTransport(message)) {
+		return true;
+	}
+
+	if (NativeMulticlassParseTransport(message)) {
+		return true;
+	}
+
+	if (NativeStartsWith(message, "HPFIX|self|")) {
+		return NativeHpFixApplyPayload(std::string(message + strlen("HPFIX|self|")));
+	}
+
+	if (NativeStartsWith(message, "HPFIX|window|show")) {
+		NativeHpFixEnsureWindow(true);
+		if (gNativeHpFixWnd) {
+			gNativeHpFixWnd->SetStatus("HPFIX window opened.");
+		}
+		return true;
+	}
+
+	if (NativeStartsWith(message, "HPFIX|")) {
+		return true;
+	}
+
+	if (NativeItemPowerParseTransport(message)) {
+		return true;
+	}
+
+	if (NativeItemRarityParseTransport(message)) {
 		return true;
 	}
 
@@ -2806,7 +6263,7 @@ static bool NativeAutoLootParseTransport(const char* message)
 		return true;
 	}
 
-	if (strstr(message, "You say, '#autoloot") || strstr(message, "You say, '#lootfilter") || strstr(message, "You say, '#livespell") || strstr(message, "You say, '#itemforge") || strstr(message, "You say, '#ach")) {
+	if (strstr(message, "You say, '#autoloot") || strstr(message, "You say, '#lootfilter") || strstr(message, "You say, '#livespell") || strstr(message, "You say, '#itemforge") || strstr(message, "You say, '#ach") || strstr(message, "You say, '#mc") || strstr(message, "You say, '#multiclass") || strstr(message, "You say, '#nativeui") || strstr(message, "You say, '#showcase") || strstr(message, "You say, '#hpfix")) {
 		return true;
 	}
 
@@ -2863,6 +6320,31 @@ static void NativeAutoLootResetSessionRequests()
 	gNativeAutoLootInGamePulses = 0;
 	gNativeAutoLootRequestedInitialStatus = false;
 	gNativeLiveSpellSentReady = false;
+	gNativeHpFixSentReady = false;
+	gNativeHpFixState = NativeHpFixState();
+	gNativeItemPowerById.clear();
+	gNativeItemRarityById.clear();
+	gNativeMulticlassSentStatus = false;
+	NativeMulticlassResetSessionState(true);
+}
+
+static void NativeAutoLootResetClientUiSession(const char* reason)
+{
+	NativeAutoLootTrace("client UI reset: %s", reason ? reason : "unknown");
+	if (gNativeHpFixWnd) {
+		delete gNativeHpFixWnd;
+		gNativeHpFixWnd = nullptr;
+	}
+	NativeMulticlassDestroyRuntimeWindows();
+	gNativeAutoLootInGamePulses = 0;
+	gNativeAutoLootRequestedInitialStatus = false;
+	gNativeLiveSpellSentReady = false;
+	gNativeHpFixSentReady = false;
+	gNativeHpFixState = NativeHpFixState();
+	gNativeItemPowerById.clear();
+	gNativeItemRarityById.clear();
+	gNativeMulticlassSentStatus = false;
+	NativeMulticlassResetSessionState(false);
 }
 
 static void NativeAutoLootMaybeSendInitialRequests()
@@ -2882,16 +6364,27 @@ static void NativeAutoLootMaybeSendInitialRequests()
 		gNativeLiveSpellSentReady = true;
 		NativeAutoLootSendCommand("/say #livespell ready");
 	}
+
+	if (!gNativeHpFixSentReady) {
+		gNativeHpFixSentReady = true;
+		NativeAutoLootSendCommand("/say #hpfix native ready");
+	}
+
+	if (!gNativeMulticlassSentStatus) {
+		gNativeMulticlassSentStatus = true;
+		NativeAutoLootSendCommand("/say #mc status");
+	}
 }
 
 static void NativeAutoLootPulse()
 {
-	if (!pSidlMgr || !pWndMgr) {
+	const DWORD state = GetGameState();
+	if (state != GAMESTATE_INGAME) {
+		NativeAutoLootResetSessionRequests();
 		return;
 	}
 
-	const DWORD state = GetGameState();
-	if (state != GAMESTATE_INGAME) {
+	if (!pSidlMgr || !pWndMgr) {
 		NativeAutoLootResetSessionRequests();
 		return;
 	}
@@ -2935,6 +6428,32 @@ static void NativeAutoLootPulse()
 		gNativeAchievementWnd->Layout();
 	}
 
+	if (gNativeUIShowcaseWnd) {
+		gNativeUIShowcaseWnd->Layout();
+	}
+
+	if (gNativeHpFixWnd) {
+		gNativeHpFixWnd->Refresh();
+	}
+
+	if (gNativeMulticlassWnd) {
+		gNativeMulticlassWnd->Layout();
+	}
+
+	if (gNativeMulticlassPetWnd) {
+		gNativeMulticlassPetWnd->Layout();
+	}
+
+	if (gNativeMulticlassMelodyWnd) {
+		gNativeMulticlassMelodyWnd->Layout();
+	}
+
+	if (gNativeMulticlassDisciplineWnd) {
+		gNativeMulticlassDisciplineWnd->Layout();
+	}
+
+	NativeMulticlassMaintainPresentationUI();
+
 	if (!gNativeAutoLootRequestedInitialStatus) {
 		gNativeAutoLootRequestedInitialStatus = true;
 		NativeAutoLootSendCommand("/say #autoloot native status");
@@ -2943,6 +6462,16 @@ static void NativeAutoLootPulse()
 	if (!gNativeLiveSpellSentReady) {
 		gNativeLiveSpellSentReady = true;
 		NativeAutoLootSendCommand("/say #livespell ready");
+	}
+
+	if (!gNativeHpFixSentReady) {
+		gNativeHpFixSentReady = true;
+		NativeAutoLootSendCommand("/say #hpfix native ready");
+	}
+
+	if (!gNativeMulticlassSentStatus) {
+		gNativeMulticlassSentStatus = true;
+		NativeAutoLootSendCommand("/say #mc status");
 	}
 }
 
@@ -2965,6 +6494,44 @@ BOOL NativeAutoLoot_ProcessGameEvents_Detour(VOID)
 }
 DETOUR_TRAMPOLINE_EMPTY(BOOL NativeAutoLoot_ProcessGameEvents_Trampoline(VOID));
 
+class NativeAutoLootUiResetHook
+{
+public:
+	VOID CleanUI_Trampoline(VOID);
+	VOID CleanUI_Detour(VOID)
+	{
+		NativeAutoLootResetClientUiSession("clean game UI");
+		CleanUI_Trampoline();
+	}
+
+	VOID ReloadUI_Trampoline(BOOL use_ini);
+	VOID ReloadUI_Detour(BOOL use_ini)
+	{
+		NativeAutoLootResetClientUiSession("reload UI");
+		ReloadUI_Trampoline(use_ini);
+	}
+};
+
+DETOUR_TRAMPOLINE_EMPTY(VOID NativeAutoLootUiResetHook::CleanUI_Trampoline(VOID));
+DETOUR_TRAMPOLINE_EMPTY(VOID NativeAutoLootUiResetHook::ReloadUI_Trampoline(BOOL));
+
+static void NativeAutoLootInstallUiResetHook()
+{
+	if (gNativeAutoLootUiResetHookInstalled) {
+		return;
+	}
+
+	if (isMQInjectsEnabled) {
+		NativeAutoLootTrace("native UI reset hook skipped because MQ display hook is enabled");
+		return;
+	}
+
+	NativeAutoLootTrace("installing native UI reset hook");
+	EzDetour(CDisplay__CleanGameUI, &NativeAutoLootUiResetHook::CleanUI_Detour, &NativeAutoLootUiResetHook::CleanUI_Trampoline);
+	EzDetour(CDisplay__ReloadUI, &NativeAutoLootUiResetHook::ReloadUI_Detour, &NativeAutoLootUiResetHook::ReloadUI_Trampoline);
+	gNativeAutoLootUiResetHookInstalled = true;
+}
+
 static void InitAutoLootNative()
 {
 	if (gNativeAutoLootHooksInstalled) {
@@ -2974,6 +6541,8 @@ static void InitAutoLootNative()
 	gNativeAutoLootHooksInstalled = true;
 	NativeAutoLootInstallChatHook();
 	NativeAutoLootInstallCommandHook();
+	NativeMulticlassInstallContextMenuHook();
+	NativeAutoLootInstallUiResetHook();
 
 	if (!gNativeAutoLootPulseHookEnabled) {
 		NativeAutoLootTrace("native pulse hook disabled");
@@ -3014,6 +6583,36 @@ static void ShutdownAutoLootNative()
 		gNativeAchievementWnd = nullptr;
 	}
 
+	if (gNativeUIShowcaseWnd) {
+		delete gNativeUIShowcaseWnd;
+		gNativeUIShowcaseWnd = nullptr;
+	}
+
+	if (gNativeHpFixWnd) {
+		delete gNativeHpFixWnd;
+		gNativeHpFixWnd = nullptr;
+	}
+
+	if (gNativeMulticlassWnd) {
+		delete gNativeMulticlassWnd;
+		gNativeMulticlassWnd = nullptr;
+	}
+
+	if (gNativeMulticlassPetWnd) {
+		delete gNativeMulticlassPetWnd;
+		gNativeMulticlassPetWnd = nullptr;
+	}
+
+	if (gNativeMulticlassMelodyWnd) {
+		delete gNativeMulticlassMelodyWnd;
+		gNativeMulticlassMelodyWnd = nullptr;
+	}
+
+	if (gNativeMulticlassDisciplineWnd) {
+		delete gNativeMulticlassDisciplineWnd;
+		gNativeMulticlassDisciplineWnd = nullptr;
+	}
+
 	if (gNativeAutoLootChatHookInstalled) {
 		RemoveDetour(CEverQuest__dsp_chat);
 		gNativeAutoLootChatHookInstalled = false;
@@ -3024,6 +6623,17 @@ static void ShutdownAutoLootNative()
 		gNativeAutoLootCommandHookInstalled = false;
 	}
 
+	if (gNativeMulticlassContextMenuHookInstalled) {
+		RemoveDetour(NativeMulticlassContextMenuAddMenuItemAddress());
+		gNativeMulticlassContextMenuHookInstalled = false;
+	}
+
+	if (gNativeAutoLootUiResetHookInstalled) {
+		RemoveDetour(CDisplay__CleanGameUI);
+		RemoveDetour(CDisplay__ReloadUI);
+		gNativeAutoLootUiResetHookInstalled = false;
+	}
+
 	if (gNativeAutoLootPulseHookInstalled) {
 		RemoveDetour((DWORD)ProcessGameEvents);
 		gNativeAutoLootPulseHookInstalled = false;
@@ -3032,8 +6642,20 @@ static void ShutdownAutoLootNative()
 	gNativeAutoLootHooksInstalled = false;
 	gNativeAutoLootRequestedInitialStatus = false;
 	gNativeLiveSpellSentReady = false;
+	gNativeHpFixSentReady = false;
+	gNativeHpFixState = NativeHpFixState();
+	gNativeItemPowerById.clear();
+	gNativeItemRarityById.clear();
+	gNativeMulticlassSentStatus = false;
 	gNativeAutoLootPulseFaulted = false;
 	gNativeAutoLootInGamePulses = 0;
+	gNativeMulticlassPets.clear();
+	gNativeMulticlassMelodySlots.clear();
+	gNativeMulticlassMelodySongs.clear();
+	gNativeMulticlassSpellLevelsById.clear();
+	gNativeMulticlassSpellLevelsByName.clear();
+	gNativeMulticlassSpellLevelPatchCount = 0;
+	gNativeMulticlassSpellLevelsLoading = false;
 }
 
 #endif
