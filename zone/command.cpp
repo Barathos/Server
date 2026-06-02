@@ -165,6 +165,7 @@ int command_init(void)
 		command_add("help", "[Search Criteria] - List available commands and their description, specify partial command as argument to search", AccountStatus::Player, command_help) ||
 		command_add("hotfix", "[hotfix_name] - Reloads shared memory into a hotfix, equiv to load_shared_memory followed by apply_shared_memory", AccountStatus::GMImpossible, command_hotfix) ||
 		command_add("hp", "Refresh your HP bar from the server.", AccountStatus::Player, command_hp) ||
+		command_add("hpfix", "[native|refresh|status|items|off] - Native high-HP display test tools.", AccountStatus::Player, command_hpfix) ||
 		command_add("illusionblock", "Controls whether or not illusion effects will land on you when cast by other players or bots", AccountStatus::Guide, command_illusion_block) ||
 		command_add("instance", "Modify Instances", AccountStatus::GMMgmt, command_instance) ||
 		command_add("interrogateinv", "use [help] argument for available options", AccountStatus::Player, command_interrogateinv) ||
@@ -173,6 +174,8 @@ int command_init(void)
 		command_add("ipban", "[IP] - Ban IP", AccountStatus::GMMgmt, command_ipban) ||
 		command_add("itemedit", "[set|add|clear|proc] - Edit the item currently held on your cursor", AccountStatus::GMMgmt, command_itemedit) ||
 		command_add("itemforge", "[dialog|craft] - Open or use the player item forge", AccountStatus::Player, command_itemforge) ||
+		command_add("itemrarity", "Set, link, view, and add colored-rarity test loot for items.", AccountStatus::GMMgmt, command_itemrarity) ||
+		command_add("itemscore", "Score, audit, and explain item power levels", AccountStatus::GMMgmt, command_itemscore) ||
 		command_add("kick", "[Character Name] - Disconnect a player by name", AccountStatus::GMLeadAdmin, command_kick) ||
 		command_add("kill", "Kill your target", AccountStatus::GMAdmin, command_kill) ||
 		command_add("killallnpcs", "[npc_name] - Kills all npcs by search name, leave blank for all attackable NPC's", AccountStatus::GMMgmt, command_killallnpcs) ||
@@ -190,6 +193,9 @@ int command_init(void)
 		command_add("modifynpcstat", "[Stat] [Value] - Modifies an NPC's stats temporarily.", AccountStatus::GMLeadAdmin, command_modifynpcstat) ||
 		command_add("movechar", "[Character ID|Character Name] [Zone ID|Zone Short Name] - Move an offline character to the specified zone", AccountStatus::Guide, command_movechar) ||
 		command_add("movement", "Various movement commands", AccountStatus::GMMgmt, command_movement) ||
+		command_add("multiclass", "[status|set|diag|native|help] - Admin/native bridge for Multiclass trio profiles", AccountStatus::GMAdmin, command_multiclass) ||
+		command_add("multiclassui", "[status|choose|pets|disc] - Native Multiclass UI bridge", AccountStatus::Player, command_multiclass_ui) ||
+		command_add("mc", "[open|status|refresh|choose|pets|pet|disc] - Short native Multiclass UI bridge", AccountStatus::Player, command_multiclass_ui) ||
 		command_add("myskills", "Show details about your current skill levels", AccountStatus::Player, command_myskills) ||
 		command_add("mysql", "[Help|Query] [SQL Query] - Mysql CLI, see 'Help' for options.", AccountStatus::GMImpossible, command_mysql) ||
 		command_add("mystats", "Show details about you or your pet", AccountStatus::Guide, command_mystats) ||

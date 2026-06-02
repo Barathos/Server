@@ -1,0 +1,7 @@
+# Client patch feed for augs-in-augs.
+# The first augment fusion prototype is server-side only, so no custom client
+# files are required. Keep eqhost generation available for external testers.
+files: []
+
+generated:
+  eqhost: true

@@ -17,6 +17,7 @@
 */
 #include "zone/client.h"
 #include "zone/command.h"
+#include "zone/bot.h"
 #include "zone/corpse.h"
 #include "zone/doors.h"
 #include "zone/object.h"

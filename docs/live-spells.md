@@ -27,6 +27,33 @@ Live Spells lets an operator generate spell definitions and matching scroll item
 
 ## Client Assets
 
-Deploy `client_files/native_autoloot/ui/EQUI_NativeSpellForgeWnd.xml` to the target client UI folder and include it from `EQUI.xml`.
+Client patch syncing is owned by `features/live-spells/patcher.yml`. Client-facing files must be added to this repo first, then listed in the patcher manifest with their destination inside the EverQuest client folder. Do not add files directly to the local EQ client as the source of truth; the client folder is only a deployment target.
 
-The XML is standalone, but the current native DLL code that listens for `LIVESPELL|...` is still shared with the lab native-client runtime.
+In `patcher.yml`:
+
+- `files[].source` is a path inside this repo.
+- `files[].destination` is a path inside the EverQuest client root.
+- `generated.eqhost: true` means the patcher should write `eqhost.txt`.
+- `generated.equiXml: true` means native UI XML includes need to be injected.
+- `generated.equiIncludes` explicitly lists custom `EQUI_*.xml` windows.
+
+The current patcher manifest publishes:
+
+- `client_files/native_autoloot/eq-core-dll/bin/dinput8.dll` to `dinput8.dll`
+- `client_files/native_autoloot/ui/EQUI_NativeSpellForgeWnd.xml` to `uifiles/default/EQUI_NativeSpellForgeWnd.xml`
+
+It also generates `eqhost`, regenerates `EQUI.xml`, and includes `EQUI_NativeSpellForgeWnd.xml`.
+
+For external syncs, look up the workspace install id in `D:\Codex\Apps\EQEmu-feature-workspaces\installs.json`, then regenerate the project feed on the patcher host. The id usually matches the feature id, but do not assume that blindly.
+
+```powershell
+cd D:\Codex\Apps\EQEmu-feature-patcher\features\patcher\eqemupatcher\service
+.\New-WorkspacePatcherDeployment.ps1 -Project <project-id> -BaseUrl http://<patch-host>:8091/patcher/
+.\Test-WorkspacePatcherDeployment.ps1 -Project <project-id> -BaseUrl http://<patch-host>:8091/patcher/
+```
+
+The feed is published at `http://<patch-host>:8091/patcher/<project-id>/`. Missing files listed in `patcher.yml` block real external releases; use `-AllowMissingClientFiles` only for partial local testing.
+
+## Native DLL Ownership
+
+Live Spells must not depend on `EQEmu-native-client-runtime` for a feature-specific `dinput8.dll`. If this feature has native client behavior, transport parsing, slash-command rewriting, or native EQ windows, that client DLL work belongs in this checkout and is deployed only to `D:\EQClients\EQClient-Live-Spells`.

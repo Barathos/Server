@@ -55,6 +55,7 @@ set(common_sources
     ipc_mutex.cpp
     item_data.cpp
     item_instance.cpp
+    item_power.cpp
     json_config.cpp
     json/jsoncpp.cpp
     light_source.cpp
@@ -609,6 +610,7 @@ set(common_headers
     ipc_mutex.h
     item_data.h
     item_instance.h
+    item_power.h
     json_config.h
     json/json_archive_single_line.h
     json/json-forwards.h

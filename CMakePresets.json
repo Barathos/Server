@@ -42,7 +42,11 @@
       "cacheVariables": {
         "CMAKE_CONFIGURATION_TYPES": "Debug;Release",
         "EQEMU_BUILD_LOGIN": "ON",
-        "EQEMU_BUILD_TESTS": "ON"
+        "EQEMU_BUILD_TESTS": "ON",
+        "EQEMU_BUILD_PERL": "ON",
+        "PERL_EXECUTABLE": "C:/Strawberry/perl/bin/perl.exe",
+        "PERL_INCLUDE_PATH": "C:/Strawberry/perl/lib/CORE",
+        "PERL_LIBRARY": "C:/Strawberry/perl/lib/CORE/libperl524.a"
       }
     }
   ]

@@ -1,0 +1,9 @@
+# Client patch feed for eqemu-general-code.
+# source paths are relative to this repo; destination paths are relative to the EQ client root.
+# Missing listed files are release blockers for external syncs.
+files: []
+
+generated:
+  eqhost: true
+  equiXml: true
+  equiIncludes: []

@@ -1,0 +1,14 @@
+version: 1
+id: hpfix
+label: HP Fix
+client: rof
+files:
+  - source: client_files/native_autoloot/eq-core-dll/bin/dinput8.dll
+    destination: dinput8.dll
+  - source: client_files/native_autoloot/ui/EQUI_NativeHpFixWnd.xml
+    destination: uifiles/default/EQUI_NativeHpFixWnd.xml
+generated:
+  eqhost: true
+  equiXml: true
+  equiIncludes:
+    - EQUI_NativeHpFixWnd.xml

@@ -54,12 +54,14 @@ set(zone_sources
     heal_rotation.cpp
     horse.cpp
     inventory.cpp
+    item_rarity_manager.cpp
     loot.cpp
     main.cpp
     map.cpp
     merc.cpp
     mob.cpp
     mob_ai.cpp
+    multiclass_manager.cpp
     mob_appearance.cpp
     mob_info.cpp
     mob_movement_manager.cpp
@@ -155,6 +157,7 @@ set(zone_headers
     hate_list.h
     heal_rotation.h
     horse.h
+    item_rarity_manager.h
     lua_bit.h
     lua_bot.h
     lua_buff.h
@@ -191,6 +194,7 @@ set(zone_headers
     masterentity.h
     merc.h
     mob.h
+    multiclass_manager.h
     mob_movement_manager.h
     npc.h
     npc_scale_manager.h
@@ -459,6 +463,7 @@ set(gm_command_sources
     gm_commands/grid.cpp
     gm_commands/guild.cpp
     gm_commands/hp.cpp
+    gm_commands/hpfix.cpp
     gm_commands/illusion_block.cpp
     gm_commands/instance.cpp
     gm_commands/interrogateinv.cpp
@@ -466,6 +471,8 @@ set(gm_command_sources
     gm_commands/invsnapshot.cpp
     gm_commands/ipban.cpp
     gm_commands/itemedit.cpp
+    gm_commands/itemrarity.cpp
+    gm_commands/itemscore.cpp
     gm_commands/kick.cpp
     gm_commands/kill.cpp
     gm_commands/killallnpcs.cpp
@@ -481,6 +488,8 @@ set(gm_command_sources
     gm_commands/modifynpcstat.cpp
     gm_commands/movechar.cpp
     gm_commands/movement.cpp
+    gm_commands/multiclass.cpp
+    gm_commands/multiclass_ui.cpp
     gm_commands/myskills.cpp
     gm_commands/mysql.cpp
     gm_commands/mystats.cpp

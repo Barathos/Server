@@ -1,6 +1,6 @@
 # AutoLoot Feature Pack
 
-Status: `draft`, `shared-runtime`
+Status: `draft`, `feature-owned-native-client`
 
 This pack describes the source-backed AutoLoot system with the native EverQuest AutoLoot window. It is intended for a server operator who wants AutoLoot without also taking Live Items, Live Spells, or Achievements.
 
@@ -28,25 +28,69 @@ The old script and MQ/Lua approaches should stay out of this pack. The native cl
 
 - EQEmu source rebuild.
 - Custom database update support, or manual execution of the SQL in this pack.
-- The native client DLL host used by this branch if the operator wants the in-client AutoLoot window.
+- A feature-owned native client DLL built from this checkout if the operator wants the in-client AutoLoot window.
+- The client patcher manifest at `features/autoloot/patcher.yml` for external/test-client file sync.
 
 The command surface can still be used without the native window, but the intended package is the native window plus server source.
 
-## Current Shared-Runtime Caveat
+## Native Client Ownership
 
 The server-side AutoLoot boundary is reasonably separable now.
 
-The client-side boundary is not fully clean yet: the lab branch's `client_files/native_autoloot/eq-core-dll/src/core_autoloot_native.h` currently contains AutoLoot code alongside other native custom windows such as Item Forge, Spell Forge, and Achievements. A truly minimal AutoLoot client pack should extract a small native-client base and then move AutoLoot-specific code into its own client source file.
+The client-side boundary must be feature-owned in this checkout. Do not depend on `EQEmu-native-client-runtime` for AutoLoot's feature-specific `dinput8.dll`; that project is reference/shared base work only until there is a proper `native-client-base` split.
 
-Until that split is done, this proof branch includes the AutoLoot UI XML but not the shared DLL source. Operators should treat the client DLL portion as shared runtime code and copy only the AutoLoot-specific C++ portions with care.
+If AutoLoot needs native client behavior, transport parsing, slash-command rewriting, or native EQ windows, keep that source and its build output under this project and deploy only to the matching AutoLoot client folder. If another feature name appears in DLL/runtime code while porting or trimming client code, stop and ask before removing it.
+
+The current package includes the AutoLoot UI XML and a patcher manifest entry for the expected AutoLoot DLL path. A real external patcher feed is blocked until every mapped file exists in this repo.
+
+## Client Patcher Manifest
+
+Client patch syncing is owned by `features/autoloot/patcher.yml`. Do not add files directly to the local EQ client as the source of truth; the client folder is only a deployment target.
+
+Add every external/test-client file to `patcher.yml`, including native DLLs, XML, config files, patch notes, status files, or other client assets. Each `files` entry maps a file in this repo to its destination inside the EverQuest client folder:
+
+```yaml
+files:
+  - source: client_files/native_autoloot/ui/EQUI_NativeAutoLootWnd.xml
+    destination: uifiles/default/EQUI_NativeAutoLootWnd.xml
+```
+
+In `patcher.yml`, `source` is a path inside this repo and `destination` is a path inside the EverQuest client root.
+
+The manifest can also request generated client files:
+
+```yaml
+generated:
+  eqhost: true
+  equiXml: true
+  equiIncludes:
+    - EQUI_NativeAutoLootWnd.xml
+```
+
+Use `generated.eqhost = true` when the patcher should write `eqhost.txt`. Use `generated.equiXml = true` when native UI XML includes need to be injected, and list each custom `EQUI_*.xml` window explicitly in `generated.equiIncludes`.
+
+When regenerating the patch feed, `-Project` is the workspace install id from `D:\Codex\Apps\EQEmu-feature-workspaces\installs.json`. That usually matches the feature id, but do not assume it blindly. For this checkout, the current install id is `autoloot`.
+
+On the patcher host, regenerate and test this project's feed with the resolved project id:
+
+```powershell
+$projectId = "<project-id-from-installs.json>"
+cd D:\Codex\Apps\EQEmu-feature-patcher\features\patcher\eqemupatcher\service
+.\New-WorkspacePatcherDeployment.ps1 -Project $projectId -BaseUrl http://<patch-host>:8091/patcher/
+.\Test-WorkspacePatcherDeployment.ps1 -Project $projectId -BaseUrl http://<patch-host>:8091/patcher/
+```
+
+The published feed is `http://<patch-host>:8091/patcher/<project-id>/`. External testers place this project's generated `eqemupatcher.exe` into their EQ client root and run it.
+
+For real external syncs, missing files in `patcher.yml` are release blockers. Use `-AllowMissingClientFiles` only for partial local testing.
 
 ## Install Outline
 
 1. Apply the server source files and hook patches listed in `MANIFEST.md`.
 2. Apply the database schema from `sql/001_source_backed_autoloot.sql`, or port it into the server's custom migration system.
 3. Rebuild `zone`.
-4. Deploy the native client DLL host and `EQUI_NativeAutoLootWnd.xml`.
-5. Add `EQUI_NativeAutoLootWnd.xml` to the target client's `EQUI.xml` include list.
+4. Build this feature's native client DLL from this checkout, if using the native window.
+5. Use `features/autoloot/patcher.yml` to deploy `dinput8.dll`, `EQUI_NativeAutoLootWnd.xml`, generated `eqhost`, and generated `EQUI.xml` includes to the target client.
 6. Log in and run `#autoloot native show`.
 
 ## Smoke Test
@@ -60,6 +104,7 @@ Until that split is done, this proof branch includes the AutoLoot UI XML but not
 
 ## Next Split Work
 
-- Extract AutoLoot-specific client code out of `core_autoloot_native.h`.
-- Create a `native-client-base` pack for shared DLL hooks, chat transport plumbing, and safe window lifecycle helpers.
-- Generate an AutoLoot-only patch from the manifest once the client-side split is clean.
+- Bring AutoLoot-specific client DLL source and build scripts into this checkout.
+- Use `native-client-runtime` only as reference/shared base work unless explicitly working in that project.
+- Create a `native-client-base` pack later for shared DLL hooks, chat transport plumbing, and safe window lifecycle helpers.
+- Keep `features/autoloot/patcher.yml` complete enough to generate an AutoLoot-only external patcher feed.

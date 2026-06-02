@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<XML ID="EQInterfaceDefinitionLanguage">
+	<Schema xmlns="EverQuestData" xmlns:dt="EverQuestDataTypes" />
+
+	<Label item="AINPCRESPONSE_StatusLabel">
+		<ScreenID>AINPCRESPONSE_StatusLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>18</Y></Location>
+		<Size><CX>420</CX><CY>40</CY></Size>
+		<Text>AI NPC response native UI placeholder</Text>
+		<TextColor><R>220</R><G>230</G><B>255</B></TextColor>
+		<NoWrap>false</NoWrap>
+	</Label>
+
+	<Screen item="NativeAiNpcResponseWnd">
+		<ScreenID>NativeAiNpcResponseWnd</ScreenID>
+		<RelativePosition>false</RelativePosition>
+		<Location><X>120</X><Y>90</Y></Location>
+		<Size><CX>460</CX><CY>180</CY></Size>
+		<Text>AI NPC response</Text>
+		<DrawTemplate>WDT_Def</DrawTemplate>
+		<Style_Titlebar>true</Style_Titlebar>
+		<Style_Closebox>true</Style_Closebox>
+		<Style_Minimizebox>true</Style_Minimizebox>
+		<Style_Border>true</Style_Border>
+		<Style_Sizable>false</Style_Sizable>
+		<Style_Transparent>false</Style_Transparent>
+		<Pieces>AINPCRESPONSE_StatusLabel</Pieces>
+	</Screen>
+</XML>

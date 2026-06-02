@@ -1858,6 +1858,9 @@ public:
 	void ResetHPUpdateTimer() { hpupdate_timer.Start(); }
 
 	void SendHPUpdateMarquee();
+	bool IsNativeHpFixReady() const { return native_hpfix_ready_; }
+	void SetNativeHpFixReady(bool ready) { native_hpfix_ready_ = ready; }
+	void SendNativeHpFixUpdate(bool force = false);
 
 	void CheckRegionTypeChanges();
 
@@ -1946,6 +1949,7 @@ public:
 private:
 	ExternalHandinMoneyReturned m_external_handin_money_returned = {};
 	std::vector<uint32_t>       m_external_handin_items_returned = {};
+	bool                       native_hpfix_ready_ = false;
 public:
 	ExternalHandinMoneyReturned GetExternalHandinMoneyReturned() { return m_external_handin_money_returned; }
 	std::vector<uint32_t> GetExternalHandinItemsReturned() { return m_external_handin_items_returned; }

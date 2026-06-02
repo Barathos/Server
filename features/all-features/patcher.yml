@@ -1,0 +1,41 @@
+version: 1
+id: all-features
+label: All Features
+client: rof
+files:
+  - source: client_files/native_autoloot/eq-core-dll/bin/dinput8.dll
+    destination: dinput8.dll
+  - source: client_files/native_autoloot/ui/EQUI_NativeAutoLootWnd.xml
+    destination: uifiles/default/EQUI_NativeAutoLootWnd.xml
+  - source: client_files/native_autoloot/ui/EQUI_NativeItemForgeWnd.xml
+    destination: uifiles/default/EQUI_NativeItemForgeWnd.xml
+  - source: client_files/native_autoloot/ui/EQUI_NativeSpellForgeWnd.xml
+    destination: uifiles/default/EQUI_NativeSpellForgeWnd.xml
+  - source: client_files/native_autoloot/ui/EQUI_NativeAchievementWnd.xml
+    destination: uifiles/default/EQUI_NativeAchievementWnd.xml
+  - source: client_files/native_autoloot/ui/EQUI_NativeMulticlassWnd.xml
+    destination: uifiles/default/EQUI_NativeMulticlassWnd.xml
+  - source: client_files/native_autoloot/ui/EQUI_NativeTradeskillsWnd.xml
+    destination: uifiles/default/EQUI_NativeTradeskillsWnd.xml
+  - source: client_files/native_autoloot/ui/EQUI_NativeHpFixWnd.xml
+    destination: uifiles/default/EQUI_NativeHpFixWnd.xml
+  - source: client_files/native_autoloot/ui/EQUI_NativeAiNpcResponseWnd.xml
+    destination: uifiles/default/EQUI_NativeAiNpcResponseWnd.xml
+  - source: client_files/native_autoloot/ui/EQUI_NativeAugsInAugsWnd.xml
+    destination: uifiles/default/EQUI_NativeAugsInAugsWnd.xml
+  - source: client_files/native_autoloot/ui/EQUI_NativeDynamicQuestsWnd.xml
+    destination: uifiles/default/EQUI_NativeDynamicQuestsWnd.xml
+generated:
+  eqhost: true
+  equiXml: true
+  equiIncludes:
+    - EQUI_NativeAutoLootWnd.xml
+    - EQUI_NativeItemForgeWnd.xml
+    - EQUI_NativeSpellForgeWnd.xml
+    - EQUI_NativeAchievementWnd.xml
+    - EQUI_NativeMulticlassWnd.xml
+    - EQUI_NativeTradeskillsWnd.xml
+    - EQUI_NativeHpFixWnd.xml
+    - EQUI_NativeAiNpcResponseWnd.xml
+    - EQUI_NativeAugsInAugsWnd.xml
+    - EQUI_NativeDynamicQuestsWnd.xml

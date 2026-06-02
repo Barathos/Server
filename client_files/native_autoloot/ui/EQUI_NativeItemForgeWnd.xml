@@ -1,7 +1,6 @@
 <?xml version="1.0"?>
 <XML ID="EQInterfaceDefinitionLanguage">
 	<Schema xmlns="EverQuestData" xmlns:dt="EverQuestDataTypes" />
-
 	<Button item="AIFW_FormTab">
 		<ScreenID>AIFW_FormTab</ScreenID>
 		<RelativePosition>true</RelativePosition>
@@ -11,7 +10,6 @@
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<Template>BDT_Normal</Template>
 	</Button>
-
 	<Button item="AIFW_StatsTab">
 		<ScreenID>AIFW_StatsTab</ScreenID>
 		<RelativePosition>true</RelativePosition>
@@ -21,7 +19,6 @@
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<Template>BDT_Normal</Template>
 	</Button>
-
 	<Button item="AIFW_CombatTab">
 		<ScreenID>AIFW_CombatTab</ScreenID>
 		<RelativePosition>true</RelativePosition>
@@ -31,7 +28,6 @@
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<Template>BDT_Normal</Template>
 	</Button>
-
 	<Button item="AIFW_ReviewTab">
 		<ScreenID>AIFW_ReviewTab</ScreenID>
 		<RelativePosition>true</RelativePosition>
@@ -41,7 +37,60 @@
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<Template>BDT_Normal</Template>
 	</Button>
-
+	<Label item="AIFW_StepLabel">
+		<ScreenID>AIFW_StepLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>520</X><Y>30</Y></Location>
+		<Size><CX>42</CX><CY>20</CY></Size>
+		<Text>Step</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_Step1Button">
+		<ScreenID>AIFW_Step1Button</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>564</X><Y>26</Y></Location>
+		<Size><CX>38</CX><CY>24</CY></Size>
+		<Text>1</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Button item="AIFW_Step5Button">
+		<ScreenID>AIFW_Step5Button</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>606</X><Y>26</Y></Location>
+		<Size><CX>38</CX><CY>24</CY></Size>
+		<Text>5</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Button item="AIFW_Step10Button">
+		<ScreenID>AIFW_Step10Button</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>648</X><Y>26</Y></Location>
+		<Size><CX>38</CX><CY>24</CY></Size>
+		<Text>10</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Button item="AIFW_Step25Button">
+		<ScreenID>AIFW_Step25Button</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>690</X><Y>26</Y></Location>
+		<Size><CX>38</CX><CY>24</CY></Size>
+		<Text>25</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Button item="AIFW_Step50Button">
+		<ScreenID>AIFW_Step50Button</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>732</X><Y>26</Y></Location>
+		<Size><CX>38</CX><CY>24</CY></Size>
+		<Text>50</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
 	<Label item="AIFW_NameLabel">
 		<ScreenID>AIFW_NameLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
@@ -51,7 +100,6 @@
 		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
-
 	<Editbox item="AIFW_NameEdit">
 		<ScreenID>AIFW_NameEdit</ScreenID>
 		<DrawTemplate>WDT_Inner</DrawTemplate>
@@ -62,7 +110,6 @@
 		<Text>Forged Blade</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 	</Editbox>
-
 	<Label item="AIFW_TypeLabel">
 		<ScreenID>AIFW_TypeLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
@@ -72,7 +119,6 @@
 		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
-
 	<Button item="AIFW_WeaponButton">
 		<ScreenID>AIFW_WeaponButton</ScreenID>
 		<RelativePosition>true</RelativePosition>
@@ -82,7 +128,6 @@
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<Template>BDT_Normal</Template>
 	</Button>
-
 	<Button item="AIFW_ArmorButton">
 		<ScreenID>AIFW_ArmorButton</ScreenID>
 		<RelativePosition>true</RelativePosition>
@@ -92,7 +137,6 @@
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<Template>BDT_Normal</Template>
 	</Button>
-
 	<Button item="AIFW_JewelryButton">
 		<ScreenID>AIFW_JewelryButton</ScreenID>
 		<RelativePosition>true</RelativePosition>
@@ -102,7 +146,6 @@
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<Template>BDT_Normal</Template>
 	</Button>
-
 	<Button item="AIFW_CharmButton">
 		<ScreenID>AIFW_CharmButton</ScreenID>
 		<RelativePosition>true</RelativePosition>
@@ -112,7 +155,6 @@
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<Template>BDT_Normal</Template>
 	</Button>
-
 	<Button item="AIFW_ShieldButton">
 		<ScreenID>AIFW_ShieldButton</ScreenID>
 		<RelativePosition>true</RelativePosition>
@@ -122,277 +164,1833 @@
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<Template>BDT_Normal</Template>
 	</Button>
-
 	<Label item="AIFW_TypeHintLabel">
 		<ScreenID>AIFW_TypeHintLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>14</X><Y>130</Y></Location>
-		<Size><CX>570</CX><CY>54</CY></Size>
+		<Size><CX>690</CX><CY>54</CY></Size>
 		<Text>Weapons equip primary or secondary and use damage, delay, and haste.</Text>
 		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
 		<NoWrap>false</NoWrap>
 	</Label>
-
 	<Label item="AIFW_HPLabel">
 		<ScreenID>AIFW_HPLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>14</X><Y>28</Y></Location>
-		<Size><CX>110</CX><CY>20</CY></Size>
+		<Location><X>16</X><Y>28</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
 		<Text>HP</Text>
 		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
-
 	<Button item="AIFW_HPMinusButton">
 		<ScreenID>AIFW_HPMinusButton</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>136</X><Y>24</Y></Location>
-		<Size><CX>34</CX><CY>26</CY></Size>
+		<Location><X>124</X><Y>24</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
 		<Text>-</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<Template>BDT_Normal</Template>
 	</Button>
-
 	<Label item="AIFW_HPValueLabel">
 		<ScreenID>AIFW_HPValueLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>180</X><Y>28</Y></Location>
-		<Size><CX>80</CX><CY>20</CY></Size>
+		<Location><X>156</X><Y>28</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
 		<Text>50</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
-
 	<Button item="AIFW_HPPlusButton">
 		<ScreenID>AIFW_HPPlusButton</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>270</X><Y>24</Y></Location>
-		<Size><CX>34</CX><CY>26</CY></Size>
+		<Location><X>206</X><Y>24</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
 		<Text>+</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<Template>BDT_Normal</Template>
 	</Button>
-
 	<Label item="AIFW_ManaLabel">
 		<ScreenID>AIFW_ManaLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>14</X><Y>74</Y></Location>
-		<Size><CX>110</CX><CY>20</CY></Size>
+		<Location><X>266</X><Y>28</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
 		<Text>Mana</Text>
 		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
-
 	<Button item="AIFW_ManaMinusButton">
 		<ScreenID>AIFW_ManaMinusButton</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>136</X><Y>70</Y></Location>
-		<Size><CX>34</CX><CY>26</CY></Size>
+		<Location><X>374</X><Y>24</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
 		<Text>-</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<Template>BDT_Normal</Template>
 	</Button>
-
 	<Label item="AIFW_ManaValueLabel">
 		<ScreenID>AIFW_ManaValueLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>180</X><Y>74</Y></Location>
-		<Size><CX>80</CX><CY>20</CY></Size>
+		<Location><X>406</X><Y>28</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
 		<Text>25</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
-
 	<Button item="AIFW_ManaPlusButton">
 		<ScreenID>AIFW_ManaPlusButton</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>270</X><Y>70</Y></Location>
-		<Size><CX>34</CX><CY>26</CY></Size>
+		<Location><X>456</X><Y>24</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
 		<Text>+</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<Template>BDT_Normal</Template>
 	</Button>
-
+	<Label item="AIFW_EndurLabel">
+		<ScreenID>AIFW_EndurLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>516</X><Y>28</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Endurance</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_EndurMinusButton">
+		<ScreenID>AIFW_EndurMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>624</X><Y>24</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_EndurValueLabel">
+		<ScreenID>AIFW_EndurValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>656</X><Y>28</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_EndurPlusButton">
+		<ScreenID>AIFW_EndurPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>706</X><Y>24</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
 	<Label item="AIFW_ACLabel">
 		<ScreenID>AIFW_ACLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>14</X><Y>120</Y></Location>
-		<Size><CX>110</CX><CY>20</CY></Size>
+		<Location><X>16</X><Y>68</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
 		<Text>AC</Text>
 		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
-
 	<Button item="AIFW_ACMinusButton">
 		<ScreenID>AIFW_ACMinusButton</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>136</X><Y>116</Y></Location>
-		<Size><CX>34</CX><CY>26</CY></Size>
+		<Location><X>124</X><Y>64</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
 		<Text>-</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<Template>BDT_Normal</Template>
 	</Button>
-
 	<Label item="AIFW_ACValueLabel">
 		<ScreenID>AIFW_ACValueLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>180</X><Y>120</Y></Location>
-		<Size><CX>80</CX><CY>20</CY></Size>
+		<Location><X>156</X><Y>68</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
 		<Text>5</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
-
 	<Button item="AIFW_ACPlusButton">
 		<ScreenID>AIFW_ACPlusButton</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>270</X><Y>116</Y></Location>
-		<Size><CX>34</CX><CY>26</CY></Size>
+		<Location><X>206</X><Y>64</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
 		<Text>+</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<Template>BDT_Normal</Template>
 	</Button>
-
+	<Label item="AIFW_StrLabel">
+		<ScreenID>AIFW_StrLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>266</X><Y>68</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>STR</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_StrMinusButton">
+		<ScreenID>AIFW_StrMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>374</X><Y>64</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_StrValueLabel">
+		<ScreenID>AIFW_StrValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>406</X><Y>68</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_StrPlusButton">
+		<ScreenID>AIFW_StrPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>456</X><Y>64</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_StaLabel">
+		<ScreenID>AIFW_StaLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>516</X><Y>68</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>STA/CON</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_StaMinusButton">
+		<ScreenID>AIFW_StaMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>624</X><Y>64</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_StaValueLabel">
+		<ScreenID>AIFW_StaValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>656</X><Y>68</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_StaPlusButton">
+		<ScreenID>AIFW_StaPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>706</X><Y>64</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_DexLabel">
+		<ScreenID>AIFW_DexLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>16</X><Y>108</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>DEX</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_DexMinusButton">
+		<ScreenID>AIFW_DexMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>124</X><Y>104</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_DexValueLabel">
+		<ScreenID>AIFW_DexValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>156</X><Y>108</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_DexPlusButton">
+		<ScreenID>AIFW_DexPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>206</X><Y>104</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_AgiLabel">
+		<ScreenID>AIFW_AgiLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>266</X><Y>108</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>AGI</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_AgiMinusButton">
+		<ScreenID>AIFW_AgiMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>374</X><Y>104</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_AgiValueLabel">
+		<ScreenID>AIFW_AgiValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>406</X><Y>108</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_AgiPlusButton">
+		<ScreenID>AIFW_AgiPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>456</X><Y>104</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_IntLabel">
+		<ScreenID>AIFW_IntLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>516</X><Y>108</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>INT</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_IntMinusButton">
+		<ScreenID>AIFW_IntMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>624</X><Y>104</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_IntValueLabel">
+		<ScreenID>AIFW_IntValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>656</X><Y>108</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_IntPlusButton">
+		<ScreenID>AIFW_IntPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>706</X><Y>104</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_WisLabel">
+		<ScreenID>AIFW_WisLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>16</X><Y>148</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>WIS</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_WisMinusButton">
+		<ScreenID>AIFW_WisMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>124</X><Y>144</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_WisValueLabel">
+		<ScreenID>AIFW_WisValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>156</X><Y>148</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_WisPlusButton">
+		<ScreenID>AIFW_WisPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>206</X><Y>144</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_ChaLabel">
+		<ScreenID>AIFW_ChaLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>266</X><Y>148</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>CHA</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_ChaMinusButton">
+		<ScreenID>AIFW_ChaMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>374</X><Y>144</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_ChaValueLabel">
+		<ScreenID>AIFW_ChaValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>406</X><Y>148</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_ChaPlusButton">
+		<ScreenID>AIFW_ChaPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>456</X><Y>144</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_MRLabel">
+		<ScreenID>AIFW_MRLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>516</X><Y>148</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Magic Resist</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_MRMinusButton">
+		<ScreenID>AIFW_MRMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>624</X><Y>144</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_MRValueLabel">
+		<ScreenID>AIFW_MRValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>656</X><Y>148</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_MRPlusButton">
+		<ScreenID>AIFW_MRPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>706</X><Y>144</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_FRLabel">
+		<ScreenID>AIFW_FRLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>16</X><Y>188</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Fire Resist</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_FRMinusButton">
+		<ScreenID>AIFW_FRMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>124</X><Y>184</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_FRValueLabel">
+		<ScreenID>AIFW_FRValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>156</X><Y>188</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_FRPlusButton">
+		<ScreenID>AIFW_FRPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>206</X><Y>184</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_CRLabel">
+		<ScreenID>AIFW_CRLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>266</X><Y>188</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Cold Resist</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_CRMinusButton">
+		<ScreenID>AIFW_CRMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>374</X><Y>184</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_CRValueLabel">
+		<ScreenID>AIFW_CRValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>406</X><Y>188</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_CRPlusButton">
+		<ScreenID>AIFW_CRPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>456</X><Y>184</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_PRLabel">
+		<ScreenID>AIFW_PRLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>516</X><Y>188</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Poison Resist</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_PRMinusButton">
+		<ScreenID>AIFW_PRMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>624</X><Y>184</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_PRValueLabel">
+		<ScreenID>AIFW_PRValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>656</X><Y>188</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_PRPlusButton">
+		<ScreenID>AIFW_PRPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>706</X><Y>184</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_DRLabel">
+		<ScreenID>AIFW_DRLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>16</X><Y>228</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Disease Resist</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_DRMinusButton">
+		<ScreenID>AIFW_DRMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>124</X><Y>224</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_DRValueLabel">
+		<ScreenID>AIFW_DRValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>156</X><Y>228</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_DRPlusButton">
+		<ScreenID>AIFW_DRPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>206</X><Y>224</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_CorrupLabel">
+		<ScreenID>AIFW_CorrupLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>266</X><Y>228</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Corruption Resist</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_CorrupMinusButton">
+		<ScreenID>AIFW_CorrupMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>374</X><Y>224</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_CorrupValueLabel">
+		<ScreenID>AIFW_CorrupValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>406</X><Y>228</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_CorrupPlusButton">
+		<ScreenID>AIFW_CorrupPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>456</X><Y>224</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HStrLabel">
+		<ScreenID>AIFW_HStrLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>516</X><Y>228</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Heroic STR</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HStrMinusButton">
+		<ScreenID>AIFW_HStrMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>624</X><Y>224</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HStrValueLabel">
+		<ScreenID>AIFW_HStrValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>656</X><Y>228</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HStrPlusButton">
+		<ScreenID>AIFW_HStrPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>706</X><Y>224</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HStaLabel">
+		<ScreenID>AIFW_HStaLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>16</X><Y>268</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Heroic STA</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HStaMinusButton">
+		<ScreenID>AIFW_HStaMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>124</X><Y>264</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HStaValueLabel">
+		<ScreenID>AIFW_HStaValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>156</X><Y>268</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HStaPlusButton">
+		<ScreenID>AIFW_HStaPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>206</X><Y>264</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HDexLabel">
+		<ScreenID>AIFW_HDexLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>266</X><Y>268</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Heroic DEX</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HDexMinusButton">
+		<ScreenID>AIFW_HDexMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>374</X><Y>264</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HDexValueLabel">
+		<ScreenID>AIFW_HDexValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>406</X><Y>268</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HDexPlusButton">
+		<ScreenID>AIFW_HDexPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>456</X><Y>264</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HAgiLabel">
+		<ScreenID>AIFW_HAgiLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>516</X><Y>268</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Heroic AGI</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HAgiMinusButton">
+		<ScreenID>AIFW_HAgiMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>624</X><Y>264</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HAgiValueLabel">
+		<ScreenID>AIFW_HAgiValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>656</X><Y>268</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HAgiPlusButton">
+		<ScreenID>AIFW_HAgiPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>706</X><Y>264</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HIntLabel">
+		<ScreenID>AIFW_HIntLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>16</X><Y>308</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Heroic INT</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HIntMinusButton">
+		<ScreenID>AIFW_HIntMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>124</X><Y>304</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HIntValueLabel">
+		<ScreenID>AIFW_HIntValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>156</X><Y>308</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HIntPlusButton">
+		<ScreenID>AIFW_HIntPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>206</X><Y>304</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HWisLabel">
+		<ScreenID>AIFW_HWisLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>266</X><Y>308</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Heroic WIS</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HWisMinusButton">
+		<ScreenID>AIFW_HWisMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>374</X><Y>304</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HWisValueLabel">
+		<ScreenID>AIFW_HWisValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>406</X><Y>308</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HWisPlusButton">
+		<ScreenID>AIFW_HWisPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>456</X><Y>304</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HChaLabel">
+		<ScreenID>AIFW_HChaLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>516</X><Y>308</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Heroic CHA</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HChaMinusButton">
+		<ScreenID>AIFW_HChaMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>624</X><Y>304</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HChaValueLabel">
+		<ScreenID>AIFW_HChaValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>656</X><Y>308</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HChaPlusButton">
+		<ScreenID>AIFW_HChaPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>706</X><Y>304</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HMRLabel">
+		<ScreenID>AIFW_HMRLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>16</X><Y>348</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Heroic MR</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HMRMinusButton">
+		<ScreenID>AIFW_HMRMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>124</X><Y>344</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HMRValueLabel">
+		<ScreenID>AIFW_HMRValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>156</X><Y>348</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HMRPlusButton">
+		<ScreenID>AIFW_HMRPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>206</X><Y>344</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HFRLabel">
+		<ScreenID>AIFW_HFRLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>266</X><Y>348</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Heroic FR</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HFRMinusButton">
+		<ScreenID>AIFW_HFRMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>374</X><Y>344</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HFRValueLabel">
+		<ScreenID>AIFW_HFRValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>406</X><Y>348</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HFRPlusButton">
+		<ScreenID>AIFW_HFRPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>456</X><Y>344</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HCRLabel">
+		<ScreenID>AIFW_HCRLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>516</X><Y>348</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Heroic CR</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HCRMinusButton">
+		<ScreenID>AIFW_HCRMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>624</X><Y>344</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HCRValueLabel">
+		<ScreenID>AIFW_HCRValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>656</X><Y>348</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HCRPlusButton">
+		<ScreenID>AIFW_HCRPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>706</X><Y>344</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HPRLabel">
+		<ScreenID>AIFW_HPRLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>16</X><Y>388</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Heroic PR</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HPRMinusButton">
+		<ScreenID>AIFW_HPRMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>124</X><Y>384</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HPRValueLabel">
+		<ScreenID>AIFW_HPRValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>156</X><Y>388</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HPRPlusButton">
+		<ScreenID>AIFW_HPRPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>206</X><Y>384</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HDRLabel">
+		<ScreenID>AIFW_HDRLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>266</X><Y>388</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Heroic DR</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HDRMinusButton">
+		<ScreenID>AIFW_HDRMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>374</X><Y>384</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HDRValueLabel">
+		<ScreenID>AIFW_HDRValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>406</X><Y>388</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HDRPlusButton">
+		<ScreenID>AIFW_HDRPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>456</X><Y>384</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HCorrupLabel">
+		<ScreenID>AIFW_HCorrupLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>516</X><Y>388</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Heroic Corrup</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HCorrupMinusButton">
+		<ScreenID>AIFW_HCorrupMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>624</X><Y>384</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HCorrupValueLabel">
+		<ScreenID>AIFW_HCorrupValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>656</X><Y>388</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HCorrupPlusButton">
+		<ScreenID>AIFW_HCorrupPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>706</X><Y>384</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
 	<Label item="AIFW_StatsHintLabel">
 		<ScreenID>AIFW_StatsHintLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>14</X><Y>170</Y></Location>
-		<Size><CX>570</CX><CY>44</CY></Size>
-		<Text>Stat ranges: HP 0-500, Mana 0-500, AC 0-100.</Text>
+		<Location><X>14</X><Y>430</Y></Location>
+		<Size><CX>720</CX><CY>36</CY></Size>
+		<Text>Use -/+ to tune every core stat, resist, heroic, and mod field.</Text>
 		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
 		<NoWrap>false</NoWrap>
 	</Label>
-
 	<Label item="AIFW_DamageLabel">
 		<ScreenID>AIFW_DamageLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>14</X><Y>28</Y></Location>
-		<Size><CX>110</CX><CY>20</CY></Size>
+		<Location><X>16</X><Y>28</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
 		<Text>Damage</Text>
 		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
-
 	<Button item="AIFW_DamageMinusButton">
 		<ScreenID>AIFW_DamageMinusButton</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>136</X><Y>24</Y></Location>
-		<Size><CX>34</CX><CY>26</CY></Size>
+		<Location><X>124</X><Y>24</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
 		<Text>-</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<Template>BDT_Normal</Template>
 	</Button>
-
 	<Label item="AIFW_DamageValueLabel">
 		<ScreenID>AIFW_DamageValueLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>180</X><Y>28</Y></Location>
-		<Size><CX>80</CX><CY>20</CY></Size>
+		<Location><X>156</X><Y>28</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
 		<Text>8</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
-
 	<Button item="AIFW_DamagePlusButton">
 		<ScreenID>AIFW_DamagePlusButton</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>270</X><Y>24</Y></Location>
-		<Size><CX>34</CX><CY>26</CY></Size>
+		<Location><X>206</X><Y>24</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
 		<Text>+</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<Template>BDT_Normal</Template>
 	</Button>
-
 	<Label item="AIFW_DelayLabel">
 		<ScreenID>AIFW_DelayLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>14</X><Y>74</Y></Location>
-		<Size><CX>110</CX><CY>20</CY></Size>
+		<Location><X>266</X><Y>28</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
 		<Text>Delay</Text>
 		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
-
 	<Button item="AIFW_DelayMinusButton">
 		<ScreenID>AIFW_DelayMinusButton</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>136</X><Y>70</Y></Location>
-		<Size><CX>34</CX><CY>26</CY></Size>
+		<Location><X>374</X><Y>24</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
 		<Text>-</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<Template>BDT_Normal</Template>
 	</Button>
-
 	<Label item="AIFW_DelayValueLabel">
 		<ScreenID>AIFW_DelayValueLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>180</X><Y>74</Y></Location>
-		<Size><CX>80</CX><CY>20</CY></Size>
+		<Location><X>406</X><Y>28</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
 		<Text>24</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
-
 	<Button item="AIFW_DelayPlusButton">
 		<ScreenID>AIFW_DelayPlusButton</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>270</X><Y>70</Y></Location>
-		<Size><CX>34</CX><CY>26</CY></Size>
+		<Location><X>456</X><Y>24</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
 		<Text>+</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<Template>BDT_Normal</Template>
 	</Button>
-
 	<Label item="AIFW_HasteLabel">
 		<ScreenID>AIFW_HasteLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>14</X><Y>120</Y></Location>
-		<Size><CX>110</CX><CY>20</CY></Size>
+		<Location><X>516</X><Y>28</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
 		<Text>Haste</Text>
 		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
-
 	<Button item="AIFW_HasteMinusButton">
 		<ScreenID>AIFW_HasteMinusButton</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>136</X><Y>116</Y></Location>
-		<Size><CX>34</CX><CY>26</CY></Size>
+		<Location><X>624</X><Y>24</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
 		<Text>-</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<Template>BDT_Normal</Template>
 	</Button>
-
 	<Label item="AIFW_HasteValueLabel">
 		<ScreenID>AIFW_HasteValueLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>180</X><Y>120</Y></Location>
-		<Size><CX>80</CX><CY>20</CY></Size>
-		<Text>0%</Text>
+		<Location><X>656</X><Y>28</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
-
 	<Button item="AIFW_HastePlusButton">
 		<ScreenID>AIFW_HastePlusButton</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>270</X><Y>116</Y></Location>
-		<Size><CX>34</CX><CY>26</CY></Size>
+		<Location><X>706</X><Y>24</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
 		<Text>+</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<Template>BDT_Normal</Template>
 	</Button>
-
+	<Label item="AIFW_AttackLabel">
+		<ScreenID>AIFW_AttackLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>16</X><Y>68</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Attack</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_AttackMinusButton">
+		<ScreenID>AIFW_AttackMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>124</X><Y>64</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_AttackValueLabel">
+		<ScreenID>AIFW_AttackValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>156</X><Y>68</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_AttackPlusButton">
+		<ScreenID>AIFW_AttackPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>206</X><Y>64</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_AccuracyLabel">
+		<ScreenID>AIFW_AccuracyLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>266</X><Y>68</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Accuracy</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_AccuracyMinusButton">
+		<ScreenID>AIFW_AccuracyMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>374</X><Y>64</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_AccuracyValueLabel">
+		<ScreenID>AIFW_AccuracyValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>406</X><Y>68</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_AccuracyPlusButton">
+		<ScreenID>AIFW_AccuracyPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>456</X><Y>64</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_AvoidanceLabel">
+		<ScreenID>AIFW_AvoidanceLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>516</X><Y>68</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Avoidance</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_AvoidanceMinusButton">
+		<ScreenID>AIFW_AvoidanceMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>624</X><Y>64</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_AvoidanceValueLabel">
+		<ScreenID>AIFW_AvoidanceValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>656</X><Y>68</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_AvoidancePlusButton">
+		<ScreenID>AIFW_AvoidancePlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>706</X><Y>64</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_RegenLabel">
+		<ScreenID>AIFW_RegenLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>16</X><Y>108</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>HP Regen</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_RegenMinusButton">
+		<ScreenID>AIFW_RegenMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>124</X><Y>104</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_RegenValueLabel">
+		<ScreenID>AIFW_RegenValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>156</X><Y>108</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_RegenPlusButton">
+		<ScreenID>AIFW_RegenPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>206</X><Y>104</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_ManaRegenLabel">
+		<ScreenID>AIFW_ManaRegenLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>266</X><Y>108</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Mana Regen</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_ManaRegenMinusButton">
+		<ScreenID>AIFW_ManaRegenMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>374</X><Y>104</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_ManaRegenValueLabel">
+		<ScreenID>AIFW_ManaRegenValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>406</X><Y>108</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_ManaRegenPlusButton">
+		<ScreenID>AIFW_ManaRegenPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>456</X><Y>104</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_EndRegenLabel">
+		<ScreenID>AIFW_EndRegenLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>516</X><Y>108</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>End Regen</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_EndRegenMinusButton">
+		<ScreenID>AIFW_EndRegenMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>624</X><Y>104</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_EndRegenValueLabel">
+		<ScreenID>AIFW_EndRegenValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>656</X><Y>108</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_EndRegenPlusButton">
+		<ScreenID>AIFW_EndRegenPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>706</X><Y>104</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_ShieldingLabel">
+		<ScreenID>AIFW_ShieldingLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>16</X><Y>148</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Shielding</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_ShieldingMinusButton">
+		<ScreenID>AIFW_ShieldingMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>124</X><Y>144</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_ShieldingValueLabel">
+		<ScreenID>AIFW_ShieldingValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>156</X><Y>148</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_ShieldingPlusButton">
+		<ScreenID>AIFW_ShieldingPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>206</X><Y>144</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_SpellShieldLabel">
+		<ScreenID>AIFW_SpellShieldLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>266</X><Y>148</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Spell Shield</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_SpellShieldMinusButton">
+		<ScreenID>AIFW_SpellShieldMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>374</X><Y>144</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_SpellShieldValueLabel">
+		<ScreenID>AIFW_SpellShieldValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>406</X><Y>148</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_SpellShieldPlusButton">
+		<ScreenID>AIFW_SpellShieldPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>456</X><Y>144</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_DotShieldLabel">
+		<ScreenID>AIFW_DotShieldLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>516</X><Y>148</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>DoT Shield</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_DotShieldMinusButton">
+		<ScreenID>AIFW_DotShieldMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>624</X><Y>144</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_DotShieldValueLabel">
+		<ScreenID>AIFW_DotShieldValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>656</X><Y>148</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_DotShieldPlusButton">
+		<ScreenID>AIFW_DotShieldPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>706</X><Y>144</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_StunResistLabel">
+		<ScreenID>AIFW_StunResistLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>16</X><Y>188</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Stun Resist</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_StunResistMinusButton">
+		<ScreenID>AIFW_StunResistMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>124</X><Y>184</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_StunResistValueLabel">
+		<ScreenID>AIFW_StunResistValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>156</X><Y>188</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_StunResistPlusButton">
+		<ScreenID>AIFW_StunResistPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>206</X><Y>184</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_StrikethroughLabel">
+		<ScreenID>AIFW_StrikethroughLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>266</X><Y>188</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Strikethrough</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_StrikethroughMinusButton">
+		<ScreenID>AIFW_StrikethroughMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>374</X><Y>184</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_StrikethroughValueLabel">
+		<ScreenID>AIFW_StrikethroughValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>406</X><Y>188</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_StrikethroughPlusButton">
+		<ScreenID>AIFW_StrikethroughPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>456</X><Y>184</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_DamageShieldLabel">
+		<ScreenID>AIFW_DamageShieldLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>516</X><Y>188</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Damage Shield</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_DamageShieldMinusButton">
+		<ScreenID>AIFW_DamageShieldMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>624</X><Y>184</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_DamageShieldValueLabel">
+		<ScreenID>AIFW_DamageShieldValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>656</X><Y>188</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_DamageShieldPlusButton">
+		<ScreenID>AIFW_DamageShieldPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>706</X><Y>184</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_DSMitigationLabel">
+		<ScreenID>AIFW_DSMitigationLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>16</X><Y>228</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>DS Mitigation</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_DSMitigationMinusButton">
+		<ScreenID>AIFW_DSMitigationMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>124</X><Y>224</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_DSMitigationValueLabel">
+		<ScreenID>AIFW_DSMitigationValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>156</X><Y>228</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_DSMitigationPlusButton">
+		<ScreenID>AIFW_DSMitigationPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>206</X><Y>224</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HealAmtLabel">
+		<ScreenID>AIFW_HealAmtLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>266</X><Y>228</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Heal Amount</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HealAmtMinusButton">
+		<ScreenID>AIFW_HealAmtMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>374</X><Y>224</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_HealAmtValueLabel">
+		<ScreenID>AIFW_HealAmtValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>406</X><Y>228</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_HealAmtPlusButton">
+		<ScreenID>AIFW_HealAmtPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>456</X><Y>224</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_SpellDmgLabel">
+		<ScreenID>AIFW_SpellDmgLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>516</X><Y>228</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Spell Damage</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_SpellDmgMinusButton">
+		<ScreenID>AIFW_SpellDmgMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>624</X><Y>224</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_SpellDmgValueLabel">
+		<ScreenID>AIFW_SpellDmgValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>656</X><Y>228</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_SpellDmgPlusButton">
+		<ScreenID>AIFW_SpellDmgPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>706</X><Y>224</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_ClairvoyanceLabel">
+		<ScreenID>AIFW_ClairvoyanceLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>16</X><Y>268</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Clairvoyance</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_ClairvoyanceMinusButton">
+		<ScreenID>AIFW_ClairvoyanceMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>124</X><Y>264</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_ClairvoyanceValueLabel">
+		<ScreenID>AIFW_ClairvoyanceValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>156</X><Y>268</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_ClairvoyancePlusButton">
+		<ScreenID>AIFW_ClairvoyancePlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>206</X><Y>264</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_BackstabDmgLabel">
+		<ScreenID>AIFW_BackstabDmgLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>266</X><Y>268</Y></Location>
+		<Size><CX>104</CX><CY>20</CY></Size>
+		<Text>Backstab Dmg</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_BackstabDmgMinusButton">
+		<ScreenID>AIFW_BackstabDmgMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>374</X><Y>264</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+	<Label item="AIFW_BackstabDmgValueLabel">
+		<ScreenID>AIFW_BackstabDmgValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>406</X><Y>268</Y></Location>
+		<Size><CX>44</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+	<Button item="AIFW_BackstabDmgPlusButton">
+		<ScreenID>AIFW_BackstabDmgPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>456</X><Y>264</Y></Location>
+		<Size><CX>26</CX><CY>24</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
 	<Label item="AIFW_CombatHintLabel">
 		<ScreenID>AIFW_CombatHintLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>14</X><Y>170</Y></Location>
-		<Size><CX>570</CX><CY>44</CY></Size>
+		<Location><X>14</X><Y>314</Y></Location>
+		<Size><CX>720</CX><CY>36</CY></Size>
 		<Text>Weapon values apply to blades. Other forms keep these at zero.</Text>
 		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
 		<NoWrap>false</NoWrap>
 	</Label>
-
 	<Label item="AIFW_ReviewTitleLabel">
 		<ScreenID>AIFW_ReviewTitleLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
@@ -402,62 +2000,65 @@
 		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
-
 	<Label item="AIFW_ReviewNameLabel">
 		<ScreenID>AIFW_ReviewNameLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>14</X><Y>48</Y></Location>
-		<Size><CX>570</CX><CY>22</CY></Size>
+		<Size><CX>720</CX><CY>22</CY></Size>
 		<Text>Forged Blade</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
-
 	<Label item="AIFW_ReviewTypeLabel">
 		<ScreenID>AIFW_ReviewTypeLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>14</X><Y>82</Y></Location>
-		<Size><CX>570</CX><CY>20</CY></Size>
-		<Text>Weapon item, summoned directly to your cursor.</Text>
+		<Size><CX>720</CX><CY>76</CY></Size>
+		<Text>Magic, No Trade, Quest</Text>
 		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
-		<NoWrap>true</NoWrap>
+		<NoWrap>false</NoWrap>
 	</Label>
-
 	<Label item="AIFW_ReviewStatsLabel">
 		<ScreenID>AIFW_ReviewStatsLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>14</X><Y>114</Y></Location>
-		<Size><CX>570</CX><CY>20</CY></Size>
+		<Location><X>40</X><Y>194</Y></Location>
+		<Size><CX>250</CX><CY>330</CY></Size>
 		<Text>HP 50, Mana 25, AC 5.</Text>
 		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
-		<NoWrap>true</NoWrap>
+		<NoWrap>false</NoWrap>
 	</Label>
-
+	<Label item="AIFW_ReviewResistsLabel">
+		<ScreenID>AIFW_ReviewResistsLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>326</X><Y>194</Y></Location>
+		<Size><CX>250</CX><CY>330</CY></Size>
+		<Text>Magic Resist 0</Text>
+		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
+		<NoWrap>false</NoWrap>
+	</Label>
 	<Label item="AIFW_ReviewCombatLabel">
 		<ScreenID>AIFW_ReviewCombatLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>14</X><Y>146</Y></Location>
-		<Size><CX>570</CX><CY>20</CY></Size>
-		<Text>Damage 8, Delay 24, Haste 0%.</Text>
+		<Location><X>610</X><Y>194</Y></Location>
+		<Size><CX>250</CX><CY>330</CY></Size>
+		<Text>Damage 8, Delay 24, Haste 0.</Text>
 		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
-		<NoWrap>true</NoWrap>
+		<NoWrap>false</NoWrap>
 	</Label>
-
 	<Button item="AIFW_CreateButton">
 		<ScreenID>AIFW_CreateButton</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>392</X><Y>226</Y></Location>
+		<Location><X>704</X><Y>540</Y></Location>
 		<Size><CX>150</CX><CY>30</CY></Size>
 		<Text>Create Item</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<Template>BDT_Normal</Template>
 	</Button>
-
 	<Screen item="AIFW_FormPage">
 		<ScreenID>AIFW_FormPage</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>12</X><Y>58</Y></Location>
-		<Size><CX>596</CX><CY>280</CY></Size>
+		<Size><CX>876</CX><CY>566</CY></Size>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Titlebar>false</Style_Titlebar>
 		<Pieces>AIFW_NameLabel</Pieces>
@@ -470,12 +2071,11 @@
 		<Pieces>AIFW_ShieldButton</Pieces>
 		<Pieces>AIFW_TypeHintLabel</Pieces>
 	</Screen>
-
 	<Screen item="AIFW_StatsPage">
 		<ScreenID>AIFW_StatsPage</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>12</X><Y>58</Y></Location>
-		<Size><CX>596</CX><CY>280</CY></Size>
+		<Size><CX>876</CX><CY>566</CY></Size>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Titlebar>false</Style_Titlebar>
 		<Pieces>AIFW_HPLabel</Pieces>
@@ -486,18 +2086,125 @@
 		<Pieces>AIFW_ManaMinusButton</Pieces>
 		<Pieces>AIFW_ManaValueLabel</Pieces>
 		<Pieces>AIFW_ManaPlusButton</Pieces>
+		<Pieces>AIFW_EndurLabel</Pieces>
+		<Pieces>AIFW_EndurMinusButton</Pieces>
+		<Pieces>AIFW_EndurValueLabel</Pieces>
+		<Pieces>AIFW_EndurPlusButton</Pieces>
 		<Pieces>AIFW_ACLabel</Pieces>
 		<Pieces>AIFW_ACMinusButton</Pieces>
 		<Pieces>AIFW_ACValueLabel</Pieces>
 		<Pieces>AIFW_ACPlusButton</Pieces>
+		<Pieces>AIFW_StrLabel</Pieces>
+		<Pieces>AIFW_StrMinusButton</Pieces>
+		<Pieces>AIFW_StrValueLabel</Pieces>
+		<Pieces>AIFW_StrPlusButton</Pieces>
+		<Pieces>AIFW_StaLabel</Pieces>
+		<Pieces>AIFW_StaMinusButton</Pieces>
+		<Pieces>AIFW_StaValueLabel</Pieces>
+		<Pieces>AIFW_StaPlusButton</Pieces>
+		<Pieces>AIFW_DexLabel</Pieces>
+		<Pieces>AIFW_DexMinusButton</Pieces>
+		<Pieces>AIFW_DexValueLabel</Pieces>
+		<Pieces>AIFW_DexPlusButton</Pieces>
+		<Pieces>AIFW_AgiLabel</Pieces>
+		<Pieces>AIFW_AgiMinusButton</Pieces>
+		<Pieces>AIFW_AgiValueLabel</Pieces>
+		<Pieces>AIFW_AgiPlusButton</Pieces>
+		<Pieces>AIFW_IntLabel</Pieces>
+		<Pieces>AIFW_IntMinusButton</Pieces>
+		<Pieces>AIFW_IntValueLabel</Pieces>
+		<Pieces>AIFW_IntPlusButton</Pieces>
+		<Pieces>AIFW_WisLabel</Pieces>
+		<Pieces>AIFW_WisMinusButton</Pieces>
+		<Pieces>AIFW_WisValueLabel</Pieces>
+		<Pieces>AIFW_WisPlusButton</Pieces>
+		<Pieces>AIFW_ChaLabel</Pieces>
+		<Pieces>AIFW_ChaMinusButton</Pieces>
+		<Pieces>AIFW_ChaValueLabel</Pieces>
+		<Pieces>AIFW_ChaPlusButton</Pieces>
+		<Pieces>AIFW_MRLabel</Pieces>
+		<Pieces>AIFW_MRMinusButton</Pieces>
+		<Pieces>AIFW_MRValueLabel</Pieces>
+		<Pieces>AIFW_MRPlusButton</Pieces>
+		<Pieces>AIFW_FRLabel</Pieces>
+		<Pieces>AIFW_FRMinusButton</Pieces>
+		<Pieces>AIFW_FRValueLabel</Pieces>
+		<Pieces>AIFW_FRPlusButton</Pieces>
+		<Pieces>AIFW_CRLabel</Pieces>
+		<Pieces>AIFW_CRMinusButton</Pieces>
+		<Pieces>AIFW_CRValueLabel</Pieces>
+		<Pieces>AIFW_CRPlusButton</Pieces>
+		<Pieces>AIFW_PRLabel</Pieces>
+		<Pieces>AIFW_PRMinusButton</Pieces>
+		<Pieces>AIFW_PRValueLabel</Pieces>
+		<Pieces>AIFW_PRPlusButton</Pieces>
+		<Pieces>AIFW_DRLabel</Pieces>
+		<Pieces>AIFW_DRMinusButton</Pieces>
+		<Pieces>AIFW_DRValueLabel</Pieces>
+		<Pieces>AIFW_DRPlusButton</Pieces>
+		<Pieces>AIFW_CorrupLabel</Pieces>
+		<Pieces>AIFW_CorrupMinusButton</Pieces>
+		<Pieces>AIFW_CorrupValueLabel</Pieces>
+		<Pieces>AIFW_CorrupPlusButton</Pieces>
+		<Pieces>AIFW_HStrLabel</Pieces>
+		<Pieces>AIFW_HStrMinusButton</Pieces>
+		<Pieces>AIFW_HStrValueLabel</Pieces>
+		<Pieces>AIFW_HStrPlusButton</Pieces>
+		<Pieces>AIFW_HStaLabel</Pieces>
+		<Pieces>AIFW_HStaMinusButton</Pieces>
+		<Pieces>AIFW_HStaValueLabel</Pieces>
+		<Pieces>AIFW_HStaPlusButton</Pieces>
+		<Pieces>AIFW_HDexLabel</Pieces>
+		<Pieces>AIFW_HDexMinusButton</Pieces>
+		<Pieces>AIFW_HDexValueLabel</Pieces>
+		<Pieces>AIFW_HDexPlusButton</Pieces>
+		<Pieces>AIFW_HAgiLabel</Pieces>
+		<Pieces>AIFW_HAgiMinusButton</Pieces>
+		<Pieces>AIFW_HAgiValueLabel</Pieces>
+		<Pieces>AIFW_HAgiPlusButton</Pieces>
+		<Pieces>AIFW_HIntLabel</Pieces>
+		<Pieces>AIFW_HIntMinusButton</Pieces>
+		<Pieces>AIFW_HIntValueLabel</Pieces>
+		<Pieces>AIFW_HIntPlusButton</Pieces>
+		<Pieces>AIFW_HWisLabel</Pieces>
+		<Pieces>AIFW_HWisMinusButton</Pieces>
+		<Pieces>AIFW_HWisValueLabel</Pieces>
+		<Pieces>AIFW_HWisPlusButton</Pieces>
+		<Pieces>AIFW_HChaLabel</Pieces>
+		<Pieces>AIFW_HChaMinusButton</Pieces>
+		<Pieces>AIFW_HChaValueLabel</Pieces>
+		<Pieces>AIFW_HChaPlusButton</Pieces>
+		<Pieces>AIFW_HMRLabel</Pieces>
+		<Pieces>AIFW_HMRMinusButton</Pieces>
+		<Pieces>AIFW_HMRValueLabel</Pieces>
+		<Pieces>AIFW_HMRPlusButton</Pieces>
+		<Pieces>AIFW_HFRLabel</Pieces>
+		<Pieces>AIFW_HFRMinusButton</Pieces>
+		<Pieces>AIFW_HFRValueLabel</Pieces>
+		<Pieces>AIFW_HFRPlusButton</Pieces>
+		<Pieces>AIFW_HCRLabel</Pieces>
+		<Pieces>AIFW_HCRMinusButton</Pieces>
+		<Pieces>AIFW_HCRValueLabel</Pieces>
+		<Pieces>AIFW_HCRPlusButton</Pieces>
+		<Pieces>AIFW_HPRLabel</Pieces>
+		<Pieces>AIFW_HPRMinusButton</Pieces>
+		<Pieces>AIFW_HPRValueLabel</Pieces>
+		<Pieces>AIFW_HPRPlusButton</Pieces>
+		<Pieces>AIFW_HDRLabel</Pieces>
+		<Pieces>AIFW_HDRMinusButton</Pieces>
+		<Pieces>AIFW_HDRValueLabel</Pieces>
+		<Pieces>AIFW_HDRPlusButton</Pieces>
+		<Pieces>AIFW_HCorrupLabel</Pieces>
+		<Pieces>AIFW_HCorrupMinusButton</Pieces>
+		<Pieces>AIFW_HCorrupValueLabel</Pieces>
+		<Pieces>AIFW_HCorrupPlusButton</Pieces>
 		<Pieces>AIFW_StatsHintLabel</Pieces>
 	</Screen>
-
 	<Screen item="AIFW_CombatPage">
 		<ScreenID>AIFW_CombatPage</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>12</X><Y>58</Y></Location>
-		<Size><CX>596</CX><CY>280</CY></Size>
+		<Size><CX>876</CX><CY>566</CY></Size>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Titlebar>false</Style_Titlebar>
 		<Pieces>AIFW_DamageLabel</Pieces>
@@ -512,51 +2219,123 @@
 		<Pieces>AIFW_HasteMinusButton</Pieces>
 		<Pieces>AIFW_HasteValueLabel</Pieces>
 		<Pieces>AIFW_HastePlusButton</Pieces>
+		<Pieces>AIFW_AttackLabel</Pieces>
+		<Pieces>AIFW_AttackMinusButton</Pieces>
+		<Pieces>AIFW_AttackValueLabel</Pieces>
+		<Pieces>AIFW_AttackPlusButton</Pieces>
+		<Pieces>AIFW_AccuracyLabel</Pieces>
+		<Pieces>AIFW_AccuracyMinusButton</Pieces>
+		<Pieces>AIFW_AccuracyValueLabel</Pieces>
+		<Pieces>AIFW_AccuracyPlusButton</Pieces>
+		<Pieces>AIFW_AvoidanceLabel</Pieces>
+		<Pieces>AIFW_AvoidanceMinusButton</Pieces>
+		<Pieces>AIFW_AvoidanceValueLabel</Pieces>
+		<Pieces>AIFW_AvoidancePlusButton</Pieces>
+		<Pieces>AIFW_RegenLabel</Pieces>
+		<Pieces>AIFW_RegenMinusButton</Pieces>
+		<Pieces>AIFW_RegenValueLabel</Pieces>
+		<Pieces>AIFW_RegenPlusButton</Pieces>
+		<Pieces>AIFW_ManaRegenLabel</Pieces>
+		<Pieces>AIFW_ManaRegenMinusButton</Pieces>
+		<Pieces>AIFW_ManaRegenValueLabel</Pieces>
+		<Pieces>AIFW_ManaRegenPlusButton</Pieces>
+		<Pieces>AIFW_EndRegenLabel</Pieces>
+		<Pieces>AIFW_EndRegenMinusButton</Pieces>
+		<Pieces>AIFW_EndRegenValueLabel</Pieces>
+		<Pieces>AIFW_EndRegenPlusButton</Pieces>
+		<Pieces>AIFW_ShieldingLabel</Pieces>
+		<Pieces>AIFW_ShieldingMinusButton</Pieces>
+		<Pieces>AIFW_ShieldingValueLabel</Pieces>
+		<Pieces>AIFW_ShieldingPlusButton</Pieces>
+		<Pieces>AIFW_SpellShieldLabel</Pieces>
+		<Pieces>AIFW_SpellShieldMinusButton</Pieces>
+		<Pieces>AIFW_SpellShieldValueLabel</Pieces>
+		<Pieces>AIFW_SpellShieldPlusButton</Pieces>
+		<Pieces>AIFW_DotShieldLabel</Pieces>
+		<Pieces>AIFW_DotShieldMinusButton</Pieces>
+		<Pieces>AIFW_DotShieldValueLabel</Pieces>
+		<Pieces>AIFW_DotShieldPlusButton</Pieces>
+		<Pieces>AIFW_StunResistLabel</Pieces>
+		<Pieces>AIFW_StunResistMinusButton</Pieces>
+		<Pieces>AIFW_StunResistValueLabel</Pieces>
+		<Pieces>AIFW_StunResistPlusButton</Pieces>
+		<Pieces>AIFW_StrikethroughLabel</Pieces>
+		<Pieces>AIFW_StrikethroughMinusButton</Pieces>
+		<Pieces>AIFW_StrikethroughValueLabel</Pieces>
+		<Pieces>AIFW_StrikethroughPlusButton</Pieces>
+		<Pieces>AIFW_DamageShieldLabel</Pieces>
+		<Pieces>AIFW_DamageShieldMinusButton</Pieces>
+		<Pieces>AIFW_DamageShieldValueLabel</Pieces>
+		<Pieces>AIFW_DamageShieldPlusButton</Pieces>
+		<Pieces>AIFW_DSMitigationLabel</Pieces>
+		<Pieces>AIFW_DSMitigationMinusButton</Pieces>
+		<Pieces>AIFW_DSMitigationValueLabel</Pieces>
+		<Pieces>AIFW_DSMitigationPlusButton</Pieces>
+		<Pieces>AIFW_HealAmtLabel</Pieces>
+		<Pieces>AIFW_HealAmtMinusButton</Pieces>
+		<Pieces>AIFW_HealAmtValueLabel</Pieces>
+		<Pieces>AIFW_HealAmtPlusButton</Pieces>
+		<Pieces>AIFW_SpellDmgLabel</Pieces>
+		<Pieces>AIFW_SpellDmgMinusButton</Pieces>
+		<Pieces>AIFW_SpellDmgValueLabel</Pieces>
+		<Pieces>AIFW_SpellDmgPlusButton</Pieces>
+		<Pieces>AIFW_ClairvoyanceLabel</Pieces>
+		<Pieces>AIFW_ClairvoyanceMinusButton</Pieces>
+		<Pieces>AIFW_ClairvoyanceValueLabel</Pieces>
+		<Pieces>AIFW_ClairvoyancePlusButton</Pieces>
+		<Pieces>AIFW_BackstabDmgLabel</Pieces>
+		<Pieces>AIFW_BackstabDmgMinusButton</Pieces>
+		<Pieces>AIFW_BackstabDmgValueLabel</Pieces>
+		<Pieces>AIFW_BackstabDmgPlusButton</Pieces>
 		<Pieces>AIFW_CombatHintLabel</Pieces>
 	</Screen>
-
 	<Screen item="AIFW_ReviewPage">
 		<ScreenID>AIFW_ReviewPage</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>12</X><Y>58</Y></Location>
-		<Size><CX>596</CX><CY>280</CY></Size>
+		<Size><CX>876</CX><CY>566</CY></Size>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Titlebar>false</Style_Titlebar>
 		<Pieces>AIFW_ReviewTitleLabel</Pieces>
 		<Pieces>AIFW_ReviewNameLabel</Pieces>
 		<Pieces>AIFW_ReviewTypeLabel</Pieces>
 		<Pieces>AIFW_ReviewStatsLabel</Pieces>
+		<Pieces>AIFW_ReviewResistsLabel</Pieces>
 		<Pieces>AIFW_ReviewCombatLabel</Pieces>
 		<Pieces>AIFW_CreateButton</Pieces>
 	</Screen>
-
 	<Label item="AIFW_StatusLabel">
 		<ScreenID>AIFW_StatusLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>14</X><Y>358</Y></Location>
-		<Size><CX>590</CX><CY>36</CY></Size>
+		<Location><X>14</X><Y>642</Y></Location>
+		<Size><CX>870</CX><CY>36</CY></Size>
 		<Text>Choose an item form, then tune stats and combat values.</Text>
 		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
 		<NoWrap>false</NoWrap>
 	</Label>
-
 	<Screen item="NativeItemForgeWnd">
 		<ScreenID>NativeItemForgeWnd</ScreenID>
 		<RelativePosition>false</RelativePosition>
-		<Location><X>150</X><Y>120</Y></Location>
-		<Size><CX>620</CX><CY>410</CY></Size>
+		<Location><X>80</X><Y>60</Y></Location>
+		<Size><CX>900</CX><CY>694</CY></Size>
 		<Text>Item Forge</Text>
 		<Style_Transparent>false</Style_Transparent>
 		<Style_Titlebar>true</Style_Titlebar>
 		<Style_Closebox>true</Style_Closebox>
 		<Style_Minimizebox>false</Style_Minimizebox>
 		<Style_Border>true</Style_Border>
-		<Style_Sizable>false</Style_Sizable>
+		<Style_Sizable>true</Style_Sizable>
 		<DrawTemplate>WDT_Rounded</DrawTemplate>
 		<Pieces>AIFW_FormTab</Pieces>
 		<Pieces>AIFW_StatsTab</Pieces>
 		<Pieces>AIFW_CombatTab</Pieces>
 		<Pieces>AIFW_ReviewTab</Pieces>
+		<Pieces>AIFW_StepLabel</Pieces>
+		<Pieces>AIFW_Step1Button</Pieces>
+		<Pieces>AIFW_Step5Button</Pieces>
+		<Pieces>AIFW_Step10Button</Pieces>
+		<Pieces>AIFW_Step25Button</Pieces>
+		<Pieces>AIFW_Step50Button</Pieces>
 		<Pieces>AIFW_FormPage</Pieces>
 		<Pieces>AIFW_StatsPage</Pieces>
 		<Pieces>AIFW_CombatPage</Pieces>

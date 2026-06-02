@@ -9242,6 +9242,32 @@ void Client::SendHPUpdateMarquee(){
 	SendMarqueeMessage(Chat::Yellow, 510, 0, 3000, 3000, health_update_notification);
 }
 
+void Client::SendNativeHpFixUpdate(bool force)
+{
+	if (!native_hpfix_ready_) {
+		return;
+	}
+
+	const int64 current = GetHP();
+	const int64 maximum = GetMaxHP();
+	if (maximum <= 0) {
+		return;
+	}
+
+	const double percent = (static_cast<double>(current) * 100.0) / static_cast<double>(maximum);
+	const auto payload = fmt::format(
+		"HPFIX|self|current={}|max={}|percent={:.2f}",
+		current,
+		maximum,
+		percent
+	);
+
+	Message(Chat::Yellow, payload.c_str());
+	if (force) {
+		LogHPUpdate("Native HPFIX forced update for [{}]: {}", GetCleanName(), payload);
+	}
+}
+
 uint32 Client::GetMoney(uint8 type, uint8 subtype) {
 	uint32 value = 0;
 

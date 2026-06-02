@@ -1,0 +1,97 @@
+<?xml version="1.0"?>
+<XML ID="EQInterfaceDefinitionLanguage">
+	<Schema xmlns="EverQuestData" xmlns:dt="EverQuestDataTypes" />
+
+	<Label item="NDQ_SummaryLabel">
+		<ScreenID>NDQ_SummaryLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>14</Y></Location>
+		<Size><CX>436</CX><CY>20</CY></Size>
+		<Text>Dynamic Quests</Text>
+		<TextColor><R>255</R><G>235</G><B>160</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="NDQ_RefreshButton">
+		<ScreenID>NDQ_RefreshButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>456</X><Y>12</Y></Location>
+		<Size><CX>72</CX><CY>22</CY></Size>
+		<Text>Refresh</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Listbox item="NDQ_QuestList">
+		<ScreenID>NDQ_QuestList</ScreenID>
+		<DrawTemplate>WDT_Inner</DrawTemplate>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>42</Y></Location>
+		<Size><CX>516</CX><CY>128</CY></Size>
+		<Style_Border>true</Style_Border>
+		<Style_VScroll>true</Style_VScroll>
+		<Style_HScroll>false</Style_HScroll>
+		<Style_Transparent>false</Style_Transparent>
+		<Columns><Width>72</Width><Heading>State</Heading></Columns>
+		<Columns><Width>294</Width><Heading>Quest</Heading></Columns>
+		<Columns><Width>150</Width><Heading>Progress</Heading></Columns>
+	</Listbox>
+
+	<Label item="NDQ_DetailTitleLabel">
+		<ScreenID>NDQ_DetailTitleLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>180</Y></Location>
+		<Size><CX>516</CX><CY>22</CY></Size>
+		<Text>Selected Quest</Text>
+		<TextColor><R>255</R><G>235</G><B>160</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Listbox item="NDQ_ObjectiveList">
+		<ScreenID>NDQ_ObjectiveList</ScreenID>
+		<DrawTemplate>WDT_Inner</DrawTemplate>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>208</Y></Location>
+		<Size><CX>516</CX><CY>146</CY></Size>
+		<Style_Border>true</Style_Border>
+		<Style_VScroll>true</Style_VScroll>
+		<Style_HScroll>false</Style_HScroll>
+		<Style_Transparent>false</Style_Transparent>
+		<Columns><Width>72</Width><Heading>State</Heading></Columns>
+		<Columns><Width>338</Width><Heading>Objective</Heading></Columns>
+		<Columns><Width>106</Width><Heading>Count</Heading></Columns>
+	</Listbox>
+
+	<Label item="NDQ_StatusLabel">
+		<ScreenID>NDQ_StatusLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>364</Y></Location>
+		<Size><CX>516</CX><CY>34</CY></Size>
+		<Text>Prototype shell; built-in task journal is authoritative.</Text>
+		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
+		<NoWrap>false</NoWrap>
+	</Label>
+
+	<Screen item="NativeDynamicQuestsWnd">
+		<ScreenID>NativeDynamicQuestsWnd</ScreenID>
+		<RelativePosition>false</RelativePosition>
+		<Location><X>120</X><Y>90</Y></Location>
+		<Size><CX>540</CX><CY>416</CY></Size>
+		<Text>Dynamic Quests</Text>
+		<DrawTemplate>WDT_Def</DrawTemplate>
+		<Style_Titlebar>true</Style_Titlebar>
+		<Style_Closebox>true</Style_Closebox>
+		<Style_Minimizebox>true</Style_Minimizebox>
+		<Style_Border>true</Style_Border>
+		<Style_Sizable>false</Style_Sizable>
+		<Style_Transparent>false</Style_Transparent>
+		<Pieces>NDQ_SummaryLabel</Pieces>
+		<Pieces>NDQ_RefreshButton</Pieces>
+		<Pieces>NDQ_QuestList</Pieces>
+		<Pieces>NDQ_DetailTitleLabel</Pieces>
+		<Pieces>NDQ_ObjectiveList</Pieces>
+		<Pieces>NDQ_StatusLabel</Pieces>
+	</Screen>
+</XML>
