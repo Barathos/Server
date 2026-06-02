@@ -24,6 +24,7 @@
 #include "zone/entity.h"
 #include "zone/mob.h"
 #include "zone/bot.h"
+#include "zone/multiclass_manager.h"
 #include "zone/quest_parser_collection.h"
 
 #include <cstdlib>
@@ -66,6 +67,7 @@ void Client::CalcBonuses()
 	CalcEdibleBonuses(&itembonuses);
 	CalcSpellBonuses(&spellbonuses);
 	CalcAABonuses(&aabonuses);
+	multiclass_manager.ApplyTrioBonuses(this, &aabonuses);
 
 	CalcSeeInvisibleLevel();
 	CalcInvisibleLevel();
@@ -260,7 +262,7 @@ void Mob::AddItemBonuses(const EQ::ItemInstance* inst, StatBonuses* b, bool is_a
 		return;
 	}
 
-	if (IsClient() && !is_tribute && !inst->IsEquipable(GetBaseRace(), GetClass())) {
+	if (IsClient() && !is_tribute && !multiclass_manager.CanUseItem(CastToClient(), inst)) {
 		if (item->ItemType != EQ::item::ItemTypeFood && item->ItemType != EQ::item::ItemTypeDrink) {
 			return;
 		}
@@ -520,7 +522,7 @@ void Mob::AdditiveWornBonuses(const EQ::ItemInstance* inst, StatBonuses* b, bool
 
 	const auto* item = inst->GetItem();
 
-	if (!inst->IsEquipable(GetBaseRace(), GetClass())) {
+	if (IsClient() ? !multiclass_manager.CanUseItem(CastToClient(), inst) : !inst->IsEquipable(GetBaseRace(), GetClass())) {
 		return;
 	}
 

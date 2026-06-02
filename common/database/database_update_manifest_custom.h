@@ -2046,6 +2046,138 @@ ON DUPLICATE KEY UPDATE
 R"()",
 		.content_schema_update = false,
 	},
+	ManifestEntry{
+		.version = 5,
+		.description = "2026_06_01_gearscore_item_power",
+		.check = "SHOW TABLES LIKE 'item_power'",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+CREATE TABLE IF NOT EXISTS `item_power` (
+  `item_id` INT UNSIGNED NOT NULL,
+  `item_level` SMALLINT UNSIGNED NOT NULL,
+  `item_score` INT UNSIGNED NOT NULL,
+  `tank_score` INT UNSIGNED NOT NULL DEFAULT 0,
+  `melee_score` INT UNSIGNED NOT NULL DEFAULT 0,
+  `caster_score` INT UNSIGNED NOT NULL DEFAULT 0,
+  `healer_score` INT UNSIGNED NOT NULL DEFAULT 0,
+  `hybrid_score` INT UNSIGNED NOT NULL DEFAULT 0,
+  `score_version` SMALLINT UNSIGNED NOT NULL,
+  `source` ENUM('computed', 'manual', 'generated') NOT NULL DEFAULT 'computed',
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`item_id`),
+  INDEX `idx_item_power_level` (`item_level`),
+  INDEX `idx_item_power_score_version` (`score_version`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `item_power_override` (
+  `item_id` INT UNSIGNED NOT NULL PRIMARY KEY,
+  `item_level_override` SMALLINT UNSIGNED NULL,
+  `score_multiplier` FLOAT NULL,
+  `flat_score_bonus` INT NULL,
+  `notes` TEXT NULL,
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `item_power_breakdown` (
+  `item_id` INT UNSIGNED NOT NULL,
+  `score_version` SMALLINT UNSIGNED NOT NULL,
+  `component` VARCHAR(64) NOT NULL,
+  `score` INT NOT NULL,
+  `details` TEXT NULL,
+  PRIMARY KEY (`item_id`, `score_version`, `component`),
+  INDEX `idx_item_power_breakdown_version` (`score_version`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+)",
+		.content_schema_update = false,
+	},
+	ManifestEntry{
+		.version = 6,
+		.description = "2026_06_01_item_rarity",
+		.check = "SHOW TABLES LIKE 'item_rarity'",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+CREATE TABLE IF NOT EXISTS `item_rarity` (
+  `item_id` INT UNSIGNED NOT NULL,
+  `rarity` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`item_id`),
+  CONSTRAINT `item_rarity_rarity_chk` CHECK (`rarity` BETWEEN 0 AND 4)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+)",
+		.content_schema_update = false,
+	},
+	ManifestEntry{
+		.version = 7,
+		.description = "2026_05_26_custom_multiclass_schema",
+		.check = "SHOW TABLES LIKE 'custom_multiclass_profiles'",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+CREATE TABLE IF NOT EXISTS `custom_multiclass_profiles` (
+  `character_id` INT UNSIGNED NOT NULL,
+  `class_slot_1` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  `class_slot_2` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  `class_slot_3` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  `trio_name` VARCHAR(96) NOT NULL DEFAULT '',
+  `resonance_key` VARCHAR(64) NOT NULL DEFAULT '',
+  `multiple_pets_enabled` TINYINT(1) NOT NULL DEFAULT 1,
+  `locked` TINYINT(1) NOT NULL DEFAULT 0,
+  `reweaves_available` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  `created_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  `updated_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`character_id`),
+  KEY `idx_slot_1` (`class_slot_1`),
+  KEY `idx_slot_2` (`class_slot_2`),
+  KEY `idx_slot_3` (`class_slot_3`),
+  KEY `idx_resonance` (`resonance_key`)
+);
+
+CREATE TABLE IF NOT EXISTS `custom_multiclass_profile_audit` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `character_id` INT UNSIGNED NOT NULL DEFAULT 0,
+  `class_slot` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  `class_id` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  `action` VARCHAR(64) NOT NULL DEFAULT '',
+  `detail` VARCHAR(255) NOT NULL DEFAULT '',
+  `created_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `idx_character_created` (`character_id`, `created_at`),
+  KEY `idx_class` (`class_id`)
+);
+
+CREATE TABLE IF NOT EXISTS `custom_multiclass_pet_state` (
+  `character_id` INT UNSIGNED NOT NULL,
+  `pet_slot` TINYINT UNSIGNED NOT NULL,
+  `spell_id` INT UNSIGNED NOT NULL DEFAULT 0,
+  `pet_name` VARCHAR(64) NOT NULL DEFAULT '',
+  `pet_order` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  `held` TINYINT(1) NOT NULL DEFAULT 0,
+  `gheld` TINYINT(1) NOT NULL DEFAULT 0,
+  `nocast` TINYINT(1) NOT NULL DEFAULT 0,
+  `focused` TINYINT(1) NOT NULL DEFAULT 0,
+  `pet_stop` TINYINT(1) NOT NULL DEFAULT 0,
+  `pet_regroup` TINYINT(1) NOT NULL DEFAULT 0,
+  `guard_x` FLOAT NOT NULL DEFAULT 0,
+  `guard_y` FLOAT NOT NULL DEFAULT 0,
+  `guard_z` FLOAT NOT NULL DEFAULT 0,
+  `guard_heading` FLOAT NOT NULL DEFAULT 0,
+  `updated_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`character_id`, `pet_slot`),
+  KEY `idx_character_spell` (`character_id`, `spell_id`)
+);
+
+CREATE TABLE IF NOT EXISTS `custom_multiclass_bard_melody` (
+  `character_id` INT UNSIGNED NOT NULL,
+  `slot_id` TINYINT UNSIGNED NOT NULL,
+  `spell_id` INT UNSIGNED NOT NULL DEFAULT 0,
+  `updated_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`character_id`, `slot_id`)
+);
+)",
+		.content_schema_update = false,
+	},
 };
 
 // see struct definitions for what each field does

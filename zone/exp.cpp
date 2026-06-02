@@ -26,6 +26,7 @@
 #include "zone/groups.h"
 #include "zone/lua_parser.h"
 #include "zone/mob.h"
+#include "zone/multiclass_manager.h"
 #include "zone/queryserv.h"
 #include "zone/quest_parser_collection.h"
 #include "zone/achievement_manager.h"
@@ -968,6 +969,7 @@ void Client::SetLevel(uint8 set_level, bool command)
 	LogInfo("Setting Level for [{}] to [{}]", GetName(), set_level);
 
 	CalcBonuses();
+	multiclass_manager.SeedEligibleSkills(this, true);
 
 	if (!RuleB(Character, HealOnLevel)) {
 		const auto max_hp = CalcMaxHP();

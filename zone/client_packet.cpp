@@ -46,6 +46,7 @@
 #include "zone/guild_mgr.h"
 #include "zone/merc.h"
 #include "zone/mob_movement_manager.h"
+#include "zone/multiclass_manager.h"
 #include "zone/petitions.h"
 #include "zone/queryserv.h"
 #include "zone/quest_parser_collection.h"
@@ -68,6 +69,24 @@ extern volatile bool is_zone_loaded;
 extern WorldServer worldserver;
 extern EntityList entity_list;
 typedef void (Client::*ClientPacketProc)(const EQApplicationPacket *app);
+
+static uint32 GetMulticlassItemClassPresentationMask(Client *client, const EQ::ItemData *item)
+{
+	if (!item) {
+		return 0;
+	}
+
+	if (!client) {
+		return item->Classes;
+	}
+
+	const auto class_mask = multiclass_manager.GetClassMask(client);
+	if ((item->Races & GetPlayerRaceBit(client->GetBaseRace())) && (item->Classes & class_mask)) {
+		return item->Classes | class_mask;
+	}
+
+	return item->Classes;
+}
 
 //Use a map for connecting opcodes since it dosent get used a lot and is sparse
 std::map<uint32, ClientPacketProc> ConnectingOpcodes;
@@ -958,6 +977,8 @@ void Client::CompleteConnect()
 		SetPetCommandState(PetButton::SpellHold, PetButtonState::Off);
 	}
 
+	multiclass_manager.SeedEligibleSkills(this, true);
+
 	database.LoadAuras(this); // this ends up spawning them so probably safer to load this later (here)
 	database.LoadCharacterDisciplines(this);
 
@@ -1685,9 +1706,9 @@ void Client::Handle_Connect_OP_ZoneEntry(const EQApplicationPacket *app)
 			m_pp.spellSlotRefresh[i] = p_timers.GetRemainingTime(pTimerSpellStart + m_pp.mem_spells[i]) * 1000;
 
 	/* Ability slot refresh send SK/PAL */
-	if (m_pp.class_ == Class::ShadowKnight || m_pp.class_ == Class::Paladin) {
+	if (multiclass_manager.HasClass(this, Class::ShadowKnight) || multiclass_manager.HasClass(this, Class::Paladin)) {
 		uint32 abilitynum = 0;
-		if (m_pp.class_ == Class::ShadowKnight) { abilitynum = pTimerHarmTouch; }
+		if (multiclass_manager.HasClass(this, Class::ShadowKnight)) { abilitynum = pTimerHarmTouch; }
 		else { abilitynum = pTimerLayHands; }
 
 		uint32 remaining = p_timers.GetRemainingTime(abilitynum);
@@ -1716,7 +1737,12 @@ void Client::Handle_Connect_OP_ZoneEntry(const EQApplicationPacket *app)
 
 	/* The entityid field in the Player Profile is used by the Client in relation to Group Leadership AA */
 	m_pp.entityid = GetID();
-	memcpy(outapp->pBuffer, &m_pp, outapp->size);
+	auto profile_for_client = m_pp;
+	const auto presentation_class = multiclass_manager.GetClientPresentationClass(this);
+	if (IsPlayerClass(presentation_class)) {
+		profile_for_client.class_ = presentation_class;
+	}
+	memcpy(outapp->pBuffer, &profile_for_client, outapp->size);
 	outapp->priority = 6;
 	FastQueuePacket(&outapp);
 
@@ -1743,9 +1769,11 @@ void Client::Handle_Connect_OP_ZoneEntry(const EQApplicationPacket *app)
 						pet->SetTaunting(m_petinfo.taunting);
 					}
 				}
+				database.LoadMulticlassPetState(this, pet, PetInfoType::Current);
 			}
 			m_petinfo.SpellID = 0;
 		}
+		database.LoadMulticlassPetInfo(this);
 	}
 	/* Moved here so it's after where we load the pet data. */
 	if (!aabonuses.ZoneSuspendMinion && !spellbonuses.ZoneSuspendMinion && !itembonuses.ZoneSuspendMinion) {
@@ -2258,7 +2286,7 @@ void Client::Handle_OP_AdventureMerchantRequest(const EQApplicationPacket *app)
 			ss << (item->Stackable ? 1 : 0) << "|";
 			ss << (item->LoreFlag ? 1 : 0) << "|";
 			ss << item->Races << "|";
-			ss << item->Classes;
+			ss << GetMulticlassItemClassPresentationMask(this, item);
 			count++;
 		}
 	}
@@ -2612,7 +2640,7 @@ void Client::Handle_OP_AltCurrencyMerchantRequest(const EQApplicationPacket *app
 				item_ss << "0|";
 				item_ss << "1|";
 				item_ss << item->Races << "|";
-				item_ss << item->Classes;
+				item_ss << GetMulticlassItemClassPresentationMask(this, item);
 				count++;
 			}
 		}
@@ -3035,7 +3063,7 @@ void Client::Handle_OP_ApplyPoison(const EQApplicationPacket *app)
 
 	bool IsPoison = (poison && poison->ItemType == EQ::item::ItemTypePoison);
 
-	if (IsPoison && GetClass() == Class::Rogue) {
+	if (IsPoison && multiclass_manager.HasClass(this, Class::Rogue)) {
 
 		// Live always checks for skillup, even when poison is too high
 		CheckIncreaseSkill(EQ::skills::SkillApplyPoison, nullptr, 10);
@@ -8921,7 +8949,7 @@ void Client::Handle_OP_Hide(const EQApplicationPacket *app)
 			hidden = true;
 		tmHidden = Timer::GetCurrentTime();
 	}
-	if (GetClass() == Class::Rogue) {
+	if (multiclass_manager.HasClass(this, Class::Rogue)) {
 		auto outapp = new EQApplicationPacket(OP_SimpleMessage, sizeof(SimpleMessage_Struct));
 		SimpleMessage_Struct *msg = (SimpleMessage_Struct *)outapp->pBuffer;
 		msg->color = 0x010E;
@@ -9288,7 +9316,7 @@ void Client::Handle_OP_ItemPreview(const EQApplicationPacket *app)
 		outapp->WriteUInt32(item->Regen);
 		outapp->WriteUInt32(item->ManaRegen);
 		outapp->WriteSInt32(item->EnduranceRegen);
-		outapp->WriteUInt32(item->Classes);
+		outapp->WriteUInt32(GetMulticlassItemClassPresentationMask(this, item));
 		outapp->WriteUInt32(item->Races);
 		outapp->WriteUInt32(item->Deity);
 		outapp->WriteUInt32(item->SkillModValue);
@@ -9399,7 +9427,8 @@ void Client::Handle_OP_ItemPreviewRequest(const EQApplicationPacket* app)
 	if (item) {
 		EQ::ItemInstance* inst = database.CreateItem(item);
 		if (inst) {
-			std::string packet = inst->Serialize(-1);
+			auto *presentation_inst = CloneItemForMulticlassPresentation(inst);
+			std::string packet = (presentation_inst ? presentation_inst : inst)->Serialize(-1);
 			auto        outapp = new EQApplicationPacket(OP_ItemPreviewRequest, packet.length());
 			memcpy(outapp->pBuffer, packet.c_str(), packet.length());
 
@@ -9409,6 +9438,7 @@ void Client::Handle_OP_ItemPreviewRequest(const EQApplicationPacket* app)
 
 			QueuePacket(outapp);
 			safe_delete(outapp);
+			safe_delete(presentation_inst);
 			safe_delete(inst);
 		}
 	}
@@ -9494,7 +9524,7 @@ void Client::Handle_OP_ItemVerifyRequest(const EQApplicationPacket *app)
 				Bards on live can click items while casting spell gems, it stops that song cast and replaces it with item click cast.
 				Can not click while casting other items.
 			*/
-			if (GetClass() == Class::Bard && IsCasting() && casting_spell_slot < CastingSlot::MaxGems)
+			if (multiclass_manager.IsBard(this) && IsCasting() && casting_spell_slot < CastingSlot::MaxGems)
 			{
 				is_casting_bard_song = true;
 			}
@@ -9653,7 +9683,7 @@ void Client::Handle_OP_ItemVerifyRequest(const EQApplicationPacket *app)
 						if (!IsCastWhileInvisibleSpell(item->Click.Effect)) {
 							CommonBreakInvisible(); // client can't do this for us :(
 						}
-						if (GetClass() == Class::Bard){
+						if (multiclass_manager.IsBard(this)){
 							DoBardCastingFromItemClick(is_casting_bard_song, item->CastTime, item->Click.Effect, target_id, CastingSlot::Item, slot_id, item->RecastType, item->RecastDelay);
 						}
 						else {
@@ -9718,7 +9748,7 @@ void Client::Handle_OP_ItemVerifyRequest(const EQApplicationPacket *app)
 						if (!IsCastWhileInvisibleSpell(augitem->Click.Effect)) {
 							CommonBreakInvisible(); // client can't do this for us :(
 						}
-						if (GetClass() == Class::Bard) {
+						if (multiclass_manager.IsBard(this)) {
 							DoBardCastingFromItemClick(is_casting_bard_song, augitem->CastTime, augitem->Click.Effect, target_id, CastingSlot::Item, slot_id, augitem->RecastType, augitem->RecastDelay);
 						}
 						else {
@@ -9738,7 +9768,7 @@ void Client::Handle_OP_ItemVerifyRequest(const EQApplicationPacket *app)
 			}
 			else
 			{
-				if (ClientVersion() >= EQ::versions::ClientVersion::SoD && !inst->IsEquipable(GetBaseRace(), GetClass()))
+				if (ClientVersion() >= EQ::versions::ClientVersion::SoD && !multiclass_manager.CanUseItem(this, inst))
 				{
 					if (item->ItemType != EQ::item::ItemTypeFood && item->ItemType != EQ::item::ItemTypeDrink && item->ItemType != EQ::item::ItemTypeAlcohol)
 					{
@@ -14756,7 +14786,7 @@ void Client::Handle_OP_Sneak(const EQApplicationPacket *app)
 	sa_out->parameter = sneaking;
 	QueuePacket(outapp);
 	safe_delete(outapp);
-	if (GetClass() == Class::Rogue) {
+	if (multiclass_manager.HasClass(this, Class::Rogue)) {
 		outapp = new EQApplicationPacket(OP_SimpleMessage, 12);
 		SimpleMessage_Struct *msg = (SimpleMessage_Struct *)outapp->pBuffer;
 		msg->color = 0x010E;

@@ -38,6 +38,7 @@
 #include "zone/entity.h"
 #include "zone/guild_mgr.h"
 #include "zone/mob.h"
+#include "zone/multiclass_manager.h"
 #include "zone/petitions.h"
 #include "zone/queryserv.h"
 #include "zone/quest_parser_collection.h"
@@ -65,6 +66,39 @@ extern QueryServ             *QServ;
 void Shutdown();
 
 // QuestParserCollection *parse = 0;
+
+namespace {
+void ApplyOrFadePetSpell(Mob *owner, uint16 spell_id, bool fade)
+{
+	if (!owner) {
+		return;
+	}
+
+	if (owner->HasPet()) {
+		if (fade) {
+			owner->GetPet()->BuffFadeBySpellID(spell_id);
+		} else {
+			owner->GetPet()->ApplySpellBuff(spell_id);
+		}
+	}
+
+	if (!owner->IsClient()) {
+		return;
+	}
+
+	for (auto *pet : multiclass_manager.GetSecondaryPetRoster(owner->CastToClient())) {
+		if (!pet) {
+			continue;
+		}
+
+		if (fade) {
+			pet->BuffFadeBySpellID(spell_id);
+		} else {
+			pet->ApplySpellBuff(spell_id);
+		}
+	}
+}
+}
 
 WorldServer::WorldServer()
 {
@@ -2585,9 +2619,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 								b->ApplySpellBuff(s->spell_id);
 
 								if (RuleB(Zone, AllowCrossZoneSpellsOnPets)) {
-									if (b->HasPet()) {
-										b->GetPet()->ApplySpellBuff(s->spell_id);
-									}
+									ApplyOrFadePetSpell(b, s->spell_id, false);
 								}
 							}
 						}
@@ -2599,9 +2631,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 						}
 
 						if (RuleB(Zone, AllowCrossZoneSpellsOnPets)) {
-							if (c->HasPet()) {
-								c->GetPet()->ApplySpellBuff(s->spell_id);
-							}
+							ApplyOrFadePetSpell(c, s->spell_id, false);
 						}
 
 						break;
@@ -2613,9 +2643,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 								b->BuffFadeBySpellID(s->spell_id);
 
 								if (RuleB(Zone, AllowCrossZoneSpellsOnPets)) {
-									if (b->HasPet()) {
-										b->GetPet()->BuffFadeBySpellID(s->spell_id);
-									}
+									ApplyOrFadePetSpell(b, s->spell_id, true);
 								}
 							}
 						}
@@ -2627,9 +2655,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 						}
 
 						if (RuleB(Zone, AllowCrossZoneSpellsOnPets)) {
-							if (c->HasPet()) {
-								c->GetPet()->BuffFadeBySpellID(s->spell_id);
-							}
+							ApplyOrFadePetSpell(c, s->spell_id, true);
 						}
 
 						break;
@@ -2652,9 +2678,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 								m->ApplySpellBuff(s->spell_id);
 
 								if (RuleB(Zone, AllowCrossZoneSpellsOnPets)) {
-									if (m->HasPet()) {
-										m->GetPet()->ApplySpellBuff(s->spell_id);
-									}
+									ApplyOrFadePetSpell(m, s->spell_id, false);
 								}
 
 								break;
@@ -2662,9 +2686,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 								m->BuffFadeBySpellID(s->spell_id);
 
 								if (RuleB(Zone, AllowCrossZoneSpellsOnPets)) {
-									if (m->HasPet()) {
-										m->GetPet()->BuffFadeBySpellID(s->spell_id);
-									}
+									ApplyOrFadePetSpell(m, s->spell_id, true);
 								}
 
 								break;
@@ -2689,9 +2711,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 								m.member->ApplySpellBuff(s->spell_id);
 
 								if (RuleB(Zone, AllowCrossZoneSpellsOnPets)) {
-									if (m.member->HasPet()) {
-										m.member->GetPet()->ApplySpellBuff(s->spell_id);
-									}
+									ApplyOrFadePetSpell(m.member, s->spell_id, false);
 								}
 
 								break;
@@ -2699,9 +2719,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 								m.member->BuffFadeBySpellID(s->spell_id);
 
 								if (RuleB(Zone, AllowCrossZoneSpellsOnPets)) {
-									if (m.member->HasPet()) {
-										m.member->GetPet()->BuffFadeBySpellID(s->spell_id);
-									}
+									ApplyOrFadePetSpell(m.member, s->spell_id, true);
 								}
 
 								break;
@@ -2721,9 +2739,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 									b->ApplySpellBuff(s->spell_id);
 
 									if (RuleB(Zone, AllowCrossZoneSpellsOnPets)) {
-										if (b->HasPet()) {
-											b->GetPet()->ApplySpellBuff(s->spell_id);
-										}
+										ApplyOrFadePetSpell(b, s->spell_id, false);
 									}
 								}
 							}
@@ -2735,9 +2751,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 							}
 
 							if (RuleB(Zone, AllowCrossZoneSpellsOnPets)) {
-								if (c.second->HasPet()) {
-									c.second->GetPet()->ApplySpellBuff(s->spell_id);
-								}
+								ApplyOrFadePetSpell(c.second, s->spell_id, false);
 							}
 
 							break;
@@ -2749,9 +2763,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 									b->BuffFadeBySpellID(s->spell_id);
 
 									if (RuleB(Zone, AllowCrossZoneSpellsOnPets)) {
-										if (b->HasPet()) {
-											b->GetPet()->BuffFadeBySpellID(s->spell_id);
-										}
+										ApplyOrFadePetSpell(b, s->spell_id, true);
 									}
 								}
 							}
@@ -2763,9 +2775,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 							}
 
 							if (RuleB(Zone, AllowCrossZoneSpellsOnPets)) {
-								if (c.second->HasPet()) {
-									c.second->GetPet()->BuffFadeBySpellID(s->spell_id);
-								}
+								ApplyOrFadePetSpell(c.second, s->spell_id, true);
 							}
 
 							break;
@@ -2784,9 +2794,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 									b->ApplySpellBuff(s->spell_id);
 
 									if (RuleB(Zone, AllowCrossZoneSpellsOnPets)) {
-										if (b->HasPet()) {
-											b->GetPet()->ApplySpellBuff(s->spell_id);
-										}
+										ApplyOrFadePetSpell(b, s->spell_id, false);
 									}
 								}
 							}
@@ -2798,9 +2806,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 							}
 
 							if (RuleB(Zone, AllowCrossZoneSpellsOnPets)) {
-								if (c.second->HasPet()) {
-									c.second->GetPet()->ApplySpellBuff(s->spell_id);
-								}
+								ApplyOrFadePetSpell(c.second, s->spell_id, false);
 							}
 
 							break;
@@ -2812,9 +2818,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 									b->BuffFadeBySpellID(s->spell_id);
 
 									if (RuleB(Zone, AllowCrossZoneSpellsOnPets)) {
-										if (b->HasPet()) {
-											b->GetPet()->BuffFadeBySpellID(s->spell_id);
-										}
+										ApplyOrFadePetSpell(b, s->spell_id, true);
 									}
 								}
 							}
@@ -2826,9 +2830,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 							}
 
 							if (RuleB(Zone, AllowCrossZoneSpellsOnPets)) {
-								if (c.second->HasPet()) {
-									c.second->GetPet()->BuffFadeBySpellID(s->spell_id);
-								}
+								ApplyOrFadePetSpell(c.second, s->spell_id, true);
 							}
 
 							break;
@@ -2847,9 +2849,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 								b->ApplySpellBuff(s->spell_id);
 
 								if (RuleB(Zone, AllowCrossZoneSpellsOnPets)) {
-									if (b->HasPet()) {
-										b->GetPet()->ApplySpellBuff(s->spell_id);
-									}
+									ApplyOrFadePetSpell(b, s->spell_id, false);
 								}
 							}
 						}
@@ -2861,9 +2861,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 						}
 
 						if (RuleB(Zone, AllowCrossZoneSpellsOnPets)) {
-							if (c->HasPet()) {
-								c->GetPet()->ApplySpellBuff(s->spell_id);
-							}
+							ApplyOrFadePetSpell(c, s->spell_id, false);
 						}
 
 						break;
@@ -2875,9 +2873,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 								b->BuffFadeBySpellID(s->spell_id);
 
 								if (RuleB(Zone, AllowCrossZoneSpellsOnPets)) {
-									if (b->HasPet()) {
-										b->GetPet()->BuffFadeBySpellID(s->spell_id);
-									}
+									ApplyOrFadePetSpell(b, s->spell_id, true);
 								}
 							}
 						}
@@ -2889,9 +2885,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 						}
 
 						if (RuleB(Zone, AllowCrossZoneSpellsOnPets)) {
-							if (c->HasPet()) {
-								c->GetPet()->BuffFadeBySpellID(s->spell_id);
-							}
+							ApplyOrFadePetSpell(c, s->spell_id, true);
 						}
 
 						break;
@@ -3235,9 +3229,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 							b->ApplySpellBuff(s->spell_id);
 
 							if (RuleB(Zone, AllowCrossZoneSpellsOnPets)) {
-								if (b->HasPet()) {
-									b->GetPet()->ApplySpellBuff(s->spell_id);
-								}
+								ApplyOrFadePetSpell(b, s->spell_id, false);
 							}
 						}
 					}
@@ -3249,9 +3241,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 					}
 
 					if (RuleB(Zone, AllowCrossZoneSpellsOnPets)) {
-						if (c.second->HasPet()) {
-							c.second->GetPet()->ApplySpellBuff(s->spell_id);
-						}
+						ApplyOrFadePetSpell(c.second, s->spell_id, false);
 					}
 				} else if (s->update_type == WWSpellUpdateType_Remove) {
 					c.second->BuffFadeBySpellID(s->spell_id);
@@ -3261,9 +3251,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 							b->BuffFadeBySpellID(s->spell_id);
 
 							if (RuleB(Zone, AllowCrossZoneSpellsOnPets)) {
-								if (b->HasPet()) {
-									b->GetPet()->BuffFadeBySpellID(s->spell_id);
-								}
+								ApplyOrFadePetSpell(b, s->spell_id, true);
 							}
 						}
 					}
@@ -3275,9 +3263,7 @@ void WorldServer::HandleMessage(uint16 opcode, const EQ::Net::Packet &p)
 					}
 
 					if (RuleB(Zone, AllowCrossZoneSpellsOnPets)) {
-						if (c.second->HasPet()) {
-							c.second->GetPet()->BuffFadeBySpellID(s->spell_id);
-						}
+						ApplyOrFadePetSpell(c.second, s->spell_id, true);
 					}
 				}
 			}

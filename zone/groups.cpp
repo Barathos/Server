@@ -24,6 +24,7 @@
 #include "common/repositories/group_leaders_repository.h"
 #include "zone/dynamic_zone.h"
 #include "zone/masterentity.h"
+#include "zone/multiclass_manager.h"
 #include "zone/queryserv.h"
 #include "zone/string_ids.h"
 #include "zone/worldserver.h"
@@ -830,6 +831,11 @@ void Group::CastGroupSpell(Mob* caster, uint16 spell_id) {
 #ifdef GROUP_BUFF_PETS
 			if(spells[spell_id].target_type != ST_GroupNoPets && caster->GetPet() && caster->HasPetAffinity() && !caster->GetPet()->IsCharmed())
 				caster->SpellOnTarget(spell_id, caster->GetPet());
+			if (spells[spell_id].target_type != ST_GroupNoPets && caster->IsClient() && caster->HasPetAffinity()) {
+				for (auto *pet : multiclass_manager.GetSecondaryPetRoster(caster->CastToClient())) {
+					caster->SpellOnTarget(spell_id, pet);
+				}
+			}
 #endif
 		}
 		else if(members[z] != nullptr)
@@ -841,6 +847,11 @@ void Group::CastGroupSpell(Mob* caster, uint16 spell_id) {
 #ifdef GROUP_BUFF_PETS
 				if(spells[spell_id].target_type != ST_GroupNoPets && members[z]->GetPet() && members[z]->HasPetAffinity() && !members[z]->GetPet()->IsCharmed())
 					caster->SpellOnTarget(spell_id, members[z]->GetPet());
+				if (spells[spell_id].target_type != ST_GroupNoPets && members[z]->IsClient() && members[z]->HasPetAffinity()) {
+					for (auto *pet : multiclass_manager.GetSecondaryPetRoster(members[z]->CastToClient())) {
+						caster->SpellOnTarget(spell_id, pet);
+					}
+				}
 #endif
 			} else
 				LogSpells("Group spell: [{}] is out of range [{}] at distance [{}] from [{}]", members[z]->GetName(), range, distance, caster->GetName());
@@ -2276,6 +2287,13 @@ int8 Group::GetNumberNeedingHealedInGroup(int8 hpr, bool include_pets) {
 			if(include_pets) {
 				if(members[i]->GetPet() && members[i]->GetPet()->GetHPRatio() <= hpr) {
 					need_healed++;
+				}
+				if (members[i]->IsClient()) {
+					for (auto *pet : multiclass_manager.GetSecondaryPetRoster(members[i]->CastToClient())) {
+						if (pet && pet->GetHPRatio() <= hpr) {
+							need_healed++;
+						}
+					}
 				}
 			}
 		}

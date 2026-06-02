@@ -152,7 +152,7 @@ void ExportSkillCaps(SharedDatabase* db)
 		return;
 	}
 
-	const auto& lines = SkillCapsRepository::GetSkillCapFileLines(*db);
+	const auto& lines = SkillCapsRepository::GetMulticlassSkillCapFileLines(*db);
 
 	const std::string& file_string = Strings::Implode("\n", lines);
 
@@ -160,7 +160,7 @@ void ExportSkillCaps(SharedDatabase* db)
 
 	file.close();
 
-	LogInfo("Exported [{}] Skill Cap{}", lines.size(), lines.size() != 1 ? "s" : "");
+	LogInfo("Exported [{}] Multiclass Skill Cap{}", lines.size(), lines.size() != 1 ? "s" : "");
 }
 
 void ExportBaseData(SharedDatabase *db)

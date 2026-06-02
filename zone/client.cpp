@@ -53,6 +53,7 @@
 #include "zone/guild_mgr.h"
 #include "zone/lua_parser.h"
 #include "zone/mob_movement_manager.h"
+#include "zone/multiclass_manager.h"
 #include "zone/petitions.h"
 #include "zone/position.h"
 #include "zone/queryserv.h"
@@ -3178,6 +3179,10 @@ bool Client::HasSkill(EQ::skills::SkillType skill_id) const
 
 bool Client::CanHaveSkill(EQ::skills::SkillType skill_id) const
 {
+	if (multiclass_manager.CanHaveSkill(this, skill_id)) {
+		return true;
+	}
+
 	if (
 		ClientVersion() < EQ::versions::ClientVersion::RoF2 &&
 		class_ == Class::Berserker &&
@@ -3191,6 +3196,13 @@ bool Client::CanHaveSkill(EQ::skills::SkillType skill_id) const
 
 uint16 Client::MaxSkill(EQ::skills::SkillType skill_id, uint8 class_id, uint8 level) const
 {
+	if (class_id == GetClass()) {
+		const auto multiclass_cap = multiclass_manager.GetBestSkillCap(this, skill_id, level);
+		if (multiclass_cap) {
+			return multiclass_cap;
+		}
+	}
+
 	if (
 		ClientVersion() < EQ::versions::ClientVersion::RoF2 &&
 		class_id == Class::Berserker &&
@@ -3204,6 +3216,13 @@ uint16 Client::MaxSkill(EQ::skills::SkillType skill_id, uint8 class_id, uint8 le
 
 uint8 Client::GetSkillTrainLevel(EQ::skills::SkillType skill_id, uint8 class_id)
 {
+	if (class_id == GetClass()) {
+		const auto multiclass_train_level = multiclass_manager.GetBestSkillTrainLevel(this, skill_id);
+		if (multiclass_train_level) {
+			return multiclass_train_level;
+		}
+	}
+
 	if (
 		ClientVersion() < EQ::versions::ClientVersion::RoF2 &&
 		class_id == Class::Berserker &&
@@ -9632,8 +9651,7 @@ void Client::InitInnates()
 	// The client calls this in a few places. When you remove a vision buff and in SetHeights, which is called in
 	// illusions, mounts, and a bunch of other cases. All of the calls to InitInnates are wrapped in restoring regen
 	// besides the call initializing the first time
-	auto race   = GetRace();
-	auto class_ = GetClass();
+	auto race = GetRace();
 
 	for (int i = 0; i < InnateSkillMax; ++i) {
 		m_pp.InnateSkills[i] = InnateDisabled;
@@ -9726,25 +9744,26 @@ void Client::InitInnates()
 			break;
 	}
 
-	switch (class_) {
-		case Class::Druid:
-			m_pp.InnateSkills[InnateHarmony] = InnateEnabled;
-			break;
-		case Class::Bard:
-			m_pp.InnateSkills[InnateReveal] = InnateEnabled;
-			break;
-		case Class::Rogue:
-			m_pp.InnateSkills[InnateSurprise] = InnateEnabled;
-			m_pp.InnateSkills[InnateReveal]   = InnateEnabled;
-			break;
-		case Class::Ranger:
-			m_pp.InnateSkills[InnateAwareness] = InnateEnabled;
-			break;
-		case Class::Monk:
-			m_pp.InnateSkills[InnateSurprise]  = InnateEnabled;
-			m_pp.InnateSkills[InnateAwareness] = InnateEnabled;
-		default:
-			break;
+	if (multiclass_manager.HasClass(this, Class::Druid)) {
+		m_pp.InnateSkills[InnateHarmony] = InnateEnabled;
+	}
+
+	if (multiclass_manager.HasClass(this, Class::Bard)) {
+		m_pp.InnateSkills[InnateReveal] = InnateEnabled;
+	}
+
+	if (multiclass_manager.HasClass(this, Class::Rogue)) {
+		m_pp.InnateSkills[InnateSurprise] = InnateEnabled;
+		m_pp.InnateSkills[InnateReveal]   = InnateEnabled;
+	}
+
+	if (multiclass_manager.HasClass(this, Class::Ranger)) {
+		m_pp.InnateSkills[InnateAwareness] = InnateEnabled;
+	}
+
+	if (multiclass_manager.HasClass(this, Class::Monk)) {
+		m_pp.InnateSkills[InnateSurprise]  = InnateEnabled;
+		m_pp.InnateSkills[InnateAwareness] = InnateEnabled;
 	}
 }
 
@@ -10809,11 +10828,16 @@ std::vector<int> Client::GetLearnableDisciplines(uint8 min_level, uint8 max_leve
 			continue;
 		}
 
-		if (max_level && spells[spell_id].classes[m_pp.class_ - 1] > max_level) {
+		const auto multiclass_level = multiclass_manager.GetBestSpellLevel(this, spell_id);
+		if (multiclass_level == 255) {
 			continue;
 		}
 
-		if (min_level > 1 && spells[spell_id].classes[m_pp.class_ - 1] < min_level) {
+		if (max_level && multiclass_level > max_level) {
+			continue;
+		}
+
+		if (min_level > 1 && multiclass_level < min_level) {
 			continue;
 		}
 
@@ -10880,11 +10904,16 @@ std::vector<int> Client::GetScribeableSpells(uint8 min_level, uint8 max_level) {
 			continue;
 		}
 
-		if (max_level && spells[spell_id].classes[m_pp.class_ - 1] > max_level) {
+		const auto multiclass_level = multiclass_manager.GetBestSpellLevel(this, spell_id);
+		if (multiclass_level == 255) {
 			continue;
 		}
 
-		if (min_level > 1 && spells[spell_id].classes[m_pp.class_ - 1] < min_level) {
+		if (max_level && multiclass_level > max_level) {
+			continue;
+		}
+
+		if (min_level > 1 && multiclass_level < min_level) {
 			continue;
 		}
 
@@ -10917,7 +10946,7 @@ std::vector<int> Client::GetScribeableSpells(uint8 min_level, uint8 max_level) {
 			if (g != spell_group_cache.end()) {
 				for (const auto& s : g->second) {
 					if (
-						EQ::ValueWithin(spells[s].classes[m_pp.class_ - 1], min_level, max_level) &&
+						EQ::ValueWithin(multiclass_manager.GetBestSpellLevel(this, s), min_level, max_level) &&
 						s == spell_id &&
 						scribeable
 					) {
@@ -11664,6 +11693,7 @@ uint16 Client::ScribeSpells(uint8 min_level, uint8 max_level)
 {
 	auto             available_book_slot = GetNextAvailableSpellBookSlot();
 	std::vector<int> spell_ids           = GetScribeableSpells(min_level, max_level);
+	std::vector<std::pair<int, int>> client_updates;
 	uint16           scribed_spells      = 0;
 
 	if (!spell_ids.empty()) {
@@ -11684,8 +11714,10 @@ uint16 Client::ScribeSpells(uint8 min_level, uint8 max_level)
 				continue;
 			}
 
-			// defer saving per spell and bulk save at the end
-			ScribeSpell(spell_id, available_book_slot, true, true);
+			// Defer both DB writes and client book packets so Multiclass can
+			// patch off-class display levels before the client caches menus.
+			ScribeSpell(spell_id, available_book_slot, false, true);
+			client_updates.emplace_back(available_book_slot, spell_id);
 			available_book_slot = GetNextAvailableSpellBookSlot(available_book_slot);
 			scribed_spells++;
 		}
@@ -11698,6 +11730,11 @@ uint16 Client::ScribeSpells(uint8 min_level, uint8 max_level)
 			fmt::format("{} new spells", scribed_spells)
 		);
 		Message(Chat::White, fmt::format("You have learned {}!", spell_message).c_str());
+
+		multiclass_manager.SendNativeSpellLevelSnapshot(this);
+		for (const auto& [slot, spell_id] : client_updates) {
+			MemorizeSpell(slot, spell_id, memSpellScribing);
+		}
 
 		// bulk insert spells
 		SaveSpells();
@@ -11790,7 +11827,13 @@ uint16 Client::GetClassTrackingDistanceMultiplier(uint16 class_) {
 }
 
 bool Client::CanThisClassTrack() {
-	return (GetClassTrackingDistanceMultiplier(GetClass()) > 0) ? true : false;
+	for (const auto class_id : multiclass_manager.GetClassSlots(this)) {
+		if (GetClassTrackingDistanceMultiplier(class_id) > 0) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void Client::ReconnectUCS()
@@ -12110,6 +12153,11 @@ std::vector<Mob*> Client::GetApplySpellList(
 						if (allow_pets && m.member->HasPet()) {
 							l.push_back(m.member->GetPet());
 						}
+						if (allow_pets) {
+							for (auto *pet : multiclass_manager.GetSecondaryPetRoster(m.member)) {
+								l.push_back(pet);
+							}
+						}
 
 						if (allow_bots) {
 							const auto& sbl = entity_list.GetBotListByCharacterID(m.member->CharacterID());
@@ -12132,6 +12180,11 @@ std::vector<Mob*> Client::GetApplySpellList(
 					if (allow_pets && m->HasPet()) {
 						l.push_back(m->GetPet());
 					}
+					if (allow_pets && m->IsClient()) {
+						for (auto *pet : multiclass_manager.GetSecondaryPetRoster(m->CastToClient())) {
+							l.push_back(pet);
+						}
+					}
 
 					if (allow_bots) {
 						const auto& sbl = entity_list.GetBotListByCharacterID(m->CastToClient()->CharacterID());
@@ -12147,6 +12200,11 @@ std::vector<Mob*> Client::GetApplySpellList(
 
 		if (allow_pets && HasPet()) {
 			l.push_back(GetPet());
+		}
+		if (allow_pets) {
+			for (auto *pet : multiclass_manager.GetSecondaryPetRoster(this)) {
+				l.push_back(pet);
+			}
 		}
 
 		if (allow_bots) {
@@ -12212,7 +12270,7 @@ void Client::MaxSkills()
 		auto current_skill_value = (
 			EQ::skills::IsSpecializedSkill(s.first) ?
 			MAX_SPECIALIZED_SKILL :
-			SkillCaps::Instance()->GetSkillCap(GetClass(), s.first, GetLevel()).cap
+			MaxSkill(s.first)
 		);
 
 		if (GetSkill(s.first) < current_skill_value) {

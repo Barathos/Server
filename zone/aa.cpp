@@ -34,6 +34,7 @@
 #include "zone/corpse.h"
 #include "zone/groups.h"
 #include "zone/mob.h"
+#include "zone/multiclass_manager.h"
 #include "zone/queryserv.h"
 #include "zone/quest_parser_collection.h"
 #include "zone/raids.h"
@@ -523,6 +524,10 @@ void Client::ResetAA()
 	int slot_id = 0;
 
 	for (auto& rank_value: aa_ranks) {
+		if (slot_id >= MAX_PP_AA_ARRAY) {
+			break;
+		}
+
 		auto ability_rank = zone->GetAlternateAdvancementAbilityAndRank(rank_value.first, rank_value.second.first);
 		auto ability      = ability_rank.first;
 		auto rank         = ability_rank.second;
@@ -923,7 +928,7 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 		return;
 	}
 
-	if(!(ability->classes & (1 << GetClass()))) {
+	if(!(ability->classes & multiclass_manager.GetAAClassMask(this))) {
 		return;
 	}
 
@@ -946,7 +951,7 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 	aai->spell = rank->spell;
 	aai->spell_type = rank->spell_type;
 	aai->spell_refresh = rank->recast_time;
-	aai->classes = ability->classes;
+	aai->classes = ability->classes | multiclass_manager.GetAAClassMask(this);
 	aai->level_req = rank->level_req;
 	aai->current_level = level;
 	aai->max_level = ability->GetMaxLevel(this);
@@ -998,6 +1003,10 @@ void Client::SendAlternateAdvancementPoints() {
 
 	int i = 0;
 	for(auto &aa : zone->aa_abilities) {
+		if (i >= MAX_PP_AA_ARRAY) {
+			break;
+		}
+
 		uint32 charges = 0;
 		auto ranks = GetAA(aa.second->first_rank_id, &charges);
 		if(ranks) {
@@ -1334,7 +1343,7 @@ void Client::ActivateAlternateAdvancementAbility(int rank_id, int target_id) {
 	}
 	else {
 		// Bards can cast instant cast AAs while they are casting or channeling item cast.
-		if (GetClass() == Class::Bard && IsCasting() && spells[rank->spell].cast_time == 0) {
+		if (multiclass_manager.IsBard(this) && IsCasting() && spells[rank->spell].cast_time == 0) {
 			if (!DoCastingChecksOnCaster(rank->spell, EQ::spells::CastingSlot::AltAbility)) {
 				return;
 			}
@@ -1570,7 +1579,8 @@ bool Mob::CanUseAlternateAdvancementRank(AA::Rank *rank)
 		return false;
 	}
 
-	if (!(a->classes & (1 << GetClass()))) {
+	const auto class_mask = IsClient() ? multiclass_manager.GetAAClassMask(CastToClient()) : (1 << GetClass());
+	if (!(a->classes & class_mask)) {
 		return false;
 	}
 

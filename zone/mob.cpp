@@ -27,6 +27,7 @@
 #include "zone/bot.h"
 #include "zone/dialogue_window.h"
 #include "zone/mob_movement_manager.h"
+#include "zone/multiclass_manager.h"
 #include "zone/quest_parser_collection.h"
 #include "zone/string_ids.h"
 #include "zone/water_map.h"
@@ -1007,6 +1008,10 @@ int64 Mob::GetSpellHPBonuses() {
 
 bool Mob::IsIntelligenceCasterClass() const
 {
+	if (IsClient() && multiclass_manager.IsIntCaster(CastToClient())) {
+		return true;
+	}
+
 	switch (GetClass()) {
 		case Class::ShadowKnight:
 		case Class::Bard:
@@ -1076,6 +1081,10 @@ bool Mob::IsWarriorClass() const
 
 bool Mob::IsWisdomCasterClass() const
 {
+	if (IsClient() && multiclass_manager.IsWisCaster(CastToClient())) {
+		return true;
+	}
+
 	switch (GetClass()) {
 		case Class::Cleric:
 		case Class::Paladin:
@@ -4516,6 +4525,13 @@ Mob* Mob::GetOwnerOrSelf()
 		return m;
 	}
 
+	if (
+		m->IsClient() &&
+		multiclass_manager.IsPetRosterMember(m->CastToClient(), this)
+	) {
+		return m;
+	}
+
 	if (IsNPC() && CastToNPC()->GetSwarmInfo()){
 		return CastToNPC()->GetSwarmInfo()->GetOwner();
 	}
@@ -4528,6 +4544,14 @@ Mob* Mob::GetOwner() {
 	Mob* m = entity_list.GetMob(GetOwnerID());
 
 	if (m && m->GetPetID() == GetID()) {
+		return m;
+	}
+
+	if (
+		m &&
+		m->IsClient() &&
+		multiclass_manager.IsPetRosterMember(m->CastToClient(), this)
+	) {
 		return m;
 	}
 

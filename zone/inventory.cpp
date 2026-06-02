@@ -24,6 +24,7 @@
 #include "common/repositories/character_corpse_items_repository.h"
 #include "common/strings.h"
 #include "zone/bot.h"
+#include "zone/multiclass_manager.h"
 #include "zone/queryserv.h"
 #include "zone/quest_parser_collection.h"
 #include "zone/worldserver.h"
@@ -31,6 +32,68 @@
 
 extern WorldServer worldserver;
 extern QueryServ  *QServ;
+
+namespace {
+bool CheckMulticlassEquipPermission(
+	Client *client,
+	const EQ::ItemInstance *inst,
+	int16 equipment_slot,
+	EQ::InventoryProfile::SwapItemFailState &fail_state
+)
+{
+	if (!inst || !EQ::ValueWithin(equipment_slot, EQ::invslot::EQUIPMENT_BEGIN, EQ::invslot::EQUIPMENT_END)) {
+		return true;
+	}
+
+	if (!inst->IsSlotAllowed(equipment_slot)) {
+		fail_state = EQ::InventoryProfile::swapNotAllowed;
+		return false;
+	}
+
+	if (!multiclass_manager.CanUseItem(client, inst)) {
+		fail_state = EQ::InventoryProfile::swapRaceClass;
+		return false;
+	}
+
+	return true;
+}
+
+bool ApplyMulticlassItemPresentation(Client *client, EQ::ItemInstance *inst, uint32 class_mask)
+{
+	if (!client || !inst || !class_mask) {
+		return false;
+	}
+
+	bool changed = false;
+	auto *item = const_cast<EQ::ItemData *>(inst->GetItem());
+	if (
+		item &&
+		(item->Classes & class_mask) &&
+		multiclass_manager.CanUseItem(client, inst)
+	) {
+		const auto expanded_classes = item->Classes | class_mask;
+		if (expanded_classes != item->Classes) {
+			item->Classes = expanded_classes;
+			changed = true;
+		}
+	}
+
+	for (int augment_index = EQ::invaug::SOCKET_BEGIN; augment_index <= EQ::invaug::SOCKET_END; ++augment_index) {
+		auto *augment = inst->GetAugment(augment_index);
+		if (augment) {
+			changed = ApplyMulticlassItemPresentation(client, augment, class_mask) || changed;
+		}
+	}
+
+	for (auto &[slot_id, child] : *inst->GetContents()) {
+		if (child) {
+			changed = ApplyMulticlassItemPresentation(client, child, class_mask) || changed;
+		}
+	}
+
+	return changed;
+}
+}
 
 // @merth: this needs to be touched up
 uint32 Client::NukeItem(uint32 itemnum, uint8 where_to_check) {
@@ -258,6 +321,7 @@ bool Client::SummonItem(uint32 item_id, int16 charges, uint32 aug1, uint32 aug2,
 
 	uint32 augments[EQ::invaug::SOCKET_COUNT] = { aug1, aug2, aug3, aug4, aug5, aug6 };
 	uint32 classes = item->Classes;
+	const uint32 multiclass_class_mask = multiclass_manager.GetClassMask(this);
 	uint32 races = item->Races;
 	uint32 slots = item->Slots;
 	bool enforce_wearable = RuleB(Inventory, EnforceAugmentWear);
@@ -451,7 +515,8 @@ bool Client::SummonItem(uint32 item_id, int16 charges, uint32 aug1, uint32 aug2,
 
 			if(enforce_usable) {
 				// check for class usability
-				if(item->Classes && !(classes &= augtest->Classes)) {
+				classes &= augtest->Classes;
+				if(item->Classes && !(classes & multiclass_class_mask)) {
 					Message(
 						Chat::Red,
 						fmt::format(
@@ -1198,7 +1263,7 @@ bool Client::TryStacking(EQ::ItemInstance* item, uint8 type, bool try_worn, bool
 bool Client::AutoPutLootInInventory(EQ::ItemInstance& inst, bool try_worn, bool try_cursor, LootItem** bag_item_data)
 {
 	// #1: Try to auto equip
-	if (try_worn && inst.IsEquipable(GetBaseRace(), GetClass()) && inst.GetItem()->ReqLevel <= level && (!inst.GetItem()->Attuneable || inst.IsAttuned()) && inst.GetItem()->ItemType != EQ::item::ItemTypeAugmentation) {
+	if (try_worn && multiclass_manager.CanUseItem(this, &inst) && inst.GetItem()->ReqLevel <= level && (!inst.GetItem()->Attuneable || inst.IsAttuned()) && inst.GetItem()->ItemType != EQ::item::ItemTypeAugmentation) {
 		for (int16 i = EQ::invslot::EQUIPMENT_BEGIN; i <= EQ::invslot::EQUIPMENT_END; i++) {
 			if ((((uint64)1 << i) & GetInv().GetLookup()->PossessionsBitmask) == 0)
 				continue;
@@ -2131,6 +2196,22 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 	}
 	else {
 		// Not dealing with charges - just do direct swap
+		EQ::InventoryProfile::SwapItemFailState fail_state = EQ::InventoryProfile::swapInvalid;
+		if (
+			!CheckMulticlassEquipPermission(this, src_inst, dst_slot_id, fail_state) ||
+			!CheckMulticlassEquipPermission(this, dst_inst, src_slot_id, fail_state)
+		) {
+			const char* fail_message = "The selected slot was invalid.";
+			if (fail_state == EQ::InventoryProfile::swapRaceClass || fail_state == EQ::InventoryProfile::swapDeity) {
+				fail_message = "Your class, deity and/or race may not equip that item.";
+			} else if (fail_state == EQ::InventoryProfile::swapLevel) {
+				fail_message = "You are not sufficient level to use this item.";
+			}
+
+			Message(Chat::Red, "%s", fail_message);
+			return false;
+		}
+
 		if (src_inst && (dst_slot_id <= EQ::invslot::EQUIPMENT_END) && dst_slot_id >= EQ::invslot::EQUIPMENT_BEGIN) {
 			if (src_inst->GetItem()->Attuneable) {
 				src_inst->SetAttuned(true);
@@ -2147,8 +2228,8 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 			SetMaterial(dst_slot_id,src_inst->GetItem()->ID);
 		}
 
-		EQ::InventoryProfile::SwapItemFailState fail_state = EQ::InventoryProfile::swapInvalid;
-		if (!m_inv.SwapItem(src_slot_id, dst_slot_id, fail_state, GetBaseRace(), GetBaseClass(), GetDeity(), GetLevel())) {
+		fail_state = EQ::InventoryProfile::swapInvalid;
+		if (!m_inv.SwapItem(src_slot_id, dst_slot_id, fail_state, GetBaseRace(), Class::None, GetDeity(), GetLevel())) {
 			const char* fail_message = "The selected slot was invalid.";
 			if (fail_state == EQ::InventoryProfile::swapRaceClass || fail_state == EQ::InventoryProfile::swapDeity)
 				fail_message = "Your class, deity and/or race may not equip that item.";
@@ -3021,6 +3102,26 @@ uint32 Client::GetEquipmentColor(uint8 material_slot) const
 	return 0;
 }
 
+EQ::ItemInstance* Client::CloneItemForMulticlassPresentation(const EQ::ItemInstance* inst)
+{
+	if (!inst) {
+		return nullptr;
+	}
+
+	const auto multiclass_class_mask = multiclass_manager.GetClassMask(this);
+	const auto base_class_mask = GetPlayerClassBit(GetBaseClass());
+	if (!multiclass_class_mask || !(multiclass_class_mask & ~base_class_mask)) {
+		return nullptr;
+	}
+
+	auto *presentation_inst = inst->Clone();
+	if (presentation_inst && !ApplyMulticlassItemPresentation(this, presentation_inst, multiclass_class_mask)) {
+		safe_delete(presentation_inst);
+	}
+
+	return presentation_inst;
+}
+
 // Send an item packet (including all subitems of the item)
 void Client::SendItemPacket(int16 slot_id, const EQ::ItemInstance* inst, ItemPacketType packet_type)
 {
@@ -3065,7 +3166,8 @@ void Client::SendItemPacket(int16 slot_id, const EQ::ItemInstance* inst, ItemPac
 	SendItemPowerTransport(inst);
 
 	// Serialize item into |-delimited string (Titanium- uses '|' delimiter .. newer clients use pure data serialization)
-	std::string packet = inst->Serialize(slot_id);
+	auto *presentation_inst = CloneItemForMulticlassPresentation(inst);
+	std::string packet = (presentation_inst ? presentation_inst : inst)->Serialize(slot_id);
 
 	EmuOpcode opcode = OP_Unknown;
 	EQApplicationPacket* outapp = nullptr;
@@ -3082,6 +3184,7 @@ void Client::SendItemPacket(int16 slot_id, const EQ::ItemInstance* inst, ItemPac
 		DumpPacket(outapp);
 #endif
 	FastQueuePacket(&outapp);
+	safe_delete(presentation_inst);
 }
 
 static int16 BandolierSlotToWeaponSlot(int BandolierSlot)

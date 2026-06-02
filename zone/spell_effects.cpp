@@ -27,6 +27,7 @@
 #include "common/spdat.h"
 #include "zone/bot.h"
 #include "zone/lua_parser.h"
+#include "zone/multiclass_manager.h"
 #include "zone/quest_parser_collection.h"
 #include "zone/string_ids.h"
 #include "zone/worldserver.h"
@@ -37,6 +38,80 @@
 extern Zone* zone;
 extern volatile bool is_zone_loaded;
 extern WorldServer worldserver;
+
+namespace {
+
+bool MulticlassRestrictionHasClass(Mob *mob, uint8 class_id)
+{
+	if (!mob) {
+		return false;
+	}
+
+	if (mob->IsClient()) {
+		return multiclass_manager.HasClass(mob->CastToClient(), class_id);
+	}
+
+	return mob->GetClass() == class_id;
+}
+
+bool MulticlassRestrictionHasAnyClass(Mob *mob, uint32 class_mask)
+{
+	if (!mob) {
+		return false;
+	}
+
+	if (mob->IsClient()) {
+		return (multiclass_manager.GetClassMask(mob->CastToClient()) & class_mask) != 0;
+	}
+
+	return (GetPlayerClassBit(mob->GetClass()) & class_mask) != 0;
+}
+
+bool MulticlassRestrictionIsCasterClass(Mob *mob)
+{
+	if (!mob) {
+		return false;
+	}
+
+	if (mob->IsClient()) {
+		auto *client = mob->CastToClient();
+		return multiclass_manager.IsIntCaster(client) || multiclass_manager.IsWisCaster(client);
+	}
+
+	return IsCasterClass(mob->GetClass());
+}
+
+bool MulticlassRestrictionIsNonSpellFighter(Mob *mob)
+{
+	const uint32 non_spell_fighter_mask =
+		GetPlayerClassBit(Class::Warrior) |
+		GetPlayerClassBit(Class::Monk) |
+		GetPlayerClassBit(Class::Bard) |
+		GetPlayerClassBit(Class::Rogue) |
+		GetPlayerClassBit(Class::Berserker);
+
+	return MulticlassRestrictionHasAnyClass(mob, non_spell_fighter_mask);
+}
+
+bool MulticlassRestrictionHasManaClass(Mob *mob)
+{
+	const uint32 mana_class_mask =
+		GetPlayerClassBit(Class::Cleric) |
+		GetPlayerClassBit(Class::Paladin) |
+		GetPlayerClassBit(Class::Ranger) |
+		GetPlayerClassBit(Class::ShadowKnight) |
+		GetPlayerClassBit(Class::Druid) |
+		GetPlayerClassBit(Class::Shaman) |
+		GetPlayerClassBit(Class::Necromancer) |
+		GetPlayerClassBit(Class::Wizard) |
+		GetPlayerClassBit(Class::Magician) |
+		GetPlayerClassBit(Class::Enchanter) |
+		GetPlayerClassBit(Class::Beastlord);
+
+	return MulticlassRestrictionHasAnyClass(mob, mana_class_mask);
+}
+
+} // namespace
 
 
 // the spell can still fail here, if the buff can't stack
@@ -1288,7 +1363,8 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 #ifdef SPELL_EFFECT_SPAM
 				snprintf(effect_desc, _EDLEN, "Summon %s: %s", (effect==SE_Familiar)?"Familiar":"Pet", spell.teleport_zone);
 #endif
-				if(GetPet())
+				const bool can_create_multiclass_pet = IsClient() && multiclass_manager.CanCreateAdditionalPet(CastToClient());
+				if(GetPet() && !can_create_multiclass_pet)
 				{
 					MessageString(Chat::Shout, ONLY_ONE_PET);
 				}
@@ -7733,108 +7809,158 @@ bool Mob::PassCastRestriction(int value)
 			break;
 
 		case IS_CLASS_MELEE_THAT_CAN_BASH_OR_KICK_EXCEPT_BARD:
-			if ((GetClass() != Class::Bard) && (GetClass() != Class::Rogue) && IsFighterClass(GetClass()))
+			if (
+				MulticlassRestrictionHasAnyClass(
+					this,
+					GetPlayerClassBit(Class::Warrior) |
+					GetPlayerClassBit(Class::Paladin) |
+					GetPlayerClassBit(Class::Ranger) |
+					GetPlayerClassBit(Class::ShadowKnight) |
+					GetPlayerClassBit(Class::Monk) |
+					GetPlayerClassBit(Class::Beastlord) |
+					GetPlayerClassBit(Class::Berserker)
+				)
+			)
 				return true;
 			break;
 
 		case IS_CLASS_PURE_MELEE:
-			if (GetClass() == Class::Rogue || GetClass() == Class::Warrior || GetClass() == Class::Berserker || GetClass() == Class::Monk)
+			if (
+				MulticlassRestrictionHasAnyClass(
+					this,
+					GetPlayerClassBit(Class::Warrior) |
+					GetPlayerClassBit(Class::Monk) |
+					GetPlayerClassBit(Class::Rogue) |
+					GetPlayerClassBit(Class::Berserker)
+				)
+			)
 				return true;
 			break;
 
 		case IS_CLASS_PURE_CASTER:
-			if (IsINTCasterClass(GetClass()))
+			if (
+				MulticlassRestrictionHasAnyClass(
+					this,
+					GetPlayerClassBit(Class::Necromancer) |
+					GetPlayerClassBit(Class::Wizard) |
+					GetPlayerClassBit(Class::Magician) |
+					GetPlayerClassBit(Class::Enchanter)
+				)
+			)
 				return true;
 			break;
 
 		case IS_CLASS_HYBRID_CLASS:
-			if (IsHybridClass(GetClass()))
+			if (
+				MulticlassRestrictionHasAnyClass(
+					this,
+					GetPlayerClassBit(Class::Paladin) |
+					GetPlayerClassBit(Class::Ranger) |
+					GetPlayerClassBit(Class::ShadowKnight) |
+					GetPlayerClassBit(Class::Bard) |
+					GetPlayerClassBit(Class::Beastlord)
+				)
+			)
 				return true;
 			break;
 
 		case IS_CLASS_WARRIOR:
-			if (GetClass() == Class::Warrior)
+			if (MulticlassRestrictionHasClass(this, Class::Warrior))
 				return true;
 			break;
 
 		case IS_CLASS_CLERIC:
-			if (GetClass() == Class::Cleric)
+			if (MulticlassRestrictionHasClass(this, Class::Cleric))
 				return true;
 			break;
 
 		case IS_CLASS_PALADIN:
-			if (GetClass() == Class::Paladin)
+			if (MulticlassRestrictionHasClass(this, Class::Paladin))
 				return true;
 			break;
 
 		case IS_CLASS_RANGER:
-			if (GetClass() == Class::Ranger)
+			if (MulticlassRestrictionHasClass(this, Class::Ranger))
 				return true;
 			break;
 
 		case IS_CLASS_SHADOWKNIGHT:
-			if (GetClass() == Class::ShadowKnight)
+			if (MulticlassRestrictionHasClass(this, Class::ShadowKnight))
 				return true;
 			break;
 
 		case IS_CLASS_DRUID:
-			if (GetClass() == Class::Druid)
+			if (MulticlassRestrictionHasClass(this, Class::Druid))
 				return true;
 			break;
 
 		case IS_CLASS_MONK:
-			if (GetClass() == Class::Monk)
+			if (MulticlassRestrictionHasClass(this, Class::Monk))
 				return true;
 			break;
 
 		case IS_CLASS_BARD2:
 		case IS_CLASS_BARD:
-			if (GetClass() == Class::Bard)
+			if (MulticlassRestrictionHasClass(this, Class::Bard))
 				return true;
 			break;
 
 		case IS_CLASS_ROGUE:
-			if (GetClass() == Class::Rogue)
+			if (MulticlassRestrictionHasClass(this, Class::Rogue))
 				return true;
 			break;
 
 		case IS_CLASS_SHAMAN:
-			if (GetClass() == Class::Shaman)
+			if (MulticlassRestrictionHasClass(this, Class::Shaman))
 				return true;
 			break;
 
 		case IS_CLASS_NECRO:
-			if (GetClass() == Class::Necromancer)
+			if (MulticlassRestrictionHasClass(this, Class::Necromancer))
 				return true;
 			break;
 
 		case IS_CLASS_MAGE:
-			if (GetClass() == Class::Magician)
+			if (MulticlassRestrictionHasClass(this, Class::Magician))
 				return true;
 			break;
 
 		case IS_CLASS_ENCHANTER:
-			if (GetClass() == Class::Enchanter)
+			if (MulticlassRestrictionHasClass(this, Class::Enchanter))
 				return true;
 			break;
 
 		case IS_CLASS_BEASTLORD:
-			if (GetClass() == Class::Beastlord)
+			if (MulticlassRestrictionHasClass(this, Class::Beastlord))
 				return true;
 			break;
 
 		case IS_CLASS_BERSERKER:
-			if (GetClass() == Class::Berserker)
+			if (MulticlassRestrictionHasClass(this, Class::Berserker))
 				return true;
 			break;
 
 		case IS_CLASS_CLR_SHM_DRU:
-			if (IsWISCasterClass(GetClass()))
+			if (
+				MulticlassRestrictionHasAnyClass(
+					this,
+					GetPlayerClassBit(Class::Cleric) |
+					GetPlayerClassBit(Class::Druid) |
+					GetPlayerClassBit(Class::Shaman)
+				)
+			)
 				return true;
 			break;
 
 		case IS_CLASS_NOT_WAR_PAL_SK:
-			if ((GetClass() != Class::Warrior) && (GetClass() != Class::Paladin) && (GetClass() != Class::ShadowKnight))
+			if (
+				!MulticlassRestrictionHasAnyClass(
+					this,
+					GetPlayerClassBit(Class::Warrior) |
+					GetPlayerClassBit(Class::Paladin) |
+					GetPlayerClassBit(Class::ShadowKnight)
+				)
+			)
 				return true;
 			break;
 
@@ -8121,12 +8247,25 @@ bool Mob::PassCastRestriction(int value)
 			break;
 
 		case IS_CLASS_KNIGHT_HYBRID_MELEE:
-			if (IsHybridClass(GetClass()) || IsNonSpellFighterClass(GetClass()))
+			if (
+				MulticlassRestrictionHasAnyClass(
+					this,
+					GetPlayerClassBit(Class::Paladin) |
+					GetPlayerClassBit(Class::Ranger) |
+					GetPlayerClassBit(Class::ShadowKnight) |
+					GetPlayerClassBit(Class::Bard) |
+					GetPlayerClassBit(Class::Beastlord) |
+					GetPlayerClassBit(Class::Warrior) |
+					GetPlayerClassBit(Class::Monk) |
+					GetPlayerClassBit(Class::Rogue) |
+					GetPlayerClassBit(Class::Berserker)
+				)
+			)
 				return true;
 			break;
 
 		case IS_CLASS_WARRIOR_CASTER_PRIEST:
-			if (IsCasterClass(GetClass()) || GetClass() == Class::Warrior)
+			if (MulticlassRestrictionIsCasterClass(this) || MulticlassRestrictionHasClass(this, Class::Warrior))
 				return true;
 			break;
 
@@ -8352,44 +8491,55 @@ bool Mob::PassCastRestriction(int value)
 
 
 		case IS_CLASS_CASTER_PRIEST:
-			if (IsCasterClass(GetClass()))
+			if (MulticlassRestrictionIsCasterClass(this))
 				return true;
 			break;
 
 		case IS_END_OR_MANA_ABOVE_20_PCT: {
-			if (IsNonSpellFighterClass(GetClass()) && CastToClient()->GetEndurancePercent() >= 20) {
+			if (MulticlassRestrictionIsNonSpellFighter(this) && IsClient() && CastToClient()->GetEndurancePercent() >= 20) {
 				return true;
 			}
-			else if (!IsNonSpellFighterClass(GetClass()) && GetManaRatio() >= 20) {
+			else if ((!MulticlassRestrictionIsNonSpellFighter(this) || MulticlassRestrictionHasManaClass(this)) && GetManaRatio() >= 20) {
 				return true;
 			}
 			break;
 		}
 		case IS_END_OR_MANA_BELOW_10_PCT: {
-			if (IsNonSpellFighterClass(GetClass()) && CastToClient()->GetEndurancePercent() <= 10) {
+			if (MulticlassRestrictionIsNonSpellFighter(this) && IsClient() && CastToClient()->GetEndurancePercent() <= 10) {
 				return true;
 			}
-			else if (!IsNonSpellFighterClass(GetClass()) && GetManaRatio() <= 10) {
+			else if ((!MulticlassRestrictionIsNonSpellFighter(this) || MulticlassRestrictionHasManaClass(this)) && GetManaRatio() <= 10) {
 				return true;
 			}
-			else if (IsHybridClass(GetClass()) && CastToClient()->GetEndurancePercent() <= 10) {
+			else if (
+				MulticlassRestrictionHasAnyClass(
+					this,
+					GetPlayerClassBit(Class::Paladin) |
+					GetPlayerClassBit(Class::Ranger) |
+					GetPlayerClassBit(Class::ShadowKnight) |
+					GetPlayerClassBit(Class::Bard) |
+					GetPlayerClassBit(Class::Beastlord)
+				) &&
+				IsClient() &&
+				CastToClient()->GetEndurancePercent() <= 10
+			) {
 				return true;
 			}
 			break;
 		}
 		case IS_END_OR_MANA_BELOW_30_PCT:
 		case IS_END_OR_MANA_BELOW_30_PCT2: {
-			if (IsNonSpellFighterClass(GetClass()) && CastToClient()->GetEndurancePercent() <= 30) {
+			if (MulticlassRestrictionIsNonSpellFighter(this) && IsClient() && CastToClient()->GetEndurancePercent() <= 30) {
 				return true;
 			}
-			else if (!IsNonSpellFighterClass(GetClass()) && GetManaRatio() <= 30) {
+			else if ((!MulticlassRestrictionIsNonSpellFighter(this) || MulticlassRestrictionHasManaClass(this)) && GetManaRatio() <= 30) {
 				return true;
 			}
 			break;
 		}
 
 		case IS_NOT_CLASS_BARD:
-			if (GetClass() != Class::Bard)
+			if (!MulticlassRestrictionHasClass(this, Class::Bard))
 				return true;
 			break;
 

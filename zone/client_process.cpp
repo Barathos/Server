@@ -35,6 +35,7 @@
 #include "zone/guild_mgr.h"
 #include "zone/live_spell_manager.h"
 #include "zone/map.h"
+#include "zone/multiclass_manager.h"
 #include "zone/petitions.h"
 #include "zone/queryserv.h"
 #include "zone/quest_parser_collection.h"
@@ -45,6 +46,7 @@
 #include "zone/zonedb.h"
 
 #include <iostream>
+#include <vector>
 
 extern QueryServ* QServ;
 extern Zone* zone;
@@ -238,6 +240,7 @@ bool Client::Process() {
 				}
 			}
 		}
+		multiclass_manager.ProcessBardMelody(this);
 
 		if (GetMerc()) {
 			UpdateMercTimer();
@@ -455,7 +458,7 @@ bool Client::Process() {
 			}
 		}
 
-		if (GetClass() == Class::Warrior || GetClass() == Class::Berserker) {
+		if (multiclass_manager.HasClass(this, Class::Warrior) || multiclass_manager.HasClass(this, Class::Berserker)) {
 			if (!dead && !IsBerserk() && GetHPRatio() < RuleI(Combat, BerserkerFrenzyStart)) {
 				entity_list.MessageCloseString(this, false, 200, 0, BERSERK_START, GetName());
 				berserk = true;
@@ -777,6 +780,17 @@ void Client::BulkSendInventoryItems()
 
 	EQ::OutBuffer ob;
 	EQ::OutBuffer::pos_type last_pos = ob.tellp();
+	std::vector<EQ::ItemInstance*> multiclass_presentation_items;
+
+	const auto serialize_inventory_item = [this, &multiclass_presentation_items, &ob](const EQ::ItemInstance* inst, int16 slot_id) {
+		auto *presentation_inst = CloneItemForMulticlassPresentation(inst);
+		const auto *serialized_inst = presentation_inst ? presentation_inst : inst;
+		serialized_inst->Serialize(ob, slot_id);
+
+		if (presentation_inst) {
+			multiclass_presentation_items.push_back(presentation_inst);
+		}
+	};
 
 	// Possessions items
 	for (int16 slot_id = EQ::invslot::POSSESSIONS_BEGIN; slot_id <= EQ::invslot::POSSESSIONS_END; slot_id++) {
@@ -785,7 +799,7 @@ void Client::BulkSendInventoryItems()
 			continue;
 		}
 
-		inst->Serialize(ob, slot_id);
+		serialize_inventory_item(inst, slot_id);
 
 		if (ob.tellp() == last_pos) {
 			LogInventory("Serialization failed on item slot [{}] during BulkSendInventoryItems. Item skipped", slot_id);
@@ -802,7 +816,7 @@ void Client::BulkSendInventoryItems()
 				continue;
 			}
 
-			inst->Serialize(ob, slot_id);
+			serialize_inventory_item(inst, slot_id);
 
 			if (ob.tellp() == last_pos) {
 				LogInventory("Serialization failed on item slot [{}] during BulkSendInventoryItems. Item skipped", slot_id);
@@ -818,7 +832,7 @@ void Client::BulkSendInventoryItems()
 				continue;
 			}
 
-			inst->Serialize(ob, slot_id);
+			serialize_inventory_item(inst, slot_id);
 
 			if (ob.tellp() == last_pos) {
 				LogInventory("Serialization failed on item slot [{}] during BulkSendInventoryItems. Item skipped", slot_id);
@@ -835,6 +849,10 @@ void Client::BulkSendInventoryItems()
 
 	QueuePacket(outapp);
 	safe_delete(outapp);
+
+	for (auto *inst : multiclass_presentation_items) {
+		safe_delete(inst);
+	}
 }
 
 void Client::BulkSendMerchantInventory(int merchant_id, int npcid) {
@@ -885,7 +903,7 @@ void Client::BulkSendMerchantInventory(int merchant_id, int npcid) {
 			continue;
 		}
 
-		if (!(ml.classes_required & (1 << (GetClass() - 1)))) {
+		if (!(ml.classes_required & multiclass_manager.GetClassMask(this))) {
 			continue;
 		}
 
@@ -1169,17 +1187,15 @@ void Client::OPMemorizeSpell(const EQApplicationPacket* app)
 		return;
 	}
 
+	const auto multiclass_spell_level = multiclass_manager.GetBestSpellLevel(this, m->spell_id);
 	if (
 		m->scribing != memSpellForget &&
-		(
-			!IsPlayerClass(GetClass()) ||
-			GetLevel() < spells[m->spell_id].classes[GetClass() - 1]
-		)
+		(!IsPlayerClass(GetClass()) || multiclass_spell_level == 255 || GetLevel() < multiclass_spell_level)
 	) {
 		MessageString(
 			Chat::Red,
 			SPELL_LEVEL_TO_LOW,
-			std::to_string(spells[m->spell_id].classes[GetClass() - 1]).c_str(),
+			std::to_string(multiclass_spell_level).c_str(),
 			spells[m->spell_id].name
 		);
 		return;
@@ -1195,7 +1211,7 @@ void Client::OPMemorizeSpell(const EQApplicationPacket* app)
 				if (
 					item &&
 					RuleB(Character, RestrictSpellScribing) &&
-					!item->IsEquipable(GetRace(), GetClass())
+					!multiclass_manager.CanUseItem(this, inst)
 				) {
 					MessageString(Chat::Red, CANNOT_USE_ITEM);
 					break;
@@ -1626,7 +1642,7 @@ void Client::OPGMTraining(const EQApplicationPacket *app)
 	//you can only use your own trainer, client enforces this, but why trust it
 	if (!RuleB(Character, AllowCrossClassTrainers)) {
 		int trains_class = pTrainer->GetClass() - (Class::WarriorGM - Class::Warrior);
-		if (GetClass() != trains_class) {
+		if (!multiclass_manager.HasClass(this, trains_class)) {
 			safe_delete(outapp);
 			return;
 		}
@@ -1651,7 +1667,7 @@ void Client::OPGMTraining(const EQApplicationPacket *app)
 		}
 	}
 
-	if (ClientVersion() < EQ::versions::ClientVersion::RoF2 && GetClass() == Class::Berserker) {
+	if (ClientVersion() < EQ::versions::ClientVersion::RoF2 && multiclass_manager.HasClass(this, Class::Berserker)) {
 		gmtrain->skills[EQ::skills::Skill1HPiercing] = gmtrain->skills[EQ::skills::Skill2HPiercing];
 		gmtrain->skills[EQ::skills::Skill2HPiercing] = 0;
 	}
@@ -1685,7 +1701,7 @@ void Client::OPGMEndTraining(const EQApplicationPacket *app)
 	//you can only use your own trainer, client enforces this, but why trust it
 	if (!RuleB(Character, AllowCrossClassTrainers)) {
 		int trains_class = pTrainer->GetClass() - (Class::WarriorGM - Class::Warrior);
-		if (GetClass() != trains_class)
+		if (!multiclass_manager.HasClass(this, trains_class))
 			return;
 	}
 
@@ -1716,7 +1732,7 @@ void Client::OPGMTrainSkill(const EQApplicationPacket *app)
 	//you can only use your own trainer, client enforces this, but why trust it
 	if (!RuleB(Character, AllowCrossClassTrainers)) {
 		int trains_class = pTrainer->GetClass() - (Class::WarriorGM - Class::Warrior);
-		if (GetClass() != trains_class)
+		if (!multiclass_manager.HasClass(this, trains_class))
 			return;
 	}
 

@@ -22,6 +22,7 @@
 #include "common/spdat.h"
 #include "zone/bot.h"
 #include "zone/mob.h"
+#include "zone/multiclass_manager.h"
 
 #include <algorithm>
 
@@ -575,7 +576,7 @@ int64 Client::CalcBaseMana()
 				ConvertedWisInt = (3 * over200 - 300) / 2 + over200;
 			}
 
-			auto base_data = zone->GetBaseData(GetLevel(), GetClass());
+			auto base_data = zone->GetBaseData(GetLevel(), multiclass_manager.GetPrimaryIntCasterClass(this));
 			if (base_data.level == GetLevel()) {
 				max_m = base_data.mana + (ConvertedWisInt * base_data.mana_fac) + itembonuses.heroic_max_mana;
 			}
@@ -608,7 +609,7 @@ int64 Client::CalcBaseMana()
 				ConvertedWisInt = (3 * over200 - 300) / 2 + over200;
 			}
 
-			auto base_data = zone->GetBaseData(GetLevel(), GetClass());
+			auto base_data = zone->GetBaseData(GetLevel(), multiclass_manager.GetPrimaryWisCasterClass(this));
 			if (base_data.level == GetLevel()) {
 				max_m = base_data.mana + (ConvertedWisInt * base_data.mana_fac) + itembonuses.heroic_max_mana;
 			}
@@ -665,7 +666,7 @@ int64 Client::CalcManaRegen(bool bCombat)
 		if (IsSitting() || CanMedOnHorse()) {
 			// kind of weird to do it here w/e
 			// client does some base medding regen for shrouds here
-			if (GetClass() != Class::Bard) {
+			if (!multiclass_manager.IsBard(this)) {
 				auto skill = GetSkill(EQ::skills::SkillMeditate);
 				if (skill > 0) {
 					regen++;
@@ -1443,7 +1444,7 @@ int32 Client::CalcATK()
 
 uint32 Mob::GetInstrumentMod(uint16 spell_id)
 {
-	if (GetClass() != Class::Bard || spells[spell_id].is_discipline || spell_id == SPELL_AMPLIFICATION) {
+	if ((IsClient() ? !multiclass_manager.IsBard(CastToClient()) : GetClass() != Class::Bard) || spells[spell_id].is_discipline || spell_id == SPELL_AMPLIFICATION) {
 		//Other classes can get a base effects mod using SPA 413
 		if (HasBaseEffectFocus()) {
 			return (10 + (GetFocusEffect(focusFcBaseEffects, spell_id) / 10));//TODO: change action->instrument mod to float to support < 10% focus values

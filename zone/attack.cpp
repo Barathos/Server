@@ -29,6 +29,7 @@
 #include "zone/fastmath.h"
 #include "zone/lua_parser.h"
 #include "zone/mob.h"
+#include "zone/multiclass_manager.h"
 #include "zone/npc.h"
 #include "zone/queryserv.h"
 #include "zone/quest_parser_collection.h"
@@ -42,6 +43,21 @@ extern WorldServer worldserver;
 extern FastMath g_Math;
 extern EntityList entity_list;
 extern Zone* zone;
+
+namespace {
+bool HasMulticlassCombatClass(Mob *mob, uint8 class_id)
+{
+	if (!mob) {
+		return false;
+	}
+
+	if (mob->IsClient()) {
+		return multiclass_manager.HasClass(mob->CastToClient(), class_id);
+	}
+
+	return mob->GetClass() == class_id;
+}
+}
 
 //SYNC WITH: tune.cpp, mob.h TuneAttackAnimation
 EQ::skills::SkillType Mob::AttackAnimation(int Hand, const EQ::ItemInstance* weapon, EQ::skills::SkillType skillinuse)
@@ -590,7 +606,7 @@ bool Mob::AvoidDamage(Mob *other, DamageHitInfo &hit)
 	}
 
 	// dodge
-	if (CanThisClassDodge() && (InFront || GetClass() == Class::Monk)) {
+	if (CanThisClassDodge() && (InFront || HasMulticlassCombatClass(this, Class::Monk))) {
 		if (IsClient())
 			CastToClient()->CheckIncreaseSkill(EQ::skills::SkillDodge, other, -10);
 		// check auto discs ... I guess aa/items too :P
@@ -1151,7 +1167,7 @@ int64 Mob::GetWeaponDamage(Mob *against, const EQ::ItemData *weapon_item) {
 				return 0;
 			}
 		}
-		else if ((GetClass() == Class::Monk || GetClass() == Class::Beastlord) && GetLevel() >= 30) {
+		else if ((HasMulticlassCombatClass(this, Class::Monk) || HasMulticlassCombatClass(this, Class::Beastlord)) && GetLevel() >= 30) {
 			dmg = GetHandToHandDamage();
 		}
 		else {
@@ -1238,7 +1254,11 @@ int64 Mob::GetWeaponDamage(Mob *against, const EQ::ItemInstance *weapon_item, in
 			return 0;
 		}
 
-		if (!weapon_item->IsClassEquipable(GetClass()) &&
+		const bool class_equipable = IsClient() ?
+			multiclass_manager.CanUseItem(CastToClient(), weapon_item) :
+			weapon_item->IsClassEquipable(GetClass());
+
+		if (!class_equipable &&
 			(
 				!IsBot() ||
 				(IsBot() && !RuleB(Bots, AllowBotEquipAnyClassGear))
@@ -1578,7 +1598,7 @@ bool Mob::Attack(Mob* other, int Hand, bool bRiposte, bool IsStrikethrough, bool
 	LogCombatDetail("Attacking [{}] with hand [{}] [{}]", other->GetName(), Hand, bRiposte ? "this is a riposte" : "");
 
 	if (
-		(IsCasting() && GetClass() != Class::Bard && !IsFromSpell)
+		(IsCasting() && !HasMulticlassCombatClass(this, Class::Bard) && !IsFromSpell)
 		|| ((IsClient() && CastToClient()->dead) || (other->IsClient() && other->CastToClient()->dead))
 		|| (GetHP() < 0)
 		|| (!IsAttackAllowed(other))
@@ -3967,34 +3987,32 @@ bool Client::CheckDoubleAttack()
 // with varying triple attack skill (1-3% error at least)
 bool Client::CheckTripleAttack()
 {
-	int chance;
+	int chance = 0;
 
 	if (RuleB(Combat, ClassicTripleAttack)) {
 		if (
-			IsClient() &&
 			GetLevel() >= 60 &&
 			(
-				GetClass() == Class::Warrior ||
-				GetClass() == Class::Ranger ||
-				GetClass() == Class::Monk ||
-				GetClass() == Class::Berserker
+				multiclass_manager.HasClass(this, Class::Warrior) ||
+				multiclass_manager.HasClass(this, Class::Ranger) ||
+				multiclass_manager.HasClass(this, Class::Monk) ||
+				multiclass_manager.HasClass(this, Class::Berserker)
 			)
 		) {
-			switch (GetClass()) {
-				case Class::Warrior:
-					chance = RuleI(Combat, ClassicTripleAttackChanceWarrior);
-					break;
-				case Class::Ranger:
-					chance = RuleI(Combat, ClassicTripleAttackChanceRanger);
-					break;
-				case Class::Monk:
-					chance = RuleI(Combat, ClassicTripleAttackChanceMonk);
-					break;
-				case Class::Berserker:
-					chance = RuleI(Combat, ClassicTripleAttackChanceBerserker);
-					break;
-				default:
-					break;
+			if (multiclass_manager.HasClass(this, Class::Warrior)) {
+				chance = std::max(chance, RuleI(Combat, ClassicTripleAttackChanceWarrior));
+			}
+
+			if (multiclass_manager.HasClass(this, Class::Ranger)) {
+				chance = std::max(chance, RuleI(Combat, ClassicTripleAttackChanceRanger));
+			}
+
+			if (multiclass_manager.HasClass(this, Class::Monk)) {
+				chance = std::max(chance, RuleI(Combat, ClassicTripleAttackChanceMonk));
+			}
+
+			if (multiclass_manager.HasClass(this, Class::Berserker)) {
+				chance = std::max(chance, RuleI(Combat, ClassicTripleAttackChanceBerserker));
 			}
 		}
 	} else {
@@ -5444,11 +5462,11 @@ void Mob::TryCriticalHit(Mob *defender, DamageHitInfo &hit, ExtraAttackOptions *
 	// We either require an innate crit chance or some SPA 169 to crit
 	bool innate_crit = false;
 	int crit_chance = GetCriticalChanceBonus(hit.skill);
-	if ((GetClass() == Class::Warrior || GetClass() == Class::Berserker) && GetLevel() >= 12) {
+	if ((HasMulticlassCombatClass(this, Class::Warrior) || HasMulticlassCombatClass(this, Class::Berserker)) && GetLevel() >= 12) {
 		innate_crit = true;
-	} else if (GetClass() == Class::Ranger && GetLevel() >= 12 && hit.skill == EQ::skills::SkillArchery) {
+	} else if (HasMulticlassCombatClass(this, Class::Ranger) && GetLevel() >= 12 && hit.skill == EQ::skills::SkillArchery) {
 		innate_crit = true;
-	} else if (GetClass() == Class::Rogue && GetLevel() >= 12 && hit.skill == EQ::skills::SkillThrowing) {
+	} else if (HasMulticlassCombatClass(this, Class::Rogue) && GetLevel() >= 12 && hit.skill == EQ::skills::SkillThrowing) {
 		innate_crit = true;
 	}
 
@@ -5474,7 +5492,7 @@ void Mob::TryCriticalHit(Mob *defender, DamageHitInfo &hit, ExtraAttackOptions *
 		dex_bonus += 45; // chances did not match live without a small boost
 
 						 // so if we have an innate crit we have a better chance, except for ber throwing
-		if (!innate_crit || (GetClass() == Class::Berserker && hit.skill == EQ::skills::SkillThrowing)) {
+		if (!innate_crit || (HasMulticlassCombatClass(this, Class::Berserker) && hit.skill == EQ::skills::SkillThrowing)) {
 			dex_bonus = dex_bonus * 3 / 5;
 		}
 
@@ -5502,7 +5520,7 @@ void Mob::TryCriticalHit(Mob *defender, DamageHitInfo &hit, ExtraAttackOptions *
 			LogCombatDetail("Crit success roll [{}] dex chance [{}] og dmg [{}] crit_mod [{}] new dmg [{}]", roll, dex_bonus, og_damage, crit_mod, hit.damage_done);
 
 			// step 3: check deadly strike
-			if (GetClass() == Class::Rogue && hit.skill == EQ::skills::SkillThrowing) {
+			if (HasMulticlassCombatClass(this, Class::Rogue) && hit.skill == EQ::skills::SkillThrowing) {
 				if (BehindMob(defender, GetX(), GetY())) {
 					int chance = GetLevel() * 12;
 					if (zone->random.Int(1, 1000) < chance) {
@@ -6372,7 +6390,7 @@ void Mob::CommonOutgoingHitSuccess(Mob* defender, DamageHitInfo &hit, ExtraAttac
 
 	// BER weren't parsing the halving
 	if (hit.skill == EQ::skills::SkillArchery ||
-		(hit.skill == EQ::skills::SkillThrowing && GetClass() != Class::Berserker))
+		(hit.skill == EQ::skills::SkillThrowing && !HasMulticlassCombatClass(this, Class::Berserker)))
 		hit.damage_done /= 2;
 
 	if (hit.damage_done < 1)
@@ -6385,7 +6403,7 @@ void Mob::CommonOutgoingHitSuccess(Mob* defender, DamageHitInfo &hit, ExtraAttac
 		if (headshot > 0) {
 			hit.damage_done = headshot;
 		}
-		else if (GetClass() == Class::Ranger && GetLevel() >= RuleI(Combat, ArcheryBonusLevelRequirement)) { // no double dmg on headshot
+		else if (HasMulticlassCombatClass(this, Class::Ranger) && GetLevel() >= RuleI(Combat, ArcheryBonusLevelRequirement)) { // no double dmg on headshot
 			if ((defender->IsNPC() && !defender->IsMoving() && !defender->IsRooted()) || !RuleB(Combat, ArcheryBonusRequiresStationary)) {
 				hit.damage_done *= 2;
 				MessageString(Chat::MeleeCrit, BOW_DOUBLE_DAMAGE);
@@ -6415,7 +6433,7 @@ void Mob::CommonOutgoingHitSuccess(Mob* defender, DamageHitInfo &hit, ExtraAttac
 			}
 		}
 	}
-	else if (hit.skill == EQ::skills::SkillFrenzy && GetClass() == Class::Berserker && GetLevel() > 50) {
+	else if (hit.skill == EQ::skills::SkillFrenzy && HasMulticlassCombatClass(this, Class::Berserker) && GetLevel() > 50) {
 		extra_mincap = 4 * GetLevel() / 5;
 	}
 

@@ -26,6 +26,7 @@
 #include "zone/client.h"
 #include "zone/entity.h"
 #include "zone/mob.h"
+#include "zone/multiclass_manager.h"
 #include "zone/zonedb.h"
 
 #include <string>
@@ -81,8 +82,14 @@ void Mob::MakePet(uint16 spell_id, const char* pettype, const char *petname) {
 void Mob::MakePoweredPet(uint16 spell_id, const char* pettype, int16 petpower,
 		const char *petname, float in_size) {
 	// Sanity and early out checking first.
-	if(HasPet() || pettype == nullptr)
+	if(pettype == nullptr)
 		return;
+
+	if (HasPet()) {
+		if (!IsClient() || !multiclass_manager.CanCreateAdditionalPet(CastToClient())) {
+			return;
+		}
+	}
 
 	int16 act_power = 0; // The actual pet power we'll use.
 	if (petpower == -1) {
@@ -281,7 +288,9 @@ void Mob::MakePoweredPet(uint16 spell_id, const char* pettype, int16 petpower,
 		npc->size = in_size;
 
 	entity_list.AddNPC(npc, true, true);
-	SetPetID(npc->GetID());
+	if (!IsClient() || !multiclass_manager.RegisterPet(CastToClient(), npc)) {
+		SetPetID(npc->GetID());
+	}
 	// We need to handle PetType 5 (petHatelist), add the current target to the hatelist of the pet
 
 	if (record.petcontrol == PetType::TargetLock)

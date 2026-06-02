@@ -436,6 +436,8 @@ public:
 	void SaveAuras(Client *c);
 	void LoadAuras(Client *c);
 	void LoadPetInfo(Client *c);
+	void LoadMulticlassPetInfo(Client *c);
+	void LoadMulticlassPetState(Client *c, NPC *pet, int pet_info_type);
 	void SavePetInfo(Client *c);
 	void RemoveTempFactions(Client *c);
 	void UpdateItemRecast(uint32 char_id, uint32 recast_type, uint32 timestamp);

@@ -67,16 +67,221 @@
 #include "zone/corpse.h"
 #include "zone/groups.h"
 #include "zone/merc.h"
+#include "zone/multiclass_manager.h"
+#include "zone/npc.h"
 #include "zone/zone.h"
 
 #include "fmt/format.h"
+#include <algorithm>
 #include <ctime>
 #include <iostream>
+#include <unordered_set>
 
 extern Zone* zone;
 
 ZoneDatabase database;
 ZoneDatabase content_db;
+
+namespace {
+
+constexpr int MulticlassPetInfoSlotBegin = 10;
+constexpr int MulticlassPetInfoSlotEnd = 12;
+
+void CapturePetInfo(NPC *pet, PetInfo &pet_info)
+{
+	memset(&pet_info, 0, sizeof(PetInfo));
+	if (!pet || !pet->GetPetSpellID()) {
+		return;
+	}
+
+	pet_info.SpellID = pet->GetPetSpellID();
+	pet_info.HP = pet->GetHP();
+	pet_info.Mana = pet->GetMana();
+	pet->GetPetState(pet_info.Buffs, pet_info.Items, pet_info.Name);
+	pet_info.petpower = pet->GetPetPower();
+	pet_info.size = pet->GetSize();
+	pet_info.taunting = pet->IsTaunting();
+}
+
+void AppendPetInfoRows(
+	Client *client,
+	int pet_info_type,
+	const PetInfo &pet_state,
+	std::vector<CharacterPetInfoRepository::CharacterPetInfo> &pet_infos,
+	std::vector<CharacterPetBuffsRepository::CharacterPetBuffs> &pet_buffs,
+	std::vector<CharacterPetInventoryRepository::CharacterPetInventory> &inventory
+)
+{
+	if (!client || !client->CharacterID() || !pet_state.SpellID) {
+		return;
+	}
+
+	auto pet_info = CharacterPetInfoRepository::NewEntity();
+	pet_info.char_id = client->CharacterID();
+	pet_info.pet = pet_info_type;
+	pet_info.petname = pet_state.Name;
+	pet_info.petpower = pet_state.petpower;
+	pet_info.spell_id = pet_state.SpellID;
+	pet_info.hp = pet_state.HP;
+	pet_info.mana = pet_state.Mana;
+	pet_info.size = pet_state.size;
+	pet_info.taunting = pet_state.taunting ? 1 : 0;
+	pet_infos.push_back(pet_info);
+
+	const uint32 max_slots = (
+		RuleI(Spells, MaxTotalSlotsPET) > PET_BUFF_COUNT ?
+		PET_BUFF_COUNT :
+		RuleI(Spells, MaxTotalSlotsPET)
+	);
+
+	for (int slot_id = 0; slot_id < max_slots; slot_id++) {
+		if (!IsValidSpell(pet_state.Buffs[slot_id].spellid)) {
+			continue;
+		}
+
+		auto pet_buff = CharacterPetBuffsRepository::NewEntity();
+		pet_buff.char_id = client->CharacterID();
+		pet_buff.pet = pet_info_type;
+		pet_buff.slot = slot_id;
+		pet_buff.spell_id = pet_state.Buffs[slot_id].spellid;
+		pet_buff.caster_level = pet_state.Buffs[slot_id].level;
+		pet_buff.ticsremaining = pet_state.Buffs[slot_id].duration;
+		pet_buff.counters = pet_state.Buffs[slot_id].counters;
+		pet_buff.instrument_mod = pet_state.Buffs[slot_id].bard_modifier;
+		pet_buffs.push_back(pet_buff);
+	}
+
+	for (
+		int slot_id = EQ::invslot::EQUIPMENT_BEGIN;
+		slot_id <= EQ::invslot::EQUIPMENT_END;
+		slot_id++
+	) {
+		if (!pet_state.Items[slot_id]) {
+			continue;
+		}
+
+		auto item = CharacterPetInventoryRepository::NewEntity();
+		item.char_id = client->CharacterID();
+		item.pet = pet_info_type;
+		item.slot = slot_id;
+		item.item_id = pet_state.Items[slot_id];
+		inventory.push_back(item);
+	}
+}
+
+bool MulticlassPetStateSchemaAvailable()
+{
+	auto results = database.QueryDatabase("SHOW TABLES LIKE 'custom_multiclass_pet_state'");
+	return results.Success() && results.RowCount() > 0;
+}
+
+std::string BuildMulticlassPetStateValue(Client *client, int pet_info_type, NPC *pet, uint16 focused_pet_id)
+{
+	if (!client || !client->CharacterID() || !pet || !pet->GetPetSpellID()) {
+		return "";
+	}
+
+	const auto guard_point = pet->GetGuardPoint();
+	return fmt::format(
+		"({}, {}, {}, '{}', {}, {}, {}, {}, {}, {}, {}, {:.3f}, {:.3f}, {:.3f}, {:.3f}, UNIX_TIMESTAMP())",
+		client->CharacterID(),
+		pet_info_type,
+		pet->GetPetSpellID(),
+		Strings::Escape(pet->GetCleanName()),
+		pet->GetPetOrder(),
+		pet->IsHeld() ? 1 : 0,
+		pet->IsGHeld() ? 1 : 0,
+		pet->IsNoCast() ? 1 : 0,
+		pet->GetID() == focused_pet_id ? 1 : 0,
+		pet->IsPetStop() ? 1 : 0,
+		pet->IsPetRegroup() ? 1 : 0,
+		guard_point.x,
+		guard_point.y,
+		guard_point.z,
+		guard_point.w
+	);
+}
+
+void ApplyMulticlassPetStateRow(Client *client, NPC *pet, int pet_info_type)
+{
+	if (!client || !client->CharacterID() || !pet || !MulticlassPetStateSchemaAvailable()) {
+		return;
+	}
+
+	auto results = database.QueryDatabase(
+		fmt::format(
+			"SELECT `pet_order`, `held`, `gheld`, `nocast`, `focused`, `pet_stop`, `pet_regroup`, "
+			"`guard_x`, `guard_y`, `guard_z`, `guard_heading` "
+			"FROM `custom_multiclass_pet_state` "
+			"WHERE `character_id` = {} AND `pet_slot` = {} LIMIT 1",
+			client->CharacterID(),
+			pet_info_type
+		)
+	);
+
+	if (!results.Success() || results.RowCount() == 0) {
+		return;
+	}
+
+	auto row = results.begin();
+	const uint8 pet_order = Strings::ToUnsignedInt(row[0]);
+	const bool held = Strings::ToBool(row[1]);
+	const bool gheld = Strings::ToBool(row[2]);
+	const bool nocast = Strings::ToBool(row[3]);
+	const bool focused = Strings::ToBool(row[4]);
+	const bool pet_stop = Strings::ToBool(row[5]);
+	const bool pet_regroup = Strings::ToBool(row[6]);
+	const float guard_x = Strings::ToFloat(row[7]);
+	const float guard_y = Strings::ToFloat(row[8]);
+	const float guard_z = Strings::ToFloat(row[9]);
+	const float guard_heading = Strings::ToFloat(row[10]);
+
+	pet->SetPetOrder(pet_order);
+	pet->SetHeld(held);
+	pet->SetGHeld(gheld);
+	pet->SetNoCast(nocast);
+	pet->SetPetStop(pet_stop);
+	pet->SetPetRegroup(pet_regroup);
+
+	if (guard_heading != 0.0f) {
+		pet->SaveGuardSpot(glm::vec4(guard_x, guard_y, guard_z, guard_heading));
+	} else if (pet_order != PetOrder::Guard) {
+		pet->SaveGuardSpot(true);
+	}
+
+	if (focused) {
+		multiclass_manager.SetFocusedPet(client, pet->GetID());
+	}
+}
+
+std::unordered_set<uint16> GetRosterPetIds(Client *client)
+{
+	std::unordered_set<uint16> ids;
+	for (auto *pet : multiclass_manager.GetPetRoster(client)) {
+		if (pet) {
+			ids.insert(pet->GetID());
+		}
+	}
+
+	return ids;
+}
+
+NPC *FindNewRosterPet(Client *client, const std::unordered_set<uint16> &previous_ids)
+{
+	for (auto *pet : multiclass_manager.GetPetRoster(client)) {
+		if (!pet || !pet->IsNPC()) {
+			continue;
+		}
+
+		if (previous_ids.find(pet->GetID()) == previous_ids.end()) {
+			return pet->CastToNPC();
+		}
+	}
+
+	return nullptr;
+}
+
+}
 
 ZoneDatabase::ZoneDatabase()
 : SharedDatabase()
@@ -3097,6 +3302,7 @@ void ZoneDatabase::SavePetInfo(Client *client)
 
 	std::vector<CharacterPetInventoryRepository::CharacterPetInventory> inventory;
 	auto item = CharacterPetInventoryRepository::NewEntity();
+	std::vector<std::string> multiclass_pet_state_values;
 
 	for (int pet_info_type = PetInfoType::Current; pet_info_type <= PetInfoType::Suspended; pet_info_type++) {
 		p = client->GetPetInfo(pet_info_type);
@@ -3185,6 +3391,49 @@ void ZoneDatabase::SavePetInfo(Client *client)
 		}
 	}
 
+	if (!client->IsDead() && multiclass_manager.GetPetRosterLimit(client) > 1) {
+		auto *current_pet = client->GetPet();
+		const auto current_pet_id = current_pet ? current_pet->GetID() : 0;
+		if (current_pet && current_pet->IsNPC()) {
+			const auto value = BuildMulticlassPetStateValue(client, PetInfoType::Current, current_pet->CastToNPC(), current_pet_id);
+			if (!value.empty()) {
+				multiclass_pet_state_values.emplace_back(value);
+			}
+		}
+
+		const uint8 roster_limit = multiclass_manager.GetPetRosterLimit(client);
+		const uint8 secondary_limit = current_pet_id ? (roster_limit - 1) : roster_limit;
+		uint8 saved_secondary_pets = 0;
+		int pet_info_type = MulticlassPetInfoSlotBegin;
+
+		for (auto *roster_pet : multiclass_manager.GetPetRoster(client)) {
+			if (
+				!roster_pet ||
+				!roster_pet->IsNPC() ||
+				roster_pet->GetID() == current_pet_id ||
+				pet_info_type > MulticlassPetInfoSlotEnd ||
+				saved_secondary_pets >= secondary_limit
+			) {
+				continue;
+			}
+
+			auto *pet_npc = roster_pet->CastToNPC();
+			if (!pet_npc || !pet_npc->GetPetSpellID()) {
+				continue;
+			}
+
+			PetInfo secondary_pet_info;
+			CapturePetInfo(pet_npc, secondary_pet_info);
+			AppendPetInfoRows(client, pet_info_type, secondary_pet_info, pet_infos, pet_buffs, inventory);
+			const auto value = BuildMulticlassPetStateValue(client, pet_info_type, pet_npc, current_pet_id);
+			if (!value.empty()) {
+				multiclass_pet_state_values.emplace_back(value);
+			}
+			pet_info_type++;
+			saved_secondary_pets++;
+		}
+	}
+
 	CharacterPetInfoRepository::DeleteWhere(
 		database,
 		fmt::format(
@@ -3219,6 +3468,26 @@ void ZoneDatabase::SavePetInfo(Client *client)
 
 	if (!inventory.empty()) {
 		CharacterPetInventoryRepository::InsertMany(database, inventory);
+	}
+
+	if (MulticlassPetStateSchemaAvailable()) {
+		QueryDatabase(
+			fmt::format(
+				"DELETE FROM `custom_multiclass_pet_state` WHERE `character_id` = {}",
+				client->CharacterID()
+			)
+		);
+
+		if (!multiclass_pet_state_values.empty()) {
+			QueryDatabase(
+				fmt::format(
+					"INSERT INTO `custom_multiclass_pet_state` "
+					"(`character_id`, `pet_slot`, `spell_id`, `pet_name`, `pet_order`, `held`, `gheld`, `nocast`, `focused`, `pet_stop`, `pet_regroup`, `guard_x`, `guard_y`, `guard_z`, `guard_heading`, `updated_at`) "
+					"VALUES {}",
+					Strings::Join(multiclass_pet_state_values, ",")
+				)
+			);
+		}
 	}
 }
 
@@ -3357,6 +3626,128 @@ void ZoneDatabase::LoadPetInfo(Client *client)
 			p->Items[e.slot] = e.item_id;
 		}
 	}
+}
+
+void ZoneDatabase::LoadMulticlassPetInfo(Client *client)
+{
+	if (!client || !client->CharacterID() || multiclass_manager.GetPetRosterLimit(client) <= 1) {
+		return;
+	}
+
+	auto pet_infos = CharacterPetInfoRepository::GetWhere(
+		database,
+		fmt::format(
+			"`char_id` = {} AND `pet` BETWEEN {} AND {}",
+			client->CharacterID(),
+			MulticlassPetInfoSlotBegin,
+			MulticlassPetInfoSlotEnd
+		)
+	);
+
+	if (pet_infos.empty()) {
+		return;
+	}
+
+	std::sort(
+		pet_infos.begin(),
+		pet_infos.end(),
+		[](const auto &left, const auto &right) {
+			return left.pet < right.pet;
+		}
+	);
+
+	auto pet_buffs = CharacterPetBuffsRepository::GetWhere(
+		database,
+		fmt::format(
+			"`char_id` = {} AND `pet` BETWEEN {} AND {}",
+			client->CharacterID(),
+			MulticlassPetInfoSlotBegin,
+			MulticlassPetInfoSlotEnd
+		)
+	);
+
+	auto inventory = CharacterPetInventoryRepository::GetWhere(
+		database,
+		fmt::format(
+			"`char_id` = {} AND `pet` BETWEEN {} AND {}",
+			client->CharacterID(),
+			MulticlassPetInfoSlotBegin,
+			MulticlassPetInfoSlotEnd
+		)
+	);
+
+	for (const auto &e : pet_infos) {
+		if (multiclass_manager.GetPetRoster(client).size() >= multiclass_manager.GetPetRosterLimit(client)) {
+			return;
+		}
+
+		if (e.spell_id <= 1 || e.spell_id > SPDAT_RECORDS || !IsValidSpell(e.spell_id)) {
+			continue;
+		}
+
+		PetInfo pet_state;
+		memset(&pet_state, 0, sizeof(PetInfo));
+		strn0cpy(pet_state.Name, e.petname.c_str(), sizeof(pet_state.Name));
+		pet_state.petpower = e.petpower;
+		pet_state.SpellID = e.spell_id;
+		pet_state.HP = e.hp;
+		pet_state.Mana = e.mana;
+		pet_state.size = e.size;
+		pet_state.taunting = e.taunting;
+
+		const int max_buff_slots = std::min<int>(RuleI(Spells, MaxTotalSlotsPET), PET_BUFF_COUNT);
+		for (const auto &buff : pet_buffs) {
+			if (buff.pet != e.pet || buff.slot < 0 || buff.slot >= max_buff_slots || !IsValidSpell(buff.spell_id)) {
+				continue;
+			}
+
+			pet_state.Buffs[buff.slot].spellid = buff.spell_id;
+			pet_state.Buffs[buff.slot].level = buff.caster_level;
+			pet_state.Buffs[buff.slot].player_id = 0;
+			pet_state.Buffs[buff.slot].effect_type = BuffEffectType::Buff;
+			pet_state.Buffs[buff.slot].duration = buff.ticsremaining;
+			pet_state.Buffs[buff.slot].counters = buff.counters;
+			pet_state.Buffs[buff.slot].bard_modifier = buff.instrument_mod;
+		}
+
+		for (const auto &item : inventory) {
+			if (item.pet != e.pet || !EQ::ValueWithin(item.slot, EQ::invslot::EQUIPMENT_BEGIN, EQ::invslot::EQUIPMENT_END)) {
+				continue;
+			}
+
+			pet_state.Items[item.slot] = item.item_id;
+		}
+
+		const auto previous_ids = GetRosterPetIds(client);
+		client->MakePoweredPet(
+			pet_state.SpellID,
+			spells[pet_state.SpellID].teleport_zone,
+			pet_state.petpower,
+			pet_state.Name,
+			pet_state.size
+		);
+
+		auto *pet = FindNewRosterPet(client, previous_ids);
+		if (!pet) {
+			continue;
+		}
+
+		pet->SetPetState(pet_state.Buffs, pet_state.Items);
+		pet->CalcBonuses();
+		pet->SetHP(pet_state.HP);
+		pet->SetMana(pet_state.Mana);
+
+		if (client->ClientVersionBit() & EQ::versions::maskUFAndLater) {
+			pet->SetTaunting(pet_state.taunting);
+		}
+
+		LoadMulticlassPetState(client, pet, e.pet);
+	}
+}
+
+void ZoneDatabase::LoadMulticlassPetState(Client *client, NPC *pet, int pet_info_type)
+{
+	ApplyMulticlassPetStateRow(client, pet, pet_info_type);
 }
 
 bool ZoneDatabase::GetFactionData(FactionMods* fm, uint32 class_mod, uint32 race_mod, uint32 deity_mod, int32 faction_id) {

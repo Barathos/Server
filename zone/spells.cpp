@@ -86,6 +86,7 @@
 #include "zone/live_spell_manager.h"
 #include "zone/lua_parser.h"
 #include "zone/mob_movement_manager.h"
+#include "zone/multiclass_manager.h"
 #include "zone/queryserv.h"
 #include "zone/quest_parser_collection.h"
 #include "zone/string_ids.h"
@@ -102,6 +103,19 @@ extern FastMath      g_Math;
 extern QueryServ    *QServ;
 
 using EQ::spells::CastingSlot;
+
+namespace {
+
+bool IsEffectiveBard(Mob *mob)
+{
+	if (mob && mob->IsClient()) {
+		return multiclass_manager.IsBard(mob->CastToClient());
+	}
+
+	return mob && mob->GetClass() == Class::Bard;
+}
+
+}
 
 // this is run constantly for every mob
 void Mob::SpellProcess()
@@ -1060,8 +1074,9 @@ bool Client::CheckFizzle(uint16 spell_id)
 
 	//Live AA - Spell Casting Expertise, Mastery of the Past
 	no_fizzle_level = aabonuses.MasteryofPast + itembonuses.MasteryofPast + spellbonuses.MasteryofPast;
+	const auto multiclass_spell_level = multiclass_manager.GetBestSpellLevel(this, spell_id);
 
-	if (spells[spell_id].classes[GetClass()-1] < no_fizzle_level) {
+	if (multiclass_spell_level < no_fizzle_level) {
 		return true;
 	}
 
@@ -1112,7 +1127,7 @@ bool Client::CheckFizzle(uint16 spell_id)
 		}
 
 		// BARDS ARE SPECIAL - they add both CHA and DEX mods to get casting rates similar to full casters without spec skill
-		if (GetClass() == Class::Bard) {
+		if (multiclass_manager.IsBard(this)) {
 			prime_stat_reduction = (GetCHA() - 75 + GetDEX() - 75) / 10.0;
 		}
 
@@ -1141,12 +1156,12 @@ bool Client::CheckFizzle(uint16 spell_id)
 	int par_skill;
 	int act_skill;
 
-	par_skill = spells[spell_id].classes[GetClass()-1] * 5 - 10;//IIRC even if you are lagging behind the skill levels you don't fizzle much
+	par_skill = multiclass_spell_level * 5 - 10;//IIRC even if you are lagging behind the skill levels you don't fizzle much
 	if (par_skill > 235) {
 		par_skill = 235;
 	}
 
-	par_skill += spells[spell_id].classes[GetClass()-1]; // maximum of 270 for level 65 spell
+	par_skill += multiclass_spell_level; // maximum of 270 for level 65 spell
 
 	act_skill = GetSkill(spells[spell_id].skill);
 	act_skill += GetLevel(); // maximum of whatever the client can cheat
@@ -1181,7 +1196,7 @@ bool Client::CheckFizzle(uint16 spell_id)
 	float diff = par_skill + static_cast<float>(spells[spell_id].base_difficulty) - act_skill;
 
 	// if you have high int/wis you fizzle less, you fizzle more if you are stupid
-	if (GetClass() == Class::Bard) {
+	if (multiclass_manager.IsBard(this)) {
 		diff -= (GetCHA() - 110) / 20.0;
 	} else if (IsIntelligenceCasterClass()) {
 		diff -= (GetINT() - 125) / 20.0;
@@ -1469,16 +1484,22 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 	bool bard_song_mode = false;
 	bool regain_conc = false;
 	Mob *spell_target = entity_list.GetMob(target_id);
+	const bool multiclass_melody_owns_song_loop =
+		IsClient() &&
+		slot < CastingSlot::MaxGems &&
+		IsBardSong(spell_id) &&
+		multiclass_manager.HasActiveBardMelody(CastToClient());
+
 	// here we do different things if this is a bard casting a bard song from
 	// a spell bar slot
-	if(GetClass() == Class::Bard) // bard's can move when casting any spell...
+	if(IsEffectiveBard(this)) // bard's can move when casting any spell...
 	{
 		if (IsBardSong(spell_id) && slot < CastingSlot::MaxGems) {
 			if (spells[spell_id].buff_duration == 0xFFFF) {
 				LogSpells("Bard song [{}] not applying bard logic because duration. dur=[{}], recast=[{}]", spell_id, spells[spell_id].buff_duration, spells[spell_id].recast_time);
 			}
 			else {
-				if (IsPulsingBardSong(spell_id)) {
+				if (IsPulsingBardSong(spell_id) && !multiclass_melody_owns_song_loop) {
 					bardsong = spell_id;
 					bardsong_slot = slot;
 
@@ -1493,8 +1514,13 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 					}
 					bardsong_timer.Start(6000);
 				}
-				LogSpells("Bard song [{}] started: slot [{}], target id [{}]", bardsong, (int)bardsong_slot, bardsong_target_id);
-				bard_song_mode = true;
+				if (multiclass_melody_owns_song_loop) {
+					LogSpells("Bard song [{}] cast as one-shot because Multiclass Melody owns sustained song looping", spell_id);
+				}
+				else {
+					LogSpells("Bard song [{}] started: slot [{}], target id [{}]", bardsong, (int)bardsong_slot, bardsong_target_id);
+				}
+				bard_song_mode = !multiclass_melody_owns_song_loop;
 			}
 		}
 	}
@@ -2671,7 +2697,7 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 					Group *target_group = entity_list.GetGroupByMob(spell_target);
 					if (target_group) {
 						target_group->CastGroupSpell(this, spell_id);
-						if (target_group != GetGroup() && GetClass() != Class::Bard) {
+						if (target_group != GetGroup() && !IsEffectiveBard(this)) {
 							SpellOnTarget(spell_id, this);
 						}
 					}
@@ -2701,6 +2727,11 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 						if (spells[spell_id].target_type != ST_GroupNoPets && GetPet() && HasPetAffinity() && !GetPet()->IsCharmed()) {
 							SpellOnTarget(spell_id, GetPet());
 						}
+						if (spells[spell_id].target_type != ST_GroupNoPets && IsClient() && HasPetAffinity()) {
+							for (auto *pet : multiclass_manager.GetSecondaryPetRoster(CastToClient())) {
+								SpellOnTarget(spell_id, pet);
+							}
+						}
 	#endif
 					}
 
@@ -2709,6 +2740,11 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 					//pet too
 					if (spells[spell_id].target_type != ST_GroupNoPets && spell_target->GetPet() && spell_target->HasPetAffinity() && !spell_target->GetPet()->IsCharmed()) {
 						SpellOnTarget(spell_id, spell_target->GetPet());
+					}
+					if (spells[spell_id].target_type != ST_GroupNoPets && spell_target->IsClient() && spell_target->HasPetAffinity()) {
+						for (auto *pet : multiclass_manager.GetSecondaryPetRoster(spell_target->CastToClient())) {
+							SpellOnTarget(spell_id, pet);
+						}
 					}
 	#endif
 				}
@@ -2803,7 +2839,7 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 			}
 		}
 		//handle bard AA and Discipline recast timers when singing
-		if (GetClass() == Class::Bard && spell_id != casting_spell_id && timer != 0xFFFFFFFF) {
+		if (IsEffectiveBard(this) && spell_id != casting_spell_id && timer != 0xFFFFFFFF) {
 			CastToClient()->GetPTimers().Start(timer, timer_duration);
 			LogSpells("Spell [{}]: Setting BARD custom reuse timer [{}] to [{}]", spell_id, casting_spell_timer, casting_spell_timer_duration);
 		}
@@ -3592,7 +3628,7 @@ int Mob::AddBuff(Mob *caster, uint16 spell_id, int duration, int32 level_overrid
 				);
 
 				if (caster) {
-					if (caster->IsClient() && RuleB(Client, UseLiveBlockedMessage) && caster->GetClass() != Class::Bard) {
+					if (caster->IsClient() && RuleB(Client, UseLiveBlockedMessage) && !IsEffectiveBard(caster)) {
 						caster->Message(
 							Chat::Red,
 							fmt::format(
@@ -3604,7 +3640,7 @@ int Mob::AddBuff(Mob *caster, uint16 spell_id, int duration, int32 level_overrid
 						);
 					}
 
-					if (caster->IsBot() && RuleB(Bots, BotsUseLiveBlockedMessage) && caster->GetClass() != Class::Bard) {
+					if (caster->IsBot() && RuleB(Bots, BotsUseLiveBlockedMessage) && !IsEffectiveBard(caster)) {
 						caster->GetOwner()->Message(
 							Chat::SpellFailure,
 							fmt::format(
@@ -6013,6 +6049,10 @@ void Client::ScribeSpell(uint16 spell_id, int slot, bool update_client, bool def
 	}
 	LogSpells("Spell [{}] scribed into spell book slot [{}]", spell_id, slot);
 
+	if (update_client && !defer_save) {
+		multiclass_manager.SendNativeSpellLevelSnapshot(this);
+	}
+
 	if (update_client) {
 		MemorizeSpell(slot, spell_id, memSpellScribing);
 	}
@@ -6152,6 +6192,19 @@ uint32 Client::GetHighestScribedSpellinSpellGroup(uint32 spell_group)
 
 std::unordered_map<uint32, std::vector<uint16>> Client::LoadSpellGroupCache(uint8 min_level, uint8 max_level) {
 	std::unordered_map<uint32, std::vector<uint16>> spell_group_cache;
+	std::vector<std::string> class_conditions;
+
+	for (const auto class_id : multiclass_manager.GetClassSlots(this)) {
+		if (!IsPlayerClass(class_id)) {
+			continue;
+		}
+
+		class_conditions.emplace_back(fmt::format("classes{} BETWEEN {} AND {}", class_id, min_level, max_level));
+	}
+
+	if (class_conditions.empty()) {
+		return spell_group_cache;
+	}
 
 	const auto query = fmt::format(
 		"SELECT a.spellgroup, a.id, a.rank "
@@ -6161,8 +6214,8 @@ std::unordered_map<uint32, std::vector<uint16>> Client::LoadSpellGroupCache(uint
 		"FROM spells_new "
 		"GROUP BY spellgroup) "
 		"b ON a.spellgroup = b.spellgroup AND a.rank = b.rank "
-		"WHERE a.spellgroup IN (SELECT DISTINCT spellgroup FROM spells_new WHERE spellgroup != 0 and classes{} BETWEEN {} AND {}) ORDER BY `rank` DESC",
-		m_pp.class_, min_level, max_level
+		"WHERE a.spellgroup IN (SELECT DISTINCT spellgroup FROM spells_new WHERE spellgroup != 0 AND ({})) ORDER BY `rank` DESC",
+		Strings::Join(class_conditions, " OR ")
 	);
 
 	auto results = content_db.QueryDatabase(query);
@@ -6519,7 +6572,7 @@ bool Mob::UseBardSpellLogic(uint16 spell_id, int slot)
 	(
 		IsValidSpell(spell_id) &&
 		slot != -1 &&
-		GetClass() == Class::Bard &&
+		IsEffectiveBard(this) &&
 		slot <= EQ::spells::SPELL_GEM_COUNT &&
 		IsBardSong(spell_id)
 	);
@@ -6527,7 +6580,7 @@ bool Mob::UseBardSpellLogic(uint16 spell_id, int slot)
 
 int Mob::GetCasterLevel(uint16 spell_id) {
 	int level = GetLevel();
-	if (GetClass() == Class::Bard) {
+	if (IsEffectiveBard(this)) {
 		// Bards receive effective casting level increases to resists/effect. They don't receive benefit from spells like intellectual superiority, however.
 		level += itembonuses.effective_casting_level + aabonuses.effective_casting_level;
 	} else {
@@ -7411,9 +7464,9 @@ bool Mob::CheckItemRaceClassDietyRestrictionsOnCast(uint32 inventory_slot) {
 	}
 
 	//Added to prevent MQ2 exploitation of equipping normally-unequippable/clickable items with effects and clicking them for benefits.
-	EQ::ItemInstance *itm = CastToClient()->GetInv().GetItem(inventory_slot);
-	int bitmask = 1;
-	bitmask = bitmask << (CastToClient()->GetClass() - 1);
+	auto *client = CastToClient();
+	EQ::ItemInstance *itm = client->GetInv().GetItem(inventory_slot);
+	const auto bitmask = multiclass_manager.GetClassMask(client);
 	if (itm && itm->GetItem()->Classes != 65535) {
 		if ((itm->GetItem()->Click.Type == EQ::item::ItemEffectEquipClick) && !(itm->GetItem()->Classes & bitmask)) {
 			if (CastToClient()->ClientVersion() < EQ::versions::ClientVersion::SoF) {

@@ -78,4 +78,35 @@ public:
 
 		return lines;
 	}
+
+	static std::vector<std::string> GetMulticlassSkillCapFileLines(Database& db)
+	{
+		std::vector<std::string> lines;
+
+		auto results = db.QueryDatabase(
+			fmt::format(
+				"SELECT CONCAT_WS('^', class_ids.class_id, caps.skill_id, caps.level, caps.cap, 0) "
+				"FROM ("
+				"SELECT 1 AS class_id UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 "
+				"UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 "
+				"UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11 UNION ALL SELECT 12 "
+				"UNION ALL SELECT 13 UNION ALL SELECT 14 UNION ALL SELECT 15 UNION ALL SELECT 16"
+				") AS class_ids "
+				"JOIN ("
+				"SELECT skill_id, level, MAX(cap) AS cap "
+				"FROM {} "
+				"GROUP BY skill_id, level"
+				") AS caps "
+				"WHERE caps.cap > 0 "
+				"ORDER BY class_ids.class_id, caps.skill_id, caps.level ASC",
+				TableName()
+			)
+		);
+
+		for (auto row : results) {
+			lines.emplace_back(row[0]);
+		}
+
+		return lines;
+	}
 };

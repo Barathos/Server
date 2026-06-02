@@ -27,6 +27,7 @@
 #include "zone/entity.h"
 #include "zone/groups.h"
 #include "zone/mob.h"
+#include "zone/multiclass_manager.h"
 #include "zone/queryserv.h"
 #include "zone/raids.h"
 #include "zone/string_ids.h"
@@ -674,6 +675,11 @@ void Raid::CastGroupSpell(Mob* caster, uint16 spellid, uint32 gid)
 			if (spells[spellid].target_type != ST_GroupNoPets && caster->GetPet() && caster->HasPetAffinity() && !caster->GetPet()->IsCharmed()) {
 				caster->SpellOnTarget(spellid, caster->GetPet());
 			}
+			if (spells[spellid].target_type != ST_GroupNoPets && caster->IsClient() && caster->HasPetAffinity()) {
+				for (auto *pet : multiclass_manager.GetSecondaryPetRoster(caster->CastToClient())) {
+					caster->SpellOnTarget(spellid, pet);
+				}
+			}
 #endif
 		}
 		else if (m.member != nullptr && m.group_number == gid) {
@@ -685,6 +691,11 @@ void Raid::CastGroupSpell(Mob* caster, uint16 spellid, uint32 gid)
 				if (spells[spellid].target_type != ST_GroupNoPets && m.member->GetPet() && m.member->HasPetAffinity() &&
 					!m.member->GetPet()->IsCharmed()) {
 					caster->SpellOnTarget(spellid, m.member->GetPet());
+				}
+				if (spells[spellid].target_type != ST_GroupNoPets && m.member->IsClient() && m.member->HasPetAffinity()) {
+					for (auto *pet : multiclass_manager.GetSecondaryPetRoster(m.member->CastToClient())) {
+						caster->SpellOnTarget(spellid, pet);
+					}
 				}
 #endif
 			}

@@ -22,10 +22,28 @@
 #include "common/spdat.h"
 #include "zone/client.h"
 #include "zone/entity.h"
+#include "zone/multiclass_manager.h"
 #include "zone/position.h"
 #include "zone/string_ids.h"
 #include "zone/worldserver.h"
 #include "zone/zonedb.h"
+
+namespace {
+
+uint8 GetEffectiveSpellClassLevel(Mob *caster, uint16 spell_id)
+{
+	if (caster && caster->IsClient()) {
+		return multiclass_manager.GetBestSpellLevel(caster->CastToClient(), spell_id);
+	}
+
+	if (!caster) {
+		return 255;
+	}
+
+	return spells[spell_id].classes[(caster->GetClass() % 17) - 1];
+}
+
+}
 
 float Mob::GetActSpellRange(uint16 spell_id, float range)
 {
@@ -135,7 +153,7 @@ int64 Mob::GetActSpellDamage(uint16 spell_id, int64 value, Mob* target) {
 			if (RuleB(Spells, IgnoreSpellDmgLvlRestriction) && !spells[spell_id].no_heal_damage_item_mod && itembonuses.SpellDmg) {
 				value -= GetExtraSpellAmt(spell_id, itembonuses.SpellDmg, base_value) * ratio / 100;
 
-			} else if (!spells[spell_id].no_heal_damage_item_mod && itembonuses.SpellDmg && spells[spell_id].classes[(GetClass() % 17) - 1] >= GetLevel() - 5) {
+			} else if (!spells[spell_id].no_heal_damage_item_mod && itembonuses.SpellDmg && GetEffectiveSpellClassLevel(this, spell_id) >= GetLevel() - 5) {
 				value -= GetExtraSpellAmt(spell_id, itembonuses.SpellDmg, base_value) * ratio / 100;
 			}
 
@@ -187,7 +205,7 @@ int64 Mob::GetActSpellDamage(uint16 spell_id, int64 value, Mob* target) {
 	else if (
 		!spells[spell_id].no_heal_damage_item_mod &&
 		GetSpellDmg() &&
-		spells[spell_id].classes[(GetClass() % 17) - 1] >= GetLevel() - 5
+		GetEffectiveSpellClassLevel(this, spell_id) >= GetLevel() - 5
 	) {
 		value -= GetExtraSpellAmt(spell_id, GetSpellDmg(), base_value);
 	}
@@ -291,7 +309,7 @@ int64 Mob::GetActDoTDamage(uint16 spell_id, int64 value, Mob* target, bool from_
 			else if (
 				!spells[spell_id].no_heal_damage_item_mod &&
 				GetSpellDmg() &&
-				spells[spell_id].classes[(GetClass() % 17) - 1] >= GetLevel() - 5
+				GetEffectiveSpellClassLevel(this, spell_id) >= GetLevel() - 5
 			) {
 				extra_dmg += GetExtraSpellAmt(spell_id, GetSpellDmg(), base_value)*ratio/100;
 			}
@@ -337,7 +355,7 @@ int64 Mob::GetActDoTDamage(uint16 spell_id, int64 value, Mob* target, bool from_
 			else if (
 				!spells[spell_id].no_heal_damage_item_mod &&
 				GetSpellDmg() &&
-				spells[spell_id].classes[(GetClass() % 17) - 1] >= GetLevel() - 5
+				GetEffectiveSpellClassLevel(this, spell_id) >= GetLevel() - 5
 			) {
 				extra_dmg += GetExtraSpellAmt(spell_id, GetSpellDmg(), base_value);
 			}
@@ -479,7 +497,7 @@ int64 Mob::GetActSpellHealing(uint16 spell_id, int64 value, Mob* target, bool fr
 		else if (
 			!spells[spell_id].no_heal_damage_item_mod &&
 			GetHealAmt() &&
-			spells[spell_id].classes[(GetClass() % 17) - 1] >= GetLevel() - 5
+			GetEffectiveSpellClassLevel(this, spell_id) >= GetLevel() - 5
 		) {
 			value += GetExtraSpellAmt(spell_id, GetHealAmt(), base_value); //Item Heal Amt Add before critical
 		}
@@ -533,7 +551,7 @@ int64 Mob::GetActSpellHealing(uint16 spell_id, int64 value, Mob* target, bool fr
 			else if (
 				!spells[spell_id].no_heal_damage_item_mod &&
 				GetHealAmt() &&
-				spells[spell_id].classes[(GetClass() % 17) - 1] >= GetLevel() - 5
+				GetEffectiveSpellClassLevel(this, spell_id) >= GetLevel() - 5
 			) {
 				extra_heal += GetExtraSpellAmt(spell_id, GetHealAmt(), base_value);
 			}
@@ -566,7 +584,7 @@ int32 Mob::GetActSpellCost(uint16 spell_id, int32 cost)
 		cost *= 2;
 
 	// Formula = Unknown exact, based off a random percent chance up to mana cost(after focuses) of the cast spell
-	if(itembonuses.Clairvoyance && spells[spell_id].classes[(GetClass()%17) - 1] >= GetLevel() - 5)
+	if(itembonuses.Clairvoyance && GetEffectiveSpellClassLevel(this, spell_id) >= GetLevel() - 5)
 	{
 		int mana_back = itembonuses.Clairvoyance * zone->random.Int(1, 100) / 100;
 		// Doesnt generate mana, so best case is a free spell
@@ -672,18 +690,10 @@ bool Client::TrainDiscipline(uint32 itemid) {
 		return false;
 	}
 
-	const auto player_class = GetClass();
-	if (player_class == Class::Wizard || player_class == Class::Enchanter || player_class == Class::Magician || player_class == Class::Necromancer) {
-		Message(Chat::Red, "Your class cannot learn from this tome.");
-		//summon them the item back...
-		SummonItem(itemid);
-		return false;
-	}
-
 	//make sure we can train this...
 	//can we use the item?
-	const auto class_bit = static_cast<uint32>(1 << (player_class - 1));
-	if (!(item->Classes & class_bit)) {
+	const auto class_mask = multiclass_manager.GetClassMask(this);
+	if (!(item->Classes & class_mask)) {
 		Message(Chat::Red, "Your class cannot learn from this tome.");
 		//summon them the item back...
 		SummonItem(itemid);
@@ -698,7 +708,7 @@ bool Client::TrainDiscipline(uint32 itemid) {
 
 	//can we use the spell?
 	const auto& spell = spells[spell_id];
-	const auto level_to_use = spell.classes[player_class - 1];
+	const auto level_to_use = multiclass_manager.GetBestSpellLevel(this, spell_id);
 	if (level_to_use == 255) {
 		Message(Chat::Red, "Your class cannot learn from this tome.");
 		//summon them the item back...
@@ -758,9 +768,7 @@ bool Client::MemorizeSpellFromItem(uint32 item_id) {
 		return false;
 	}
 
-	const auto class_bit = static_cast<uint32>(1 << (GetClass() - 1));
-
-	if (!(item->Classes & class_bit)) {
+	if (!(item->Classes & multiclass_manager.GetClassMask(this))) {
 		Message(Chat::Red, "Your class cannot learn from this scroll.");
 		SummonItem(item_id);
 		return false;
@@ -773,7 +781,7 @@ bool Client::MemorizeSpellFromItem(uint32 item_id) {
 	}
 
 	const auto& spell = spells[spell_id];
-	const auto level_to_use = spell.classes[GetClass() - 1];
+	const auto level_to_use = multiclass_manager.GetBestSpellLevel(this, spell_id);
 	if (level_to_use == 255) {
 		Message(Chat::Red, "Your class cannot learn from this scroll.");
 		SummonItem(item_id);
@@ -884,7 +892,7 @@ bool Client::UseDiscipline(uint32 spell_id, uint32 target) {
 
 	//can we use the spell?
 	const SPDat_Spell_Struct &spell = spells[spell_id];
-	uint8 level_to_use = spell.classes[GetClass() - 1];
+	uint8 level_to_use = multiclass_manager.GetBestSpellLevel(this, spell_id);
 	if(level_to_use == 255) {
 		Message(Chat::Red, "Your class cannot learn from this tome.");
 		//should summon them a new one...
@@ -947,7 +955,7 @@ bool Client::UseDiscipline(uint32 spell_id, uint32 target) {
 		if (reduced_recast > 0) {
 			instant_recast = false;
 
-			if (GetClass() == Class::Bard && IsCasting() && spells[spell_id].cast_time == 0) {
+			if (multiclass_manager.IsBard(this) && IsCasting() && spells[spell_id].cast_time == 0) {
 				if (DoCastingChecksOnCaster(spell_id, EQ::spells::CastingSlot::Discipline)) {
 					SpellFinished(spell_id, entity_list.GetMob(target), EQ::spells::CastingSlot::Discipline, 0, -1, spells[spell_id].resist_difficulty, false, -1, (uint32)DiscTimer, reduced_recast, false);
 				}
@@ -962,7 +970,7 @@ bool Client::UseDiscipline(uint32 spell_id, uint32 target) {
 	}
 
 	if (instant_recast) {
-		if (GetClass() == Class::Bard && IsCasting() && spells[spell_id].cast_time == 0) {
+		if (multiclass_manager.IsBard(this) && IsCasting() && spells[spell_id].cast_time == 0) {
 			if (DoCastingChecksOnCaster(spell_id, EQ::spells::CastingSlot::Discipline)) {
 				SpellFinished(spell_id, entity_list.GetMob(target), EQ::spells::CastingSlot::Discipline, 0, -1, spells[spell_id].resist_difficulty, false, -1, 0xFFFFFFFF, 0, false);
 			}
