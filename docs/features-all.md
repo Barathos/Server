@@ -81,6 +81,31 @@ The expanded all-features target stages additional feature payloads in this chec
 first, then wires server/native behavior here. Standalone feature projects remain in
 their current state; this checkout owns the combined package.
 
+## Live Items Testbed Payload
+
+The public-testbed Live Items NPC scripts and seed SQL are mirrored under
+`features/all-features/` so the bundle package can publish them as all-features-owned
+content. The source copies came from the Live Items checkpoint `079c7de44`.
+
+- `features/all-features/quests/global/900901.lua`
+- `features/all-features/quests/global/900902.lua`
+- `features/all-features/quests/global/900904.lua`
+- `features/all-features/quests/global/900905.lua`
+- `features/all-features/quests/global/900906.lua`
+- `features/all-features/quests/global/global_player.lua`
+- `features/all-features/quests/global/items/199091.lua`
+- `features/all-features/quests/tutorialb/900905.lua`
+- `features/all-features/quests/tutorialb/900906.lua`
+- `features/all-features/quests/tutorialb/zone.lua`
+- `features/all-features/sql/001_live_items_rules.sql`
+- `features/all-features/sql/002_live_items_testbed_seed.sql`
+- `features/all-features/sql/003_live_items_log_settings.sql`
+- `features/all-features/sql/004_augment_fusion_testbed_seed.sql`
+
+Do not add a Live Items `900903` quest. NPC and spawn id `900903` are reserved for
+Sage Aurelian / AI NPC Response and should be preserved in place during testbed
+promotion.
+
 ## Client Patcher
 
 Client patch syncing for this bundle is owned by `features/all-features/patcher.yml`.
