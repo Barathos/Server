@@ -20,10 +20,12 @@ Interface feature.
 - `client_files/native_autoloot/eq-core-dll/src/eq-core-dll-vs2022.vcxproj`
 - `client_files/native_autoloot/eq-core-dll/src/dinput8.def`
 - `client_files/native_autoloot/eq-core-dll/src/native_interface.cpp`
+- `client_files/native_autoloot/config/native_interface.ini`
 
 ## Built Client Artifact
 
 - `client_files/native_autoloot/eq-core-dll/bin/dinput8.dll`
+- `client_files/native_autoloot/config/native_interface.ini`
 
 ## Client Patcher Feed
 

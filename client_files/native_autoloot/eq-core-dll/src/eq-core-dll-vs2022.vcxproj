@@ -161,6 +161,7 @@
     <ClCompile Include="MQ2Pulse.cpp" />
     <ClCompile Include="MQ2Spawns.cpp" />
     <ClCompile Include="MQ2Utilities.cpp" />
+    <ClCompile Include="native_interface.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core_eqg_load.h" />

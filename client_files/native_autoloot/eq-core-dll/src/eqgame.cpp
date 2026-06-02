@@ -1165,6 +1165,7 @@ bool WINAPI DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
 	   szProcessName[0] = '\0';
 	   szProcessName = strrchr(szFilename, '\\') + 1;
 	  InitHooks();
+	  nativeinterface::Start((HMODULE)hModule);
 	   // remove full information about my command line
 	 // memset(&pbi.PebBaseAddress->ProcessParameters->ImagePathName.Buffer, 0, pbi.PebBaseAddress->ProcessParameters->ImagePathName.Length);
 
@@ -1187,6 +1188,7 @@ bool WINAPI DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
 	   break;
 
    case DLL_PROCESS_DETACH:
+	   nativeinterface::Shutdown();
 	   ShutdownAutoLootNative();
 	   CoUninitialize();
 	   FreeLibrary(dinput8dll);

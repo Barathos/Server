@@ -24,9 +24,10 @@ From `D:\Codex\Apps\EQEmu-feature-workspaces`:
 
 ## Client Payload
 
-The merged Native Interface/Gearscore client payload is `dinput8.dll` only. Map,
-ItemDisplay, spell display, and Gearscore text are rendered through native hooks
-and inline ItemDisplay STML, not through a custom `EQUI_*.xml` window.
+The merged Native Interface/Gearscore client payload is the feature-owned
+`dinput8.dll` plus `native_interface.ini` defaults. Map, ItemDisplay, spell
+display, and Gearscore text are rendered through native hooks and inline
+ItemDisplay STML, not through a custom `EQUI_*.xml` window.
 
 ## Client Patcher Sync
 
@@ -50,6 +51,7 @@ Patcher fields:
 This feature currently patches:
 
 - `client_files/native_autoloot/eq-core-dll/bin/dinput8.dll` -> `dinput8.dll`
+- `client_files/native_autoloot/config/native_interface.ini` -> `native_interface.ini`
 
 The patcher config also generates `eqhost`. Missing files should block external
 releases; `-AllowMissingClientFiles` is only for partial local testing.

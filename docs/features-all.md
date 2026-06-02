@@ -43,6 +43,7 @@ client DLL.
 
 - `client_files/native_autoloot/eq-core-dll/bin/dinput8.dll`
 - `client_files/native_autoloot/eq-core-dll/`
+- `client_files/native_autoloot/config/native_interface.ini`
 
 - `EQUI_NativeAutoLootWnd.xml`
 - `EQUI_NativeItemForgeWnd.xml`
@@ -55,9 +56,12 @@ client DLL.
 - `EQUI_NativeDynamicQuestsWnd.xml`
 
 The runtime handles `AUTOLOOT|`, `LIVEITEM|`, `LIVESPELL|`, `ACH|`, `HPFIX|`,
-`ITEMPOWER|`, and `ITEMRARITY|` transport lines. It is no longer only lab code,
+`ITEMPOWER|`, and `ITEMRARITY|` transport lines. It also owns the native
+interface module for map commands, native interface diagnostics, and
+Gearscore/ItemPower ItemDisplay decoration. It is no longer only lab code,
 but it is still monolithic internally: most feature-specific client behavior
-lives in `client_files/native_autoloot/eq-core-dll/src/core_autoloot_native.h`.
+lives in `client_files/native_autoloot/eq-core-dll/src/core_autoloot_native.h`
+or `client_files/native_autoloot/eq-core-dll/src/native_interface.cpp`.
 The next cleanup is splitting that into a reusable native-client base plus
 feature-specific native modules.
 
@@ -95,6 +99,7 @@ In `patcher.yml`:
 Current patcher manifest responsibilities:
 
 - Publish `client_files/native_autoloot/eq-core-dll/bin/dinput8.dll` to `dinput8.dll`.
+- Publish `client_files/native_autoloot/config/native_interface.ini` to `native_interface.ini`.
 - Publish all native XML windows to `uifiles/default/`.
 - Generate `eqhost`.
 - Generate `EQUI.xml` with includes for every custom native window listed in

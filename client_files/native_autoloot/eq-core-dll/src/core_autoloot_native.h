@@ -10,6 +10,13 @@
 #include <unordered_map>
 #include <vector>
 
+namespace nativeinterface {
+	bool HandleChatMessage(const char* message);
+	bool HandleCommandLine(const char* line);
+	void Start(HMODULE module);
+	void Shutdown();
+}
+
 static void NativeAutoLootTrace(const char* format, ...)
 {
 	char path[MAX_PATH];
@@ -5438,6 +5445,11 @@ public:
 			return;
 		}
 
+		if (nativeinterface::HandleCommandLine(line)) {
+			NativeAutoLootTrace("handled native interface command: %s", line ? line : "");
+			return;
+		}
+
 		Trampoline(player, line);
 	}
 };
@@ -6278,7 +6290,8 @@ public:
 	{
 		NativeAutoLootMaybeSendInitialRequests();
 
-		if (NativeAutoLootParseTransport(szMsg)) {
+		const bool native_interface_handled = nativeinterface::HandleChatMessage(szMsg);
+		if (NativeAutoLootParseTransport(szMsg) || native_interface_handled) {
 			return;
 		}
 

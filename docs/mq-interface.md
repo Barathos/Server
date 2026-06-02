@@ -38,7 +38,7 @@ Gearscore server scorer/transport layer.
 - Native source: `client_files/native_autoloot/eq-core-dll/src/native_interface.cpp`
 - Built DLL: `client_files/native_autoloot/eq-core-dll/bin/dinput8.dll`
 
-The workspace client install script deploys the DLL only to
+The workspace client install script deploys the DLL and default config to
 `D:\EQClients\EQClient-Mq-Interface`. The merged display path is inline
 ItemDisplay STML, not a custom `EQUI_*.xml` window.
 
@@ -63,6 +63,7 @@ Patcher fields:
 Current entries:
 
 - `client_files/native_autoloot/eq-core-dll/bin/dinput8.dll` -> `dinput8.dll`
+- `client_files/native_autoloot/config/native_interface.ini` -> `native_interface.ini`
 
 The patcher also generates `eqhost` from the `generated` section.
 
@@ -91,7 +92,8 @@ use `-AllowMissingClientFiles` only for partial local testing.
 
 ## Optional Client Config
 
-Create or edit `D:\EQClients\EQClient-Mq-Interface\native_interface.ini`:
+The patcher installs default settings to
+`D:\EQClients\EQClient-Mq-Interface\native_interface.ini`:
 
 ~~~ini
 [Map]
