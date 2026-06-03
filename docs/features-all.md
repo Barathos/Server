@@ -147,6 +147,21 @@ testers place the generated `eqemupatcher.exe` in their EQ client root and run i
 For real external syncs, missing manifest files are release blockers. Use
 `-AllowMissingClientFiles` only for partial local testing.
 
+## Public Tester Feedback Form
+
+The combined player feedback form pipeline lives under `features/all-features/`:
+
+- `features/all-features/GOOGLE_FORM_PIPELINE.md`
+- `features/all-features/TESTER_GOOGLE_FORM.md`
+- `features/all-features/google-forms/all-features-public-test-form.gs`
+
+Use this all-features form for public bundle testing instead of the narrower
+Live Items-only form. It asks patch/login once, then covers the player-visible
+tests for Live Items, Augs-in-Augs, AutoLoot, Achievements, Multiclass, Live
+Spells, AI NPC Response, Dynamic Quests, Gearscore, Item Rarity, Native
+Interface, HP Fix, Tradeskills, and general stability without duplicating setup
+questions in each feature section.
+
 ## Verification
 
 Use:
