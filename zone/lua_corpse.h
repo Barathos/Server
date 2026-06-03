@@ -23,6 +23,7 @@
 
 class Corpse;
 class Lua_Client;
+class Lua_ItemInst;
 struct Lua_Corpse_Loot_List;
 
 namespace luabind {
@@ -61,6 +62,8 @@ public:
 	void AddItem(uint32 itemnum, uint16 charges);
 	void AddItem(uint32 itemnum, uint16 charges, int16 slot);
 	void AddItem(uint32 itemnum, uint16 charges, int16 slot, uint32 aug1, uint32 aug2, uint32 aug3, uint32 aug4, uint32 aug5);
+	void AddLiveItem(Lua_ItemInst inst);
+	void AddLiveItem(Lua_ItemInst inst, int16 slot);
 	uint32 GetWornItem(int16 equipSlot);
 	void RemoveItem(uint16 lootslot);
 	void RemoveItemByID(uint32 item_id);

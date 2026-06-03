@@ -290,7 +290,8 @@ void NPC::AddLootDrop(
 	uint32 augment_three,
 	uint32 augment_four,
 	uint32 augment_five,
-	uint32 augment_six
+	uint32 augment_six,
+	const std::string &custom_data
 )
 {
 	if (m_resumed_from_zone_suspend) {
@@ -303,25 +304,6 @@ void NPC::AddLootDrop(
 	}
 
 	auto item = new LootItem;
-
-	if (EQEmuLogSys::Instance()->log_settings[Logs::Loot].is_category_enabled == 1) {
-		EQ::SayLinkEngine linker;
-		linker.SetLinkType(EQ::saylink::SayLinkItemData);
-		linker.SetItemData(item2);
-
-		LogLoot(
-			"NPC [{}] Item ({}) [{}] charges [{}] chance [{}] trivial min/max [{}/{}] npc min/max [{}/{}]",
-			GetName(),
-			item2->ID,
-			linker.GenerateLink(),
-			loot_drop.item_charges,
-			loot_drop.chance,
-			loot_drop.trivial_min_level,
-			loot_drop.trivial_max_level,
-			loot_drop.npc_min_level,
-			loot_drop.npc_max_level
-		);
-	}
 
 	EQApplicationPacket *outapp               = nullptr;
 	WearChange_Struct   *p_wear_change_struct = nullptr;
@@ -341,6 +323,7 @@ void NPC::AddLootDrop(
 	item->aug_5             = augment_five;
 	item->aug_6             = augment_six;
 	item->attuned           = false;
+	item->custom_data       = custom_data;
 	item->trivial_min_level = loot_drop.trivial_min_level;
 	item->trivial_max_level = loot_drop.trivial_max_level;
 	item->equip_slot        = EQ::invslot::SLOT_INVALID;
@@ -366,11 +349,37 @@ void NPC::AddLootDrop(
 		augment_three,
 		augment_four,
 		augment_five,
-		augment_six
+		augment_six,
+		false,
+		custom_data
 	);
 
 	if (!inst) {
 		return;
+	}
+
+	if (EQEmuLogSys::Instance()->log_settings[Logs::Loot].is_category_enabled == 1) {
+		const auto *client_item = inst->GetClientItem();
+		if (!client_item) {
+			client_item = item2;
+		}
+
+		EQ::SayLinkEngine linker;
+		linker.SetLinkType(EQ::saylink::SayLinkItemData);
+		linker.SetItemData(client_item);
+
+		LogLoot(
+			"NPC [{}] Item ({}) [{}] charges [{}] chance [{}] trivial min/max [{}/{}] npc min/max [{}/{}]",
+			GetName(),
+			client_item->ID,
+			linker.GenerateLink(),
+			loot_drop.item_charges,
+			loot_drop.chance,
+			loot_drop.trivial_min_level,
+			loot_drop.trivial_max_level,
+			loot_drop.npc_min_level,
+			loot_drop.npc_max_level
+		);
 	}
 
 	if (loot_drop.equip_item > 0) {
@@ -562,6 +571,31 @@ void NPC::AddItem(const EQ::ItemData *item, uint16 charges, bool equip_item)
 	l.item_charges = charges;
 
 	AddLootDrop(item, l, true);
+}
+
+void NPC::AddItem(const EQ::ItemInstance *inst, bool equip_item)
+{
+	if (!inst || !inst->GetItem()) {
+		return;
+	}
+
+	auto l = LootdropEntriesRepository::NewNpcEntity();
+
+	l.equip_item   = static_cast<uint8>(equip_item ? 1 : 0);
+	l.item_charges = inst->GetCharges();
+
+	AddLootDrop(
+		inst->GetItem(),
+		l,
+		true,
+		inst->GetAugmentItemID(0),
+		inst->GetAugmentItemID(1),
+		inst->GetAugmentItemID(2),
+		inst->GetAugmentItemID(3),
+		inst->GetAugmentItemID(4),
+		inst->GetAugmentItemID(5),
+		inst->GetCustomDataString()
+	);
 }
 
 void NPC::AddItem(

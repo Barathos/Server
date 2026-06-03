@@ -32,6 +32,8 @@
 #include <deque>
 #include <list>
 
+namespace EQ { class ItemInstance; }
+
 struct NPCProximity {
 	float	min_x;
 	float	max_x;
@@ -191,6 +193,7 @@ public:
 
 	// loot
 	void AddItem(const EQ::ItemData *item, uint16 charges, bool equip_item = true);
+	void AddItem(const EQ::ItemInstance *inst, bool equip_item = true);
 	void AddItem(
 		uint32 item_id,
 		uint16 charges,
@@ -327,7 +330,8 @@ public:
 		uint32 augment_three = 0,
 		uint32 augment_four = 0,
 		uint32 augment_five = 0,
-		uint32 augment_six = 0
+		uint32 augment_six = 0,
+		const std::string &custom_data = std::string()
 	);
 
 	bool MeetsLootDropLevelRequirements(LootdropEntriesRepository::LootdropEntries loot_drop, bool verbose=false);

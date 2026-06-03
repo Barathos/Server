@@ -1589,6 +1589,12 @@ bool Lua_Client::PushItemOnCursor(Lua_ItemInst inst) {
 	return self->PushItemOnCursor(*rinst, true);
 }
 
+bool Lua_Client::RewardLiveItem(Lua_ItemInst inst) {
+	Lua_Safe_Call_Bool();
+	EQ::ItemInstance *rinst = inst;
+	return rinst && self->PushItemOnCursor(*rinst, true);
+}
+
 Lua_Inventory Lua_Client::GetInventory() {
 	Lua_Safe_Call_Class(Lua_Inventory);
 	return &self->GetInv();
@@ -4032,6 +4038,7 @@ luabind::scope lua_register_client() {
 	.def("Popup", (void(Lua_Client::*)(const char*,const char*,uint32,uint32,uint32,uint32,const char*,const char*,uint32))&Lua_Client::Popup)
 	.def("PushItemOnCursor", (bool(Lua_Client::*)(Lua_ItemInst))&Lua_Client::PushItemOnCursor)
 	.def("PutItemInInventory", (bool(Lua_Client::*)(int,Lua_ItemInst))&Lua_Client::PutItemInInventory)
+	.def("RewardLiveItem", (bool(Lua_Client::*)(Lua_ItemInst))&Lua_Client::RewardLiveItem)
 	.def("QuestReadBook", (void(Lua_Client::*)(const char *,int))&Lua_Client::QuestReadBook)
 	.def("QuestReward", (void(Lua_Client::*)(Lua_Mob))&Lua_Client::QuestReward)
 	.def("QuestReward", (void(Lua_Client::*)(Lua_Mob, luabind::adl::object))&Lua_Client::QuestReward)

@@ -21,6 +21,7 @@
 
 #include "zone/corpse.h"
 #include "zone/lua_client.h"
+#include "zone/lua_iteminst.h"
 
 #include "lua.hpp"
 #include "luabind/iterator_policy.hpp"
@@ -113,6 +114,56 @@ void Lua_Corpse::AddItem(uint32 itemnum, uint16 charges, int16 slot) {
 void Lua_Corpse::AddItem(uint32 itemnum, uint16 charges, int16 slot, uint32 aug1, uint32 aug2, uint32 aug3, uint32 aug4, uint32 aug5) {
 	Lua_Safe_Call_Void();
 	self->AddItem(itemnum, charges, slot, aug1, aug2, aug3, aug4, aug5);
+}
+
+void Lua_Corpse::AddLiveItem(Lua_ItemInst inst) {
+	Lua_Safe_Call_Void();
+	EQ::ItemInstance *rinst = inst;
+	if (!rinst) {
+		return;
+	}
+
+	self->AddItem(
+		rinst->GetID(),
+		rinst->GetCharges(),
+		0,
+		rinst->GetAugmentItemID(0),
+		rinst->GetAugmentItemID(1),
+		rinst->GetAugmentItemID(2),
+		rinst->GetAugmentItemID(3),
+		rinst->GetAugmentItemID(4),
+		rinst->GetAugmentItemID(5),
+		rinst->IsAttuned(),
+		rinst->GetCustomDataString(),
+		rinst->GetOrnamentationIcon(),
+		rinst->GetOrnamentationIDFile(),
+		rinst->GetOrnamentHeroModel()
+	);
+}
+
+void Lua_Corpse::AddLiveItem(Lua_ItemInst inst, int16 slot) {
+	Lua_Safe_Call_Void();
+	EQ::ItemInstance *rinst = inst;
+	if (!rinst) {
+		return;
+	}
+
+	self->AddItem(
+		rinst->GetID(),
+		rinst->GetCharges(),
+		slot,
+		rinst->GetAugmentItemID(0),
+		rinst->GetAugmentItemID(1),
+		rinst->GetAugmentItemID(2),
+		rinst->GetAugmentItemID(3),
+		rinst->GetAugmentItemID(4),
+		rinst->GetAugmentItemID(5),
+		rinst->IsAttuned(),
+		rinst->GetCustomDataString(),
+		rinst->GetOrnamentationIcon(),
+		rinst->GetOrnamentationIDFile(),
+		rinst->GetOrnamentHeroModel()
+	);
 }
 
 uint32 Lua_Corpse::GetWornItem(int16 equipSlot) {
@@ -240,6 +291,8 @@ luabind::scope lua_register_corpse() {
 	.def("AddItem", (void(Lua_Corpse::*)(uint32, uint16))&Lua_Corpse::AddItem)
 	.def("AddItem", (void(Lua_Corpse::*)(uint32, uint16, int16))&Lua_Corpse::AddItem)
 	.def("AddItem", (void(Lua_Corpse::*)(uint32, uint16, int16, uint32, uint32, uint32, uint32, uint32))&Lua_Corpse::AddItem)
+	.def("AddLiveItem", (void(Lua_Corpse::*)(Lua_ItemInst))&Lua_Corpse::AddLiveItem)
+	.def("AddLiveItem", (void(Lua_Corpse::*)(Lua_ItemInst,int16))&Lua_Corpse::AddLiveItem)
 	.def("AddLooter", (void(Lua_Corpse::*)(Lua_Mob))&Lua_Corpse::AddLooter)
 	.def("AllowMobLoot", (void(Lua_Corpse::*)(Lua_Mob, uint8))&Lua_Corpse::AllowMobLoot)
 	.def("Bury", (void(Lua_Corpse::*)(void))&Lua_Corpse::Bury)

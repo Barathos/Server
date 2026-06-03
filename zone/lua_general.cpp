@@ -4063,6 +4063,172 @@ std::string lua_item_link(uint32 item_id, int16 charges, uint32 aug1, uint32 aug
 	return quest_manager.varlink(item_id, charges, aug1, aug2, aug3, aug4, aug5, aug6, attuned);
 }
 
+bool lua_live_item_table_has(luabind::object table, const char *key)
+{
+	return luabind::type(table[key]) != LUA_TNIL;
+}
+
+std::string lua_live_item_key_to_string(luabind::object key)
+{
+	if (luabind::type(key) == LUA_TSTRING) {
+		return luabind::object_cast<std::string>(key);
+	}
+
+	if (luabind::type(key) == LUA_TNUMBER) {
+		return fmt::format("{}", luabind::object_cast<int>(key));
+	}
+
+	return {};
+}
+
+void lua_apply_live_item_set_data(EQ::ItemInstance *inst, luabind::object values)
+{
+	if (!inst || luabind::type(values) != LUA_TTABLE) {
+		return;
+	}
+
+	for (luabind::iterator iter(values), end; iter != end; ++iter) {
+		const auto key = lua_live_item_key_to_string(iter.key());
+		if (key.empty()) {
+			continue;
+		}
+
+		auto value = values[iter.key()];
+		if (luabind::type(value) == LUA_TSTRING) {
+			inst->SetDynamicItemData(key, luabind::object_cast<std::string>(value));
+		}
+		else if (luabind::type(value) == LUA_TNUMBER) {
+			inst->SetDynamicItemData(key, luabind::object_cast<int>(value));
+		}
+		else if (luabind::type(value) == LUA_TBOOLEAN) {
+			inst->SetDynamicItemData(key, luabind::object_cast<bool>(value) ? 1 : 0);
+		}
+	}
+}
+
+void lua_apply_live_item_modifiers(EQ::ItemInstance *inst, luabind::object values)
+{
+	if (!inst || luabind::type(values) != LUA_TTABLE) {
+		return;
+	}
+
+	for (luabind::iterator iter(values), end; iter != end; ++iter) {
+		const auto key = lua_live_item_key_to_string(iter.key());
+		if (key.empty()) {
+			continue;
+		}
+
+		auto value = values[iter.key()];
+		if (luabind::type(value) == LUA_TNUMBER) {
+			inst->SetDynamicItemModifier(key, luabind::object_cast<int>(value));
+		}
+		else if (luabind::type(value) == LUA_TBOOLEAN) {
+			inst->SetDynamicItemModifier(key, luabind::object_cast<bool>(value) ? 1 : 0);
+		}
+	}
+}
+
+void lua_apply_live_item_custom_data(EQ::ItemInstance *inst, luabind::object values)
+{
+	if (!inst || luabind::type(values) != LUA_TTABLE) {
+		return;
+	}
+
+	for (luabind::iterator iter(values), end; iter != end; ++iter) {
+		const auto key = lua_live_item_key_to_string(iter.key());
+		if (key.empty()) {
+			continue;
+		}
+
+		auto value = values[iter.key()];
+		if (luabind::type(value) == LUA_TSTRING) {
+			inst->SetCustomData(key, luabind::object_cast<std::string>(value));
+		}
+		else if (luabind::type(value) == LUA_TBOOLEAN) {
+			inst->SetCustomData(key, luabind::object_cast<bool>(value));
+		}
+		else if (luabind::type(value) == LUA_TNUMBER) {
+			inst->SetCustomData(key, luabind::object_cast<int>(value));
+		}
+	}
+}
+
+void lua_apply_live_item_spec(EQ::ItemInstance *inst, luabind::object spec)
+{
+	if (!inst || luabind::type(spec) != LUA_TTABLE) {
+		return;
+	}
+
+	if (lua_live_item_table_has(spec, "set")) {
+		lua_apply_live_item_set_data(inst, spec["set"]);
+	}
+
+	if (lua_live_item_table_has(spec, "data")) {
+		lua_apply_live_item_set_data(inst, spec["data"]);
+	}
+
+	if (lua_live_item_table_has(spec, "mods")) {
+		lua_apply_live_item_modifiers(inst, spec["mods"]);
+	}
+
+	if (lua_live_item_table_has(spec, "modifiers")) {
+		lua_apply_live_item_modifiers(inst, spec["modifiers"]);
+	}
+
+	if (lua_live_item_table_has(spec, "custom")) {
+		lua_apply_live_item_custom_data(inst, spec["custom"]);
+	}
+
+	if (lua_live_item_table_has(spec, "custom_data")) {
+		lua_apply_live_item_custom_data(inst, spec["custom_data"]);
+	}
+}
+
+Lua_ItemInst lua_create_live_item(luabind::object spec)
+{
+	if (luabind::type(spec) != LUA_TTABLE || !lua_live_item_table_has(spec, "item_id")) {
+		return Lua_ItemInst();
+	}
+
+	const uint32 item_id       = luabind::object_cast<uint32>(spec["item_id"]);
+	const int16 charges        = lua_live_item_table_has(spec, "charges") ? luabind::object_cast<int16>(spec["charges"]) : -1;
+	const uint32 augment_one   = lua_live_item_table_has(spec, "augment_one") ? luabind::object_cast<uint32>(spec["augment_one"]) : 0;
+	const uint32 augment_two   = lua_live_item_table_has(spec, "augment_two") ? luabind::object_cast<uint32>(spec["augment_two"]) : 0;
+	const uint32 augment_three = lua_live_item_table_has(spec, "augment_three") ? luabind::object_cast<uint32>(spec["augment_three"]) : 0;
+	const uint32 augment_four  = lua_live_item_table_has(spec, "augment_four") ? luabind::object_cast<uint32>(spec["augment_four"]) : 0;
+	const uint32 augment_five  = lua_live_item_table_has(spec, "augment_five") ? luabind::object_cast<uint32>(spec["augment_five"]) : 0;
+	const uint32 augment_six   = lua_live_item_table_has(spec, "augment_six") ? luabind::object_cast<uint32>(spec["augment_six"]) : 0;
+	const bool attuned         = lua_live_item_table_has(spec, "attuned") ? luabind::object_cast<bool>(spec["attuned"]) : false;
+	const bool rebuild         = lua_live_item_table_has(spec, "rebuild") ? luabind::object_cast<bool>(spec["rebuild"]) : true;
+
+	auto inst = Lua_ItemInst(
+		database.CreateItem(
+			item_id,
+			charges,
+			augment_one,
+			augment_two,
+			augment_three,
+			augment_four,
+			augment_five,
+			augment_six,
+			attuned
+		),
+		true
+	);
+
+	EQ::ItemInstance *raw_inst = inst;
+	if (!raw_inst) {
+		return Lua_ItemInst();
+	}
+
+	lua_apply_live_item_spec(raw_inst, spec);
+	if (rebuild) {
+		raw_inst->RebuildDynamicItemData();
+	}
+
+	return inst;
+}
+
 bool lua_do_augment_slots_match(uint32 item_one, uint32 item_two)
 {
 	return quest_manager.DoAugmentSlotsMatch(item_one, item_two);
@@ -6082,6 +6248,7 @@ luabind::scope lua_register_general() {
 		luabind::def("item_link", (std::string(*)(uint32,int16,uint32,uint32,uint32,uint32,uint32))&lua_item_link),
 		luabind::def("item_link", (std::string(*)(uint32,int16,uint32,uint32,uint32,uint32,uint32,uint32))&lua_item_link),
 		luabind::def("item_link", (std::string(*)(uint32,int16,uint32,uint32,uint32,uint32,uint32,uint32,bool))&lua_item_link),
+		luabind::def("create_live_item", &lua_create_live_item),
 		luabind::def("get_item_comment", (std::string(*)(uint32))&lua_get_item_comment),
 		luabind::def("get_item_lore", (std::string(*)(uint32))&lua_get_item_lore),
 		luabind::def("get_item_name", (std::string(*)(uint32))&lua_get_item_name),
