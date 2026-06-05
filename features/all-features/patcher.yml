@@ -1,7 +1,7 @@
 version: 1
 id: all-features
 label: All Features
-patchVersion: 'Build 5'
+patchVersion: 'Build 7'
 autoIncrementPatchVersion: true
 client: rof
 files:
@@ -11,16 +11,6 @@ files:
     destination: native_interface.ini
   - source: client_files/native_autoloot/ui/EQUI_NativeAutoLootWnd.xml
     destination: uifiles/default/EQUI_NativeAutoLootWnd.xml
-  - source: client_files/native_autoloot/ui/EQUI_AdvancedLootWnd.xml
-    destination: uifiles/default/EQUI_AdvancedLootWnd.xml
-  - source: client_files/native_autoloot/ui/EQUI_LootSettingsWnd.xml
-    destination: uifiles/default/EQUI_LootSettingsWnd.xml
-  - source: client_files/native_autoloot/ui/EQUI_LootFiltersWnd.xml
-    destination: uifiles/default/EQUI_LootFiltersWnd.xml
-  - source: client_files/native_autoloot/ui/EQUI_LootFiltersCopyWnd.xml
-    destination: uifiles/default/EQUI_LootFiltersCopyWnd.xml
-  - source: client_files/native_autoloot/ui/EQUI_ManageLootWnd.xml
-    destination: uifiles/default/EQUI_ManageLootWnd.xml
   - source: client_files/native_autoloot/ui/EQUI_NativeItemForgeWnd.xml
     destination: uifiles/default/EQUI_NativeItemForgeWnd.xml
   - source: client_files/native_autoloot/ui/EQUI_NativeSpellForgeWnd.xml
@@ -70,6 +60,7 @@ files:
 generated:
   eqhost: true
   equiXml: true
+  equiAutoIncludeFiles: false
   equiIncludes:
     - EQUI_NativeAutoLootWnd.xml
     - EQUI_NativeItemForgeWnd.xml
