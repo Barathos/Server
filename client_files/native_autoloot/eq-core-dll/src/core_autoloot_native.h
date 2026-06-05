@@ -818,27 +818,72 @@ static void NativeMulticlassShowSpellGemWindow()
 	}
 }
 
-static void NativeMulticlassMaintainPresentationUI()
+static std::string NativeMulticlassInventoryClassText()
 {
+	if (!gNativeMulticlassState.has_profile) {
+		return "";
+	}
+
+	if (!gNativeMulticlassState.profile_name.empty() && gNativeMulticlassState.profile_name != "Unchosen Trio") {
+		return gNativeMulticlassState.profile_name;
+	}
+
 	if (
-		!gNativeMulticlassState.has_profile ||
-		!NativeMulticlassPresentationUsesMana(gNativeMulticlassState.presentation) ||
-		!pPlayerWnd
+		NativeMulticlassIsPlayerClass(gNativeMulticlassState.class1) &&
+		NativeMulticlassIsPlayerClass(gNativeMulticlassState.class2) &&
+		NativeMulticlassIsPlayerClass(gNativeMulticlassState.class3)
 	) {
+		return std::string(NativeMulticlassClassName(gNativeMulticlassState.class1)) + " / " +
+			NativeMulticlassClassName(gNativeMulticlassState.class2) + " / " +
+			NativeMulticlassClassName(gNativeMulticlassState.class3);
+	}
+
+	return "Multiclass Trio";
+}
+
+static void NativeMulticlassPatchInventoryClassLabel()
+{
+	if (!gNativeMulticlassState.has_profile || !ppInventoryWnd || !pInventoryWnd) {
 		return;
 	}
 
-	NativeMulticlassPatchLocalVitals();
-	NativeMulticlassShowPlayerManaPiece("Player_Mana");
-	NativeMulticlassShowPlayerManaPiece("PlayerMana");
-	NativeMulticlassShowPlayerManaPiece("Player_ManaLabel");
-	NativeMulticlassShowPlayerManaPiece("ManaLabel");
-	NativeMulticlassShowPlayerManaPiece("Player_ManaPercLabel");
-	NativeMulticlassShowPlayerManaPiece("ManPercLabel");
+	const std::string class_text = NativeMulticlassInventoryClassText();
+	if (class_text.empty()) {
+		return;
+	}
 
-	if (gNativeMulticlassShowCasterUiPulses > 0) {
-		--gNativeMulticlassShowCasterUiPulses;
-		NativeMulticlassShowSpellGemWindow();
+	__try {
+		CXWnd* class_label = pInventoryWnd->GetChildItem((char*)"IW_Class");
+		if (class_label) {
+			CXStr value(class_text.c_str());
+			class_label->SetWindowTextA(value);
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+	}
+}
+
+static void NativeMulticlassMaintainPresentationUI()
+{
+	if (!gNativeMulticlassState.has_profile) {
+		return;
+	}
+
+	NativeMulticlassPatchInventoryClassLabel();
+
+	if (NativeMulticlassPresentationUsesMana(gNativeMulticlassState.presentation) && pPlayerWnd) {
+		NativeMulticlassPatchLocalVitals();
+		NativeMulticlassShowPlayerManaPiece("Player_Mana");
+		NativeMulticlassShowPlayerManaPiece("PlayerMana");
+		NativeMulticlassShowPlayerManaPiece("Player_ManaLabel");
+		NativeMulticlassShowPlayerManaPiece("ManaLabel");
+		NativeMulticlassShowPlayerManaPiece("Player_ManaPercLabel");
+		NativeMulticlassShowPlayerManaPiece("ManPercLabel");
+
+		if (gNativeMulticlassShowCasterUiPulses > 0) {
+			--gNativeMulticlassShowCasterUiPulses;
+			NativeMulticlassShowSpellGemWindow();
+		}
 	}
 }
 
