@@ -1,4 +1,6 @@
 local CATALYST_ITEM_ID = 199211
+local TEST_AUGMENT_IDS = { 199212, 199213, 199214 }
+local TEST_SOCKET_ITEM_ID = 199220
 local MAX_TRADE_SLOTS = 4
 local MAX_SOURCE_AUGMENTS = MAX_TRADE_SLOTS - 1
 local MIN_SOURCE_AUGMENTS = 1
@@ -124,7 +126,8 @@ local function validate_augments(catalysts, sources)
 		local base_id = inst:GetID()
 		local item = inst:GetItem()
 		if not item or as_number(item:ID()) == 0 or as_number(item:AugType()) == 0 then
-			return nil, "Every non-catalyst hand-in must be an augment."
+			local name = item and item:Name() or ("item " .. tostring(base_id))
+			return nil, tostring(name) .. " is not an augment. Hand me only one Augment Catalyst plus one to three augment items."
 		end
 
 		required[tostring(base_id)] = (required[tostring(base_id)] or 0) + 1
@@ -186,9 +189,23 @@ local function fuse_augments(sources, source_ids)
 	}
 end
 
+local function give_test_kit(client)
+	client:SummonItem(CATALYST_ITEM_ID, 1)
+	for _, item_id in ipairs(TEST_AUGMENT_IDS) do
+		client:SummonItem(item_id, 1)
+	end
+	client:SummonItem(TEST_SOCKET_ITEM_ID, 1)
+end
+
 function event_say(e)
 	if not live_items_enabled() then
 		e.self:Say("Augment fusion is disabled right now.")
+		return
+	end
+
+	if e.message:findi("test kit") or e.message:findi("testkit") then
+		give_test_kit(e.other)
+		e.self:Say("I placed a catalyst, three known-valid test augments, and a socket sash on your cursor. Fuse the augments first, then socket the result into the sash.")
 		return
 	end
 
@@ -205,7 +222,8 @@ function event_say(e)
 	e.self:Say(
 		"Hand me one Augment Catalyst plus one to three augment items and no coins. " ..
 		"I will return one fused augment that carries the combined supported stats from the augment items. " ..
-		"Say " .. eq.say_link("catalyst") .. " if you need a catalyst for testing."
+		"Say " .. eq.say_link("catalyst") .. " if you need only a catalyst, or " ..
+		eq.say_link("test kit") .. " if you want a full known-good test set."
 	)
 end
 

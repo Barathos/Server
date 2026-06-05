@@ -79,12 +79,14 @@ public:
 	bool HasActiveBardMelody(Client *client);
 	void ProcessBardMelody(Client *client);
 	void SendNativeSpellLevelSnapshot(Client *client);
+	void SendNativeSpellLevelForSpell(Client *client, uint16 spell_id);
 
 private:
 	void SendHelp(Client *client);
 	void SendStatus(Client *client);
 	void SendDiagnostics(Client *client, const char *topic = nullptr);
 	void SendNativeSnapshot(Client *client, const std::string &status = "", bool show_window = true, bool show_pet_window = false);
+	bool SendNativeSpellLevelPatchRow(Client *client, uint16 spell_id, uint8 presentation_class);
 	void SendNativeSpellLevelPatch(Client *client, uint8 presentation_class);
 
 	struct TrioMetadata {

@@ -3420,7 +3420,7 @@ bool HandleNativeMapCommand(const char* line) {
     }
 
     if (CommandMatch(args, "help", nullptr)) {
-        Chat("NativeMap: on|off|status|reload|npcs|players|corpses|con|labels|showtarget|targetline|ground|vector|named|target");
+        Chat("NativeMap: on|off|status|reload|npcs|players|corpses|con|labels|showtarget|targetline|ground|vector|named|filter|search|hide|target");
         Chat("NativeMap commands: /nimap or /nativeinterfacemap.");
         Chat("Map tools: /mapfilter help, /mapshow <text>, /maphide <text>, /highlight <text>, /maploc add <label>, /xtarinfo");
         return true;
@@ -3529,7 +3529,7 @@ bool HandleNativeMapCommand(const char* line) {
         return true;
     }
 
-    if (CommandMatch(args, "filter", &sub_args) || CommandMatch(args, "name", &sub_args)) {
+    if (CommandMatch(args, "filter", &sub_args) || CommandMatch(args, "name", &sub_args) || CommandMatch(args, "search", &sub_args)) {
         return HandleTextFilterCommand(sub_args, g_config.map_name_filter, "NameFilter", "name");
     }
 

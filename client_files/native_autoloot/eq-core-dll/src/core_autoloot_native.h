@@ -105,6 +105,11 @@ public:
 		LeaveButton = (CButtonWnd*)GetChildItem("AALW_LeaveButton");
 		AlwaysButton = (CButtonWnd*)GetChildItem("AALW_AlwaysButton");
 		NeverButton = (CButtonWnd*)GetChildItem("AALW_NeverButton");
+		NeedButton = (CButtonWnd*)GetChildItem("AALW_NeedButton");
+		GreedButton = (CButtonWnd*)GetChildItem("AALW_GreedButton");
+		NoButton = (CButtonWnd*)GetChildItem("AALW_NoButton");
+		AlwaysNeedButton = (CButtonWnd*)GetChildItem("AALW_AlwaysNeedButton");
+		AlwaysGreedButton = (CButtonWnd*)GetChildItem("AALW_AlwaysGreedButton");
 		ApplyFiltersCheck = (CButtonWnd*)GetChildItem("AALW_ApplyFiltersCheck");
 
 		Layout();
@@ -198,6 +203,46 @@ public:
 				SetStatus("Requested never loot.");
 				return 1;
 			}
+
+			if (pWnd == (CXWnd*)NeedButton) {
+				char command[128];
+				sprintf_s(command, "/say #autoloot action %d need", row->entry_id);
+				NativeAutoLootSendCommand(command);
+				SetStatus("Marked Need.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)GreedButton) {
+				char command[128];
+				sprintf_s(command, "/say #autoloot action %d greed", row->entry_id);
+				NativeAutoLootSendCommand(command);
+				SetStatus("Marked Greed.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)NoButton) {
+				char command[128];
+				sprintf_s(command, "/say #autoloot action %d no", row->entry_id);
+				NativeAutoLootSendCommand(command);
+				SetStatus("Marked No.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)AlwaysNeedButton) {
+				char command[128];
+				sprintf_s(command, "/say #autoloot action %d alwaysneed", row->entry_id);
+				NativeAutoLootSendCommand(command);
+				SetStatus("Marked Always Need.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)AlwaysGreedButton) {
+				char command[128];
+				sprintf_s(command, "/say #autoloot action %d alwaysgreed", row->entry_id);
+				NativeAutoLootSendCommand(command);
+				SetStatus("Marked Always Greed.");
+				return 1;
+			}
 		}
 
 		return CSidlScreenWnd::WndNotification(pWnd, Message, unknown);
@@ -237,6 +282,11 @@ private:
 	CButtonWnd* LeaveButton = nullptr;
 	CButtonWnd* AlwaysButton = nullptr;
 	CButtonWnd* NeverButton = nullptr;
+	CButtonWnd* NeedButton = nullptr;
+	CButtonWnd* GreedButton = nullptr;
+	CButtonWnd* NoButton = nullptr;
+	CButtonWnd* AlwaysNeedButton = nullptr;
+	CButtonWnd* AlwaysGreedButton = nullptr;
 	CButtonWnd* ApplyFiltersCheck = nullptr;
 	int LastLayoutWidth = 0;
 	int LastLayoutHeight = 0;
@@ -262,6 +312,8 @@ static bool gNativeHpFixSentReady = false;
 static bool gNativeAutoLootPulseFaulted = false;
 static std::string gNativeAutoLootGroupMode = "solo";
 static std::string gNativeAutoLootAssigned = "none";
+static std::string gNativeAutoLootFilterMode = "both";
+static bool gNativeAutoLootNeedGreed = false;
 
 struct NativeAutoLootRuleRow
 {
@@ -5181,8 +5233,15 @@ void NativeAutoLootWnd::RefreshRows()
 	sprintf_s(rules, "Rules %d keep / %d never", gNativeAutoLootKeepCount, gNativeAutoLootIgnoreCount);
 	SetLabel(RuleSummaryLabel, rules);
 
-	char master[128];
-	sprintf_s(master, "Group: %s  Assigned: %s", gNativeAutoLootGroupMode.c_str(), gNativeAutoLootAssigned.c_str());
+	char master[192];
+	sprintf_s(
+		master,
+		"Filter: %s  Group: %s  Need/Greed: %s  Assigned: %s",
+		gNativeAutoLootFilterMode.c_str(),
+		gNativeAutoLootGroupMode.c_str(),
+		gNativeAutoLootNeedGreed ? "on" : "off",
+		gNativeAutoLootAssigned.c_str()
+	);
 	SetLabel(MasterLabel, master);
 
 	if (ApplyFiltersCheck) {
@@ -6370,6 +6429,11 @@ static bool NativeAutoLootParseTransport(const char* message)
 		if (gNativeAutoLootAssigned.empty()) {
 			gNativeAutoLootAssigned = "none";
 		}
+		gNativeAutoLootFilterMode = NativeGetPairValue(payload, "filter_mode");
+		if (gNativeAutoLootFilterMode.empty()) {
+			gNativeAutoLootFilterMode = "both";
+		}
+		gNativeAutoLootNeedGreed = NativeToBool(NativeGetPairValue(payload, "needgreed"));
 		NativeAutoLootUpdateWindow();
 		return true;
 	}
@@ -6471,6 +6535,17 @@ static void NativeAutoLootResetSessionRequests()
 {
 	gNativeAutoLootInGamePulses = 0;
 	gNativeAutoLootRequestedInitialStatus = false;
+	gNativeAutoLootRows.clear();
+	gNativeAutoLootRuleRows.clear();
+	gNativeAutoLootEnabled = false;
+	gNativeAutoLootGrouped = false;
+	gNativeAutoLootLeader = false;
+	gNativeAutoLootKeepCount = 0;
+	gNativeAutoLootIgnoreCount = 0;
+	gNativeAutoLootGroupMode = "solo";
+	gNativeAutoLootAssigned = "none";
+	gNativeAutoLootFilterMode = "both";
+	gNativeAutoLootNeedGreed = false;
 	gNativeLiveSpellSentReady = false;
 	gNativeHpFixSentReady = false;
 	gNativeHpFixState = NativeHpFixState();
@@ -6490,6 +6565,17 @@ static void NativeAutoLootResetClientUiSession(const char* reason)
 	NativeMulticlassDestroyRuntimeWindows();
 	gNativeAutoLootInGamePulses = 0;
 	gNativeAutoLootRequestedInitialStatus = false;
+	gNativeAutoLootRows.clear();
+	gNativeAutoLootRuleRows.clear();
+	gNativeAutoLootEnabled = false;
+	gNativeAutoLootGrouped = false;
+	gNativeAutoLootLeader = false;
+	gNativeAutoLootKeepCount = 0;
+	gNativeAutoLootIgnoreCount = 0;
+	gNativeAutoLootGroupMode = "solo";
+	gNativeAutoLootAssigned = "none";
+	gNativeAutoLootFilterMode = "both";
+	gNativeAutoLootNeedGreed = false;
 	gNativeLiveSpellSentReady = false;
 	gNativeHpFixSentReady = false;
 	gNativeHpFixState = NativeHpFixState();

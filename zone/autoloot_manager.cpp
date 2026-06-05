@@ -253,9 +253,12 @@ void AutoLootManager::Process()
 	PruneLootEntries();
 }
 
-AutoLootManager::CharacterSettings AutoLootManager::GetCharacterSettings(uint32 character_id)
+AutoLootManager::CharacterSettings AutoLootManager::GetCharacterSettings(uint32 character_id, bool create_enabled)
 {
 	CharacterSettings settings;
+	if (!character_id) {
+		return settings;
+	}
 
 	auto results = database.QueryDatabase(
 		fmt::format(
@@ -266,6 +269,11 @@ AutoLootManager::CharacterSettings AutoLootManager::GetCharacterSettings(uint32 
 	);
 
 	if (!results.Success() || !results.RowCount()) {
+		if (results.Success() && create_enabled) {
+			settings.enabled = true;
+			SaveCharacterSettings(character_id, settings);
+		}
+
 		return settings;
 	}
 
@@ -626,7 +634,8 @@ void AutoLootManager::ProcessNearby(Client *client, float radius)
 		radius = kMaxNearbyRadius;
 	}
 
-	uint32 processed = 0;
+	uint32 scanned = 0;
+	uint32 queued = 0;
 	for (auto &[corpse_id, corpse] : entity_list.GetCorpseList()) {
 		if (!corpse || !corpse->IsNPCCorpse() || corpse->IsLocked() || corpse->IsBeingLooted()) {
 			continue;
@@ -640,21 +649,32 @@ void AutoLootManager::ProcessNearby(Client *client, float radius)
 			continue;
 		}
 
-		ProcessCorpse(corpse, client, true);
-		processed++;
+		scanned++;
+		if (ProcessCorpse(corpse, client, true)) {
+			queued++;
+		}
 	}
 
-	client->Message(Chat::White, fmt::format("AutoLoot nearby processed {} corpse{}.", processed, processed == 1 ? "" : "s").c_str());
+	SendNativeUpdate(client);
+	client->Message(
+		Chat::White,
+		fmt::format(
+			"AutoLoot nearby scanned {} corpse{} and queued loot from {}.",
+			scanned,
+			scanned == 1 ? "" : "s",
+			queued
+		).c_str()
+	);
 }
 
-void AutoLootManager::ProcessCorpse(Corpse *corpse, Client *resolved_client, bool nearby)
+bool AutoLootManager::ProcessCorpse(Corpse *corpse, Client *resolved_client, bool nearby)
 {
 	if (!AutoLootEnabled()) {
-		return;
+		return false;
 	}
 
 	if (!corpse || !resolved_client || !corpse->IsNPCCorpse() || corpse->IsBeingLooted()) {
-		return;
+		return false;
 	}
 
 	if (QueueCorpseEntries(corpse, resolved_client, nearby)) {
@@ -662,7 +682,11 @@ void AutoLootManager::ProcessCorpse(Corpse *corpse, Client *resolved_client, boo
 		if (autoloot_client) {
 			SendNativeUpdate(autoloot_client);
 		}
+
+		return true;
 	}
+
+	return false;
 }
 
 bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client, bool nearby)
@@ -891,7 +915,7 @@ void AutoLootManager::RefreshQueuedRulesForClient(Client *client)
 		return;
 	}
 
-	const auto settings = GetCharacterSettings(client->CharacterID());
+	const auto settings = GetCharacterSettings(client->CharacterID(), true);
 	for (auto &[entry_id, entry] : m_loot_entries) {
 		if (!IsEntryVisibleToClient(entry, client)) {
 			continue;
@@ -2057,7 +2081,7 @@ void AutoLootManager::ShowWindow(Client *client)
 
 void AutoLootManager::SendStatus(Client *client)
 {
-	const auto settings = GetCharacterSettings(client->CharacterID());
+	const auto settings = GetCharacterSettings(client->CharacterID(), true);
 	client->Message(
 		Chat::White,
 		fmt::format(
@@ -2078,7 +2102,7 @@ void AutoLootManager::SendNativeStatus(Client *client)
 		return;
 	}
 
-	const auto settings = GetCharacterSettings(client->CharacterID());
+	const auto settings = GetCharacterSettings(client->CharacterID(), true);
 	const auto include_count = GetFilters(client->CharacterID(), "include").size();
 	const auto exclude_count = GetFilters(client->CharacterID(), "exclude").size();
 
@@ -2086,6 +2110,7 @@ void AutoLootManager::SendNativeStatus(Client *client)
 	std::string assigned_name = "none";
 	bool grouped = false;
 	bool leader = false;
+	bool need_greed_enabled = false;
 
 	auto group = client->GetGroup();
 	if (group) {
@@ -2094,6 +2119,7 @@ void AutoLootManager::SendNativeStatus(Client *client)
 
 		const auto group_settings = GetGroupSettings(group->GetID());
 		group_mode = group_settings.loot_mode;
+		need_greed_enabled = group_settings.need_greed_enabled;
 
 		if (group_settings.assigned_character_id) {
 			assigned_name = database.GetCharNameByID(group_settings.assigned_character_id);
@@ -2104,14 +2130,18 @@ void AutoLootManager::SendNativeStatus(Client *client)
 	}
 
 	const auto status = fmt::format(
-		"AUTOLOOT|status|enabled={}|include={}|exclude={}|grouped={}|group_mode={}|assigned={}|leader={}",
+		"AUTOLOOT|status|enabled={}|include={}|exclude={}|grouped={}|group_mode={}|assigned={}|leader={}|filter_mode={}|debug={}|log={}|needgreed={}",
 		settings.enabled ? 1 : 0,
 		include_count,
 		exclude_count,
 		grouped ? 1 : 0,
 		group_mode,
 		assigned_name,
-		leader ? 1 : 0
+		leader ? 1 : 0,
+		settings.filter_mode,
+		settings.debug_enabled ? 1 : 0,
+		settings.log_enabled ? 1 : 0,
+		need_greed_enabled ? 1 : 0
 	);
 
 	client->Message(Chat::White, status.c_str());

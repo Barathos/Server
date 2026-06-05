@@ -14,6 +14,12 @@ local function live_items_enabled()
 	return value == nil or value == "" or value == "true" or value == "1"
 end
 
+local function debug(message)
+	if eq and eq.debug then
+		eq.debug(message, 1)
+	end
+end
+
 local templates = {
 	{ id = 6002, type = "Weapon", name = "Staff", damage = true },
 	{ id = 6919, type = "Weapon", name = "Forlorn Bow", damage = true },
@@ -225,9 +231,36 @@ local function seed_npc(npc)
 	if ok and item and item.valid then
 		npc:AddLiveItem(item, false)
 		npc:SetEntityVariable(seed_marker, "1")
-	elseif eq and eq.debug then
-		eq.debug("Live Items tutorialb spawn loot error: " .. tostring(item), 1)
+	else
+		debug("Live Items tutorialb spawn loot creation error: " .. tostring(item))
 	end
+end
+
+local function seed_corpse_fallback(corpse, killed)
+	if not corpse or not corpse.valid or not killed or not killed.valid then
+		return
+	end
+
+	if skipped_npcs[killed:GetNPCTypeID()] or killed:EntityVariableExists(seed_marker) then
+		return
+	end
+
+	local ok, item = pcall(create_random_item)
+	if not ok or not item or not item.valid then
+		debug("Live Items tutorialb corpse fallback creation error: " .. tostring(item))
+		return
+	end
+
+	local added, add_error = pcall(function()
+		corpse:AddLiveItem(item)
+	end)
+	if not added then
+		debug("Live Items tutorialb corpse fallback insertion error: " .. tostring(add_error))
+		return
+	end
+
+	killed:SetEntityVariable(seed_marker, "1")
+	debug("Live Items tutorialb corpse fallback seeded NPC type " .. tostring(killed:GetNPCTypeID()))
 end
 
 local function seed_existing_npcs()
@@ -250,5 +283,14 @@ function event_enter_zone(e)
 		return
 	end
 
+	seed_existing_npcs()
+end
+
+function event_death_zone(e)
+	if not live_items_enabled() then
+		return
+	end
+
+	seed_corpse_fallback(e.corpse, e.killed)
 	seed_existing_npcs()
 end

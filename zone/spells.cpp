@@ -6050,7 +6050,7 @@ void Client::ScribeSpell(uint16 spell_id, int slot, bool update_client, bool def
 	LogSpells("Spell [{}] scribed into spell book slot [{}]", spell_id, slot);
 
 	if (update_client && !defer_save) {
-		multiclass_manager.SendNativeSpellLevelSnapshot(this);
+		multiclass_manager.SendNativeSpellLevelForSpell(this, spell_id);
 	}
 
 	if (update_client) {

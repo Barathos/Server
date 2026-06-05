@@ -101,7 +101,7 @@ private:
 		time_t created_at = 0;
 	};
 
-	CharacterSettings GetCharacterSettings(uint32 character_id);
+	CharacterSettings GetCharacterSettings(uint32 character_id, bool create_enabled = false);
 	void SaveCharacterSettings(uint32 character_id, const CharacterSettings &settings);
 	GroupSettings GetGroupSettings(uint32 group_id);
 	void SaveGroupSettings(uint32 group_id, const GroupSettings &settings);
@@ -118,7 +118,7 @@ private:
 	Client *DetermineRecipient(Client *resolved_client, Corpse *corpse, const GroupSettings &settings);
 	std::vector<Client *> GetGroupClients(Group *group);
 
-	void ProcessCorpse(Corpse *corpse, Client *resolved_client, bool nearby);
+	bool ProcessCorpse(Corpse *corpse, Client *resolved_client, bool nearby);
 	bool QueueCorpseEntries(Corpse *corpse, Client *resolved_client, bool nearby);
 	bool HasQueuedEntry(uint16 corpse_id, uint16 loot_slot) const;
 	bool IsEntryVisibleToClient(const LootEntry &entry, Client *client) const;

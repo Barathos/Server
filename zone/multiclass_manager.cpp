@@ -112,6 +112,24 @@ bool IsBardClass(uint8 class_id)
 	return class_id == Class::Bard;
 }
 
+uint8 GetBestSpellLevelForSlots(const MulticlassManager::ClassSlots &class_slots, uint16 spell_id)
+{
+	if (!IsValidSpell(spell_id)) {
+		return 255;
+	}
+
+	uint8 best_level = 255;
+	for (const auto class_id : class_slots) {
+		if (!IsPlayerClass(class_id)) {
+			continue;
+		}
+
+		best_level = std::min(best_level, spells[spell_id].classes[class_id - 1]);
+	}
+
+	return best_level;
+}
+
 void RefreshClientAfterMulticlassProfileChange(Client *client)
 {
 	if (!client) {
@@ -140,6 +158,8 @@ void RefreshClientAfterMulticlassProfileChange(Client *client)
 	for (uint8 material_slot = EQ::textures::textureBegin; material_slot <= EQ::textures::LastTexture; ++material_slot) {
 		client->SendWearChange(material_slot);
 	}
+
+	multiclass_manager.SendNativeSpellLevelSnapshot(client);
 }
 
 bool IsStrikerClass(uint8 class_id)
@@ -986,16 +1006,7 @@ uint8 MulticlassManager::GetBestSpellLevel(const Client *client, uint16 spell_id
 		return 255;
 	}
 
-	uint8 best_level = 255;
-	for (const auto class_id : GetClassSlots(client)) {
-		if (!IsPlayerClass(class_id)) {
-			continue;
-		}
-
-		best_level = std::min(best_level, spells[spell_id].classes[class_id - 1]);
-	}
-
-	return best_level;
+	return GetBestSpellLevelForSlots(GetClassSlots(client), spell_id);
 }
 
 bool MulticlassManager::CanUseSpell(const Client *client, uint16 spell_id)
@@ -1408,6 +1419,39 @@ void MulticlassManager::SendNativeSpellLevelSnapshot(Client *client)
 	SendNativeSpellLevelPatch(client, GetClientPresentationClass(client));
 }
 
+void MulticlassManager::SendNativeSpellLevelForSpell(Client *client, uint16 spell_id)
+{
+	SendNativeSpellLevelPatchRow(client, spell_id, GetClientPresentationClass(client));
+}
+
+bool MulticlassManager::SendNativeSpellLevelPatchRow(Client *client, uint16 spell_id, uint8 presentation_class)
+{
+	if (!client || !IsPlayerClass(presentation_class) || !IsValidSpell(spell_id)) {
+		return false;
+	}
+
+	const auto best_level = GetBestSpellLevel(client, spell_id);
+	if (!best_level || best_level == 255) {
+		return false;
+	}
+
+	if (spells[spell_id].classes[presentation_class - 1] == best_level) {
+		return false;
+	}
+
+	client->Message(
+		Chat::White,
+		fmt::format(
+			"MULTICLASS|spell_level|id={}|level={}|presentation={}",
+			spell_id,
+			best_level,
+			presentation_class
+		).c_str()
+	);
+
+	return true;
+}
+
 void MulticlassManager::SendHelp(Client *client)
 {
 	client->Message(Chat::White, "Multiclass admin/native bridge commands:");
@@ -1418,6 +1462,7 @@ void MulticlassManager::SendHelp(Client *client)
 	client->Message(Chat::White, "#multiclass diag - Show capability masks and caster/skill diagnostics.");
 	client->Message(Chat::White, "#multiclass native - Send the native window snapshot contract.");
 	client->Message(Chat::White, "#mc pets - Open or refresh the standalone native pet console.");
+	client->Message(Chat::White, "#mc petcmd <pet-id|active|all> <attack|back|follow|guard|health> - Macro-friendly pet control.");
 	client->Message(Chat::White, "#mc disc - Open or refresh the native Multiclass discipline bridge.");
 	client->Message(Chat::White, "Player flow should go through the native Multiclass UI, not typed commands.");
 }
@@ -1922,19 +1967,17 @@ void MulticlassManager::SendNativeSpellLevelPatch(Client *client, uint8 presenta
 		return;
 	}
 
-	uint16 patched_count = 0;
+	uint32 patched_count = 0;
+	const auto class_slots = GetClassSlots(client);
+	const auto max_spell_id = std::min<uint32>(SPDAT_RECORDS, static_cast<uint32>(std::numeric_limits<uint16>::max()) + 1);
 	client->Message(Chat::White, "MULTICLASS|spell_levels|begin");
-	for (const auto spell_id_value : client->GetScribedSpells()) {
-		if (spell_id_value < 0 || spell_id_value > std::numeric_limits<uint16>::max()) {
-			continue;
-		}
-
+	for (uint32 spell_id_value = 2; spell_id_value < max_spell_id; ++spell_id_value) {
 		const auto spell_id = static_cast<uint16>(spell_id_value);
 		if (!IsValidSpell(spell_id)) {
 			continue;
 		}
 
-		const auto best_level = GetBestSpellLevel(client, spell_id);
+		const auto best_level = GetBestSpellLevelForSlots(class_slots, spell_id);
 		if (!best_level || best_level == 255) {
 			continue;
 		}
@@ -2272,8 +2315,8 @@ bool MulticlassManager::HandleNativePetCommand(Client *client, const Seperator *
 		return true;
 	}
 
-	const std::string action = sep->arg[2] ? sep->arg[2] : "";
-	const auto action_name = Strings::ToLower(action);
+	std::string action = sep->arg[2] ? sep->arg[2] : "";
+	auto action_name = Strings::ToLower(action);
 	if (action_name == "focus") {
 		const auto pet_id = static_cast<uint16>(Strings::ToUnsignedInt(sep->arg[3]));
 		if (!SetFocusedPet(client, pet_id)) {
@@ -2287,16 +2330,25 @@ bool MulticlassManager::HandleNativePetCommand(Client *client, const Seperator *
 	}
 
 	std::vector<Mob *> targets;
-	const auto target_arg = sep->arg[3] ? Strings::ToLower(sep->arg[3]) : "";
+	auto target_arg = sep->arg[3] ? Strings::ToLower(sep->arg[3]) : "";
+	if ((action_name == "active" || action_name == "focused" || action_name == "all" || Strings::IsNumber(action_name)) && sep->arg[3] && sep->arg[3][0]) {
+		target_arg = action_name;
+		action = sep->arg[3];
+		action_name = Strings::ToLower(action);
+	}
+
+	const bool target_requested = !target_arg.empty();
 	const bool all_pets = target_arg == "all" ||
-		action_name == "attack" ||
-		action_name == "qattack" ||
-		action_name == "back" ||
-		action_name == "backoff" ||
-		action_name == "follow" ||
-		action_name == "guard" ||
-		action_name == "guardme" ||
-		action_name == "health";
+		(!target_requested && (
+			action_name == "attack" ||
+			action_name == "qattack" ||
+			action_name == "back" ||
+			action_name == "backoff" ||
+			action_name == "follow" ||
+			action_name == "guard" ||
+			action_name == "guardme" ||
+			action_name == "health"
+		));
 
 	if (target_arg != "all" && Strings::IsNumber(target_arg)) {
 		const auto pet_id = static_cast<uint16>(Strings::ToUnsignedInt(target_arg.c_str()));

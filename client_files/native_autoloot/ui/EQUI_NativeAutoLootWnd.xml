@@ -266,6 +266,71 @@
 		<Template>BDT_Normal</Template>
 	</Button>
 
+	<Button item="AALW_NeedButton">
+		<ScreenID>AALW_NeedButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>392</X><Y>350</Y></Location>
+		<Size><CX>48</CX><CY>22</CY></Size>
+		<Text>Need</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Mark the selected shared loot row as Need.</TooltipReference>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="AALW_GreedButton">
+		<ScreenID>AALW_GreedButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>444</X><Y>350</Y></Location>
+		<Size><CX>52</CX><CY>22</CY></Size>
+		<Text>Greed</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Mark the selected shared loot row as Greed.</TooltipReference>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="AALW_NoButton">
+		<ScreenID>AALW_NoButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>500</X><Y>350</Y></Location>
+		<Size><CX>38</CX><CY>22</CY></Size>
+		<Text>No</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Pass on the selected shared loot row.</TooltipReference>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="AALW_AlwaysNeedButton">
+		<ScreenID>AALW_AlwaysNeedButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>542</X><Y>350</Y></Location>
+		<Size><CX>38</CX><CY>22</CY></Size>
+		<Text>AN</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Always Need this item when it appears.</TooltipReference>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="AALW_AlwaysGreedButton">
+		<ScreenID>AALW_AlwaysGreedButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>584</X><Y>350</Y></Location>
+		<Size><CX>38</CX><CY>22</CY></Size>
+		<Text>AG</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Always Greed this item when it appears.</TooltipReference>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
 	<Label item="AALW_StatusLabel">
 		<ScreenID>AALW_StatusLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
@@ -315,6 +380,11 @@
 		<Pieces>AALW_NearbyButton</Pieces>
 		<Pieces>AALW_EditFiltersButton</Pieces>
 		<Pieces>AALW_ApplyFiltersCheck</Pieces>
+		<Pieces>AALW_NeedButton</Pieces>
+		<Pieces>AALW_GreedButton</Pieces>
+		<Pieces>AALW_NoButton</Pieces>
+		<Pieces>AALW_AlwaysNeedButton</Pieces>
+		<Pieces>AALW_AlwaysGreedButton</Pieces>
 		<Pieces>AALW_StatusLabel</Pieces>
 	</Screen>
 
