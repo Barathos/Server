@@ -252,14 +252,28 @@
 		<DrawTemplate>WDT_Inner</DrawTemplate>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>278</X><Y>486</Y></Location>
-		<Size><CX>530</CX><CY>64</CY></Size>
+		<Size><CX>330</CX><CY>64</CY></Size>
 		<Style_Border>true</Style_Border>
 		<Style_VScroll>true</Style_VScroll>
 		<Style_HScroll>false</Style_HScroll>
 		<Style_Transparent>false</Style_Transparent>
 		<Columns><Width>58</Width><Heading>State</Heading></Columns>
-		<Columns><Width>360</Width><Heading>Objective</Heading></Columns>
-		<Columns><Width>112</Width><Heading>Progress</Heading></Columns>
+		<Columns><Width>188</Width><Heading>Objective</Heading></Columns>
+		<Columns><Width>84</Width><Heading>Progress</Heading></Columns>
+	</Listbox>
+
+	<Listbox item="NAW_RewardList">
+		<ScreenID>NAW_RewardList</ScreenID>
+		<DrawTemplate>WDT_Inner</DrawTemplate>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>616</X><Y>486</Y></Location>
+		<Size><CX>192</CX><CY>64</CY></Size>
+		<Style_Border>true</Style_Border>
+		<Style_VScroll>true</Style_VScroll>
+		<Style_HScroll>false</Style_HScroll>
+		<Style_Transparent>false</Style_Transparent>
+		<Columns><Width>54</Width><Heading>State</Heading></Columns>
+		<Columns><Width>138</Width><Heading>Reward</Heading></Columns>
 	</Listbox>
 
 	<Label item="NAW_RewardHintLabel">
@@ -332,6 +346,7 @@
 		<Pieces>Label:NAW_ObjectiveHeaderLabel</Pieces>
 		<Pieces>Label:NAW_RewardHeaderLabel</Pieces>
 		<Pieces>Listbox:NAW_ObjectiveList</Pieces>
+		<Pieces>Listbox:NAW_RewardList</Pieces>
 		<Pieces>Label:NAW_RewardHintLabel</Pieces>
 		<Pieces>Screen:NAW_StatusPanel</Pieces>
 		<Pieces>Label:NAW_StatusLabel</Pieces>

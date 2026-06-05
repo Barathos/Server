@@ -3,6 +3,8 @@ id: achievements
 label: Achievements
 client: rof
 files:
+  - source: client_files/native_autoloot/eq-core-dll/bin/dinput8.dll
+    destination: dinput8.dll
   - source: client_files/native_autoloot/ui/EQUI_NativeAchievementWnd.xml
     destination: uifiles/default/EQUI_NativeAchievementWnd.xml
   - source: client_files/native_autoloot/ui/Achievement_account_unlock_color.tga

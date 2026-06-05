@@ -43,6 +43,8 @@ The custom migration manifest creates and seeds:
 
 | File | Purpose |
 | --- | --- |
+| `client_files/native_autoloot/eq-core-dll/` | Achievements-owned native `dinput8.dll` source/build scaffold. |
+| `client_files/native_autoloot/eq-core-dll/bin/dinput8.dll` | Built Achievements native client DLL deployed to the client root. |
 | `client_files/native_autoloot/ui/EQUI_NativeAchievementWnd.xml` | Native SIDL window layout for Achievement browsing. |
 | `client_files/native_autoloot/ui/Achievement_*.tga` | Live EQ achievement window art shipped with the feature patch payload. |
 | `features/achievements/patcher.yml` | Feature-owned client patch manifest for external/test-client sync. |
@@ -53,6 +55,7 @@ Client patch syncing is owned by `features/achievements/patcher.yml`.
 
 Current files:
 
+- `client_files/native_autoloot/eq-core-dll/bin/dinput8.dll` -> `dinput8.dll`
 - `client_files/native_autoloot/ui/EQUI_NativeAchievementWnd.xml` -> `uifiles/default/EQUI_NativeAchievementWnd.xml`
 - `client_files/native_autoloot/ui/Achievement_*.tga` -> `uifiles/default/Achievement_*.tga`
 
