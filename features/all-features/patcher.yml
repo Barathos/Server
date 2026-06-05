@@ -1,7 +1,7 @@
 version: 1
 id: all-features
 label: All Features
-patchVersion: 'Build 8'
+patchVersion: 'Build 9'
 autoIncrementPatchVersion: true
 client: rof
 files:
@@ -9,6 +9,116 @@ files:
     destination: dinput8.dll
   - source: client_files/native_autoloot/config/native_interface.ini
     destination: native_interface.ini
+  - source: client_files/login/rof/eqlsClient.ini
+    destination: eqlsClient.ini
+  - source: client_files/login/rof/eqlsnews.txt
+    destination: eqlsnews.txt
+  - source: client_files/login/rof/eqlsstr_us.txt
+    destination: eqlsstr_us.txt
+  - source: client_files/login/rof/Resources/loadscreen.jpg
+    destination: Resources/loadscreen.jpg
+  - source: client_files/login/rof/uifiles/default/EQLS_background_01.tga
+    destination: uifiles/default/EQLS_background_01.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_background_02.tga
+    destination: uifiles/default/EQLS_background_02.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_background_03.tga
+    destination: uifiles/default/EQLS_background_03.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_background_04.tga
+    destination: uifiles/default/EQLS_background_04.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_background_05.tga
+    destination: uifiles/default/EQLS_background_05.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_background_06.tga
+    destination: uifiles/default/EQLS_background_06.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_BlackFill.tga
+    destination: uifiles/default/EQLS_BlackFill.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_ESRBSplash01.tga
+    destination: uifiles/default/EQLS_ESRBSplash01.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_ESRBSplash02.tga
+    destination: uifiles/default/EQLS_ESRBSplash02.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_ESRBSplash03.tga
+    destination: uifiles/default/EQLS_ESRBSplash03.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_ESRBSplash04.tga
+    destination: uifiles/default/EQLS_ESRBSplash04.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_ESRBSplash05.tga
+    destination: uifiles/default/EQLS_ESRBSplash05.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_ESRBSplash06.tga
+    destination: uifiles/default/EQLS_ESRBSplash06.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_scrollbar_gutter.tga
+    destination: uifiles/default/EQLS_scrollbar_gutter.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_SOESplash01.tga
+    destination: uifiles/default/EQLS_SOESplash01.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_SOESplash02.tga
+    destination: uifiles/default/EQLS_SOESplash02.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_SOESplash03.tga
+    destination: uifiles/default/EQLS_SOESplash03.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_SOESplash04.tga
+    destination: uifiles/default/EQLS_SOESplash04.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_SOESplash05.tga
+    destination: uifiles/default/EQLS_SOESplash05.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_SOESplash06.tga
+    destination: uifiles/default/EQLS_SOESplash06.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_window_pieces_01.tga
+    destination: uifiles/default/EQLS_window_pieces_01.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_window_pieces_02.tga
+    destination: uifiles/default/EQLS_window_pieces_02.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_WndBorder_01.tga
+    destination: uifiles/default/EQLS_WndBorder_01.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_WndBorder_02.tga
+    destination: uifiles/default/EQLS_WndBorder_02.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_WndBorder_03.tga
+    destination: uifiles/default/EQLS_WndBorder_03.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_WndBorder_04.tga
+    destination: uifiles/default/EQLS_WndBorder_04.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_WndBorder_05.tga
+    destination: uifiles/default/EQLS_WndBorder_05.tga
+  - source: client_files/login/rof/uifiles/default/EQLS_WndBorder_06.tga
+    destination: uifiles/default/EQLS_WndBorder_06.tga
+  - source: client_files/login/rof/uifiles/default/EQLSUI.xml
+    destination: uifiles/default/EQLSUI.xml
+  - source: client_files/login/rof/uifiles/default/EQLSUI_Animations.xml
+    destination: uifiles/default/EQLSUI_Animations.xml
+  - source: client_files/login/rof/uifiles/default/EQLSUI_AVATAR.xml
+    destination: uifiles/default/EQLSUI_AVATAR.xml
+  - source: client_files/login/rof/uifiles/default/EQLSUI_AVATAR_MacroEditorDialog.xml
+    destination: uifiles/default/EQLSUI_AVATAR_MacroEditorDialog.xml
+  - source: client_files/login/rof/uifiles/default/EQLSUI_ChatOptionsDialog.xml
+    destination: uifiles/default/EQLSUI_ChatOptionsDialog.xml
+  - source: client_files/login/rof/uifiles/default/EQLSUI_ChatWnd.xml
+    destination: uifiles/default/EQLSUI_ChatWnd.xml
+  - source: client_files/login/rof/uifiles/default/EQLSUI_ColorPickerWnd.xml
+    destination: uifiles/default/EQLSUI_ColorPickerWnd.xml
+  - source: client_files/login/rof/uifiles/default/EQLSUI_ConnectWnd.xml
+    destination: uifiles/default/EQLSUI_ConnectWnd.xml
+  - source: client_files/login/rof/uifiles/default/EQLSUI_CreditsWnd.xml
+    destination: uifiles/default/EQLSUI_CreditsWnd.xml
+  - source: client_files/login/rof/uifiles/default/EQLSUI_ESRBSplashWnd.xml
+    destination: uifiles/default/EQLSUI_ESRBSplashWnd.xml
+  - source: client_files/login/rof/uifiles/default/EQLSUI_EulaWnd.xml
+    destination: uifiles/default/EQLSUI_EulaWnd.xml
+  - source: client_files/login/rof/uifiles/default/EQLSUI_HelpWnd.xml
+    destination: uifiles/default/EQLSUI_HelpWnd.xml
+  - source: client_files/login/rof/uifiles/default/EQLSUI_MainWnd.xml
+    destination: uifiles/default/EQLSUI_MainWnd.xml
+  - source: client_files/login/rof/uifiles/default/EQLSUI_NewsWnd.xml
+    destination: uifiles/default/EQLSUI_NewsWnd.xml
+  - source: client_files/login/rof/uifiles/default/EQLSUI_OKDialog.xml
+    destination: uifiles/default/EQLSUI_OKDialog.xml
+  - source: client_files/login/rof/uifiles/default/EQLSUI_OrderExpansionWnd.xml
+    destination: uifiles/default/EQLSUI_OrderExpansionWnd.xml
+  - source: client_files/login/rof/uifiles/default/EQLSUI_PollWnd.xml
+    destination: uifiles/default/EQLSUI_PollWnd.xml
+  - source: client_files/login/rof/uifiles/default/EQLSUI_ServerSelectWnd.xml
+    destination: uifiles/default/EQLSUI_ServerSelectWnd.xml
+  - source: client_files/login/rof/uifiles/default/EQLSUI_SOESplashWnd.xml
+    destination: uifiles/default/EQLSUI_SOESplashWnd.xml
+  - source: client_files/login/rof/uifiles/default/EQLSUI_SplashExWnd.xml
+    destination: uifiles/default/EQLSUI_SplashExWnd.xml
+  - source: client_files/login/rof/uifiles/default/EQLSUI_Templates.xml
+    destination: uifiles/default/EQLSUI_Templates.xml
+  - source: client_files/login/rof/uifiles/default/EQLSUI_WebOrderWnd.xml
+    destination: uifiles/default/EQLSUI_WebOrderWnd.xml
+  - source: client_files/login/rof/uifiles/default/EQLSUI_YesNoDialog.xml
+    destination: uifiles/default/EQLSUI_YesNoDialog.xml
   - source: client_files/native_autoloot/ui/EQUI_NativeAutoLootWnd.xml
     destination: uifiles/default/EQUI_NativeAutoLootWnd.xml
   - source: client_files/native_autoloot/ui/EQUI_NativeItemForgeWnd.xml
