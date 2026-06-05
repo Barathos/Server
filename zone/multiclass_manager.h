@@ -12,6 +12,8 @@
 #include "common/skills.h"
 #include "common/types.h"
 
+#include "glm/vec4.hpp"
+
 #include <array>
 #include <string>
 #include <unordered_map>
@@ -77,6 +79,7 @@ public:
 	bool CanCreateAdditionalPet(Client *client);
 	bool RegisterPet(Client *client, Mob *pet);
 	bool SetFocusedPet(Client *client, uint16 pet_id);
+	bool GetPetFollowPosition(const Client *client, const Mob *pet, glm::vec4 &position);
 	bool HasActiveBardMelody(Client *client);
 	void ProcessBardMelody(Client *client);
 	void SendNativeSpellLevelSnapshot(Client *client);

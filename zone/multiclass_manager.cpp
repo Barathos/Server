@@ -32,6 +32,7 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <cmath>
 #include <cstring>
 #include <ctime>
 #include <limits>
@@ -995,6 +996,49 @@ bool MulticlassManager::RegisterPet(Client *client, Mob *pet)
 		client->SetPetID(pet->GetID());
 	}
 
+	return true;
+}
+
+bool MulticlassManager::GetPetFollowPosition(const Client *client, const Mob *pet, glm::vec4 &position)
+{
+	if (
+		!MulticlassEnabled() ||
+		!client ||
+		!pet ||
+		!client->CharacterID() ||
+		GetPetRosterLimit(client) <= 1
+	) {
+		return false;
+	}
+
+	const auto roster = GetPetRoster(client);
+	if (roster.size() <= 1) {
+		return false;
+	}
+
+	size_t roster_index = roster.size();
+	for (size_t index = 0; index < roster.size(); ++index) {
+		if (roster[index] == pet) {
+			roster_index = index;
+			break;
+		}
+	}
+
+	if (roster_index == roster.size() || roster_index == 0) {
+		return false;
+	}
+
+	const float side_offset = roster_index == 1 ? -24.0f : 24.0f;
+	const float back_offset = -12.0f;
+	const float heading = (client->GetHeading() / 512.0f) * 6.283184f;
+	const float forward_x = std::sin(heading);
+	const float forward_y = std::cos(heading);
+	const float right_x = std::cos(heading);
+	const float right_y = -std::sin(heading);
+
+	position = client->GetPosition();
+	position.x += (right_x * side_offset) + (forward_x * back_offset);
+	position.y += (right_y * side_offset) + (forward_y * back_offset);
 	return true;
 }
 

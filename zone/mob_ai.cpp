@@ -29,6 +29,7 @@
 #include "zone/entity.h"
 #include "zone/fastmath.h"
 #include "zone/map.h"
+#include "zone/multiclass_manager.h"
 #include "zone/npc.h"
 #include "zone/quest_parser_collection.h"
 #include "zone/string_ids.h"
@@ -1403,6 +1404,10 @@ void Mob::AI_Process() {
 						}
 
 						glm::vec4 pet_owner_position = owner->GetPosition();
+						if (owner->IsClient()) {
+							multiclass_manager.GetPetFollowPosition(owner->CastToClient(), this, pet_owner_position);
+						}
+
 						float     distance_to_owner  = DistanceSquared(m_Position, pet_owner_position);
 						float     z_distance         = pet_owner_position.z - m_Position.z;
 

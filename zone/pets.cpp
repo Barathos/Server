@@ -288,7 +288,12 @@ void Mob::MakePoweredPet(uint16 spell_id, const char* pettype, int16 petpower,
 		npc->size = in_size;
 
 	entity_list.AddNPC(npc, true, true);
-	if (!IsClient() || !multiclass_manager.RegisterPet(CastToClient(), npc)) {
+	if (IsClient() && multiclass_manager.RegisterPet(CastToClient(), npc)) {
+		glm::vec4 pet_follow_position;
+		if (multiclass_manager.GetPetFollowPosition(CastToClient(), npc, pet_follow_position)) {
+			npc->GMMove(pet_follow_position.x, pet_follow_position.y, pet_follow_position.z, pet_follow_position.w, false);
+		}
+	} else {
 		SetPetID(npc->GetID());
 	}
 	// We need to handle PetType 5 (petHatelist), add the current target to the hatelist of the pet
