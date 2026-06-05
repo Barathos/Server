@@ -146,6 +146,7 @@ int command_init(void)
 		command_add("evolve", "Evolving Item manipulation commands. Use argument help for more info.", AccountStatus::Steward, command_evolvingitems) ||
 		command_add("faction", "[Find (criteria | all ) | Review (criteria | all) | Reset (id)] - Resets Player's Faction", AccountStatus::QuestTroupe, command_faction) ||
 		command_add("factionassociation", "[factionid] [amount] - triggers a faction hits via association", AccountStatus::GMLeadAdmin, command_faction_association) ||
+		command_add("customfeatures", "- Show enabled/disabled custom all-features rule gates", AccountStatus::GMAdmin, command_customfeatures) ||
 		command_add("feature", "Change your or your target's feature's temporarily", AccountStatus::QuestTroupe, command_feature) ||
 		command_add("size", "Change your targets size (alias of #feature size)", AccountStatus::QuestTroupe, command_feature) ||
 		command_add("find", "Search command used to find various things", AccountStatus::Guide, command_find) ||

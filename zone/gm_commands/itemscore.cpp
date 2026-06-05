@@ -17,6 +17,7 @@
 */
 #include "common/item_instance.h"
 #include "common/item_power.h"
+#include "common/rulesys.h"
 #include "common/seperator.h"
 #include "common/strings.h"
 #include "zone/client.h"
@@ -347,6 +348,11 @@ namespace {
 
 void command_itemscore(Client *c, const Seperator *sep)
 {
+	if (!RuleB(CustomFeatures, GearScoreEnabled)) {
+		c->Message(Chat::White, "GearScore is disabled on this server.");
+		return;
+	}
+
 	const auto action = Strings::ToLower(GetArg(sep, 1));
 	if (action.empty() || action == "help") {
 		SendItemScoreUsage(c);

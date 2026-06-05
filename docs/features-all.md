@@ -1,6 +1,7 @@
 # All Features Bundle
 
-This branch combines the standalone feature branches on top of a clean EQEmu base:
+This branch is the maintained source of truth for the combined custom EQEmu
+distribution on top of a clean EQEmu base:
 
 - AutoLoot
 - Live Items / Item Forge
@@ -18,7 +19,33 @@ This branch combines the standalone feature branches on top of a clean EQEmu bas
 
 ## Branch Shape
 
-The bundle keeps the feature commits layered instead of using the dirty integration lab as source of truth. This gives operators one branch to grab when they want every system, while preserving the individual feature branches for piecemeal installs.
+The all-features checkout now owns the maintained combined package. Standalone feature
+projects are useful as historical references or extraction targets, but normal feature
+fixes for the combined server should land here and be protected by runtime feature
+gates instead of maintaining separate live implementations.
+
+Feature gates live in the `CustomFeatures` rule category:
+
+- `CustomFeatures:MulticlassEnabled`
+- `CustomFeatures:AchievementsEnabled`
+- `CustomFeatures:AutoLootEnabled`
+- `CustomFeatures:GearScoreEnabled`
+- `CustomFeatures:LiveItemsEnabled`
+- `CustomFeatures:LiveSpellsEnabled`
+- `CustomFeatures:ItemRarityEnabled`
+- `CustomFeatures:HpFixEnabled`
+- `CustomFeatures:AiDialogueEnabled`
+- `CustomFeatures:TradeskillsEnabled`
+- `CustomFeatures:AugsInAugsEnabled`
+- `CustomFeatures:DynamicQuestsEnabled`
+- `CustomFeatures:MqInterfaceEnabled`
+
+Use `#customfeatures` in-game as a GM admin to print the current all-features gate
+state. When adding or changing feature behavior, gate it at server authority
+boundaries: commands, passive event processors, native transport senders, quest entry
+points, and item/spell mutation paths. The all-features client patcher may still ship
+all XML and native DLL payloads together; disabled server rules should prevent the
+feature from doing real work.
 
 ## Database
 

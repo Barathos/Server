@@ -1,5 +1,10 @@
 local UPGRADE_AMOUNT = 10
 
+local function live_items_enabled()
+	local value = eq.get_rule("CustomFeatures:LiveItemsEnabled")
+	return value == nil or value == "" or value == "true" or value == "1"
+end
+
 local stat_fields = {
 	{ key = "hp", label = "HP", cap = 5000, get = function(item) return item:HP() end },
 	{ key = "mana", label = "Mana", cap = 5000, get = function(item) return item:Mana() end },
@@ -152,6 +157,11 @@ local function trade_items(trade)
 end
 
 function event_say(e)
+	if not live_items_enabled() then
+		e.self:Say("Instance upgrades are disabled right now.")
+		return
+	end
+
 	if not e.message:findi("hail") then
 		return
 	end
@@ -165,6 +175,12 @@ end
 
 function event_trade(e)
 	local item_lib = require("items")
+	if not live_items_enabled() then
+		e.self:Say("Instance upgrades are disabled right now.")
+		item_lib.return_items(e.self, e.other, e.trade)
+		return
+	end
+
 	local items = trade_items(e.trade)
 
 	if #items ~= 1 or e.trade.platinum > 0 or e.trade.gold > 0 or e.trade.silver > 0 or e.trade.copper > 0 then

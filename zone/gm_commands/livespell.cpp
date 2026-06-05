@@ -41,6 +41,11 @@ namespace {
 	constexpr const char *LiveSpellNextScrollBucket = "live_spell.next_scroll_item_id";
 	bool gLiveSpellServerLoaded = false;
 
+	bool LiveSpellsEnabled()
+	{
+		return RuleB(CustomFeatures, LiveSpellsEnabled);
+	}
+
 	struct LiveSpellElement {
 		const char *key;
 		const char *label;
@@ -789,6 +794,10 @@ namespace {
 namespace LiveSpellManager {
 	void EnsureServerLoaded()
 	{
+		if (!LiveSpellsEnabled()) {
+			return;
+		}
+
 		if (gLiveSpellServerLoaded) {
 			return;
 		}
@@ -799,6 +808,13 @@ namespace LiveSpellManager {
 
 	void SendClientSync(Client *c)
 	{
+		if (!LiveSpellsEnabled()) {
+			if (c) {
+				c->Message(Chat::White, "Live Spells are disabled on this server.");
+			}
+			return;
+		}
+
 		EnsureServerLoaded();
 
 		int sent = 0;
@@ -820,6 +836,11 @@ namespace LiveSpellManager {
 		const std::string &custom_name
 	)
 	{
+		if (!LiveSpellsEnabled()) {
+			c->Message(Chat::White, "Live Spells are disabled on this server.");
+			return false;
+		}
+
 		EnsureServerLoaded();
 
 		auto definition = BuildLiveSpellDefinition(c, element, target, range, damage, recast_time, custom_name);
@@ -864,12 +885,21 @@ namespace LiveSpellManager {
 
 	bool IsLiveSpell(const uint16 spell_id)
 	{
+		if (!LiveSpellsEnabled()) {
+			return false;
+		}
+
 		return IsPersistedLiveSpellID(spell_id);
 	}
 }
 
 void command_livespell(Client *c, const Seperator *sep)
 {
+	if (!LiveSpellsEnabled()) {
+		c->Message(Chat::White, "Live Spells are disabled on this server.");
+		return;
+	}
+
 	const auto arguments = sep->argnum;
 	if (!arguments || !strcasecmp(sep->arg[1], "help")) {
 		SendLiveSpellUsage(c);

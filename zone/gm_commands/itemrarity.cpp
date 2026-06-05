@@ -16,6 +16,7 @@
 	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 #include "common/item_instance.h"
+#include "common/rulesys.h"
 #include "common/seperator.h"
 #include "common/strings.h"
 #include "zone/client.h"
@@ -110,6 +111,11 @@ namespace {
 
 void command_itemrarity(Client *c, const Seperator *sep)
 {
+	if (!RuleB(CustomFeatures, ItemRarityEnabled)) {
+		c->Message(Chat::White, "Item Rarity is disabled on this server.");
+		return;
+	}
+
 	const auto arguments = sep->argnum;
 	if (!arguments || !strcasecmp(sep->arg[1], "help")) {
 		SendUsage(c);

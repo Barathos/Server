@@ -80,6 +80,7 @@ void command_copycharacter(Client *c, const Seperator *sep);
 void command_corpse(Client *c, const Seperator *sep);
 void command_corpsefix(Client *c, const Seperator *sep);
 void command_countitem(Client *c, const Seperator *sep);
+void command_customfeatures(Client *c, const Seperator *sep);
 void command_damage(Client *c, const Seperator *sep);
 void command_databuckets(Client *c, const Seperator *sep);
 void command_dbspawn2(Client *c, const Seperator *sep);

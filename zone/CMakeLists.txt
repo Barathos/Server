@@ -397,6 +397,7 @@ set(gm_command_sources
     gm_commands/corpse.cpp
     gm_commands/corpsefix.cpp
     gm_commands/countitem.cpp
+    gm_commands/customfeatures.cpp
     gm_commands/damage.cpp
     gm_commands/databuckets.cpp
     gm_commands/dbspawn2.cpp

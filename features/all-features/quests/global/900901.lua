@@ -1,5 +1,10 @@
 local TEST_LOOT_CACHE_ID = 199091
 
+local function live_items_enabled()
+	local value = eq.get_rule("CustomFeatures:LiveItemsEnabled")
+	return value == nil or value == "" or value == "true" or value == "1"
+end
+
 local forge_payload = table.concat({
 	"LIVEITEM|ui|open",
 	"types=weapon,armor,jewelry,charm,shield,augment",
@@ -12,6 +17,11 @@ local forge_payload = table.concat({
 }, "|")
 
 function event_say(e)
+	if not live_items_enabled() then
+		e.self:QuestSay(e.other, "The Item Forge is disabled right now.")
+		return
+	end
+
 	if e.message:findi("hail") then
 		e.self:QuestSay(
 			e.other,

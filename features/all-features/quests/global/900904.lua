@@ -17,6 +17,11 @@ local classes = {
 	[16] = { name = "Berserker", base_item_id = 50515, class_mask = 32768, itemtype = 1, slots = 8192, damage = 38, delay = 40 },
 }
 
+local function live_items_enabled()
+	local value = eq.get_rule("CustomFeatures:LiveItemsEnabled")
+	return value == nil or value == "" or value == "true" or value == "1"
+end
+
 local initial_stats = {
 	hp = 50,
 	mana = 50,
@@ -113,6 +118,11 @@ function event_say_heirloom(e)
 end
 
 function event_say(e)
+	if not live_items_enabled() then
+		e.self:Say("Heirloom testing is disabled right now.")
+		return
+	end
+
 	local message = (e.message or ""):lower()
 
 	if message:find("heirloom") then

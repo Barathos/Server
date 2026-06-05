@@ -35,6 +35,11 @@
 #include <utility>
 
 namespace {
+	bool LiveItemsEnabled()
+	{
+		return RuleB(CustomFeatures, LiveItemsEnabled);
+	}
+
 	void SendLiveItemUsage(Client *c)
 	{
 		c->Message(
@@ -428,6 +433,11 @@ namespace {
 
 void command_itemforge(Client *c, const Seperator *sep)
 {
+	if (!LiveItemsEnabled()) {
+		c->Message(Chat::White, "Live Items are disabled on this server.");
+		return;
+	}
+
 	const auto arguments = sep->argnum;
 	if (!arguments || !strcasecmp(sep->arg[1], "help")) {
 		SendItemForgeUsage(c);
@@ -481,6 +491,11 @@ void command_itemforge(Client *c, const Seperator *sep)
 
 void command_liveitem(Client *c, const Seperator *sep)
 {
+	if (!LiveItemsEnabled()) {
+		c->Message(Chat::White, "Live Items are disabled on this server.");
+		return;
+	}
+
 	const auto arguments = sep->argnum;
 	if (!arguments || !strcasecmp(sep->arg[1], "help")) {
 		SendLiveItemUsage(c);

@@ -39,6 +39,24 @@ MulticlassManager multiclass_manager;
 
 namespace {
 
+bool MulticlassEnabled()
+{
+	return RuleB(CustomFeatures, MulticlassEnabled);
+}
+
+bool RequireMulticlassEnabled(Client *client)
+{
+	if (MulticlassEnabled()) {
+		return true;
+	}
+
+	if (client) {
+		client->Message(Chat::White, "Multiclass is disabled on this server.");
+	}
+
+	return false;
+}
+
 uint32 ToUInt(const char *value)
 {
 	return value ? Strings::ToUnsignedInt(value) : 0;
@@ -397,6 +415,10 @@ void MulticlassManager::HandleCommand(Client *client, const Seperator *sep)
 		return;
 	}
 
+	if (!RequireMulticlassEnabled(client)) {
+		return;
+	}
+
 	if (sep->argnum < 1) {
 		SendStatus(client);
 		return;
@@ -516,6 +538,10 @@ void MulticlassManager::HandleNativeCommand(Client *client, const Seperator *sep
 		return;
 	}
 
+	if (!RequireMulticlassEnabled(client)) {
+		return;
+	}
+
 	if (
 		sep->argnum < 1 ||
 		!strcasecmp(sep->arg[1], "status") ||
@@ -603,7 +629,7 @@ void MulticlassManager::HandleNativeCommand(Client *client, const Seperator *sep
 
 bool MulticlassManager::EnsureProfile(Client *client)
 {
-	if (!client || !client->CharacterID() || !IsPlayerClass(client->GetClass()) || !SchemaAvailable()) {
+	if (!MulticlassEnabled() || !client || !client->CharacterID() || !IsPlayerClass(client->GetClass()) || !SchemaAvailable()) {
 		return false;
 	}
 
@@ -638,7 +664,7 @@ bool MulticlassManager::EnsureProfile(Client *client)
 MulticlassManager::Profile MulticlassManager::LoadProfile(uint32 character_id)
 {
 	Profile profile;
-	if (!character_id) {
+	if (!MulticlassEnabled() || !character_id) {
 		return profile;
 	}
 
@@ -691,6 +717,7 @@ MulticlassManager::Profile MulticlassManager::LoadProfile(uint32 character_id)
 bool MulticlassManager::SetProfile(Client *client, uint8 class_slot_1, uint8 class_slot_2, uint8 class_slot_3, const std::string &source)
 {
 	if (
+		!MulticlassEnabled() ||
 		!client ||
 		!client->CharacterID() ||
 		!IsPlayerClass(class_slot_1) ||
@@ -728,7 +755,7 @@ bool MulticlassManager::SetProfile(Client *client, uint8 class_slot_1, uint8 cla
 
 bool MulticlassManager::HasClass(uint32 character_id, uint8 class_id)
 {
-	if (!IsPlayerClass(class_id)) {
+	if (!MulticlassEnabled() || !IsPlayerClass(class_id)) {
 		return false;
 	}
 
@@ -742,12 +769,20 @@ bool MulticlassManager::HasClass(const Client *client, uint8 class_id)
 		return false;
 	}
 
+	if (!MulticlassEnabled()) {
+		return client->GetClass() == class_id;
+	}
+
 	const auto slots = GetClassSlots(client);
 	return slots[0] == class_id || slots[1] == class_id || slots[2] == class_id;
 }
 
 bool MulticlassManager::HasMultiplePetProfile(uint32 character_id)
 {
+	if (!MulticlassEnabled()) {
+		return false;
+	}
+
 	const auto profile = LoadProfile(character_id);
 	if (!profile.multiple_pets_enabled) {
 		return false;
@@ -766,7 +801,7 @@ bool MulticlassManager::HasMultiplePetProfile(uint32 character_id)
 
 uint8 MulticlassManager::GetPetRosterLimit(const Client *client)
 {
-	if (!client || !client->CharacterID()) {
+	if (!MulticlassEnabled() || !client || !client->CharacterID()) {
 		return 1;
 	}
 
@@ -822,7 +857,7 @@ std::vector<Mob *> MulticlassManager::GetPetRoster(const Client *client)
 std::vector<Mob *> MulticlassManager::GetSecondaryPetRoster(Client *client)
 {
 	std::vector<Mob *> pets;
-	if (!client || GetPetRosterLimit(client) <= 1) {
+	if (!MulticlassEnabled() || !client || GetPetRosterLimit(client) <= 1) {
 		return pets;
 	}
 
@@ -841,6 +876,7 @@ std::vector<Mob *> MulticlassManager::GetSecondaryPetRoster(Client *client)
 bool MulticlassManager::IsPetRosterMember(const Client *client, Mob *pet)
 {
 	if (
+		!MulticlassEnabled() ||
 		!client ||
 		!pet ||
 		!client->CharacterID() ||
@@ -858,7 +894,7 @@ bool MulticlassManager::IsPetRosterMember(const Client *client, Mob *pet)
 
 bool MulticlassManager::CanCreateAdditionalPet(Client *client)
 {
-	if (!client) {
+	if (!MulticlassEnabled() || !client) {
 		return false;
 	}
 
@@ -876,7 +912,7 @@ bool MulticlassManager::CanCreateAdditionalPet(Client *client)
 
 bool MulticlassManager::RegisterPet(Client *client, Mob *pet)
 {
-	if (!client || !pet || !client->CharacterID()) {
+	if (!MulticlassEnabled() || !client || !pet || !client->CharacterID()) {
 		return false;
 	}
 
@@ -904,6 +940,11 @@ MulticlassManager::ClassSlots MulticlassManager::GetClassSlots(const Client *cli
 {
 	ClassSlots slots = {0, 0, 0};
 	if (!client || !IsPlayerClass(client->GetClass())) {
+		return slots;
+	}
+
+	if (!MulticlassEnabled()) {
+		slots[0] = client->GetClass();
 		return slots;
 	}
 
@@ -1029,7 +1070,7 @@ uint8 MulticlassManager::GetBestSkillTrainLevel(const Client *client, EQ::skills
 
 uint16 MulticlassManager::SeedEligibleSkills(Client *client, bool notify)
 {
-	if (!client || !client->CharacterID() || !SchemaAvailable() || !EnsureProfile(client)) {
+	if (!MulticlassEnabled() || !client || !client->CharacterID() || !SchemaAvailable() || !EnsureProfile(client)) {
 		return 0;
 	}
 
@@ -1088,7 +1129,7 @@ uint16 MulticlassManager::SeedEligibleSkills(Client *client, bool notify)
 
 void MulticlassManager::ApplyTrioBonuses(Client *client, StatBonuses *bonuses)
 {
-	if (!client || !bonuses || !client->CharacterID() || !SchemaAvailable()) {
+	if (!MulticlassEnabled() || !client || !bonuses || !client->CharacterID() || !SchemaAvailable()) {
 		return;
 	}
 
@@ -2458,6 +2499,10 @@ bool MulticlassManager::HandleNativeDisciplineCommand(Client *client, const Sepe
 
 bool MulticlassManager::MelodySchemaAvailable()
 {
+	if (!MulticlassEnabled()) {
+		return false;
+	}
+
 	if (melody_schema_available_) {
 		return true;
 	}
@@ -2614,7 +2659,7 @@ void MulticlassManager::RefreshAlternateAdvancementTable(Client *client)
 
 bool MulticlassManager::HasActiveBardMelody(Client *client)
 {
-	if (!client || !IsBard(client) || !MelodySchemaAvailable()) {
+	if (!MulticlassEnabled() || !client || !IsBard(client) || !MelodySchemaAvailable()) {
 		return false;
 	}
 
@@ -2836,7 +2881,7 @@ void MulticlassManager::SendNativeBardMelody(Client *client, bool show_melody_wi
 
 void MulticlassManager::ProcessBardMelody(Client *client)
 {
-	if (!client || client->IsDead() || !IsBard(client) || !MelodySchemaAvailable()) {
+	if (!MulticlassEnabled() || !client || client->IsDead() || !IsBard(client) || !MelodySchemaAvailable()) {
 		return;
 	}
 
@@ -2865,6 +2910,10 @@ void MulticlassManager::ProcessBardMelody(Client *client)
 
 bool MulticlassManager::SchemaAvailable()
 {
+	if (!MulticlassEnabled()) {
+		return false;
+	}
+
 	if (schema_available_) {
 		return true;
 	}

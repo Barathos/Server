@@ -37,6 +37,22 @@
 
 
 
+RULE_CATEGORY(CustomFeatures)
+RULE_BOOL(CustomFeatures, MulticlassEnabled, true, "Enables the custom Multiclass trio feature, including trio profiles, secondary class permissions, native UI sync, resonance bonuses, and multi-pet behavior.")
+RULE_BOOL(CustomFeatures, AchievementsEnabled, true, "Enables the custom Achievements feature, including achievement progress processing, commands, and native achievement window sync.")
+RULE_BOOL(CustomFeatures, AutoLootEnabled, true, "Enables the custom source-backed AutoLoot, LootFilter, AutoSell, Need/Greed, and native AutoLoot window behavior.")
+RULE_BOOL(CustomFeatures, GearScoreEnabled, true, "Enables the custom item power/gearscore transport and #itemscore tools.")
+RULE_BOOL(CustomFeatures, LiveItemsEnabled, true, "Enables the custom Live Items and Item Forge testing commands and native Item Forge behavior.")
+RULE_BOOL(CustomFeatures, LiveSpellsEnabled, true, "Enables the custom Live Spells and Spell Forge commands, server spell patching, and native Spell Forge sync.")
+RULE_BOOL(CustomFeatures, ItemRarityEnabled, true, "Enables the custom item rarity tools and native rarity transport.")
+RULE_BOOL(CustomFeatures, HpFixEnabled, true, "Enables the native high-HP client display helper and #hpfix tools.")
+RULE_BOOL(CustomFeatures, AiDialogueEnabled, true, "Enables the custom AI dialogue feature payload and related scripted NPC behavior.")
+RULE_BOOL(CustomFeatures, TradeskillsEnabled, true, "Enables custom native tradeskill feature behavior when wired by the server and client payload.")
+RULE_BOOL(CustomFeatures, AugsInAugsEnabled, true, "Enables custom Augs-in-Augs feature behavior when wired by the server and client payload.")
+RULE_BOOL(CustomFeatures, DynamicQuestsEnabled, true, "Enables custom Dynamic Quests feature behavior when wired by the server and client payload.")
+RULE_BOOL(CustomFeatures, MqInterfaceEnabled, true, "Enables bundled MQ-derived native client interface helpers such as map and item display when shipped in the all-features DLL.")
+RULE_CATEGORY_END()
+
 RULE_CATEGORY(Character)
 RULE_INT(Character, MaxLevel, 65, "Sets the highest level for players that can be reached through experience")
 RULE_BOOL(Character, PerCharacterQglobalMaxLevel, false, "Check for qglobal 'CharMaxLevel' character qglobal (Type 5, \"\"), if player tries to level beyond that point, it will not go beyond that level")

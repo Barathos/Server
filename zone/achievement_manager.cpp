@@ -9,6 +9,7 @@
 */
 #include "achievement_manager.h"
 
+#include "common/rulesys.h"
 #include "common/seperator.h"
 #include "common/skills.h"
 #include "common/strings.h"
@@ -24,6 +25,11 @@
 AchievementManager achievement_manager;
 
 namespace {
+	bool AchievementsEnabled()
+	{
+		return RuleB(CustomFeatures, AchievementsEnabled);
+	}
+
 	uint32 ToUInt(const char *value)
 	{
 		return value ? Strings::ToUnsignedInt(value) : 0;
@@ -67,6 +73,11 @@ namespace {
 void AchievementManager::HandleCommand(Client *client, const Seperator *sep)
 {
 	if (!client || !sep) {
+		return;
+	}
+
+	if (!AchievementsEnabled()) {
+		client->Message(Chat::White, "Achievements are disabled on this server.");
 		return;
 	}
 
@@ -187,7 +198,7 @@ void AchievementManager::HandleCommand(Client *client, const Seperator *sep)
 
 void AchievementManager::ProcessLevel(Client *client)
 {
-	if (!client) {
+	if (!client || !AchievementsEnabled()) {
 		return;
 	}
 
@@ -219,7 +230,7 @@ void AchievementManager::ProcessLevel(Client *client)
 
 void AchievementManager::ProcessZoneVisit(Client *client)
 {
-	if (!client || !zone) {
+	if (!client || !zone || !AchievementsEnabled()) {
 		return;
 	}
 
@@ -236,7 +247,7 @@ void AchievementManager::ProcessZoneVisit(Client *client)
 
 void AchievementManager::ProcessTaskComplete(Client *client, uint32 task_id)
 {
-	if (!client || !task_id) {
+	if (!client || !task_id || !AchievementsEnabled()) {
 		return;
 	}
 
@@ -253,7 +264,7 @@ void AchievementManager::ProcessTaskComplete(Client *client, uint32 task_id)
 
 void AchievementManager::ProcessSkill(Client *client, uint32 skill_id, uint32 value)
 {
-	if (!client) {
+	if (!client || !AchievementsEnabled()) {
 		return;
 	}
 
@@ -270,7 +281,7 @@ void AchievementManager::ProcessSkill(Client *client, uint32 skill_id, uint32 va
 
 void AchievementManager::ProcessKill(Client *client, NPC *npc)
 {
-	if (!client || !npc || !zone) {
+	if (!client || !npc || !zone || !AchievementsEnabled()) {
 		return;
 	}
 

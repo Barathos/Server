@@ -1,5 +1,10 @@
 local CACHE_ITEM_ID = 199091
 
+local function live_items_enabled()
+	local value = eq.get_rule("CustomFeatures:LiveItemsEnabled")
+	return value == nil or value == "" or value == "true" or value == "1"
+end
+
 local templates = {
 	{ id = 6002, type = "Weapon", name = "Staff", damage = true },
 	{ id = 6919, type = "Weapon", name = "Forlorn Bow", damage = true },
@@ -200,6 +205,11 @@ local function create_random_item(e)
 end
 
 function event_item_click(e)
+	if not live_items_enabled() then
+		e.owner:Message(13, "Live Items test caches are disabled right now.")
+		return
+	end
+
 	if e.self:GetID() ~= CACHE_ITEM_ID then
 		return
 	end

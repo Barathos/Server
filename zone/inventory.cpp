@@ -21,6 +21,7 @@
 #include "common/events/player_event_logs.h"
 #include "common/evolving_items.h"
 #include "common/item_power.h"
+#include "common/rulesys.h"
 #include "common/repositories/character_corpse_items_repository.h"
 #include "common/strings.h"
 #include "zone/bot.h"
@@ -1654,6 +1655,10 @@ bool Client::RefreshLiveItemTree(EQ::ItemInstance* inst)
 
 void Client::SendItemPowerTransport(const EQ::ItemInstance* inst)
 {
+	if (!RuleB(CustomFeatures, GearScoreEnabled)) {
+		return;
+	}
+
 	if (!inst || !inst->GetItem()) {
 		return;
 	}

@@ -3,6 +3,11 @@ local MAX_TRADE_SLOTS = 4
 local MAX_SOURCE_AUGMENTS = MAX_TRADE_SLOTS - 1
 local MIN_SOURCE_AUGMENTS = 1
 
+local function live_items_enabled()
+	local value = eq.get_rule("CustomFeatures:LiveItemsEnabled")
+	return value == nil or value == "" or value == "true" or value == "1"
+end
+
 local stat_fields = {
 	{ key = "ac", label = "AC", get = function(item) return item:AC() end },
 	{ key = "hp", label = "HP", get = function(item) return item:HP() end },
@@ -182,6 +187,11 @@ local function fuse_augments(sources, source_ids)
 end
 
 function event_say(e)
+	if not live_items_enabled() then
+		e.self:Say("Augment fusion is disabled right now.")
+		return
+	end
+
 	if e.message:findi("catalyst") then
 		e.other:SummonItem(CATALYST_ITEM_ID, 1)
 		e.self:Say("An Augment Catalyst is on your cursor. Hand it back to me with one to three augment items and no coins when you are ready to test fusion.")
@@ -201,6 +211,12 @@ end
 
 function event_trade(e)
 	local item_lib = require("items")
+	if not live_items_enabled() then
+		e.self:Say("Augment fusion is disabled right now.")
+		item_lib.return_items(e.self, e.other, e.trade)
+		return
+	end
+
 	local items = trade_items(e.trade)
 
 	if #items < 2 or #items > MAX_TRADE_SLOTS or e.trade.platinum > 0 or e.trade.gold > 0 or e.trade.silver > 0 or e.trade.copper > 0 then

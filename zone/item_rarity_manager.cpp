@@ -20,6 +20,7 @@
 #include "common/eq_constants.h"
 #include "common/item_data.h"
 #include "common/item_instance.h"
+#include "common/rulesys.h"
 #include "common/say_link.h"
 #include "common/strings.h"
 #include "zone/client.h"
@@ -321,6 +322,10 @@ std::string ItemRarityManager::BuildDecoratedLink(const EQ::ItemInstance *inst, 
 
 void ItemRarityManager::SendNativeRarity(Client *client, uint32 item_id, ItemRarity rarity)
 {
+	if (!RuleB(CustomFeatures, ItemRarityEnabled)) {
+		return;
+	}
+
 	if (!client || !item_id) {
 		return;
 	}
@@ -340,6 +345,10 @@ void ItemRarityManager::SendNativeRarity(Client *client, uint32 item_id, ItemRar
 
 void ItemRarityManager::SendNativeRarityClear(Client *client, uint32 item_id)
 {
+	if (!RuleB(CustomFeatures, ItemRarityEnabled)) {
+		return;
+	}
+
 	if (!client || !item_id) {
 		return;
 	}
@@ -358,6 +367,10 @@ void ItemRarityManager::SendNativeRarityClear(Client *client, uint32 item_id)
 
 void ItemRarityManager::SendRarityItemLink(Client *client, uint32 item_id)
 {
+	if (!RuleB(CustomFeatures, ItemRarityEnabled)) {
+		return;
+	}
+
 	if (!client) {
 		return;
 	}
@@ -386,6 +399,10 @@ void ItemRarityManager::SendRarityItemLink(Client *client, uint32 item_id)
 
 void ItemRarityManager::SendLootedItemMessage(Client *client, const EQ::ItemInstance *inst, const std::string &)
 {
+	if (!RuleB(CustomFeatures, ItemRarityEnabled)) {
+		return;
+	}
+
 	if (!client || !inst || !inst->GetItem()) {
 		return;
 	}

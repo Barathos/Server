@@ -13,6 +13,7 @@
 #include "common/emu_constants.h"
 #include "common/inventory_profile.h"
 #include "common/item_instance.h"
+#include "common/rulesys.h"
 #include "common/say_link.h"
 #include "common/seperator.h"
 #include "common/strings.h"
@@ -39,6 +40,24 @@ namespace {
 	constexpr float kMaxNearbyRadius = 250.0f;
 	constexpr uint32 kNeedGreedSeconds = 45;
 	constexpr uint32 kAutosellSessionSeconds = 60;
+
+	bool AutoLootEnabled()
+	{
+		return RuleB(CustomFeatures, AutoLootEnabled);
+	}
+
+	bool RequireAutoLootEnabled(Client *client)
+	{
+		if (AutoLootEnabled()) {
+			return true;
+		}
+
+		if (client) {
+			client->Message(Chat::White, "AutoLoot is disabled on this server.");
+		}
+
+		return false;
+	}
 
 	bool IsValidFilterMode(const std::string &mode)
 	{
@@ -197,6 +216,13 @@ namespace {
 
 void AutoLootManager::Process()
 {
+	if (!AutoLootEnabled()) {
+		m_pending_votes.clear();
+		m_autosell_sessions.clear();
+		m_loot_entries.clear();
+		return;
+	}
+
 	const time_t now = std::time(nullptr);
 	if (now == m_last_process) {
 		return;
@@ -566,6 +592,10 @@ Client *AutoLootManager::DetermineRecipient(Client *resolved_client, Corpse *cor
 
 void AutoLootManager::ProcessCorpseDeath(Corpse *corpse, Mob *killer)
 {
+	if (!AutoLootEnabled()) {
+		return;
+	}
+
 	if (!corpse || !corpse->IsNPCCorpse()) {
 		return;
 	}
@@ -580,6 +610,10 @@ void AutoLootManager::ProcessCorpseDeath(Corpse *corpse, Mob *killer)
 
 void AutoLootManager::ProcessNearby(Client *client, float radius)
 {
+	if (!RequireAutoLootEnabled(client)) {
+		return;
+	}
+
 	if (!client) {
 		return;
 	}
@@ -615,6 +649,10 @@ void AutoLootManager::ProcessNearby(Client *client, float radius)
 
 void AutoLootManager::ProcessCorpse(Corpse *corpse, Client *resolved_client, bool nearby)
 {
+	if (!AutoLootEnabled()) {
+		return;
+	}
+
 	if (!corpse || !resolved_client || !corpse->IsNPCCorpse() || corpse->IsBeingLooted()) {
 		return;
 	}
@@ -629,6 +667,10 @@ void AutoLootManager::ProcessCorpse(Corpse *corpse, Client *resolved_client, boo
 
 bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client, bool nearby)
 {
+	if (!AutoLootEnabled()) {
+		return false;
+	}
+
 	if (!corpse || !resolved_client || !corpse->IsNPCCorpse() || corpse->IsBeingLooted()) {
 		return false;
 	}
@@ -787,6 +829,10 @@ void AutoLootManager::PruneLootEntries()
 
 void AutoLootManager::SendNativeSnapshot(Client *client)
 {
+	if (!AutoLootEnabled()) {
+		return;
+	}
+
 	if (!client) {
 		return;
 	}
@@ -827,12 +873,20 @@ void AutoLootManager::SendNativeSnapshot(Client *client)
 
 void AutoLootManager::SendNativeUpdate(Client *client)
 {
+	if (!AutoLootEnabled()) {
+		return;
+	}
+
 	SendNativeStatus(client);
 	SendNativeSnapshot(client);
 }
 
 void AutoLootManager::RefreshQueuedRulesForClient(Client *client)
 {
+	if (!AutoLootEnabled()) {
+		return;
+	}
+
 	if (!client) {
 		return;
 	}
@@ -858,6 +912,10 @@ void AutoLootManager::RefreshQueuedRulesForClient(Client *client)
 
 void AutoLootManager::SendNativeFilterUpdate(Client *client)
 {
+	if (!AutoLootEnabled()) {
+		return;
+	}
+
 	RefreshQueuedRulesForClient(client);
 	SendNativeUpdate(client);
 	SendNativeFilters(client, "both");
@@ -865,6 +923,10 @@ void AutoLootManager::SendNativeFilterUpdate(Client *client)
 
 void AutoLootManager::HandleLootAction(Client *client, const Seperator *sep)
 {
+	if (!RequireAutoLootEnabled(client)) {
+		return;
+	}
+
 	if (!client || !sep || sep->argnum < 3 || !sep->IsNumber(2)) {
 		client->Message(Chat::White, "Usage: #autoloot action [Entry ID] [loot|leave|never|alwaysloot]");
 		return;
@@ -939,6 +1001,10 @@ void AutoLootManager::HandleLootAction(Client *client, const Seperator *sep)
 
 void AutoLootManager::HandlePersonalLootCommand(Client *client, const Seperator *sep)
 {
+	if (!RequireAutoLootEnabled(client)) {
+		return;
+	}
+
 	if (!client || !sep || sep->argnum < 2) {
 		client->Message(Chat::White, "Usage: #autoloot personal [lootall|leaveall]");
 		return;
@@ -1516,6 +1582,10 @@ void AutoLootManager::CancelAutosell(Client *client)
 
 void AutoLootManager::HandleAutolootCommand(Client *client, const Seperator *sep)
 {
+	if (!RequireAutoLootEnabled(client)) {
+		return;
+	}
+
 	if (!client || !sep) {
 		return;
 	}
@@ -1734,6 +1804,10 @@ void AutoLootManager::HandleAutolootCommand(Client *client, const Seperator *sep
 
 void AutoLootManager::HandleLootFilterCommand(Client *client, const Seperator *sep)
 {
+	if (!RequireAutoLootEnabled(client)) {
+		return;
+	}
+
 	if (!client || !sep) {
 		return;
 	}
@@ -1873,6 +1947,10 @@ void AutoLootManager::HandleLootFilterCommand(Client *client, const Seperator *s
 
 void AutoLootManager::HandleAutosellCommand(Client *client, const Seperator *sep)
 {
+	if (!RequireAutoLootEnabled(client)) {
+		return;
+	}
+
 	if (!client || !sep) {
 		return;
 	}
@@ -1951,6 +2029,10 @@ void AutoLootManager::HandleAutosellCommand(Client *client, const Seperator *sep
 
 void AutoLootManager::HandleNeedGreedCommand(Client *client, const Seperator *sep)
 {
+	if (!RequireAutoLootEnabled(client)) {
+		return;
+	}
+
 	if (!client || !sep || sep->argnum < 3 || strcasecmp(sep->arg[1], "vote") || !sep->IsNumber(2)) {
 		client->Message(Chat::White, "Usage: #needgreed vote [Vote ID] [need|greed|pass]");
 		return;
@@ -1961,6 +2043,10 @@ void AutoLootManager::HandleNeedGreedCommand(Client *client, const Seperator *se
 
 void AutoLootManager::ShowWindow(Client *client)
 {
+	if (!RequireAutoLootEnabled(client)) {
+		return;
+	}
+
 	if (!client) {
 		return;
 	}

@@ -11,6 +11,11 @@ local commands = {
 	liveitemdebug = true,
 }
 
+local function live_items_enabled()
+	local value = eq.get_rule("CustomFeatures:LiveItemsEnabled")
+	return value == nil or value == "" or value == "true" or value == "1"
+end
+
 local function is_handled_command(command)
 	return commands[string.lower(tostring(command or ""))] == true
 end
@@ -245,6 +250,10 @@ function event_command(e)
 		return 0
 	end
 
+	if not live_items_enabled() then
+		return 0
+	end
+
 	local command = string.lower(tostring(e.command or ""))
 	if command == "heirloomdebug" or command == "evolvingdebug" or command == "liveitemdebug" then
 		debug_message(e.self, "Manual heirloom debug command received.")
@@ -288,6 +297,10 @@ function event_command(e)
 end
 
 function event_level_up(e)
+	if not live_items_enabled() then
+		return
+	end
+
 	local client = e.self
 	local levels_gained = math.max(1, number(e.levels_gained, 1))
 	local grown = 0

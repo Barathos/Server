@@ -27,6 +27,12 @@ my $AI_POLL_TIMER = "ai_npc_poll";
 my %pending_ai_jobs = ();
 
 sub EVENT_SAY {
+    my $enabled = quest::get_rule("CustomFeatures:AiDialogueEnabled");
+    if (defined $enabled && $enabled =~ /^(0|false)$/i) {
+        quest::say("The old records are quiet right now. Try me again another time.");
+        return;
+    }
+
     my $player_message = defined $text ? $text : "";
     $player_message =~ s/^\s+|\s+$//g;
     return if $player_message eq "";

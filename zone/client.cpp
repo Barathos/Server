@@ -9263,6 +9263,11 @@ void Client::SendHPUpdateMarquee(){
 
 void Client::SendNativeHpFixUpdate(bool force)
 {
+	if (!RuleB(CustomFeatures, HpFixEnabled)) {
+		native_hpfix_ready_ = false;
+		return;
+	}
+
 	if (!native_hpfix_ready_) {
 		return;
 	}

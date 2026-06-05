@@ -9,6 +9,11 @@ local skipped_npcs = {
 
 local seed_marker = "live_items_tutorialb_spawn_loot_seeded"
 
+local function live_items_enabled()
+	local value = eq.get_rule("CustomFeatures:LiveItemsEnabled")
+	return value == nil or value == "" or value == "true" or value == "1"
+end
+
 local templates = {
 	{ id = 6002, type = "Weapon", name = "Staff", damage = true },
 	{ id = 6919, type = "Weapon", name = "Forlorn Bow", damage = true },
@@ -233,9 +238,17 @@ local function seed_existing_npcs()
 end
 
 function event_spawn_zone(e)
+	if not live_items_enabled() then
+		return
+	end
+
 	seed_npc(e.other)
 end
 
 function event_enter_zone(e)
+	if not live_items_enabled() then
+		return
+	end
+
 	seed_existing_npcs()
 end

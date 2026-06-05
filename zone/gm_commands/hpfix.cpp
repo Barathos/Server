@@ -15,6 +15,7 @@
 	You should have received a copy of the GNU General Public License
 	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
+#include "common/rulesys.h"
 #include "zone/client.h"
 
 namespace {
@@ -54,6 +55,12 @@ namespace {
 
 void command_hpfix(Client* c, const Seperator* sep)
 {
+	if (!RuleB(CustomFeatures, HpFixEnabled)) {
+		c->SetNativeHpFixReady(false);
+		c->Message(Chat::White, "HPFIX is disabled on this server.");
+		return;
+	}
+
 	const uint16 arguments = sep->argnum;
 
 	if (

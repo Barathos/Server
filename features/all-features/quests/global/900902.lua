@@ -6,6 +6,11 @@ local DEFAULT_NAME = "Bloodbound Augment"
 local ALL_EQUIPMENT_SLOTS = 8388607
 local ALL_AUGMENT_TYPES = 2147483647
 
+local function live_items_enabled()
+	local value = eq.get_rule("CustomFeatures:LiveItemsEnabled")
+	return value == nil or value == "" or value == "true" or value == "1"
+end
+
 local upgrade_order = {
 	"hp", "mana", "endur", "ac",
 	"str", "sta", "agi", "dex", "int", "wis", "cha",
@@ -375,6 +380,11 @@ local function confirm_build(e)
 end
 
 function event_say(e)
+	if not live_items_enabled() then
+		e.self:QuestSay(e.other, "Shardwork is disabled right now.")
+		return
+	end
+
 	local raw_message = e.message or ""
 	local message = normalize(raw_message)
 
