@@ -824,18 +824,26 @@ static std::string NativeMulticlassInventoryClassText()
 		return "";
 	}
 
-	if (!gNativeMulticlassState.profile_name.empty() && gNativeMulticlassState.profile_name != "Unchosen Trio") {
-		return gNativeMulticlassState.profile_name;
-	}
-
 	if (
 		NativeMulticlassIsPlayerClass(gNativeMulticlassState.class1) &&
 		NativeMulticlassIsPlayerClass(gNativeMulticlassState.class2) &&
 		NativeMulticlassIsPlayerClass(gNativeMulticlassState.class3)
 	) {
-		return std::string(NativeMulticlassClassName(gNativeMulticlassState.class1)) + " / " +
-			NativeMulticlassClassName(gNativeMulticlassState.class2) + " / " +
-			NativeMulticlassClassName(gNativeMulticlassState.class3);
+		const std::string class1 = gNativeMulticlassState.class1_name.empty() ?
+			NativeMulticlassClassName(gNativeMulticlassState.class1) :
+			gNativeMulticlassState.class1_name;
+		const std::string class2 = gNativeMulticlassState.class2_name.empty() ?
+			NativeMulticlassClassName(gNativeMulticlassState.class2) :
+			gNativeMulticlassState.class2_name;
+		const std::string class3 = gNativeMulticlassState.class3_name.empty() ?
+			NativeMulticlassClassName(gNativeMulticlassState.class3) :
+			gNativeMulticlassState.class3_name;
+
+		return class1 + "\n" + class2 + "\n" + class3;
+	}
+
+	if (!gNativeMulticlassState.profile_name.empty() && gNativeMulticlassState.profile_name != "Unchosen Trio") {
+		return gNativeMulticlassState.profile_name;
 	}
 
 	return "Multiclass Trio";

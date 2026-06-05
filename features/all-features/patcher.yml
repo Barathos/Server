@@ -1,6 +1,8 @@
 version: 1
 id: all-features
 label: All Features
+patchVersion: 'Build 1'
+autoIncrementPatchVersion: true
 client: rof
 files:
   - source: client_files/native_autoloot/eq-core-dll/bin/dinput8.dll
