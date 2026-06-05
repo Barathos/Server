@@ -57,6 +57,7 @@ public:
 	uint8 GetBestSpellLevel(const Client *client, uint16 spell_id);
 	bool CanUseSpell(const Client *client, uint16 spell_id);
 	bool CanUseItem(const Client *client, const EQ::ItemInstance *inst);
+	std::string BuildItemUseReport(const Client *client, const EQ::ItemInstance *inst, int16 equipment_slot = -1);
 	bool CanHaveSkill(const Client *client, EQ::skills::SkillType skill_id);
 	uint16 GetBestSkillCap(const Client *client, EQ::skills::SkillType skill_id, uint8 level);
 	uint8 GetBestSkillTrainLevel(const Client *client, EQ::skills::SkillType skill_id);
@@ -85,6 +86,7 @@ private:
 	void SendHelp(Client *client);
 	void SendStatus(Client *client);
 	void SendDiagnostics(Client *client, const char *topic = nullptr);
+	void SendItemCheck(Client *requester, Client *target_client, const char *mode, const char *value, const char *slot_value = nullptr);
 	void SendNativeSnapshot(Client *client, const std::string &status = "", bool show_window = true, bool show_pet_window = false);
 	bool SendNativeSpellLevelPatchRow(Client *client, uint16 spell_id, uint8 presentation_class);
 	void SendNativeSpellLevelPatch(Client *client, uint8 presentation_class);

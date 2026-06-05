@@ -13,6 +13,8 @@
 #include "common/eq_packet_structs.h"
 #include "common/item_data.h"
 #include "common/item_instance.h"
+#include "common/deity.h"
+#include "common/races.h"
 #include "common/rulesys.h"
 #include "common/seperator.h"
 #include "common/skill_caps.h"
@@ -454,6 +456,29 @@ void MulticlassManager::HandleCommand(Client *client, const Seperator *sep)
 		return;
 	}
 
+	if (!strcasecmp(sep->arg[1], "refresh") || !strcasecmp(sep->arg[1], "itemrefresh")) {
+		Client *target_client = client;
+		if (client->GetTarget() && client->GetTarget()->IsClient()) {
+			target_client = client->GetTarget()->CastToClient();
+		}
+
+		RefreshAlternateAdvancementTable(target_client);
+		RefreshClientAfterMulticlassProfileChange(target_client);
+		SendNativeSnapshot(target_client, "Inventory item usability refreshed.", false, false);
+		client->Message(Chat::White, fmt::format("Refreshed Multiclass item presentation for {}.", target_client->GetCleanName()).c_str());
+		return;
+	}
+
+	if (!strcasecmp(sep->arg[1], "itemcheck") || !strcasecmp(sep->arg[1], "equipcheck")) {
+		Client *target_client = client;
+		if (client->GetTarget() && client->GetTarget()->IsClient()) {
+			target_client = client->GetTarget()->CastToClient();
+		}
+
+		SendItemCheck(client, target_client, sep->arg[2], sep->arg[3], sep->arg[4]);
+		return;
+	}
+
 	if (!strcasecmp(sep->arg[1], "diag") || !strcasecmp(sep->arg[1], "diagnostics")) {
 		SendDiagnostics(client, sep->arg[2]);
 		return;
@@ -562,15 +587,32 @@ void MulticlassManager::HandleNativeCommand(Client *client, const Seperator *sep
 		return;
 	}
 
+	if (sep->argnum < 1) {
+		RefreshAlternateAdvancementTable(client);
+		RefreshClientAfterMulticlassProfileChange(client);
+		SendNativeSnapshot(client, "Inventory item usability refreshed.");
+		return;
+	}
+
 	if (
-		sep->argnum < 1 ||
 		!strcasecmp(sep->arg[1], "status") ||
-		!strcasecmp(sep->arg[1], "refresh") ||
 		!strcasecmp(sep->arg[1], "open") ||
 		!strcasecmp(sep->arg[1], "window")
 	) {
 		RefreshAlternateAdvancementTable(client);
 		SendNativeSnapshot(client);
+		return;
+	}
+
+	if (!strcasecmp(sep->arg[1], "refresh") || !strcasecmp(sep->arg[1], "itemrefresh")) {
+		RefreshAlternateAdvancementTable(client);
+		RefreshClientAfterMulticlassProfileChange(client);
+		SendNativeSnapshot(client, "Inventory item usability refreshed.");
+		return;
+	}
+
+	if (!strcasecmp(sep->arg[1], "itemcheck") || !strcasecmp(sep->arg[1], "equipcheck")) {
+		SendItemCheck(client, client, sep->arg[2], sep->arg[3], sep->arg[4]);
 		return;
 	}
 
@@ -1033,6 +1075,82 @@ bool MulticlassManager::CanUseItem(const Client *client, const EQ::ItemInstance 
 	return (item->Classes & GetClassMask(client)) != 0;
 }
 
+std::string MulticlassManager::BuildItemUseReport(const Client *client, const EQ::ItemInstance *inst, int16 equipment_slot)
+{
+	if (!client) {
+		return "Multiclass item check failed: no client context.";
+	}
+
+	const auto *client_name = client->GetName();
+	if (!inst) {
+		return fmt::format("Multiclass item check for {} failed: no item instance.", client_name);
+	}
+
+	const auto *item = inst->GetItem();
+	if (!item) {
+		return fmt::format("Multiclass item check for {} failed: item data is unavailable.", client_name);
+	}
+
+	const auto profile = LoadProfile(client->CharacterID());
+	const auto slots = GetClassSlots(client);
+	const auto race_mask = GetPlayerRaceBit(client->GetBaseRace());
+	const auto deity_mask = Deity::GetBitmask(client->GetDeity());
+	const auto class_mask = GetClassMask(client);
+	const bool race_ok = (item->Races & race_mask) != 0;
+	const bool deity_ok = item->Deity == 0 || (item->Deity & deity_mask) != 0;
+	const bool class_ok = (item->Classes & class_mask) != 0;
+	const bool level_ok = item->ReqLevel == 0 || client->GetLevel() >= item->ReqLevel;
+	const bool slot_check = EQ::ValueWithin(equipment_slot, EQ::invslot::EQUIPMENT_BEGIN, EQ::invslot::EQUIPMENT_END);
+	const bool slot_ok = !slot_check || inst->IsSlotAllowed(equipment_slot);
+	const uint32 presentation_classes = (race_ok && class_ok) ? (item->Classes | class_mask) : item->Classes;
+
+	std::vector<std::string> failures;
+	if (!race_ok) {
+		failures.emplace_back("base race is not on the item");
+	}
+	if (!deity_ok) {
+		failures.emplace_back("deity is not on the item");
+	}
+	if (!class_ok) {
+		failures.emplace_back("none of the trio classes are on the item");
+	}
+	if (!level_ok) {
+		failures.emplace_back(fmt::format("requires level {}", item->ReqLevel));
+	}
+	if (!slot_ok) {
+		failures.emplace_back("item cannot go in that equipment slot");
+	}
+
+	const std::string result = failures.empty() ? "ALLOW" : fmt::format("BLOCK: {}", JoinValues(failures, ", "));
+	const std::string slot_text = slot_check ? fmt::format("slot {}", equipment_slot) : "slot not checked";
+
+	return fmt::format(
+		"Multiclass item check for {}: {} ({}) on {} -> {}. Character race {}({}) mask 0x{:X}; deity {}({}) mask 0x{:X}; trio [{} / {} / {}], locked {}, class mask 0x{:X}. Item races 0x{:X}, deity 0x{:X}, classes 0x{:X}, presentation classes 0x{:X}, req level {}, slots 0x{:X}.",
+		client_name,
+		item->Name,
+		item->ID,
+		slot_text,
+		result,
+		GetRaceIDName(client->GetBaseRace()),
+		client->GetBaseRace(),
+		race_mask,
+		Deity::GetName(client->GetDeity()),
+		client->GetDeity(),
+		deity_mask,
+		ClassName(slots[0], client->GetLevel()),
+		ClassName(slots[1], client->GetLevel()),
+		ClassName(slots[2], client->GetLevel()),
+		profile.locked ? "yes" : "no",
+		class_mask,
+		item->Races,
+		item->Deity,
+		item->Classes,
+		presentation_classes,
+		item->ReqLevel,
+		item->Slots
+	);
+}
+
 bool MulticlassManager::CanHaveSkill(const Client *client, EQ::skills::SkillType skill_id)
 {
 	return GetBestSkillCap(client, skill_id, RuleI(Character, MaxLevel)) > 0;
@@ -1460,7 +1578,11 @@ void MulticlassManager::SendHelp(Client *client)
 	client->Message(Chat::White, "#multiclass reweave grant <count> - Admin-grant rare one-slot reweaves to the target.");
 	client->Message(Chat::White, "#multiclass reweave <slot 2|3> <class> - Admin-test a one-slot reweave.");
 	client->Message(Chat::White, "#multiclass diag - Show capability masks and caster/skill diagnostics.");
+	client->Message(Chat::White, "#multiclass itemcheck [cursor|slot <slot>|item <id>] [equip_slot] - Explain item equip eligibility for the target.");
+	client->Message(Chat::White, "#multiclass refresh - Resend Multiclass item/spell/AA presentation to the target.");
 	client->Message(Chat::White, "#multiclass native - Send the native window snapshot contract.");
+	client->Message(Chat::White, "#mc itemcheck [cursor|slot <slot>|item <id>] [equip_slot] - Player-facing item eligibility check.");
+	client->Message(Chat::White, "#mc refresh - Resend inventory item usability to this client.");
 	client->Message(Chat::White, "#mc pets - Open or refresh the standalone native pet console.");
 	client->Message(Chat::White, "#mc petcmd <pet-id|active|all> <attack|back|follow|guard|health> - Macro-friendly pet control.");
 	client->Message(Chat::White, "#mc disc - Open or refresh the native Multiclass discipline bridge.");
@@ -1814,6 +1936,96 @@ void MulticlassManager::SendDiagnostics(Client *client, const char *topic)
 			GetBestSkillCap(target_client, EQ::skills::SkillDefense, target_client->GetLevel())
 		).c_str()
 	);
+}
+
+void MulticlassManager::SendItemCheck(Client *requester, Client *target_client, const char *mode, const char *value, const char *slot_value)
+{
+	if (!requester || !target_client) {
+		return;
+	}
+
+	const std::string mode_value = mode && mode[0] ? Strings::ToLower(mode) : "cursor";
+	const std::string value_text = value && value[0] ? value : "";
+	const std::string slot_text = slot_value && slot_value[0] ? slot_value : "";
+	int16 equipment_slot = -1;
+	if (Strings::IsNumber(slot_text)) {
+		equipment_slot = static_cast<int16>(Strings::ToInt(slot_text, -1));
+	}
+
+	const EQ::ItemInstance *inst = nullptr;
+	EQ::ItemInstance *created_inst = nullptr;
+	std::string source;
+
+	if (mode_value == "cursor") {
+		inst = target_client->GetInv().GetItem(EQ::invslot::slotCursor);
+		source = "cursor";
+		if (Strings::IsNumber(value_text)) {
+			equipment_slot = static_cast<int16>(Strings::ToInt(value_text, -1));
+		}
+	} else if (mode_value == "slot") {
+		if (!Strings::IsNumber(value_text)) {
+			requester->Message(Chat::White, "Usage: #mc itemcheck slot <slot_id> [equip_slot]");
+			return;
+		}
+
+		const auto slot_id = static_cast<int16>(Strings::ToInt(value_text, -1));
+		if (!target_client->IsValidSlot(slot_id)) {
+			requester->Message(Chat::White, fmt::format("Slot {} is not valid for {}.", slot_id, target_client->GetCleanName()).c_str());
+			return;
+		}
+
+		inst = target_client->GetInv().GetItem(slot_id);
+		source = fmt::format("slot {}", slot_id);
+		if (equipment_slot < 0 && EQ::ValueWithin(slot_id, EQ::invslot::EQUIPMENT_BEGIN, EQ::invslot::EQUIPMENT_END)) {
+			equipment_slot = slot_id;
+		}
+	} else if (mode_value == "item" || mode_value == "id") {
+		if (!Strings::IsNumber(value_text)) {
+			requester->Message(Chat::White, "Usage: #mc itemcheck item <item_id> [equip_slot]");
+			return;
+		}
+
+		const auto item_id = Strings::ToUnsignedInt(value_text);
+		created_inst = database.CreateItem(item_id);
+		inst = created_inst;
+		source = fmt::format("item {}", item_id);
+	} else if (Strings::IsNumber(mode_value)) {
+		const auto number = Strings::ToUnsignedInt(mode_value);
+		if (target_client->IsValidSlot(number) && target_client->GetInv().GetItem(static_cast<int16>(number))) {
+			inst = target_client->GetInv().GetItem(static_cast<int16>(number));
+			source = fmt::format("slot {}", number);
+			if (Strings::IsNumber(value_text)) {
+				equipment_slot = static_cast<int16>(Strings::ToInt(value_text, -1));
+			} else if (EQ::ValueWithin(static_cast<int16>(number), EQ::invslot::EQUIPMENT_BEGIN, EQ::invslot::EQUIPMENT_END)) {
+				equipment_slot = static_cast<int16>(number);
+			}
+		} else {
+			created_inst = database.CreateItem(number);
+			inst = created_inst;
+			source = fmt::format("item {}", number);
+			if (Strings::IsNumber(value_text)) {
+				equipment_slot = static_cast<int16>(Strings::ToInt(value_text, -1));
+			}
+		}
+	} else {
+		requester->Message(Chat::White, "Usage: #mc itemcheck [cursor [equip_slot] | slot <slot_id> [equip_slot] | item <item_id> [equip_slot] | <item_id> [equip_slot]]");
+		return;
+	}
+
+	if (!inst) {
+		requester->Message(Chat::White, fmt::format("No item found for {} on {}.", source, target_client->GetCleanName()).c_str());
+		safe_delete(created_inst);
+		return;
+	}
+
+	const auto report = BuildItemUseReport(target_client, inst, equipment_slot);
+	requester->Message(Chat::White, fmt::format("Checking {} for {}.", source, target_client->GetCleanName()).c_str());
+	requester->Message(Chat::White, report.c_str());
+	if (requester != target_client) {
+		target_client->Message(Chat::Yellow, report.c_str());
+	}
+
+	safe_delete(created_inst);
 }
 
 void MulticlassManager::SendNativeSnapshot(Client *client, const std::string &status, bool show_window, bool show_pet_window)

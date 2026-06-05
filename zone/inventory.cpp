@@ -39,7 +39,8 @@ bool CheckMulticlassEquipPermission(
 	Client *client,
 	const EQ::ItemInstance *inst,
 	int16 equipment_slot,
-	EQ::InventoryProfile::SwapItemFailState &fail_state
+	EQ::InventoryProfile::SwapItemFailState &fail_state,
+	std::string *fail_detail = nullptr
 )
 {
 	if (!inst || !EQ::ValueWithin(equipment_slot, EQ::invslot::EQUIPMENT_BEGIN, EQ::invslot::EQUIPMENT_END)) {
@@ -48,11 +49,17 @@ bool CheckMulticlassEquipPermission(
 
 	if (!inst->IsSlotAllowed(equipment_slot)) {
 		fail_state = EQ::InventoryProfile::swapNotAllowed;
+		if (fail_detail) {
+			*fail_detail = multiclass_manager.BuildItemUseReport(client, inst, equipment_slot);
+		}
 		return false;
 	}
 
 	if (!multiclass_manager.CanUseItem(client, inst)) {
 		fail_state = EQ::InventoryProfile::swapRaceClass;
+		if (fail_detail) {
+			*fail_detail = multiclass_manager.BuildItemUseReport(client, inst, equipment_slot);
+		}
 		return false;
 	}
 
@@ -2202,9 +2209,10 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 	else {
 		// Not dealing with charges - just do direct swap
 		EQ::InventoryProfile::SwapItemFailState fail_state = EQ::InventoryProfile::swapInvalid;
+		std::string multiclass_equip_detail;
 		if (
-			!CheckMulticlassEquipPermission(this, src_inst, dst_slot_id, fail_state) ||
-			!CheckMulticlassEquipPermission(this, dst_inst, src_slot_id, fail_state)
+			!CheckMulticlassEquipPermission(this, src_inst, dst_slot_id, fail_state, &multiclass_equip_detail) ||
+			!CheckMulticlassEquipPermission(this, dst_inst, src_slot_id, fail_state, &multiclass_equip_detail)
 		) {
 			const char* fail_message = "The selected slot was invalid.";
 			if (fail_state == EQ::InventoryProfile::swapRaceClass || fail_state == EQ::InventoryProfile::swapDeity) {
@@ -2214,6 +2222,10 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 			}
 
 			Message(Chat::Red, "%s", fail_message);
+			if (!multiclass_equip_detail.empty()) {
+				Message(Chat::Yellow, "%s", multiclass_equip_detail.c_str());
+				LogInventory("Multiclass equip blocked for [{}]: {}", GetCleanName(), multiclass_equip_detail);
+			}
 			return false;
 		}
 
@@ -2243,6 +2255,22 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 
 			if (fail_message)
 				Message(Chat::Red, "%s", fail_message);
+
+			const EQ::ItemInstance *report_inst = nullptr;
+			int16 report_slot = -1;
+			if (EQ::ValueWithin(dst_slot_id, EQ::invslot::EQUIPMENT_BEGIN, EQ::invslot::EQUIPMENT_END)) {
+				report_inst = src_inst;
+				report_slot = dst_slot_id;
+			} else if (EQ::ValueWithin(src_slot_id, EQ::invslot::EQUIPMENT_BEGIN, EQ::invslot::EQUIPMENT_END)) {
+				report_inst = dst_inst;
+				report_slot = src_slot_id;
+			}
+
+			if (report_inst) {
+				const auto report = multiclass_manager.BuildItemUseReport(this, report_inst, report_slot);
+				Message(Chat::Yellow, "%s", report.c_str());
+				LogInventory("Inventory equip blocked for [{}]: {}", GetCleanName(), report);
+			}
 
 			return false;
 		}
