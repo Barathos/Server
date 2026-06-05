@@ -67,6 +67,8 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstdarg>
+#include <algorithm>
+#include <unordered_map>
 
 extern QueryServ* QServ;
 extern EntityList entity_list;
@@ -12408,6 +12410,224 @@ void Client::SendPath(Mob* target)
 	}
 
 	SendPathPacket(points);
+}
+
+namespace {
+constexpr const char *PetBagCharmInventoryKey = "is_charmed";
+constexpr const char *PetBagCharmOriginClassKey = "pet_bag_origin_class";
+
+std::vector<Mob*> GetPetBagRoster(Client *client)
+{
+	std::vector<Mob*> pets;
+	if (!client) {
+		return pets;
+	}
+
+	auto add_pet = [&pets](Mob *pet) {
+		if (!pet || std::find(pets.begin(), pets.end(), pet) != pets.end()) {
+			return;
+		}
+
+		pets.push_back(pet);
+	};
+
+	add_pet(client->GetPet());
+	for (auto *pet : multiclass_manager.GetPetRoster(client)) {
+		add_pet(pet);
+	}
+
+	return pets;
+}
+
+bool PetBagPetMatchesClass(NPC *pet, int class_id)
+{
+	if (!pet) {
+		return false;
+	}
+
+	if (pet->GetPetSpellID() && GetSpellLevel(pet->GetPetSpellID(), class_id) < UINT8_MAX) {
+		return true;
+	}
+
+	if (pet->EntityVariableExists(PetBagCharmOriginClassKey)) {
+		return Strings::ToInt(pet->GetEntityVariable(PetBagCharmOriginClassKey)) == class_id;
+	}
+
+	return false;
+}
+} // namespace
+
+bool Client::IsPetBagActive()
+{
+	for (int class_id = Class::Warrior; class_id <= Class::Berserker; class_id++) {
+		if (multiclass_manager.HasClass(this, class_id) && GetActivePetBagSlot(class_id) >= 0) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+EQ::ItemInstance* Client::GetActivePetBag(int class_id)
+{
+	const int16 slot_id = GetActivePetBagSlot(class_id);
+	if (slot_id < 0) {
+		return nullptr;
+	}
+
+	return GetInv().GetItem(slot_id);
+}
+
+int16 Client::GetActivePetBagSlot(int class_id)
+{
+	if (!RuleB(CustomFeatures, PetBagsEnabled)) {
+		return -1;
+	}
+
+	EQ::ItemInstance *active_bag = nullptr;
+	int16 active_bag_slot = -1;
+
+	auto evaluate_bags_in_range = [&](int16 start_slot, int16 end_slot) {
+		for (int16 slot_id = start_slot; slot_id <= end_slot; slot_id++) {
+			auto *potential_bag = GetInv().GetItem(slot_id);
+			if (!potential_bag || !IsValidPetBagForClass(potential_bag->GetID(), class_id)) {
+				continue;
+			}
+
+			if (!active_bag || active_bag->GetItem()->BagSlots < potential_bag->GetItem()->BagSlots) {
+				active_bag = potential_bag;
+				active_bag_slot = slot_id;
+			}
+		}
+	};
+
+	evaluate_bags_in_range(EQ::invslot::GENERAL_BEGIN, EQ::invslot::GENERAL_END);
+	if (!active_bag) {
+		evaluate_bags_in_range(EQ::invslot::BANK_BEGIN, EQ::invslot::BANK_END);
+	}
+
+	return active_bag_slot;
+}
+
+bool Client::IsValidPetBagForClass(int bag_id, int class_id)
+{
+	static const std::unordered_map<int, std::vector<int>> class_to_bag_map = {
+		{Class::ShadowKnight, {899980}},
+		{Class::Druid, {899981}},
+		{Class::Bard, {899983}},
+		{Class::Shaman, {899984}},
+		{Class::Necromancer, {899985, 17727}},
+		{Class::Magician, {899986, 900000}},
+		{Class::Enchanter, {899987, 17726}},
+		{Class::Beastlord, {899988, 17725}},
+	};
+
+	auto it = class_to_bag_map.find(class_id);
+	if (it == class_to_bag_map.end()) {
+		return false;
+	}
+
+	const auto &valid_bags = it->second;
+	return std::find(valid_bags.begin(), valid_bags.end(), bag_id) != valid_bags.end();
+}
+
+bool Client::IsValidPetBag(int item_id)
+{
+	for (int class_id = Class::Warrior; class_id <= Class::Berserker; class_id++) {
+		if (IsValidPetBagForClass(item_id, class_id)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void Client::DoPetBagResync(int class_id)
+{
+	if (!RuleB(CustomFeatures, PetBagsEnabled)) {
+		return;
+	}
+
+	auto *pet_bag = GetActivePetBag(class_id);
+	if (!pet_bag) {
+		return;
+	}
+
+	const int16 pet_bag_slot = GetActivePetBagSlot(class_id);
+	if (pet_bag_slot < 0) {
+		return;
+	}
+
+	for (auto *pet : GetPetBagRoster(this)) {
+		if (!pet || !pet->IsNPC()) {
+			continue;
+		}
+
+		auto *pet_npc = pet->CastToNPC();
+		if (!PetBagPetMatchesClass(pet_npc, class_id)) {
+			continue;
+		}
+
+		if (pet_npc->IsCharmed() && !pet_npc->EntityVariableExists(PetBagCharmInventoryKey)) {
+			auto inventory = pet_npc->GetLootList();
+			std::vector<std::string> inventory_strings;
+			inventory_strings.reserve(inventory.size());
+
+			for (int item_id : inventory) {
+				inventory_strings.push_back(std::to_string(item_id));
+			}
+
+			const auto serialized_inventory = Strings::Join(inventory_strings, ",");
+			pet_npc->SetEntityVariable(PetBagCharmInventoryKey, serialized_inventory);
+			LogDebug("Pet bag charm inventory serialized for [{}]: [{}]", pet_npc->GetCleanName(), serialized_inventory);
+		}
+
+		DoPetBagFlush(pet);
+
+		const int bag_top = EQ::InventoryProfile::CalcSlotId(pet_bag_slot, EQ::invbag::SLOT_BEGIN);
+		const int bag_bot = EQ::InventoryProfile::CalcSlotId(pet_bag_slot, pet_bag->GetItem()->BagSlots);
+
+		for (int slot_id = bag_top; slot_id < bag_bot; slot_id++) {
+			auto *item_inst = GetInv().GetItem(slot_id);
+			if (!item_inst) {
+				continue;
+			}
+
+			pet_npc->AddItem(
+				item_inst->GetID(),
+				1,
+				true,
+				item_inst->GetAugmentItemID(0),
+				item_inst->GetAugmentItemID(1),
+				item_inst->GetAugmentItemID(2),
+				item_inst->GetAugmentItemID(3),
+				item_inst->GetAugmentItemID(4),
+				item_inst->GetAugmentItemID(5)
+			);
+		}
+
+		if (IsPlayerRace(pet->GetRace())) {
+			for (int texture = EQ::textures::textureBegin; texture < EQ::textures::weaponPrimary; texture++) {
+				pet->SendWearChange(texture);
+			}
+		}
+
+		pet->SendWearChange(EQ::textures::weaponPrimary);
+		pet->SendWearChange(EQ::textures::weaponSecondary);
+		pet_npc->SetAttackTimer();
+	}
+}
+
+void Client::DoPetBagFlush(Mob *pet)
+{
+	if (!RuleB(CustomFeatures, PetBagsEnabled) || !pet || !pet->IsNPC()) {
+		return;
+	}
+
+	auto *pet_npc = pet->CastToNPC();
+	while (!pet_npc->GetLootList().empty()) {
+		pet_npc->RemoveItem(pet_npc->GetLootList().front());
+	}
 }
 
 void Client::UseAugmentContainer(int container_slot)

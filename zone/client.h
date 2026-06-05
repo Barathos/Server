@@ -1145,6 +1145,13 @@ public:
 	bool SummonItem(uint32 item_id, int16 charges = -1, uint32 aug1 = 0, uint32 aug2 = 0, uint32 aug3 = 0, uint32 aug4 = 0, uint32 aug5 = 0, uint32 aug6 = 0, bool attuned = false, uint16 to_slot = EQ::invslot::slotCursor, uint32 ornament_icon = 0, uint32 ornament_idfile = 0, uint32 ornament_hero_model = 0);
 	void SummonItemIntoInventory(uint32 item_id, int16 charges = -1, uint32 aug1 = 0, uint32 aug2 = 0, uint32 aug3 = 0, uint32 aug4 = 0, uint32 aug5 = 0, uint32 aug6 = 0, bool is_attuned = false);
 	void SummonBaggedItems(uint32 bag_item_id, const std::vector<LootItem>& bag_items);
+	bool IsPetBagActive();
+	bool IsValidPetBagForClass(int bag_id, int class_id);
+	bool IsValidPetBag(int item_id);
+	EQ::ItemInstance* GetActivePetBag(int class_id);
+	int16 GetActivePetBagSlot(int class_id);
+	void DoPetBagResync(int class_id);
+	void DoPetBagFlush(Mob* pet);
 	void SetStats(uint8 type,int16 set_val);
 	void IncStats(uint8 type,int16 increase_val);
 	void DropItem(int16 slot_id, bool recurse = true);

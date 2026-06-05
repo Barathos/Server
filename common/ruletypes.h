@@ -51,6 +51,7 @@ RULE_BOOL(CustomFeatures, TradeskillsEnabled, true, "Enables custom native trade
 RULE_BOOL(CustomFeatures, AugsInAugsEnabled, true, "Enables custom Augs-in-Augs feature behavior when wired by the server and client payload.")
 RULE_BOOL(CustomFeatures, DynamicQuestsEnabled, true, "Enables custom Dynamic Quests feature behavior when wired by the server and client payload.")
 RULE_BOOL(CustomFeatures, MqInterfaceEnabled, true, "Enables bundled MQ-derived native client interface helpers such as map and item display when shipped in the all-features DLL.")
+RULE_BOOL(CustomFeatures, PetBagsEnabled, true, "Enables Syncrosatchel pet bags that mirror class-specific bag contents onto summoned and charmed pets.")
 RULE_CATEGORY_END()
 
 RULE_CATEGORY(Character)

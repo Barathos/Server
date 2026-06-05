@@ -31,6 +31,8 @@
 #include "zone/worldserver.h"
 #include "zone/zonedb.h"
 
+#include <algorithm>
+
 extern WorldServer worldserver;
 extern QueryServ  *QServ;
 
@@ -1844,8 +1846,51 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 				}
 			}
 
+			const int item_id = inst && inst->GetItem() ? inst->GetItem()->ID : 0;
+			int pet_bag_class_id = Class::None;
+			for (int class_id = Class::Warrior; class_id <= Class::Berserker; class_id++) {
+				if (IsValidPetBagForClass(item_id, class_id)) {
+					pet_bag_class_id = class_id;
+					break;
+				}
+			}
+
 			DeleteItemInInventory(move_in->from_slot);
 			SendCursorBuffer();
+
+			if (pet_bag_class_id != Class::None) {
+				std::vector<Mob*> pets;
+				auto add_pet = [&pets](Mob *pet) {
+					if (!pet || std::find(pets.begin(), pets.end(), pet) != pets.end()) {
+						return;
+					}
+
+					pets.push_back(pet);
+				};
+
+				add_pet(GetPet());
+				for (auto *pet : multiclass_manager.GetPetRoster(this)) {
+					add_pet(pet);
+				}
+
+				for (auto *pet : pets) {
+					if (!pet || !pet->IsNPC()) {
+						continue;
+					}
+
+					auto *pet_npc = pet->CastToNPC();
+					const bool matches_class =
+						pet_npc->GetPetOriginClass() == pet_bag_class_id ||
+						(
+							pet_npc->EntityVariableExists("pet_bag_origin_class") &&
+							Strings::ToInt(pet_npc->GetEntityVariable("pet_bag_origin_class")) == pet_bag_class_id
+						);
+
+					if (matches_class) {
+						DoPetBagFlush(pet);
+					}
+				}
+			}
 
 			return true; // Item destroyed by client
 		}
@@ -2401,6 +2446,22 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 	// Step 8: Re-calc stats
 	CalcBonuses();
 	ApplyWeaponsStance();
+
+	if (RuleB(CustomFeatures, PetBagsEnabled)) {
+		for (int class_id = Class::Warrior; class_id <= Class::Berserker; class_id++) {
+			const auto pet_bag_slot = GetActivePetBagSlot(class_id);
+			if (
+				pet_bag_slot >= 0 &&
+				(
+					pet_bag_slot == EQ::InventoryProfile::CalcSlotId(dst_slot_id) ||
+					pet_bag_slot == EQ::InventoryProfile::CalcSlotId(src_slot_id)
+				)
+			) {
+				DoPetBagResync(class_id);
+			}
+		}
+	}
+
 	return true;
 }
 

@@ -328,6 +328,10 @@ void Mob::MakePoweredPet(uint16 spell_id, const char* pettype, int16 petpower,
 			}
 		}
 	}
+
+	if (IsClient() && !npc->HasDied()) {
+		CastToClient()->DoPetBagResync(npc->GetPetOriginClass());
+	}
 }
 
 void NPC::TryDepopTargetLockedPets(Mob* current_target) {
@@ -470,6 +474,11 @@ void Mob::SetPet(Mob* newpet) {
 		if (oldowner)
 			oldowner->SetPetID(0);
 		newpet->SetOwnerID(GetID());
+
+		if (newpet->IsNPC() && IsClient() && !newpet->IsCharmed()) {
+			CastToClient()->DoPetBagResync(newpet->CastToNPC()->GetPetOriginClass());
+			CastToClient()->Save();
+		}
 	}
 }
 

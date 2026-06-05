@@ -33,4 +33,5 @@ void command_customfeatures(Client *c, const Seperator *)
 	SendFeatureStatus(c, "Augs-in-Augs", RuleB(CustomFeatures, AugsInAugsEnabled));
 	SendFeatureStatus(c, "Dynamic Quests", RuleB(CustomFeatures, DynamicQuestsEnabled));
 	SendFeatureStatus(c, "MQ Interface", RuleB(CustomFeatures, MqInterfaceEnabled));
+	SendFeatureStatus(c, "Pet Bags", RuleB(CustomFeatures, PetBagsEnabled));
 }

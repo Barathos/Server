@@ -1770,6 +1770,7 @@ void Client::Handle_Connect_OP_ZoneEntry(const EQApplicationPacket *app)
 					}
 				}
 				database.LoadMulticlassPetState(this, pet, PetInfoType::Current);
+				DoPetBagResync(pet->GetPetOriginClass());
 			}
 			m_petinfo.SpellID = 0;
 		}
@@ -3540,6 +3541,14 @@ void Client::Handle_OP_AugmentItem(const EQApplicationPacket *app)
 		safe_delete(item_two_to_push);
 	} else {
 		Object::HandleAugmentation(this, in_augment, m_tradeskill_object); // Delegate to tradeskill object to perform combine
+	}
+
+	for (int class_id = Class::Warrior; class_id <= Class::Berserker; class_id++) {
+		const auto pet_bag_slot = GetActivePetBagSlot(class_id);
+		if (pet_bag_slot >= 0 && EQ::InventoryProfile::CalcSlotId(in_augment->container_slot) == pet_bag_slot) {
+			DoPetBagResync(class_id);
+			break;
+		}
 	}
 
 	return;
