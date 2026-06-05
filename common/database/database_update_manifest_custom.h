@@ -2318,6 +2318,20 @@ CREATE TABLE IF NOT EXISTS `custom_account_achievement_unlocks` (
 )",
 		.content_schema_update = false,
 	},
+	ManifestEntry{
+		.version = 10,
+		.description = "2026_06_05_all_equipment_all_races",
+		.check = "SELECT `id` FROM `items` WHERE `slots` <> 0 AND `races` <> 65535 LIMIT 1",
+		.condition = "not_empty",
+		.match = "",
+		.sql = R"(
+UPDATE `items`
+SET `races` = 65535
+WHERE `slots` <> 0
+  AND `races` <> 65535;
+)",
+		.content_schema_update = true,
+	},
 };
 
 // see struct definitions for what each field does
