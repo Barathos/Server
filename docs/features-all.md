@@ -163,9 +163,21 @@ value is the workspace install id from
 feature id, but check the registry instead of assuming it. For this checkout, the
 current install id is `all-features`.
 
+Do not let all-features patcher generation fall back to local login defaults.
+External tester `eqhost.txt` must stay pointed at the public testbed login endpoint:
+
+```ini
+[LoginServer]
+Host=47.181.1.223:5999
+```
+
+Do not change generated `eqhost.txt` behavior or the public login host unless the user
+explicitly asks for an eqhost/login-host change. When manually regenerating this feed,
+pass the public login host and port explicitly.
+
 ```powershell
 cd D:\Codex\Apps\EQEmu-feature-patcher\features\patcher\eqemupatcher\service
-.\New-WorkspacePatcherDeployment.ps1 -Project all-features -BaseUrl http://<patch-host>:8091/patcher/
+.\New-WorkspacePatcherDeployment.ps1 -Project all-features -BaseUrl http://47.181.1.223:8091/patcher/ -LoginHost 47.181.1.223 -LoginPort 5999
 .\Test-WorkspacePatcherDeployment.ps1 -Project all-features -BaseUrl http://<patch-host>:8091/patcher/
 ```
 
