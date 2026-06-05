@@ -300,7 +300,8 @@ static bool gNativeAutoLootCommandHookInstalled = false;
 static bool gNativeAutoLootPulseHookInstalled = false;
 static bool gNativeAutoLootUiResetHookInstalled = false;
 static bool gNativeAutoLootRequestedInitialStatus = false;
-static bool gNativeAutoLootPulseHookEnabled = false;
+static bool gNativeAutoLootPulseHookEnabled = true;
+static bool gNativeAutoLootWasInGame = false;
 static bool gNativeAutoLootEnabled = false;
 static bool gNativeAutoLootGrouped = false;
 static bool gNativeAutoLootLeader = false;
@@ -6531,10 +6532,77 @@ static void NativeAutoLootInstallCommandHook()
 	gNativeAutoLootCommandHookInstalled = true;
 }
 
+static void NativeAchievementResetState()
+{
+	gNativeAchievementCategories.clear();
+	gNativeAchievementRows.clear();
+	gNativeAchievementObjectives.clear();
+	gNativeAchievementRewards.clear();
+	gNativeAchievementSelectedCategory = 0;
+	gNativeAchievementSelectedAchievement = 0;
+	gNativeAchievementCompleted = 0;
+	gNativeAchievementTotal = 0;
+	gNativeAchievementPoints = 0;
+	gNativeAchievementCategoryCount = 0;
+	gNativeAchievementLoading = false;
+	gNativeAchievementCategoriesDirty = true;
+	gNativeAchievementRowsDirty = true;
+	gNativeAchievementObjectivesDirty = true;
+	gNativeAchievementRewardsDirty = true;
+	gNativeAchievementDetailTitle = "Select an achievement";
+	gNativeAchievementDetailDescription.clear();
+}
+
+static bool NativeAutoLootHasRuntimeWindows()
+{
+	return
+		gNativeAutoLootWnd ||
+		gNativeAutoLootRulesWnd ||
+		gNativeSpellForgeWnd ||
+		gNativeItemForgeWnd ||
+		gNativeAchievementWnd ||
+		gNativeUIShowcaseWnd ||
+		gNativeHpFixWnd ||
+		gNativeMulticlassWnd ||
+		gNativeMulticlassPetWnd ||
+		gNativeMulticlassMelodyWnd ||
+		gNativeMulticlassDisciplineWnd;
+}
+
+static void NativeAutoLootDestroyRuntimeWindows()
+{
+#define NATIVE_AUTOLOOT_DESTROY_WINDOW(ptr, label) \
+	do { \
+		if (ptr) { \
+			auto* window = ptr; \
+			ptr = nullptr; \
+			__try { \
+				window->pXWnd()->Show(0, 1); \
+				delete window; \
+			} \
+			__except (EXCEPTION_EXECUTE_HANDLER) { \
+				NativeAutoLootTrace("%s window release faulted during UI reset", label); \
+			} \
+		} \
+	} while (0)
+
+	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeAutoLootWnd, "AutoLoot");
+	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeAutoLootRulesWnd, "AutoLoot rules");
+	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeSpellForgeWnd, "Spell Forge");
+	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeItemForgeWnd, "Item Forge");
+	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeAchievementWnd, "Achievement");
+	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeUIShowcaseWnd, "Native UI showcase");
+	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeHpFixWnd, "HP Fix");
+	NativeMulticlassDestroyRuntimeWindows();
+
+#undef NATIVE_AUTOLOOT_DESTROY_WINDOW
+}
+
 static void NativeAutoLootResetSessionRequests()
 {
 	gNativeAutoLootInGamePulses = 0;
 	gNativeAutoLootRequestedInitialStatus = false;
+	gNativeAutoLootWasInGame = false;
 	gNativeAutoLootRows.clear();
 	gNativeAutoLootRuleRows.clear();
 	gNativeAutoLootEnabled = false;
@@ -6553,18 +6621,16 @@ static void NativeAutoLootResetSessionRequests()
 	gNativeItemRarityById.clear();
 	gNativeMulticlassSentStatus = false;
 	NativeMulticlassResetSessionState(true);
+	NativeAchievementResetState();
 }
 
 static void NativeAutoLootResetClientUiSession(const char* reason)
 {
 	NativeAutoLootTrace("client UI reset: %s", reason ? reason : "unknown");
-	if (gNativeHpFixWnd) {
-		delete gNativeHpFixWnd;
-		gNativeHpFixWnd = nullptr;
-	}
-	NativeMulticlassDestroyRuntimeWindows();
+	NativeAutoLootDestroyRuntimeWindows();
 	gNativeAutoLootInGamePulses = 0;
 	gNativeAutoLootRequestedInitialStatus = false;
+	gNativeAutoLootWasInGame = false;
 	gNativeAutoLootRows.clear();
 	gNativeAutoLootRuleRows.clear();
 	gNativeAutoLootEnabled = false;
@@ -6583,6 +6649,7 @@ static void NativeAutoLootResetClientUiSession(const char* reason)
 	gNativeItemRarityById.clear();
 	gNativeMulticlassSentStatus = false;
 	NativeMulticlassResetSessionState(false);
+	NativeAchievementResetState();
 }
 
 static void NativeAutoLootMaybeSendInitialRequests()
@@ -6618,7 +6685,12 @@ static void NativeAutoLootPulse()
 {
 	const DWORD state = GetGameState();
 	if (state != GAMESTATE_INGAME) {
-		NativeAutoLootResetSessionRequests();
+		if (gNativeAutoLootWasInGame || NativeAutoLootHasRuntimeWindows()) {
+			NativeAutoLootResetClientUiSession("left game state");
+		}
+		else {
+			NativeAutoLootResetSessionRequests();
+		}
 		return;
 	}
 
@@ -6631,6 +6703,8 @@ static void NativeAutoLootPulse()
 		NativeAutoLootResetSessionRequests();
 		return;
 	}
+
+	gNativeAutoLootWasInGame = true;
 
 	if (gNativeAutoLootInGamePulses < 120) {
 		++gNativeAutoLootInGamePulses;
