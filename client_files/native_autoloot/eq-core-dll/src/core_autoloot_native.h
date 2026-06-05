@@ -2493,6 +2493,17 @@ struct NativeAchievementObjectiveRow
 	std::string name = "Objective";
 };
 
+struct NativeAchievementRewardRow
+{
+	uint64_t definition_id = 0;
+	int reward_id = 0;
+	int amount = 0;
+	bool auto_claim = false;
+	std::string type;
+	std::string tier;
+	std::string name;
+};
+
 class NativeAchievementWnd : public CCustomWnd
 {
 public:
@@ -2507,6 +2518,7 @@ public:
 		DetailTitleLabel = GetChildItem("NAW_DetailTitleLabel");
 		DetailDescriptionLabel = GetChildItem("NAW_DetailDescriptionLabel");
 		ObjectiveList = (CListWnd*)GetChildItem("NAW_ObjectiveList");
+		RewardList = (CListWnd*)GetChildItem("NAW_RewardList");
 		StatusLabel = GetChildItem("NAW_StatusLabel");
 		RefreshButton = (CButtonWnd*)GetChildItem("NAW_RefreshButton");
 		CheckButton = (CButtonWnd*)GetChildItem("NAW_CheckButton");
@@ -2583,6 +2595,7 @@ private:
 	void RefreshCategoryList();
 	void RefreshAchievementList();
 	void RefreshObjectiveList();
+	void RefreshRewardList();
 	void SelectCategoryListRow();
 	void SelectAchievementListRow();
 	void SetLabel(CXWnd* label, const char* text)
@@ -2599,6 +2612,7 @@ private:
 	CXWnd* DetailTitleLabel = nullptr;
 	CXWnd* DetailDescriptionLabel = nullptr;
 	CListWnd* ObjectiveList = nullptr;
+	CListWnd* RewardList = nullptr;
 	CXWnd* StatusLabel = nullptr;
 	CButtonWnd* RefreshButton = nullptr;
 	CButtonWnd* CheckButton = nullptr;
@@ -2610,6 +2624,7 @@ static NativeAchievementWnd* gNativeAchievementWnd = nullptr;
 static std::vector<NativeAchievementCategoryRow> gNativeAchievementCategories;
 static std::vector<NativeAchievementRow> gNativeAchievementRows;
 static std::vector<NativeAchievementObjectiveRow> gNativeAchievementObjectives;
+static std::vector<NativeAchievementRewardRow> gNativeAchievementRewards;
 static int gNativeAchievementSelectedCategory = 0;
 static int gNativeAchievementSelectedAchievement = 0;
 static int gNativeAchievementCompleted = 0;
@@ -2620,6 +2635,7 @@ static bool gNativeAchievementLoading = false;
 static bool gNativeAchievementCategoriesDirty = true;
 static bool gNativeAchievementRowsDirty = true;
 static bool gNativeAchievementObjectivesDirty = true;
+static bool gNativeAchievementRewardsDirty = true;
 static std::string gNativeAchievementDetailTitle = "Select an achievement";
 static std::string gNativeAchievementDetailDescription = "";
 
@@ -4766,6 +4782,40 @@ void NativeAchievementWnd::RefreshObjectiveList()
 	gNativeAchievementObjectivesDirty = false;
 }
 
+void NativeAchievementWnd::RefreshRewardList()
+{
+	if (!RewardList) {
+		return;
+	}
+
+	RewardList->DeleteAll();
+	if (gNativeAchievementRewards.empty()) {
+		CXStr dash("-");
+		const int row = RewardList->AddString(dash, 0xFFB0B0B0, 0, nullptr, nullptr);
+		CXStr empty("No rewards listed.");
+		RewardList->SetItemText(row, 1, &empty);
+		gNativeAchievementRewardsDirty = false;
+		return;
+	}
+
+	for (const NativeAchievementRewardRow& reward : gNativeAchievementRewards) {
+		CXStr state(reward.auto_claim ? "Auto" : "Claim");
+		const int row = RewardList->AddString(state, reward.auto_claim ? 0xFF66FF66 : 0xFFFFFF80, (uint32_t)reward.definition_id, nullptr, nullptr);
+
+		std::string reward_text = reward.name.empty() ? reward.type : reward.name;
+		if (!reward.tier.empty()) {
+			reward_text += " [";
+			reward_text += reward.tier;
+			reward_text += "]";
+		}
+
+		CXStr name(reward_text.c_str());
+		RewardList->SetItemText(row, 1, &name);
+	}
+
+	gNativeAchievementRewardsDirty = false;
+}
+
 void NativeAchievementWnd::SelectCategoryListRow()
 {
 	if (!CategoryList || SelectedCategoryID <= 0) {
@@ -4828,6 +4878,10 @@ void NativeAchievementWnd::RefreshRows()
 
 	if (gNativeAchievementObjectivesDirty) {
 		RefreshObjectiveList();
+	}
+
+	if (gNativeAchievementRewardsDirty) {
+		RefreshRewardList();
 	}
 }
 
@@ -5967,11 +6021,13 @@ static bool NativeAchievementParseTransport(const char* message)
 		gNativeAchievementCategories.clear();
 		gNativeAchievementRows.clear();
 		gNativeAchievementObjectives.clear();
+		gNativeAchievementRewards.clear();
 		gNativeAchievementSelectedCategory = 0;
 		gNativeAchievementSelectedAchievement = 0;
 		gNativeAchievementCategoriesDirty = true;
 		gNativeAchievementRowsDirty = true;
 		gNativeAchievementObjectivesDirty = true;
+		gNativeAchievementRewardsDirty = true;
 		gNativeAchievementDetailTitle = "Select an achievement";
 		gNativeAchievementDetailDescription.clear();
 		if (gNativeAchievementWnd) {
@@ -5984,9 +6040,11 @@ static bool NativeAchievementParseTransport(const char* message)
 		gNativeAchievementLoading = true;
 		gNativeAchievementRows.clear();
 		gNativeAchievementObjectives.clear();
+		gNativeAchievementRewards.clear();
 		gNativeAchievementSelectedAchievement = 0;
 		gNativeAchievementRowsDirty = true;
 		gNativeAchievementObjectivesDirty = true;
+		gNativeAchievementRewardsDirty = true;
 		gNativeAchievementDetailTitle = "Select an achievement";
 		gNativeAchievementDetailDescription.clear();
 		if (gNativeAchievementWnd) {
@@ -6002,6 +6060,12 @@ static bool NativeAchievementParseTransport(const char* message)
 		if (gNativeAchievementWnd) {
 			gNativeAchievementWnd->SetStatus("Loading achievement detail...");
 		}
+		return true;
+	}
+
+	if (NativeStartsWith(message, "ACH|rewards|clear")) {
+		gNativeAchievementRewards.clear();
+		gNativeAchievementRewardsDirty = true;
 		return true;
 	}
 
@@ -6078,6 +6142,8 @@ static bool NativeAchievementParseTransport(const char* message)
 		gNativeAchievementDetailDescription = description;
 		gNativeAchievementObjectives.clear();
 		gNativeAchievementObjectivesDirty = true;
+		gNativeAchievementRewards.clear();
+		gNativeAchievementRewardsDirty = true;
 		if (gNativeAchievementWnd && !gNativeAchievementLoading) {
 			gNativeAchievementWnd->RefreshRows();
 		}
@@ -6095,6 +6161,26 @@ static bool NativeAchievementParseTransport(const char* message)
 		if (row.id > 0) {
 			gNativeAchievementObjectives.push_back(row);
 			gNativeAchievementObjectivesDirty = true;
+		}
+		if (gNativeAchievementWnd && !gNativeAchievementLoading) {
+			gNativeAchievementWnd->RefreshRows();
+		}
+		return true;
+	}
+
+	if (NativeStartsWith(message, "ACH|reward|")) {
+		const std::string payload(message + strlen("ACH|reward|"));
+		NativeAchievementRewardRow row;
+		row.definition_id = static_cast<uint64_t>(_strtoui64(NativeGetPairValue(payload, "definition").c_str(), nullptr, 10));
+		row.type = NativeGetPairValue(payload, "type");
+		row.reward_id = NativeToInt(NativeGetPairValue(payload, "id"));
+		row.amount = NativeToInt(NativeGetPairValue(payload, "amount"));
+		row.auto_claim = NativeToBool(NativeGetPairValue(payload, "auto"));
+		row.tier = NativeGetPairValue(payload, "tier");
+		row.name = NativeGetPairValue(payload, "name");
+		if (row.definition_id > 0 || !row.name.empty()) {
+			gNativeAchievementRewards.push_back(row);
+			gNativeAchievementRewardsDirty = true;
 		}
 		if (gNativeAchievementWnd && !gNativeAchievementLoading) {
 			gNativeAchievementWnd->RefreshRows();
