@@ -909,6 +909,25 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 				} else if (IsNPC()) {
 					CastToNPC()->SetPetSpellID(0);    //not a pet spell.
 					CastToNPC()->ModifyStatsOnCharm(false, caster);
+
+					if (RuleB(CustomFeatures, PetBagsEnabled) && caster && caster->IsClient()) {
+						int pet_bag_class_id = Class::None;
+						for (int class_id = Class::Warrior; class_id <= Class::Berserker; class_id++) {
+							if (GetSpellLevel(spell_id, class_id) < UINT8_MAX) {
+								pet_bag_class_id = class_id;
+								break;
+							}
+						}
+
+						if (pet_bag_class_id != Class::None) {
+							SetEntityVariable("pet_bag_origin_class", std::to_string(pet_bag_class_id));
+
+							auto *client_owner = caster->CastToClient();
+							if (client_owner->GetActivePetBag(pet_bag_class_id)) {
+								client_owner->DoPetBagResync(pet_bag_class_id);
+							}
+						}
+					}
 				}
 
 				bool bBreak = false;
@@ -4591,6 +4610,44 @@ void Mob::BuffFadeBySlot(int slot, bool iRecalcBonuses)
 					entity_list.QueueClients(this, app);
 					safe_delete(app);
 				}
+
+				if (RuleB(CustomFeatures, PetBagsEnabled) && IsNPC()) {
+					auto *npc = CastToNPC();
+					if (EntityVariableExists("is_charmed") && !EntityVariableExists("preserve_inventory")) {
+						if (!EntityVariableExists("charm_refresh")) {
+							const auto serialized_inventory = GetEntityVariable("is_charmed");
+
+							while (npc->CountLoot()) {
+								const auto loot_list = npc->GetLootList();
+								if (loot_list.empty()) {
+									break;
+								}
+
+								for (int item_id : loot_list) {
+									npc->RemoveItem(item_id);
+								}
+							}
+
+							if (!serialized_inventory.empty()) {
+								const auto inventory = Strings::Split(serialized_inventory, ",");
+								for (const auto &item : inventory) {
+									const int item_id = Strings::ToInt(item);
+									const auto *item_data = database.GetItem(item_id);
+									if (item_data) {
+										npc->AddItem(item_data->ID, item_data->MaxCharges);
+									}
+								}
+							}
+
+							DeleteEntityVariable("is_charmed");
+						}
+					} else {
+						DeleteEntityVariable("preserve_inventory");
+					}
+
+					DeleteEntityVariable("pet_bag_origin_class");
+				}
+
 				if(IsClient())
 				{
 					InterruptSpell();

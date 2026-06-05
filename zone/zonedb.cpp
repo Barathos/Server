@@ -3742,6 +3742,7 @@ void ZoneDatabase::LoadMulticlassPetInfo(Client *client)
 		}
 
 		LoadMulticlassPetState(client, pet, e.pet);
+		client->DoPetBagResync(pet->GetPetOriginClass());
 	}
 }
 

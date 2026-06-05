@@ -4167,6 +4167,21 @@ bool NPC::FacesTarget()
 	return std::find(v.begin(), v.end(), std::to_string(GetBaseRace())) == v.end();
 }
 
+int NPC::GetPetOriginClass()
+{
+	if (!GetPetSpellID()) {
+		return Class::None;
+	}
+
+	for (int class_id = Class::Warrior; class_id <= Class::Berserker; class_id++) {
+		if (GetSpellLevel(GetPetSpellID(), class_id) < UINT8_MAX) {
+			return class_id;
+		}
+	}
+
+	return Class::None;
+}
+
 bool NPC::CanPetTakeItem(const EQ::ItemInstance *inst)
 {
 	if (!inst) {

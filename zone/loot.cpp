@@ -751,9 +751,18 @@ void NPC::RemoveItem(uint32 item_id, uint16 quantity, uint16 slot)
 		LootItem *item = *cur;
 		if (item->item_id == item_id && slot <= 0 && quantity <= 0) {
 			m_loot_items.erase(cur);
-			safe_delete(item);
 			UpdateEquipmentLight();
 			if (UpdateActiveLight()) { SendAppearancePacket(AppearanceType::Light, GetActiveLightType()); }
+			if (EQ::ValueWithin(item->equip_slot, EQ::invslot::EQUIPMENT_BEGIN, EQ::invslot::EQUIPMENT_END)) {
+				equipment[item->equip_slot] = 0;
+				const auto material = EQ::InventoryProfile::CalcMaterialFromSlot(item->equip_slot);
+				if (material != EQ::textures::materialInvalid) {
+					SendWearChange(material);
+				}
+				GetInv().DeleteItem(item->equip_slot);
+			}
+			CalcBonuses();
+			safe_delete(item);
 			return;
 		}
 		else if (item->item_id == item_id && item->equip_slot == slot && quantity >= 1) {
@@ -763,6 +772,15 @@ void NPC::RemoveItem(uint32 item_id, uint16 quantity, uint16 slot)
 				if (UpdateActiveLight()) {
 					SendAppearancePacket(AppearanceType::Light, GetActiveLightType());
 				}
+				if (EQ::ValueWithin(item->equip_slot, EQ::invslot::EQUIPMENT_BEGIN, EQ::invslot::EQUIPMENT_END)) {
+					equipment[item->equip_slot] = 0;
+					const auto material = EQ::InventoryProfile::CalcMaterialFromSlot(item->equip_slot);
+					if (material != EQ::textures::materialInvalid) {
+						SendWearChange(material);
+					}
+					GetInv().DeleteItem(item->equip_slot);
+				}
+				CalcBonuses();
 				safe_delete(item);
 			}
 			else {
