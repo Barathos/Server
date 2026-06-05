@@ -130,6 +130,16 @@ namespace {
 		return soft_cap + ((value - soft_cap) * 0.35);
 	}
 
+	bool IsScorableGear(const EQ::ItemData &item)
+	{
+		return item.ItemClass == EQ::item::ItemClassCommon && item.Slots != 0;
+	}
+
+	std::string BuildClearTransportMessage(const EQ::ItemData &item)
+	{
+		return fmt::format("ITEMPOWER|clear|item_id={}|name={}", item.ID, item.Name);
+	}
+
 	void AddScore(
 		RoleScore &score,
 		const std::string &component,
@@ -672,6 +682,20 @@ EQ::ItemPower::ScoreResult EQ::ItemPower::Calculate(const ItemData &item, bool i
 	result.slot_budget = slot_budget.budget;
 	result.slot_budget_name = slot_budget.name;
 
+	if (!IsScorableGear(item)) {
+		result.item_level = 0;
+		result.warnings.emplace_back("item power only scores equippable gear");
+		if (include_breakdown) {
+			result.breakdown.push_back(ScoreComponent{
+				.component = "eligibility",
+				.score = 0,
+				.details = "not equippable gear"
+			});
+		}
+
+		return result;
+	}
+
 	const auto tank = CalculateRoleScore(item, Role::Tank);
 	const auto melee = CalculateRoleScore(item, Role::Melee);
 	const auto caster = CalculateRoleScore(item, Role::Caster);
@@ -1067,6 +1091,11 @@ std::string EQ::ItemPower::BuildTransportMessage(const ItemData &item, const Sto
 
 bool EQ::ItemPower::TryBuildTransportMessage(Database &db, const ItemData &item, std::string &message, bool calculate_if_missing)
 {
+	if (!IsScorableGear(item)) {
+		message = BuildClearTransportMessage(item);
+		return true;
+	}
+
 	StoredScore score;
 	if (!TryGetStoredScore(db, item.ID, score)) {
 		if (!calculate_if_missing) {
