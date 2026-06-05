@@ -94,6 +94,36 @@ bool IsBardClass(uint8 class_id)
 	return class_id == Class::Bard;
 }
 
+void RefreshClientAfterMulticlassProfileChange(Client *client)
+{
+	if (!client) {
+		return;
+	}
+
+	client->CalcBonuses();
+	client->SendManaUpdate();
+	client->SendEnduranceUpdate();
+
+	static const int16 inventory_ranges[][2] = {
+		{EQ::invslot::POSSESSIONS_BEGIN, EQ::invslot::POSSESSIONS_END},
+		{EQ::invbag::GENERAL_BAGS_BEGIN, EQ::invbag::GENERAL_BAGS_END},
+		{EQ::invbag::CURSOR_BAG_BEGIN, EQ::invbag::CURSOR_BAG_END}
+	};
+
+	for (const auto &range : inventory_ranges) {
+		for (int16 slot_id = range[0]; slot_id <= range[1]; ++slot_id) {
+			const auto *inst = client->GetInv().GetItem(slot_id);
+			if (inst) {
+				client->SendItemPacket(slot_id, inst, ItemPacketType::ItemPacketTrade);
+			}
+		}
+	}
+
+	for (uint8 material_slot = EQ::textures::textureBegin; material_slot <= EQ::textures::LastTexture; ++material_slot) {
+		client->SendWearChange(material_slot);
+	}
+}
+
 bool IsStrikerClass(uint8 class_id)
 {
 	return class_id == Class::Monk || class_id == Class::Rogue || class_id == Class::Berserker;
@@ -692,6 +722,7 @@ bool MulticlassManager::SetProfile(Client *client, uint8 class_slot_1, uint8 cla
 
 	AuditProfile(profile, source);
 	SeedEligibleSkills(client, true);
+	RefreshClientAfterMulticlassProfileChange(client);
 	return true;
 }
 
@@ -1990,7 +2021,7 @@ bool MulticlassManager::ReweaveProfileSlot(Client *client, uint8 class_slot, uin
 
 	AuditProfile(profile, source);
 	SeedEligibleSkills(client, true);
-	client->CalcBonuses();
+	RefreshClientAfterMulticlassProfileChange(client);
 
 	status = fmt::format(
 		"Rewove slot {} from {} to {}. Reweaves left: {}.",
