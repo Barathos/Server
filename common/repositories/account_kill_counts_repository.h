@@ -45,7 +45,7 @@ public:
 
 	// Custom extended repository methods here
 
-	static int GetRaceCount(Database& db, uint account_id, uint race_id) {
+	static int GetRaceCount(Database& db, uint32 account_id, uint32 race_id) {
 		auto results = db.QueryDatabase(
 			fmt::format(
 				"{} WHERE {} = {} and {} = {} LIMIT 1",

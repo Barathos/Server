@@ -721,6 +721,7 @@ float Client::GetBaseExpValueForKill(int conlevel, int target_tier, EQ::ItemInst
 	float exp_value   = 0.0f;
 	float norm_val 	  = GetItemStatValue(upgrade_item->GetItem());
 	float clamp_scale = 0.0f;
+	float rate_scale  = std::max(0.0f, RuleR(Custom, PowerSourceItemUpgradeRateScale)) / 100.0f;
 
 	switch (conlevel) {
 	case ConsiderColor::Green:
@@ -752,9 +753,9 @@ float Client::GetBaseExpValueForKill(int conlevel, int target_tier, EQ::ItemInst
 	// Easter Handling
 	if (exp_value && upgrade_item->GetID() % 1000000 == 24131) {
 		if (target_tier == 1) {
-			return exp_value / 2.5f;
+			return (exp_value / 2.5f) * rate_scale;
 		} else {
-			return exp_value / 10.0f;
+			return (exp_value / 10.0f) * rate_scale;
 		}
 	}
 
@@ -772,11 +773,11 @@ float Client::GetBaseExpValueForKill(int conlevel, int target_tier, EQ::ItemInst
 
 	exp_value = exp_value * (database.LootBuffEnabled() ? 1.5 : 1);
 
-	float exp_boost = XPRate / 100;
+	float exp_boost = static_cast<float>(XPRate) / 100.0f;
 
-	exp_value = exp_value * exp_boost;
+	exp_value = exp_value * exp_boost * rate_scale;
 
-	LogDebug("tier: [{}], norm_val: [{}], exp_value [{}], conlevel [{}]", target_tier, norm_val, exp_value, conlevel);
+	LogDebug("tier: [{}], norm_val: [{}], exp_value [{}], conlevel [{}], rate_scale [{}]", target_tier, norm_val, exp_value, conlevel, rate_scale);
 
 	return exp_value;
 }

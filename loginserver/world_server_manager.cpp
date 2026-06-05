@@ -91,6 +91,17 @@ std::unique_ptr<EQApplicationPacket> WorldServerManager::CreateServerListPacket(
 		}
 	}
 
+	LogInfo(
+		"Server list trace | client [{}] account_id [{}] version [{}] ip [{}] world_connections [{}] authorized_count [{}] sequence [{}]",
+		client->GetAccountName(),
+		client->GetAccountID(),
+		static_cast<int>(client->GetClientVersion()),
+		client_ip,
+		m_world_servers.size(),
+		server_count,
+		sequence
+	);
+
 	SerializeBuffer buf;
 
 	// LoginBaseMessage_Struct header
@@ -133,8 +144,30 @@ std::unique_ptr<EQApplicationPacket> WorldServerManager::CreateServerListPacket(
 			use_local_ip ? "Local" : "Remote"
 		);
 
+		LogInfo(
+			"Server list trace | entry id [{}] long_name [{}] short_name [{}] authorized [{}] list_type [{}] status [{}] zones [{}] players [{}] remote_ip [{}] local_ip [{}] selected_ip [{}] selected_ip_type [{}]",
+			s->GetServerId(),
+			s->GetServerLongName(),
+			s->GetServerShortName(),
+			s->IsAuthorizedToList(),
+			s->GetServerListID(),
+			s->GetStatus(),
+			s->GetZonesBooted(),
+			s->GetPlayersOnline(),
+			s->GetRemoteIP(),
+			s->GetLocalIP(),
+			use_local_ip ? s->GetLocalIP() : s->GetRemoteIP(),
+			use_local_ip ? "local" : "remote"
+		);
+
 		s->SerializeForClientServerList(buf, use_local_ip, client->GetClientVersion());
 	}
+
+	LogInfo(
+		"Server list trace | serialized_payload_bytes [{}] authorized_count [{}]",
+		buf.size(),
+		server_count
+	);
 
 	return std::make_unique<EQApplicationPacket>(OP_ServerListResponse, buf);
 }

@@ -45,6 +45,131 @@ extern QueryServ* QServ;
 // The maximum amount of a single bazaar/barter transaction expressed in copper.
 // Equivalent to 2 Million plat
 constexpr auto MAX_TRANSACTION_VALUE = 2000000000;
+
+constexpr const char *THJ_SYSTEM_BUYER_NAME_PREFIX = "Thjbounty";
+
+static bool IsTHJSystemBuyer(const BuyerRepository::Buyer &buyer)
+{
+	return buyer.char_entity_id == 0 && Strings::BeginsWith(buyer.char_name, THJ_SYSTEM_BUYER_NAME_PREFIX);
+}
+
+static void RecordTHJSystemBuyerTransaction(Client *seller, BuyerLineSellItem_Struct &sell_line, uint64 total_cost)
+{
+	if (!PlayerEventLogs::Instance()->IsEventEnabled(PlayerEvent::BARTER_TRANSACTION)) {
+		return;
+	}
+
+	PlayerEvent::BarterTransaction e{};
+	e.status        = "Successful System Barter Transaction";
+	e.item_id       = sell_line.item_id;
+	e.item_quantity = sell_line.seller_quantity;
+	e.item_name     = sell_line.item_name;
+	e.trade_items   = sell_line.trade_items;
+	e.total_cost    = total_cost;
+	e.buyer_name    = sell_line.buyer_name;
+	e.seller_name   = seller->GetCleanName();
+	RecordPlayerEventLogWithClient(seller, PlayerEvent::BARTER_TRANSACTION, e);
+}
+
+static void CompleteTHJSystemBuyerSale(
+	Client *seller,
+	BuyerLineSellItem_Struct &sell_line,
+	const BuyerRepository::Buyer &buyer
+)
+{
+	sell_line.buyer_entity_id = 0;
+	sell_line.buyer_id        = buyer.char_id;
+	sell_line.buyer_name      = buyer.char_name;
+
+	if (!sell_line.trade_items.empty() || sell_line.seller_quantity == 0 || sell_line.item_cost == 0) {
+		seller->SendBarterBuyerClientMessage(
+			sell_line,
+			Barter_SellerTransactionComplete,
+			Barter_Failure,
+			Barter_Failure
+		);
+		return;
+	}
+
+	auto buy_lines = BuyerBuyLinesRepository::GetWhere(
+		database,
+		fmt::format(
+			"`buyer_id` = '{}' AND `buy_slot_id` = '{}' AND `item_id` = '{}' LIMIT 1",
+			buyer.id,
+			sell_line.slot,
+			sell_line.item_id
+		)
+	);
+
+	if (buy_lines.empty()) {
+		seller->SendBarterBuyerClientMessage(
+			sell_line,
+			Barter_SellerTransactionComplete,
+			Barter_Failure,
+			Barter_DataOutOfDate
+		);
+		return;
+	}
+
+	auto buy_line = buy_lines.front();
+	if (
+		buy_line.item_price != static_cast<int32>(sell_line.item_cost) ||
+		buy_line.item_qty < static_cast<int32>(sell_line.seller_quantity)
+	) {
+		seller->SendBarterBuyerClientMessage(
+			sell_line,
+			Barter_SellerTransactionComplete,
+			Barter_Failure,
+			Barter_DataOutOfDate
+		);
+		return;
+	}
+
+	if (!seller->DoBarterSellerChecks(sell_line)) {
+		return;
+	}
+
+	uint64 total_cost = static_cast<uint64>(sell_line.item_cost) * static_cast<uint64>(sell_line.seller_quantity);
+	if (!total_cost || total_cost > MAX_TRANSACTION_VALUE) {
+		seller->SendBarterBuyerClientMessage(
+			sell_line,
+			Barter_SellerTransactionComplete,
+			Barter_Failure,
+			Barter_Failure
+		);
+		return;
+	}
+
+	BuyerRepository::UpdateTransactionDate(database, buyer.char_id, time(nullptr));
+	seller->RemoveItem(sell_line.item_id, sell_line.seller_quantity);
+	seller->AddMoneyToPP(total_cost, false);
+
+	if (buy_line.item_qty <= static_cast<int32>(sell_line.seller_quantity)) {
+		BuyerBuyLinesRepository::DeleteWhere(database, fmt::format("`id` = '{}'", buy_line.id));
+	}
+	else {
+		buy_line.item_qty -= static_cast<int32>(sell_line.seller_quantity);
+		BuyerBuyLinesRepository::UpdateOne(database, buy_line);
+	}
+
+	RecordTHJSystemBuyerTransaction(seller, sell_line, total_cost);
+	seller->SendBarterBuyerClientMessage(
+		sell_line,
+		Barter_SellerTransactionComplete,
+		Barter_Success,
+		Barter_Success
+	);
+	seller->Message(
+		Chat::Yellow,
+		fmt::format(
+			"{} bought {} x{} for {}.",
+			buyer.char_name,
+			sell_line.item_name,
+			sell_line.seller_quantity,
+			Client::DetermineMoneyString(total_cost)
+		).c_str()
+	);
+}
 // ##########################################
 // Trade implementation
 // ##########################################
@@ -2046,6 +2171,11 @@ void Client::SellToBuyer(const EQApplicationPacket *app)
 						Barter_DataOutOfDate
 					);
 					return;
+				}
+
+				if (IsTHJSystemBuyer(buyer)) {
+					CompleteTHJSystemBuyerSale(this, sell_line, buyer);
+					break;
 				}
 
 				if (sell_line.trade_items.size() > 0) {

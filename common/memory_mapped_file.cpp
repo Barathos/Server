@@ -32,6 +32,8 @@
 #ifdef FREEBSD
 #include <sys/stat.h>
 #endif
+#include <limits>
+#include <utility>
 
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -46,12 +48,24 @@ namespace EQ {
 #endif
 	};
 
+#ifdef _WINDOWS
+	namespace {
+		std::pair<DWORD, DWORD> GetFileMappingSizeParts(uint64 total_size)
+		{
+			return {
+				static_cast<DWORD>(total_size >> 32),
+				static_cast<DWORD>(total_size & 0xFFFFFFFF)
+			};
+		}
+	}
+#endif
+
 	MemoryMappedFile::MemoryMappedFile(std::string filename, uint32 size)
 		: filename_(filename), size_(size) {
 		imp_ = new Implementation;
 
 #ifdef _WINDOWS
-		DWORD total_size = size + sizeof(shared_memory_struct);
+		uint64 total_size = static_cast<uint64>(size) + sizeof(shared_memory_struct);
 		HANDLE file = CreateFile(filename.c_str(),
 			GENERIC_READ | GENERIC_WRITE,
 			FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -64,12 +78,14 @@ namespace EQ {
 			EQ_EXCEPT("Shared Memory", "Could not open a file for this shared memory segment.");
 		}
 
+		auto [total_size_high, total_size_low] = GetFileMappingSizeParts(total_size);
 		imp_->mapped_object_ = CreateFileMapping(file,
 			nullptr,
 			PAGE_READWRITE,
-			0,
-			total_size,
-			filename.c_str());
+			total_size_high,
+			total_size_low,
+			nullptr);
+		CloseHandle(file);
 
 		if(!imp_->mapped_object_) {
 			EQ_EXCEPT("Shared Memory", "Could not create a file mapping for this shared memory file.");
@@ -79,7 +95,7 @@ namespace EQ {
 			FILE_MAP_ALL_ACCESS,
 			0,
 			0,
-			total_size));
+			static_cast<SIZE_T>(total_size)));
 
 		if(!memory_) {
 			EQ_EXCEPT("Shared Memory", "Could not map a view of the shared memory file.");
@@ -115,12 +131,22 @@ namespace EQ {
 			EQ_EXCEPT("Shared Memory", "Could not open the file to find the existing file size.");
 		}
 		fseek(f, 0U, SEEK_END);
-		uint32 size = static_cast<uint32>(ftell(f)) - sizeof(shared_memory_struct);
+		auto file_size = ftell(f);
+		if (file_size < static_cast<long>(sizeof(shared_memory_struct))) {
+			fclose(f);
+			EQ_EXCEPT("Shared Memory", "Existing shared memory file is too small.");
+		}
+		auto data_size = static_cast<uint64>(file_size) - sizeof(shared_memory_struct);
+		if (data_size > std::numeric_limits<uint32>::max()) {
+			fclose(f);
+			EQ_EXCEPT("Shared Memory", "Existing shared memory file is too large.");
+		}
+		uint32 size = static_cast<uint32>(data_size);
 		size_ = size;
 		fclose(f);
 
 #ifdef _WINDOWS
-		DWORD total_size = size + sizeof(shared_memory_struct);
+		uint64 total_size = static_cast<uint64>(size) + sizeof(shared_memory_struct);
 		HANDLE file = CreateFile(filename.c_str(),
 			GENERIC_READ | GENERIC_WRITE,
 			FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -133,12 +159,14 @@ namespace EQ {
 			EQ_EXCEPT("Shared Memory", "Could not open a file for this shared memory segment.");
 		}
 
+		auto [total_size_high, total_size_low] = GetFileMappingSizeParts(total_size);
 		imp_->mapped_object_ = CreateFileMapping(file,
 			nullptr,
 			PAGE_READWRITE,
-			0,
-			total_size,
-			filename.c_str());
+			total_size_high,
+			total_size_low,
+			nullptr);
+		CloseHandle(file);
 
 		if(!imp_->mapped_object_) {
 			EQ_EXCEPT("Shared Memory", "Could not create a file mapping for this shared memory file.");
@@ -148,7 +176,7 @@ namespace EQ {
 			FILE_MAP_ALL_ACCESS,
 			0,
 			0,
-			total_size));
+			static_cast<SIZE_T>(total_size)));
 
 		if(!memory_) {
 			EQ_EXCEPT("Shared Memory", "Could not map a view of the shared memory file.");

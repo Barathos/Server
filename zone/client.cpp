@@ -1888,15 +1888,9 @@ void Client::FixModel(Spawn_Struct* npc) {
 			static const std::vector<std::pair<int, int>> frostTrash = { {6, 0}, {6, 3}, {7, 0}, {7, 3}, {7, 4}, {7, 9}, {8, 0}, {8, 3}, {8, 8}, {8, 9} };
 
             bool isCaster = IsCasterClass(npc->class_);
-#if defined(WIN32)
-			bool isElite = (StrStrA(npc->name, "centurion") != nullptr) ||
-				(StrStrA(npc->name, "legionnaire") != nullptr);
-			bool isStandard = StrStrA(npc->name, "pawn") != nullptr;
-#else
-            bool isElite = (strcasestr(npc->name, "centurion") != nullptr) ||
-                           (strcasestr(npc->name, "legionnaire") != nullptr);
-            bool isStandard = strcasestr(npc->name, "pawn") != nullptr;
-#endif
+			bool isElite = caseInsensitiveFind(npc->name, "centurion") ||
+				caseInsensitiveFind(npc->name, "legionnaire");
+			bool isStandard = caseInsensitiveFind(npc->name, "pawn");
             const std::vector<std::pair<int, int>>* appearancePool = nullptr;
             std::vector<std::pair<int, int>> combinedPool;
 
@@ -14480,6 +14474,8 @@ bool Client::AddExtraClass(int class_id) {
 			m_pp.classes = classes_bits | n_class_bit;
 			CalcBonuses();
 			SendAlternateAdvancementTable();
+			SendTopLevelInventory();
+			SendCursorBuffer();
 
 			if (IsInAGuild()) {
 				guild_mgr.SendToWorldMemberLevelUpdate(GuildID(), RuleB(Custom, MulticlassingEnabled) ? GetClassesBits() : GetLevel(), std::string(GetCleanName()));

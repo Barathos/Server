@@ -268,6 +268,14 @@ void Client::SendServerListPacket(uint32 seq)
 {
 	auto app = server.server_manager->CreateServerListPacket(this, seq);
 
+	LogInfo(
+		"Server list trace | queuing response to [{}] opcode [{}] size [{}] sequence [{}]",
+		GetClientLoggingDescription(),
+		OpcodeManager::EmuToName(app->GetOpcode()),
+		app->Size(),
+		seq
+	);
+
 	m_connection->QueuePacket(app.get());
 }
 

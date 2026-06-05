@@ -19,6 +19,7 @@
 #include "../common/global_define.h"
 #include "../common/eqemu_logsys.h"
 
+#include "../common/classes.h"
 #include "../common/strings.h"
 #include "quest_parser_collection.h"
 #include "worldserver.h"
@@ -31,6 +32,25 @@
 
 extern WorldServer worldserver;
 extern QueryServ  *QServ;
+
+namespace {
+	void AddClientClassBitForMulticlassItem(EQ::ItemInstance *inst, uint16 race_id, uint16 classes_bits, uint16 client_class_bit)
+	{
+		if (!inst) {
+			return;
+		}
+
+		const auto item = inst->GetItem();
+		if (item && item->IsClassCommon() && inst->IsEquipable(race_id, classes_bits)) {
+			auto mutable_item = const_cast<EQ::ItemData *>(item);
+			mutable_item->Classes |= client_class_bit;
+		}
+
+		for (auto &entry : *inst->GetContents()) {
+			AddClientClassBitForMulticlassItem(entry.second, race_id, classes_bits, client_class_bit);
+		}
+	}
+}
 
 void Client::ValidateAugments(EQ::ItemInstance* item) {
     if (!item) {
@@ -4018,8 +4038,20 @@ void Client::SendItemPacket(int16 slot_id, const EQ::ItemInstance* inst, ItemPac
 		}
 	}
 
+	const EQ::ItemInstance *serialized_inst = inst;
+	EQ::ItemInstance *multiclass_inst = nullptr;
+	if (RuleB(Custom, MulticlassingEnabled)) {
+		const uint16 classes_bits = static_cast<uint16>(GetClassesBits());
+		const uint16 client_class_bit = GetPlayerClassBit(GetBaseClass());
+		if (classes_bits && client_class_bit) {
+			multiclass_inst = inst->Clone();
+			AddClientClassBitForMulticlassItem(multiclass_inst, GetBaseRace(), classes_bits, client_class_bit);
+			serialized_inst = multiclass_inst;
+		}
+	}
+
 	// Serialize item into |-delimited string (Titanium- uses '|' delimiter .. newer clients use pure data serialization)
-	std::string packet = inst->Serialize(slot_id);
+	std::string packet = serialized_inst->Serialize(slot_id);
 
 	EmuOpcode opcode = OP_Unknown;
 	EQApplicationPacket* outapp = nullptr;
@@ -4036,6 +4068,7 @@ void Client::SendItemPacket(int16 slot_id, const EQ::ItemInstance* inst, ItemPac
 		DumpPacket(outapp);
 #endif
 	FastQueuePacket(&outapp);
+	safe_delete(multiclass_inst);
 }
 
 static int16 BandolierSlotToWeaponSlot(int BandolierSlot)

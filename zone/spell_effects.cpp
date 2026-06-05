@@ -4102,6 +4102,7 @@ void Mob::DoBuffTic(const Buffs_Struct &buff, int slot, Mob *caster)
 	if (!IsValidSpell(buff.spellid))
 		return;
 
+	const uint16 ticking_spell_id = buff.spellid;
 	const SPDat_Spell_Struct &spell = spells[buff.spellid];
 
 	const auto& export_string = fmt::format(
@@ -4326,6 +4327,10 @@ void Mob::DoBuffTic(const Buffs_Struct &buff, int slot, Mob *caster)
 				}
 			}
 
+			if (buff.spellid != ticking_spell_id) {
+				break;
+			}
+
 			if (!caster || !PassCharismaCheck(caster, buff.spellid)) {
 				BuffFadeByEffect(SE_Charm);
 
@@ -4349,6 +4354,10 @@ void Mob::DoBuffTic(const Buffs_Struct &buff, int slot, Mob *caster)
 				} else if (!TryFadeEffect(slot)) {
 					BuffFadeBySlot(slot);
 				}
+			}
+
+			if (buff.spellid != ticking_spell_id) {
+				break;
 			}
 
 			/* Root formula derived from extensive personal live parses - Kayen
@@ -4378,6 +4387,10 @@ void Mob::DoBuffTic(const Buffs_Struct &buff, int slot, Mob *caster)
 				} else if (!TryFadeEffect(slot)) {
 					BuffFadeBySlot(slot);
 				}
+			}
+
+			if (buff.spellid != ticking_spell_id) {
+				break;
 			}
 
 			if (zone->random.Roll(RuleI(Spells, FearBreakCheckChance))) {

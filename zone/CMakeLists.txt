@@ -355,6 +355,7 @@ set(gm_command_sources
     gm_commands/entityvariable.cpp
     gm_commands/exptoggle.cpp
     gm_commands/faction.cpp
+    gm_commands/fakebazaar.cpp
     gm_commands/evolving_items.cpp
     gm_commands/feature.cpp
     gm_commands/find.cpp

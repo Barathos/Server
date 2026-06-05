@@ -1193,6 +1193,7 @@ RULE_CATEGORY_END()
 RULE_CATEGORY(Custom)
 // Multiclassing Engine
 RULE_BOOL(Custom, 	ServerAuthStats, 						true, "Enable this rule in order to send explicit client updates. Requires client dll.")
+RULE_BOOL(Custom, 	ServerAuthEnforcement, 					false, "Require THJ client auth before allowing players to leave Bazaar. ServerAuthStats may stay enabled while this is disabled.")
 RULE_BOOL(Custom, 	MulticlassingEnabled, 					true, "Enable this to enable all multiclass-related tweaks. Requires ServerAuthStats and UseDynamicAATimers for full functionality.")
 RULE_BOOL(Custom, 	UseDynamicAATimers, 					true, "Enable using dynamic AA timers. Required to deconflict multiclass AA timers")
 
@@ -1221,7 +1222,7 @@ RULE_BOOL(Custom, 	DoItemUpgrades, 						true, "Retribution item upgrades")
 RULE_REAL(Custom, 	Tier2ItemDropRate, 						25, "Percentage chance that a drop will be upgraded to Tier 2. These percentages are independent of one another, but Tier2 is rolled first. Default value is twice as rare as Tier2.")
 RULE_REAL(Custom, 	Tier1ItemDropRate, 						50, "Percentage chance that a drop will be upgraded to Tier 1. These percentages are independent of one another, but Tier2 is rolled first. Default value is twice as rare as Unmodified")
 RULE_BOOL(Custom, 	PowerSourceItemUpgrade, 		 		false, "Enable to add Power Source to all items which can be equipped by some race and class.")
-RULE_REAL(Custom, 	PowerSourceItemUpgradeRateScale, 		1.0, "Scale XP rate of items using this value.")
+RULE_REAL(Custom, 	PowerSourceItemUpgradeRateScale, 		100.0, "Percentage scale for Power Source item upgrade XP. 100 is normal speed.")
 RULE_REAL(Custom, 	PowerSourceItemTier1RateFloor,			1.0, "Smallest percentage item XP that a white can can award for a tier 1 item")
 RULE_REAL(Custom, 	PowerSourceItemTier2RateFloor,			0.1, "Smallest percentage item XP that a white can can award for a tier 2 item")
 
