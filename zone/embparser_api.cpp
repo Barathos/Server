@@ -32,6 +32,7 @@
 #include "entity.h"
 #include "queryserv.h"
 #include "questmgr.h"
+#include "thj_fake_bazaar.h"
 #include "zone.h"
 #include "../common/data_bucket.h"
 #include "../common/events/player_event_logs.h"
@@ -6040,12 +6041,36 @@ bool Perl__handin(perl::reference handin_ref)
 	return quest_manager.handin(handin_map);
 }
 
+bool Perl__fakebazaar_seed()
+{
+	return THJFakeBazaarSeedRows(0, "quest::fakebazaar_seed").success;
+}
+
+bool Perl__fakebazaar_clear()
+{
+	return THJFakeBazaarClearRows().success;
+}
+
+bool Perl__fakebazaar_refresh()
+{
+	return THJFakeBazaarRefreshRows(true, "quest::fakebazaar_refresh").success;
+}
+
+bool Perl__fakebazaar_refresh(bool force)
+{
+	return THJFakeBazaarRefreshRows(force, "quest::fakebazaar_refresh").success;
+}
+
 void perl_register_quest()
 {
 	perl::interpreter perl(PERL_GET_THX);
 
 	auto package = perl.new_package("quest");
 
+	package.add("fakebazaar_seed", &Perl__fakebazaar_seed);
+	package.add("fakebazaar_clear", &Perl__fakebazaar_clear);
+	package.add("fakebazaar_refresh", (bool(*)())&Perl__fakebazaar_refresh);
+	package.add("fakebazaar_refresh", (bool(*)(bool))&Perl__fakebazaar_refresh);
 	package.add("botquest", &Perl__botquest);
 	package.add("spawnbotcount", (int(*)())&Perl__spawnbotcount);
 	package.add("spawnbotcount", (int(*)(uint8))&Perl__spawnbotcount);

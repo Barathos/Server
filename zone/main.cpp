@@ -56,6 +56,7 @@
 #include "lua_parser.h"
 #include "questmgr.h"
 #include "npc_scale_manager.h"
+#include "thj_fake_bazaar.h"
 
 #include "../common/net/eqstream.h"
 
@@ -520,6 +521,8 @@ int main(int argc, char **argv)
 	bool websocker_server_opened = false;
 
 	Timer quest_timers(100);
+	Timer thj_fake_bazaar_timer(60000);
+	thj_fake_bazaar_timer.Trigger();
 	UpdateWindowTitle(nullptr);
 	std::shared_ptr<EQStreamInterface>                 eqss;
 	EQStreamInterface                                  *eqsi;
@@ -608,6 +611,10 @@ int main(int argc, char **argv)
 
 		if (WorldserverProcess.Check()) {
 			worldserver.Process();
+		}
+
+		if (thj_fake_bazaar_timer.Check()) {
+			THJFakeBazaarProcessAutoRefresh();
 		}
 
 		if (is_zone_loaded) {

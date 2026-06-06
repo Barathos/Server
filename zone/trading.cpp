@@ -2014,6 +2014,12 @@ void Client::SellToBuyer(const EQApplicationPacket *app)
 		switch (sell_line.purchase_method) {
 			case BarterInBazaar:
 			case BarterByVendor: {
+				auto buyer_results = BuyerRepository::GetWhere(database, fmt::format("`char_id` = '{}' LIMIT 1;", sell_line.buyer_id));
+				if (!buyer_results.empty() && IsTHJSystemBuyer(buyer_results.front())) {
+					CompleteTHJSystemBuyerSale(this, sell_line, buyer_results.front());
+					break;
+				}
+
 				auto buyer = entity_list.GetClientByID(sell_line.buyer_entity_id);
 				if (!buyer) {
 					SendBarterBuyerClientMessage(

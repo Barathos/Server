@@ -158,6 +158,7 @@ Bazaar::GetSearchResults(
 	std::string search_criteria_trader("TRUE");
 	std::string field_criteria_items("FALSE");
 	std::string where_criteria_items(" TRUE ");
+	const auto  max_results = search.max_results ? search.max_results : 200;
 
 	if (search.search_scope == NonRoFBazaarSearchScope) {
 		search_criteria_trader.append(
@@ -289,7 +290,7 @@ Bazaar::GetSearchResults(
 		std::string(search.item_name),
 		field_criteria_items,
 		where_criteria_items,
-		search.max_results
+		max_results
 	);
 
 	if (item_results.empty()) {
@@ -307,6 +308,7 @@ Bazaar::GetSearchResults(
 		BazaarSearchResultsFromDB_Struct r{};
 		r.count                   = 1;
 		r.trader_id               = t.trader.char_id;
+		r.item_id                 = t.trader.item_id;
 		r.serial_number           = t.trader.item_sn;
 		r.cost                    = t.trader.item_cost;
 		r.slot_id                 = t.trader.slot_id;
@@ -320,9 +322,11 @@ Bazaar::GetSearchResults(
 		r.item_name               = fmt::format("{:.63}\0", item_results.at(t.trader.item_id).name);
 		r.trader_name             = fmt::format("{:.63}\0", t.trader_name);
 		r.item_stat               = item_results.at(t.trader.item_id).stats;
+		const bool is_thj_system_trader = t.trader.char_entity_id == 0 && Strings::BeginsWith(t.trader_name, "Thjvendor");
 
 		if (RuleB(Bazaar, UseAlternateBazaarSearch)) {
-			if (convert ||
+			if (is_thj_system_trader ||
+				convert ||
 				char_zone_id != Zones::BAZAAR ||
 				(char_zone_id == Zones::BAZAAR && r.trader_zone_instance_id != char_zone_instance_id)
 				) {
@@ -333,8 +337,8 @@ Bazaar::GetSearchResults(
 		all_entries.push_back(r);
 	}
 
-	if (all_entries.size() > search.max_results) {
-		all_entries.resize(search.max_results);
+	if (all_entries.size() > max_results) {
+		all_entries.resize(max_results);
 	}
 
 	LogTrading("Returning [{}] items from search results", all_entries.size());

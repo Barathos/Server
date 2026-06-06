@@ -22,6 +22,7 @@
 #include "quest_parser_collection.h"
 #include "questmgr.h"
 #include "qglobals.h"
+#include "thj_fake_bazaar.h"
 #include "encounter.h"
 #include "lua_encounter.h"
 #include "../common/data_bucket.h"
@@ -147,6 +148,26 @@ void unload_encounter_with_data(std::string name, std::string info_str) {
 	std::vector<std::any> info_ptrs;
 	info_ptrs.push_back(&info_str);
 	parse->EventEncounter(EVENT_ENCOUNTER_UNLOAD, name, "", 0, &info_ptrs);
+}
+
+bool lua_fake_bazaar_seed()
+{
+	return THJFakeBazaarSeedRows(0, "eq.fake_bazaar_seed").success;
+}
+
+bool lua_fake_bazaar_clear()
+{
+	return THJFakeBazaarClearRows().success;
+}
+
+bool lua_fake_bazaar_refresh()
+{
+	return THJFakeBazaarRefreshRows(true, "eq.fake_bazaar_refresh").success;
+}
+
+bool lua_fake_bazaar_refresh_force(bool force)
+{
+	return THJFakeBazaarRefreshRows(force, "eq.fake_bazaar_refresh").success;
 }
 
 void register_event(std::string package_name, std::string name, int evt, luabind::adl::object func) {
@@ -5880,6 +5901,10 @@ luabind::scope lua_register_general() {
 		luabind::def("unload_encounter", &unload_encounter),
 		luabind::def("load_encounter_with_data", &load_encounter_with_data),
 		luabind::def("unload_encounter_with_data", &unload_encounter_with_data),
+		luabind::def("fake_bazaar_seed", &lua_fake_bazaar_seed),
+		luabind::def("fake_bazaar_clear", &lua_fake_bazaar_clear),
+		luabind::def("fake_bazaar_refresh", (bool(*)())&lua_fake_bazaar_refresh),
+		luabind::def("fake_bazaar_refresh", (bool(*)(bool))&lua_fake_bazaar_refresh_force),
 		luabind::def("register_npc_event", (void(*)(std::string, int, int, luabind::adl::object))&register_npc_event),
 		luabind::def("register_npc_event", (void(*)(int, int, luabind::adl::object))&register_npc_event),
 		luabind::def("unregister_npc_event", (void(*)(std::string, int, int))&unregister_npc_event),
