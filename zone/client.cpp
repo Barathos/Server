@@ -840,7 +840,7 @@ void Client::SendZoneInPackets()
 		SendAppearancePacket(AppearanceType::PVP, GetPVP(false), true, false);
 
 	//Send AA Exp packet:
-	if (GetLevel() >= 51)
+	if (GetLevel() >= 51 || RuleB(AA, AllowAAExpBelowLevel51))
 		SendAlternateAdvancementStats();
 
 	// Send exp packets
@@ -13493,6 +13493,59 @@ void Client::SetAAEXPPercentage(uint8 percentage)
 
 	SendAlternateAdvancementStats();
 	SendAlternateAdvancementTable();
+}
+
+const std::vector<EQ::skills::SkillType> &Client::GetAvailableAutoSkills()
+{
+	static const std::vector<EQ::skills::SkillType> available_auto_skills = {
+		EQ::skills::SkillBackstab,
+		EQ::skills::SkillBash,
+		EQ::skills::SkillDragonPunch,
+		EQ::skills::SkillEagleStrike,
+		EQ::skills::SkillFlyingKick,
+		EQ::skills::SkillKick,
+		EQ::skills::SkillRoundKick,
+		EQ::skills::SkillTigerClaw,
+		EQ::skills::SkillTaunt,
+		EQ::skills::SkillFrenzy
+	};
+
+	return available_auto_skills;
+}
+
+bool Client::GetAutoSkillStatus(EQ::skills::SkillType skill_id)
+{
+	const auto cached_status = m_autoskill.find(skill_id);
+	if (cached_status != m_autoskill.end()) {
+		return cached_status->second;
+	}
+
+	const auto bucket_name = fmt::format("autoskill.{}", static_cast<int>(skill_id));
+	const bool enabled = Strings::ToBool(GetBucket(bucket_name));
+	m_autoskill[skill_id] = enabled;
+
+	return enabled;
+}
+
+void Client::SetAutoSkillStatus(EQ::skills::SkillType skill_id, bool enabled)
+{
+	m_autoskill[skill_id] = enabled;
+
+	const auto bucket_name = fmt::format("autoskill.{}", static_cast<int>(skill_id));
+	SetBucket(bucket_name, enabled ? "1" : "0");
+}
+
+std::vector<EQ::skills::SkillType> Client::GetAutoSkillsList()
+{
+	std::vector<EQ::skills::SkillType> skills;
+
+	for (const auto skill_id : GetAvailableAutoSkills()) {
+		if (HasSkill(skill_id)) {
+			skills.push_back(skill_id);
+		}
+	}
+
+	return skills;
 }
 
 void Client::BroadcastPositionUpdate()

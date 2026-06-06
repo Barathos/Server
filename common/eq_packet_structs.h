@@ -1534,6 +1534,25 @@ struct ExpUpdate_Struct
 /*0004*/ uint32 aaxp;	// @BP ??
 };
 
+enum StatEntry
+{
+	statClassesBitmask = 1
+};
+
+#pragma pack(push, 1)
+struct StatEntry_Struct
+{
+/*0000*/ uint32 stat_key;
+/*0004*/ uint64 stat_value;
+};
+
+struct Stat_Struct
+{
+/*0000*/ uint32 count;
+/*0004*/ StatEntry_Struct entries[0];
+};
+#pragma pack(pop)
+
 /*
 ** Item Packet Struct - Works on a variety of opcodes
 ** Packet Types: See ItemPacketType enum

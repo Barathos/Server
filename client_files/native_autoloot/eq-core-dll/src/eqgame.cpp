@@ -32,6 +32,7 @@ extern void Pulse();
 extern bool was_background;
 extern void LoadIniSettings();
 extern HMODULE heqwMod;
+extern void NativeLabelsHandleWorldMessage(unsigned __int16 opcode, const char* buffer, size_t size);
 HANDLE myproc = 0;
 bool title_set = false;
 bool first_maximize = true;
@@ -530,6 +531,7 @@ unsigned char __cdecl SendExe_Detour(DWORD con)
 unsigned char __fastcall HandleWorldMessage_Trampoline(DWORD *con, DWORD edx, unsigned __int32 unk, unsigned __int16 opcode, char* buf, size_t size);
 unsigned char __fastcall HandleWorldMessage_Detour(DWORD *con, DWORD edx, unsigned __int32 unk, unsigned __int16 opcode, char* buf, size_t size)
 {
+	NativeLabelsHandleWorldMessage(opcode, buf, size);
 	return HandleWorldMessage_Trampoline(con, edx, unk, opcode, buf, size);
 }
 

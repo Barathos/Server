@@ -54,6 +54,8 @@ RULE_BOOL(CustomFeatures, DynamicQuestsEnabled, true, "Enables custom Dynamic Qu
 RULE_BOOL(CustomFeatures, MqInterfaceEnabled, true, "Enables bundled MQ-derived native client interface helpers such as map and item display when shipped in the all-features DLL.")
 RULE_BOOL(CustomFeatures, PetBagsEnabled, true, "Enables Syncrosatchel pet bags that mirror class-specific bag contents onto summoned and charmed pets.")
 RULE_BOOL(CustomFeatures, FactionWindowEnabled, true, "Enables the custom faction reputation window and player-facing reputation command.")
+RULE_BOOL(CustomFeatures, AutoskillsEnabled, true, "Enables the custom player #autoskill command and automatic combat skill processing.")
+RULE_BOOL(CustomFeatures, ServerAuthStatsEnabled, true, "Enables custom server-authoritative stat packets consumed by the native client payload.")
 RULE_CATEGORY_END()
 
 RULE_CATEGORY(Character)
@@ -1021,6 +1023,7 @@ RULE_INT(AA, ModernAAScalingAALimit, 4000, "The number of earned AA when AA expe
 RULE_BOOL(AA, SoundForAAEarned, false, "Play sound when AA point earned")
 RULE_INT(AA, UnusedAAPointCap, -1, "Cap for Unused AA Points.  Default: -1.  NOTE: DO NOT LOWER THIS WITHOUT KNOWING WHAT YOU ARE DOING. MAY RESULT IN PLAYERS LOSING AAs.")
 RULE_INT(AA, MaxAAEXPPerKill, -1, "Maximum AA EXP per Kill (3425214 is about 7%) - Default: -1 will disable the check")
+RULE_BOOL(AA, AllowAAExpBelowLevel51, true, "Allow players below level 51 to allocate and earn AA experience.")
 RULE_CATEGORY_END()
 
 RULE_CATEGORY(Console)

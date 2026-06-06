@@ -1695,6 +1695,7 @@ protected:
 	Timer attack_timer;
 	Timer attack_dw_timer;
 	Timer ranged_timer;
+	Timer attack_autoskill_timer;
 	float attack_speed; //% increase/decrease in attack speed (not haste)
 	int attack_delay; //delay between attacks in 10ths of seconds
 	bool always_aggro;

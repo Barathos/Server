@@ -4985,3 +4985,30 @@ bool Client::FindNumberOfFreeInventorySlotsWithSizeCheck(std::vector<BuyerLineTr
 	}
 	return false;
 };
+
+int64 Client::GetStatEntryValue(StatEntry stat)
+{
+	switch (stat) {
+		case statClassesBitmask:
+			return multiclass_manager.GetClassMask(this);
+		default:
+			return 0;
+	}
+}
+
+void Client::SendBulkStatsUpdate()
+{
+	if (!Connected() || !RuleB(CustomFeatures, ServerAuthStatsEnabled)) {
+		return;
+	}
+
+	constexpr uint32 entry_count = 1;
+	auto outapp = new EQApplicationPacket(OP_ServerAuthStats, sizeof(uint32) + (sizeof(StatEntry_Struct) * entry_count));
+	auto stats = reinterpret_cast<Stat_Struct *>(outapp->pBuffer);
+	stats->count = entry_count;
+	stats->entries[0].stat_key = statClassesBitmask;
+	stats->entries[0].stat_value = static_cast<uint64>(GetStatEntryValue(statClassesBitmask));
+
+	QueuePacket(outapp);
+	safe_delete(outapp);
+}

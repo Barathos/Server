@@ -18,6 +18,8 @@
 #include "zone/client.h"
 #include "zone/dialogue_window.h"
 
+#include "common/repositories/content_flags_repository.h"
+
 void ShowContentFlags(Client *c, const Seperator *sep)
 {
 	Client *t = c;

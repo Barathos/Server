@@ -6661,6 +6661,7 @@ void Client::SetAttackTimer()
 	//default value for attack timer in case they have
 	//an invalid weapon equipped:
 	attack_timer.SetAtTrigger(4000, true);
+	attack_autoskill_timer.SetAtTrigger(500, true);
 
 	Timer *TimerToUse = nullptr;
 

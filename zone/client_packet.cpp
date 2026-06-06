@@ -1745,6 +1745,7 @@ void Client::Handle_Connect_OP_ZoneEntry(const EQApplicationPacket *app)
 	memcpy(outapp->pBuffer, &profile_for_client, outapp->size);
 	outapp->priority = 6;
 	FastQueuePacket(&outapp);
+	SendBulkStatsUpdate();
 
 	if (m_pp.RestTimer) {
 		rest_timer.Start(m_pp.RestTimer * 1000);
@@ -3569,6 +3570,7 @@ void Client::Handle_OP_AutoAttack(const EQApplicationPacket *app)
 		attack_timer.Disable();
 		ranged_timer.Disable();
 		attack_dw_timer.Disable();
+		attack_autoskill_timer.Disable();
 
 		m_AutoAttackPosition       = glm::vec4();
 		m_AutoAttackTargetLocation = glm::vec3();
@@ -3624,6 +3626,9 @@ void Client::Handle_OP_AutoFire(const EQApplicationPacket *app)
 		auto_fire = false;
 
 	auto_attack = false;
+	if (!auto_fire) {
+		attack_autoskill_timer.Disable();
+	}
 	SetAttackTimer();
 }
 

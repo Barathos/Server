@@ -110,6 +110,7 @@ int command_init(void)
 		command_add("attack", "[Entity Name] - Make your NPC target attack an entity by name", AccountStatus::GMLeadAdmin, command_attack) ||
 		command_add("autoloot", "[window|on|off|mode|nearby|group|stackables] - Source-backed AutoLoot settings and actions", AccountStatus::Player, command_autoloot) ||
 		command_add("autosell", "[preview|confirm|cancel|exclude] - Preview and sell items from AutoSell bags", AccountStatus::Player, command_autosell) ||
+		command_add("autoskill", "[list|skill on|skill off|skill status] - Configure automatic combat skill usage", AccountStatus::Player, command_autoskill) ||
 		command_add("augmentitem", "Force augments an item. Must have the augment item window open.", AccountStatus::GMImpossible, command_augmentitem) ||
 		command_add("ban", "[Character Name] [Reason] - Ban by character name", AccountStatus::GMLeadAdmin, command_ban) ||
 		command_add("bugs", "[Close|Delete|Review|Search|View] - Handles player bug reports", AccountStatus::QuestTroupe, command_bugs) ||

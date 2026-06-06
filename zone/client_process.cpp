@@ -326,6 +326,9 @@ bool Client::Process() {
 		}
 
 		bool may_use_attacks = false;
+		const bool may_use_combat_actions = !IsAIControlled() && !dead
+			&& !(spellend_timer.Enabled() && casting_spell_id && !IsBardSong(casting_spell_id))
+			&& !IsStunned() && !IsFeared() && !IsMezzed() && GetAppearance() != eaDead && !IsMeleeDisabled();
 		/*
 			Things which prevent us from attacking:
 				- being under AI control, the AI does attacks
@@ -336,11 +339,9 @@ bool Client::Process() {
 				- having used a ranged weapon recently
 		*/
 		if (auto_attack) {
-			if (!IsAIControlled() && !dead
-				&& !(spellend_timer.Enabled() && casting_spell_id && !IsBardSong(casting_spell_id))
-				&& !IsStunned() && !IsFeared() && !IsMezzed() && GetAppearance() != eaDead && !IsMeleeDisabled()
-				)
+			if (may_use_combat_actions) {
 				may_use_attacks = true;
+			}
 
 			if (may_use_attacks && ranged_timer.Enabled()) {
 				//if the range timer is enabled, we need to consider it
@@ -493,6 +494,49 @@ bool Client::Process() {
 
 					DoAttackRounds(auto_attack_target, EQ::invslot::slotSecondary);
 				}
+			}
+		}
+
+		if (
+			RuleB(CustomFeatures, AutoskillsEnabled) &&
+			(AutoFireEnabled() || AutoAttackEnabled()) &&
+			auto_attack_target != nullptr &&
+			(may_use_attacks || (AutoFireEnabled() && may_use_combat_actions)) &&
+			attack_autoskill_timer.Check() &&
+			auto_attack_target->IsNPC()
+		) {
+			for (const auto skill : GetAutoSkillsList()) {
+				if (!GetAutoSkillStatus(skill)) {
+					continue;
+				}
+
+				if (skill == EQ::skills::SkillTaunt) {
+					if (!p_timers.Expired(&database, pTimerTaunt, false)) {
+						continue;
+					}
+
+					auto target = GetTarget();
+					if (!target || !target->IsNPC() || !zone->CanDoCombat()) {
+						continue;
+					}
+
+					if (DistanceSquared(GetPosition(), target->GetPosition()) > (RuleI(Skills, MaximumTauntDistance) * RuleI(Skills, MaximumTauntDistance))) {
+						continue;
+					}
+
+					auto hate_top = target->GetHateTop();
+					if (hate_top && hate_top->GetID() == GetID()) {
+						continue;
+					}
+
+					p_timers.Start(pTimerTaunt, TauntReuseTime - 1);
+					Taunt(target->CastToNPC(), false);
+					continue;
+				}
+
+				SetEntityVariable("auto_skill", "enabled");
+				DoClassAttacks(auto_attack_target, skill, false);
+				DeleteEntityVariable("auto_skill");
 			}
 		}
 

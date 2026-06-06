@@ -6,10 +6,106 @@
 
 #include "MQ2Main.h"
 #include <map>
+#include <string>
 
 typedef string(*pEqTypesFunc)();
 
 map<DWORD, pEqTypesFunc> eqTypesMap;
+
+namespace {
+
+constexpr WORD NativeOpServerAuthStats = 0x1338;
+constexpr DWORD NativeStatClassesBitmask = 1;
+constexpr DWORD NativeMaxServerAuthStat = 128;
+
+#pragma pack(push, 1)
+struct NativeServerAuthStatEntry {
+	DWORD StatKey;
+	ULONGLONG StatValue;
+};
+#pragma pack(pop)
+
+ULONGLONG gNativeServerAuthStats[NativeMaxServerAuthStat] = {0};
+bool gNativeServerAuthStatsSeen[NativeMaxServerAuthStat] = {false};
+
+bool NativeHasServerAuthStat(DWORD stat_key)
+{
+	return stat_key < NativeMaxServerAuthStat && gNativeServerAuthStatsSeen[stat_key];
+}
+
+ULONGLONG NativeGetServerAuthStat(DWORD stat_key)
+{
+	return NativeHasServerAuthStat(stat_key) ? gNativeServerAuthStats[stat_key] : 0;
+}
+
+std::string NativeClassListLabel(bool abbreviations)
+{
+	if (!NativeHasServerAuthStat(NativeStatClassesBitmask)) {
+		return "";
+	}
+
+	static const char* class_names[] = {
+		"Warrior", "Cleric", "Paladin", "Ranger", "Shadow Knight", "Druid",
+		"Monk", "Bard", "Rogue", "Shaman", "Necromancer", "Wizard",
+		"Magician", "Enchanter", "Beastlord", "Berserker"
+	};
+
+	static const char* class_abbreviations[] = {
+		"WAR", "CLR", "PAL", "RNG", "SHD", "DRU", "MNK", "BRD",
+		"ROG", "SHM", "NEC", "WIZ", "MAG", "ENC", "BST", "BER"
+	};
+
+	const auto class_bits = NativeGetServerAuthStat(NativeStatClassesBitmask);
+	const auto* labels = abbreviations ? class_abbreviations : class_names;
+	std::string text;
+
+	for (DWORD i = 0; i < (sizeof(class_names) / sizeof(class_names[0])); ++i) {
+		if (!(class_bits & (1ULL << i))) {
+			continue;
+		}
+
+		if (!text.empty()) {
+			text += "\n";
+		}
+		text += labels[i];
+	}
+
+	return text;
+}
+
+std::string NativeClassNamesLabel()
+{
+	return NativeClassListLabel(false);
+}
+
+std::string NativeClassAbbreviationsLabel()
+{
+	return NativeClassListLabel(true);
+}
+
+} // namespace
+
+void NativeLabelsHandleWorldMessage(unsigned __int16 opcode, const char* buffer, size_t size)
+{
+	if (opcode != NativeOpServerAuthStats || !buffer || size < sizeof(DWORD)) {
+		return;
+	}
+
+	const DWORD count = *(const DWORD*)buffer;
+	const size_t max_entries = (size - sizeof(DWORD)) / sizeof(NativeServerAuthStatEntry);
+	if (count > max_entries) {
+		return;
+	}
+
+	const auto* entries = (const NativeServerAuthStatEntry*)(buffer + sizeof(DWORD));
+	for (DWORD i = 0; i < count; ++i) {
+		const DWORD stat_key = entries[i].StatKey;
+		if (stat_key > 0 && stat_key < NativeMaxServerAuthStat) {
+			gNativeServerAuthStats[stat_key] = entries[i].StatValue;
+			gNativeServerAuthStatsSeen[stat_key] = true;
+		}
+	}
+}
 
 // CSidlManager::CreateLabel 0x5F2470
 
@@ -67,7 +163,14 @@ public:
 		std::string eqtypesString = "";
 
 
-        if ((DWORD)pThisLabel->SidlPiece==9999) {
+		auto eqtype_iter = eqTypesMap.find((DWORD)pThisLabel->SidlPiece);
+		if (eqtype_iter != eqTypesMap.end()) {
+			auto func = eqtype_iter->second;
+			if (func) {
+				eqtypesString = (*func)();
+				Found = TRUE;
+			}
+        } else if ((DWORD)pThisLabel->SidlPiece==9999) {
             if (!pThisLabel->Wnd.XMLToolTip) {
                 strcpy(Buffer,"BadCustom");
                 Found=TRUE;
@@ -78,19 +181,6 @@ public:
                 if (!strcmp(Buffer,"NULL"))
                     Buffer[0]=0;
                 Found=TRUE;
-            }
-        } else if ((DWORD)pThisLabel->SidlPiece>=1000) {
-            for (auto eqtype : eqTypesMap) {
-                if (eqtype.first==(DWORD)pThisLabel->SidlPiece) {
-
-					auto func = eqtype.second;
-					if (func)
-					{
-						eqtypesString = (*func)();
-						Found = TRUE;
-						break;
-					}
-                }
             }
         }
         if (Found) SetCXStr(&(pThisLabel->Wnd.WindowText),(PCHAR)eqtypesString.c_str());
@@ -112,6 +202,8 @@ PLUGIN_API VOID InitializeMQ2Labels(VOID)
 {
  //   DebugSpewAlways("Initializing MQ2Labels");
 	eqTypesMap[1000] = testDisplayFunction; //and so forth 
+	eqTypesMap[3] = NativeClassNamesLabel;
+	eqTypesMap[6666] = NativeClassAbbreviationsLabel;
 
     // Add commands, macro parameters, hooks, etc.
     //EasyClassDetour(CLabel__Draw,CLabelHook,Draw_Detour,VOID,(VOID),Draw_Trampoline);

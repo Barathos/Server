@@ -771,25 +771,26 @@ struct NativeMulticlassClassDef
 {
 	int id = 0;
 	const char* name = "";
+	const char* abbreviation = "";
 };
 
 static const NativeMulticlassClassDef gNativeMulticlassClassDefs[] = {
-	{1, "Warrior"},
-	{2, "Cleric"},
-	{3, "Paladin"},
-	{4, "Ranger"},
-	{5, "Shadow Knight"},
-	{6, "Druid"},
-	{7, "Monk"},
-	{8, "Bard"},
-	{9, "Rogue"},
-	{10, "Shaman"},
-	{11, "Necromancer"},
-	{12, "Wizard"},
-	{13, "Magician"},
-	{14, "Enchanter"},
-	{15, "Beastlord"},
-	{16, "Berserker"}
+	{1, "Warrior", "WAR"},
+	{2, "Cleric", "CLR"},
+	{3, "Paladin", "PAL"},
+	{4, "Ranger", "RNG"},
+	{5, "Shadow Knight", "SHD"},
+	{6, "Druid", "DRU"},
+	{7, "Monk", "MNK"},
+	{8, "Bard", "BRD"},
+	{9, "Rogue", "ROG"},
+	{10, "Shaman", "SHM"},
+	{11, "Necromancer", "NEC"},
+	{12, "Wizard", "WIZ"},
+	{13, "Magician", "MAG"},
+	{14, "Enchanter", "ENC"},
+	{15, "Beastlord", "BST"},
+	{16, "Berserker", "BER"}
 };
 
 struct NativeMulticlassPetRow
@@ -921,6 +922,17 @@ static const char* NativeMulticlassClassName(int class_id)
 	}
 
 	return "Unchosen";
+}
+
+static const char* NativeMulticlassClassAbbreviation(int class_id)
+{
+	for (const auto& class_def : gNativeMulticlassClassDefs) {
+		if (class_def.id == class_id) {
+			return class_def.abbreviation;
+		}
+	}
+
+	return "";
 }
 
 static DWORD NativeMulticlassToDword(int value)
@@ -1081,6 +1093,24 @@ static std::string NativeMulticlassInventoryClassText()
 	return "Multiclass Trio";
 }
 
+static std::string NativeMulticlassInventoryClassAbbreviationText()
+{
+	if (
+		!gNativeMulticlassState.has_profile ||
+		!NativeMulticlassIsPlayerClass(gNativeMulticlassState.class1) ||
+		!NativeMulticlassIsPlayerClass(gNativeMulticlassState.class2) ||
+		!NativeMulticlassIsPlayerClass(gNativeMulticlassState.class3)
+	) {
+		return "";
+	}
+
+	return std::string(NativeMulticlassClassAbbreviation(gNativeMulticlassState.class1)) +
+		"\n" +
+		NativeMulticlassClassAbbreviation(gNativeMulticlassState.class2) +
+		"\n" +
+		NativeMulticlassClassAbbreviation(gNativeMulticlassState.class3);
+}
+
 static void NativeMulticlassPatchInventoryClassLabel()
 {
 	if (!gNativeMulticlassState.has_profile || !ppInventoryWnd || !pInventoryWnd) {
@@ -1097,6 +1127,13 @@ static void NativeMulticlassPatchInventoryClassLabel()
 		if (class_label) {
 			CXStr value(class_text.c_str());
 			class_label->SetWindowTextA(value);
+		}
+
+		const std::string class_abbreviations = NativeMulticlassInventoryClassAbbreviationText();
+		CXWnd* abbreviation_label = pInventoryWnd->GetChildItem((char*)"IW_ClassAbbr");
+		if (abbreviation_label && !class_abbreviations.empty()) {
+			CXStr value(class_abbreviations.c_str());
+			abbreviation_label->SetWindowTextA(value);
 		}
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER) {

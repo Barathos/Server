@@ -1029,6 +1029,10 @@ public:
 	bool BindWound(Mob* bindmob, bool start, bool fail = false);
 	void SetTradeskillObject(Object* object) { m_tradeskill_object = object; }
 	Object* GetTradeskillObject() { return m_tradeskill_object; }
+	bool GetAutoSkillStatus(EQ::skills::SkillType skill_id);
+	void SetAutoSkillStatus(EQ::skills::SkillType skill_id, bool enabled);
+	std::vector<EQ::skills::SkillType> GetAutoSkillsList();
+	static const std::vector<EQ::skills::SkillType> &GetAvailableAutoSkills();
 	void SetLastRecipeAutoCombine(const RecipeAutoCombine_Struct *recipe)
 	{
 		if (!recipe) {
@@ -1097,6 +1101,8 @@ public:
 	void SendAlternateAdvancementRank(int aa_id, int level);
 	void SendAlternateAdvancementTable();
 	void SendAlternateAdvancementStats();
+	void SendBulkStatsUpdate();
+	int64 GetStatEntryValue(StatEntry stat);
 	void PurchaseAlternateAdvancementRank(int rank_id);
 	bool GrantAlternateAdvancementAbility(int aa_id, int points, bool ignore_cost = false);
 	void IncrementAlternateAdvancementRank(int rank_id);
@@ -2203,6 +2209,7 @@ private:
 	RecipeAutoCombine_Struct m_last_recipe_auto_combine = {};
 	bool m_has_last_recipe_auto_combine = false;
 	bool m_has_last_recipe_auto_combine_context = false;
+	std::map<EQ::skills::SkillType, bool> m_autoskill;
 	PetInfo m_petinfo; // current pet data, used while loading from and saving to DB
 	PetInfo m_suspendedminion; // pet data for our suspended minion.
 	MercInfo m_mercinfo[MAXMERCS]; // current mercenary

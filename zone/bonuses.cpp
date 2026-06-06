@@ -100,6 +100,7 @@ void Client::CalcBonuses()
 	CalcMaxEndurance();
 
 	SetAttackTimer();
+	SendBulkStatsUpdate();
 
 	rooted = FindType(SpellEffect::Root);
 

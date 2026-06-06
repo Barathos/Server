@@ -388,6 +388,7 @@ set(gm_command_sources
     gm_commands/appearanceeffects.cpp
     gm_commands/attack.cpp
     gm_commands/autoloot.cpp
+    gm_commands/autoskill.cpp
     gm_commands/augmentitem.cpp
     gm_commands/ban.cpp
     gm_commands/bugs.cpp
