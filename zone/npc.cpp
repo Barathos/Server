@@ -4206,11 +4206,15 @@ void NPC::SendPetStatsWindow(Client *c)
 
 	std::string final_string;
 
-	final_string += DialogueWindow::ColorMessage(header_color, "Basic");
 	final_string += DialogueWindow::Table(
-		row("Name", GetCleanName()) +
-		row("Level", Strings::Commify(GetLevel())) +
-		row("Pet Origin", GetPlayerClassAbbreviation(GetPetOriginClass()))
+		DialogueWindow::TableRow(
+			DialogueWindow::TableCell(
+				DialogueWindow::ColorMessage(
+					standard_text,
+					fmt::format("Level: {} (Pet Power: {})", Strings::Commify(GetLevel()), Strings::Commify(GetPetPower()))
+				)
+			)
+		)
 	);
 
 	const auto current_hp = GetHP();
@@ -4218,16 +4222,14 @@ void NPC::SendPetStatsWindow(Client *c)
 	const auto hp_percent = max_hp > 0 ? (static_cast<float>(current_hp) / static_cast<float>(max_hp)) * 100.0f : 0.0f;
 	const auto hp_color   = hp_percent >= 75.0f ? "green" : hp_percent >= 25.0f ? "green_yellow" : "red";
 
-	final_string += DialogueWindow::ColorMessage(header_color, "Health");
 	final_string += DialogueWindow::Table(
 		DialogueWindow::TableRow(
-			cell("Hit Points") +
+			cell("Health") +
 			DialogueWindow::TableCell(
 				fmt::format(
-					"{} / {} ({:.1f}%)",
+					"{} / {}",
 					DialogueWindow::ColorMessage(hp_color, Strings::Commify(current_hp)),
-					DialogueWindow::ColorMessage(standard_text, Strings::Commify(max_hp)),
-					hp_percent
+					DialogueWindow::ColorMessage(standard_text, Strings::Commify(max_hp))
 				)
 			)
 		)
@@ -4269,7 +4271,7 @@ void NPC::SendPetStatsWindow(Client *c)
 
 	std::string combat_rows;
 	combat_rows += row(
-		"Main Hand",
+		"Main Hand:",
 		fmt::format(
 			"DMG {}-{}, Delay {}",
 			Strings::Commify(GetMinDamage()),
@@ -4285,7 +4287,7 @@ void NPC::SendPetStatsWindow(Client *c)
 			GetAttackDelay();
 
 		combat_rows += row(
-			"Off Hand",
+			"Off Hand:",
 			fmt::format(
 				"DMG {}-{}, Delay {}",
 				Strings::Commify(static_cast<int>(GetMinDamage() * 0.62f)),
@@ -4299,8 +4301,23 @@ void NPC::SendPetStatsWindow(Client *c)
 	combat_rows += row("MIT", Strings::Commify(GetMitigationAC()));
 	combat_rows += row("EVA", Strings::Commify(GetTotalDefense()));
 
-	final_string += DialogueWindow::ColorMessage(header_color, "Combat");
 	final_string += DialogueWindow::Table(combat_rows);
+
+	if (auto *owner = GetOwner()) {
+		const auto owner_spell = owner->GetSpellBonuses();
+		const auto owner_aa    = owner->GetAABonuses();
+		const auto owner_item  = owner->GetItemBonuses();
+		const auto flurry = owner_spell.PetFlurry + owner_aa.PetFlurry + owner_item.PetFlurry + spellbonuses.FlurryChance;
+		const auto critical = owner_spell.PetCriticalHit + owner_aa.PetCriticalHit + owner_item.PetCriticalHit;
+		const auto mitigation = owner_spell.PetMeleeMitigation + owner_aa.PetMeleeMitigation + owner_item.PetMeleeMitigation;
+		const auto avoidance = owner_spell.PetAvoidance + owner_aa.PetAvoidance + owner_item.PetAvoidance;
+
+		final_string += DialogueWindow::ColorMessage(header_color, "Owner Abilities");
+		final_string += DialogueWindow::Table(
+			paired_row("Flurry Rate", Strings::Commify(flurry), "Crit Rate", Strings::Commify(critical)) +
+			paired_row("Extra Mitigation", Strings::Commify(mitigation), "Extra Avoidance", Strings::Commify(avoidance))
+		);
+	}
 
 	std::string ability_rows;
 	ability_rows += paired_row(
@@ -4326,6 +4343,30 @@ void NPC::SendPetStatsWindow(Client *c)
 		Strings::Commify(spellbonuses.SpellDmg + itembonuses.SpellDmg),
 		"Heal Amount",
 		Strings::Commify(spellbonuses.HealAmt + itembonuses.HealAmt)
+	);
+	ability_rows += paired_row(
+		"Critical Spell Chance",
+		fmt::format("{}%", Strings::Commify(spellbonuses.CriticalSpellChance + itembonuses.CriticalSpellChance + aabonuses.CriticalSpellChance)),
+		"Critical Spell Damage",
+		fmt::format(
+			"{}%",
+			Strings::Commify(
+				spellbonuses.SpellCritDmgIncrease + itembonuses.SpellCritDmgIncrease + aabonuses.SpellCritDmgIncrease +
+				spellbonuses.SpellCritDmgIncNoStack + itembonuses.SpellCritDmgIncNoStack + aabonuses.SpellCritDmgIncNoStack
+			)
+		)
+	);
+	ability_rows += paired_row(
+		"Critical DoT Chance",
+		fmt::format("{}%", Strings::Commify(spellbonuses.CriticalDoTChance + itembonuses.CriticalDoTChance + aabonuses.CriticalDoTChance)),
+		"Critical DoT Damage",
+		fmt::format("{}%", Strings::Commify(spellbonuses.DotCritDmgIncrease + itembonuses.DotCritDmgIncrease + aabonuses.DotCritDmgIncrease))
+	);
+	ability_rows += paired_row(
+		"Critical Heal Chance",
+		fmt::format("{}%", Strings::Commify(spellbonuses.CriticalHealChance + itembonuses.CriticalHealChance + aabonuses.CriticalHealChance)),
+		"Critical HoT Chance",
+		fmt::format("{}%", Strings::Commify(spellbonuses.CriticalHealOverTime + itembonuses.CriticalHealOverTime + aabonuses.CriticalHealOverTime))
 	);
 
 	final_string += DialogueWindow::ColorMessage(header_color, "Special Abilities");
@@ -4361,14 +4402,14 @@ void NPC::SendPetStatsWindow(Client *c)
 	}
 
 	c->SendWindow(
+		0,
 		POPUPID_PET_STATS_WINDOW,
 		0,
-		0,
 		"",
 		"",
 		0,
-		0,
-		nullptr,
+		1,
+		this,
 		fmt::format("Pet Stats: {}", GetCleanName()).c_str(),
 		"%s",
 		final_string.c_str()

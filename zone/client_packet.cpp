@@ -11384,7 +11384,6 @@ void Client::Handle_OP_PetCommands(const EQApplicationPacket *app)
 			if (mypet->IsNPC()) {
 				mypet->CastToNPC()->SendPetStatsWindow(this);
 			}
-			mypet->ShowBuffs(this);
 		}
 		break;
 	}
