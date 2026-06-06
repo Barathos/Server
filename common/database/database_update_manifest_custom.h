@@ -2431,6 +2431,153 @@ ON DUPLICATE KEY UPDATE
 )",
 		.content_schema_update = true,
 	},
+	ManifestEntry{
+		.version = 13,
+		.description = "2026_06_05_pet_bag_vendor_stock_repair",
+		.check = "SELECT IF((SELECT COUNT(*) FROM `npc_types` WHERE `id` = 900907 AND `merchant_id` = 900907) = 1 AND (SELECT COUNT(*) FROM `spawn2` WHERE `id` = 900907 AND `spawngroupID` = 900907 AND `zone` = 'tutorialb') = 1 AND (SELECT COUNT(*) FROM `merchantlist` WHERE `merchantid` = 900907 AND `item` IN (899980, 899981, 899983, 899984, 899985, 899986, 899987, 899988, 17725, 17726, 17727, 900000)) = 12 AND (SELECT COUNT(*) FROM `merchantlist` WHERE `merchantid` = 151022 AND `item` IN (899985, 899986, 899987, 899988, 899984, 899983, 899981, 899980, 17725, 17726, 17727)) = 11, 'ok', 'missing')",
+		.condition = "missing",
+		.match = "ok",
+		.sql = R"(
+DELETE FROM `merchantlist` WHERE `merchantid` = 900907;
+DELETE FROM `merchantlist`
+WHERE `merchantid` = 151022
+  AND (
+    `slot` BETWEEN 7 AND 17
+    OR `item` IN (899985, 899986, 899987, 899988, 899984, 899983, 899981, 899980, 17725, 17726, 17727)
+  );
+
+DELETE FROM `spawn2` WHERE `id` = 900907 OR `spawngroupID` = 900907;
+DELETE FROM `spawnentry` WHERE `spawngroupID` = 900907 OR `npcID` = 900907;
+DELETE FROM `spawngroup` WHERE `id` = 900907;
+DELETE FROM `npc_types` WHERE `id` = 900907;
+
+REPLACE INTO `npc_types` (
+  `id`, `name`, `lastname`, `level`, `race`, `class`, `bodytype`, `hp`,
+  `gender`, `texture`, `merchant_id`, `size`, `runspeed`, `findable`,
+  `trackable`, `npc_aggro`, `isquest`, `show_name`, `special_abilities`,
+  `skip_global_loot`, `keeps_sold_items`
+) VALUES
+(900907, 'Satra_Syncrosatchel', 'Free Pet Bag Vendor', 70, 1, 41, 1, 100000, 1, 0, 900907, 6.0, 1.25, 1, 1, 0, 0, 1, '19,1', 1, 0);
+
+REPLACE INTO `spawngroup` (`id`, `name`, `spawn_limit`) VALUES
+(900907, 'all_features_satra_syncrosatchel', 1);
+
+REPLACE INTO `spawnentry` (`spawngroupID`, `npcID`, `chance`) VALUES
+(900907, 900907, 100);
+
+REPLACE INTO `spawn2` (
+  `id`, `spawngroupID`, `zone`, `version`, `x`, `y`, `z`, `heading`,
+  `respawntime`, `variance`
+) VALUES
+(900907, 900907, 'tutorialb', 0, -24.0, -88.0, 25.0, 128.0, 300, 0);
+
+INSERT INTO `merchantlist` (
+  `merchantid`, `slot`, `item`, `faction_required`, `level_required`,
+  `min_status`, `max_status`, `alt_currency_cost`, `classes_required`,
+  `probability`
+) VALUES
+(900907, 1, 899980, -100, 0, 0, 255, 0, 65535, 100),
+(900907, 2, 899981, -100, 0, 0, 255, 0, 65535, 100),
+(900907, 3, 899983, -100, 0, 0, 255, 0, 65535, 100),
+(900907, 4, 899984, -100, 0, 0, 255, 0, 65535, 100),
+(900907, 5, 899985, -100, 0, 0, 255, 0, 65535, 100),
+(900907, 6, 899986, -100, 0, 0, 255, 0, 65535, 100),
+(900907, 7, 899987, -100, 0, 0, 255, 0, 65535, 100),
+(900907, 8, 899988, -100, 0, 0, 255, 0, 65535, 100),
+(900907, 9, 17725, -100, 0, 0, 255, 0, 65535, 100),
+(900907, 10, 17726, -100, 0, 0, 255, 0, 65535, 100),
+(900907, 11, 17727, -100, 0, 0, 255, 0, 65535, 100),
+(900907, 12, 900000, -100, 0, 0, 255, 0, 65535, 100);
+
+INSERT INTO `merchantlist` (
+  `merchantid`, `slot`, `item`, `faction_required`, `level_required`,
+  `min_status`, `max_status`, `alt_currency_cost`, `classes_required`,
+  `probability`
+) VALUES
+(151022, 7, 899985, -100, 0, 0, 255, 0, 1024, 100),
+(151022, 8, 899986, -100, 0, 0, 255, 0, 4096, 100),
+(151022, 9, 899987, -100, 0, 0, 255, 0, 8192, 100),
+(151022, 10, 899988, -100, 0, 0, 255, 0, 16384, 100),
+(151022, 11, 899984, -100, 0, 0, 255, 0, 512, 100),
+(151022, 12, 899983, -100, 0, 0, 255, 0, 128, 100),
+(151022, 13, 899981, -100, 0, 0, 255, 0, 32, 100),
+(151022, 14, 899980, -100, 0, 0, 255, 0, 16, 100),
+(151022, 15, 17725, -100, 60, 0, 255, 0, 16384, 100),
+(151022, 16, 17726, -100, 60, 0, 255, 0, 8192, 100),
+(151022, 17, 17727, -100, 60, 0, 255, 0, 1024, 100);
+)",
+		.content_schema_update = true,
+	},
+	ManifestEntry{
+		.version = 14,
+		.description = "2026_06_05_pet_bag_vendor_visibility_repair",
+		.check = "SELECT IF((SELECT COUNT(*) FROM `merchantlist` WHERE `merchantid` = 900907 AND `classes_required` = 65535 AND `item` IN (899980, 899981, 899983, 899984, 899985, 899986, 899987, 899988, 17725, 17726, 17727, 900000)) = 12 AND (SELECT COUNT(*) FROM `merchantlist` WHERE `merchantid` = 151022 AND `classes_required` = 65535 AND `item` IN (899985, 899986, 899987, 899988, 899984, 899983, 899981, 899980, 17725, 17726, 17727)) = 11, 'ok', 'missing')",
+		.condition = "missing",
+		.match = "ok",
+		.sql = R"(
+UPDATE `merchantlist`
+SET `classes_required` = 65535
+WHERE `merchantid` IN (900907, 151022)
+  AND `item` IN (899980, 899981, 899983, 899984, 899985, 899986, 899987, 899988, 17725, 17726, 17727, 900000);
+)",
+		.content_schema_update = true,
+	},
+	ManifestEntry{
+		.version = 15,
+		.description = "2026_06_05_pet_bag_item_cache_visibility_repair",
+		.check = "SELECT IF((SELECT COUNT(*) FROM `items` WHERE `id` IN (899980, 899981, 899983, 899984, 899985, 899986, 899987, 899988, 17725, 17726, 17727, 900000) AND `classes` = 65535 AND `races` = 131071 AND `norent` = 1 AND `nodrop` = 1 AND `summonedflag` = 0 AND `price` = 100) = 12 AND (SELECT COUNT(*) FROM `merchantlist` WHERE `merchantid` IN (900907, 151022) AND `slot` BETWEEN 1 AND 12 AND `item` IN (899980, 899981, 899983, 899984, 899985, 899986, 899987, 899988, 17725, 17726, 17727, 900000) AND `classes_required` = 65535) = 24 AND (SELECT COUNT(*) FROM `merchantlist` WHERE `merchantid` IN (900907, 151022) AND `item` IN (7681, 17005)) = 0, 'ok', 'missing')",
+		.condition = "missing",
+		.match = "ok",
+		.sql = R"(
+UPDATE `items`
+SET
+  `classes` = 65535,
+  `races` = 131071,
+  `norent` = 1,
+  `nodrop` = 1,
+  `summonedflag` = 0,
+  `price` = 100
+WHERE `id` IN (899980, 899981, 899983, 899984, 899985, 899986, 899987, 899988, 17725, 17726, 17727, 900000);
+
+DELETE FROM `merchantlist`
+WHERE `merchantid` IN (900907, 151022)
+  AND (
+    `slot` BETWEEN 1 AND 20
+    OR `item` IN (899980, 899981, 899983, 899984, 899985, 899986, 899987, 899988, 17725, 17726, 17727, 900000, 7681, 17005)
+  );
+
+INSERT INTO `merchantlist` (
+  `merchantid`, `slot`, `item`, `faction_required`, `level_required`,
+  `min_status`, `max_status`, `alt_currency_cost`, `classes_required`,
+  `probability`
+) VALUES
+(900907, 1, 899980, -100, 0, 0, 255, 0, 65535, 100),
+(900907, 2, 899981, -100, 0, 0, 255, 0, 65535, 100),
+(900907, 3, 899983, -100, 0, 0, 255, 0, 65535, 100),
+(900907, 4, 899984, -100, 0, 0, 255, 0, 65535, 100),
+(900907, 5, 899985, -100, 0, 0, 255, 0, 65535, 100),
+(900907, 6, 899986, -100, 0, 0, 255, 0, 65535, 100),
+(900907, 7, 899987, -100, 0, 0, 255, 0, 65535, 100),
+(900907, 8, 899988, -100, 0, 0, 255, 0, 65535, 100),
+(900907, 9, 17725, -100, 0, 0, 255, 0, 65535, 100),
+(900907, 10, 17726, -100, 0, 0, 255, 0, 65535, 100),
+(900907, 11, 17727, -100, 0, 0, 255, 0, 65535, 100),
+(900907, 12, 900000, -100, 0, 0, 255, 0, 65535, 100),
+(151022, 1, 899980, -100, 0, 0, 255, 0, 65535, 100),
+(151022, 2, 899981, -100, 0, 0, 255, 0, 65535, 100),
+(151022, 3, 899983, -100, 0, 0, 255, 0, 65535, 100),
+(151022, 4, 899984, -100, 0, 0, 255, 0, 65535, 100),
+(151022, 5, 899985, -100, 0, 0, 255, 0, 65535, 100),
+(151022, 6, 899986, -100, 0, 0, 255, 0, 65535, 100),
+(151022, 7, 899987, -100, 0, 0, 255, 0, 65535, 100),
+(151022, 8, 899988, -100, 0, 0, 255, 0, 65535, 100),
+(151022, 9, 17725, -100, 0, 0, 255, 0, 65535, 100),
+(151022, 10, 17726, -100, 0, 0, 255, 0, 65535, 100),
+(151022, 11, 17727, -100, 0, 0, 255, 0, 65535, 100),
+(151022, 12, 900000, -100, 0, 0, 255, 0, 65535, 100);
+)",
+		.content_schema_update = true,
+	},
 };
 
 // see struct definitions for what each field does
