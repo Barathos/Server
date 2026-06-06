@@ -627,7 +627,7 @@ int64 Mob::GetActSpellHealing(uint16 spell_id, int64 value, Mob* target, bool fr
 
 	bool lifetap = IsLifetapSpell(spell_id) && RuleB(Spells, CompoundLifetapHeals);
 
-	EQ::spells::CastingSlot cast_slot = static_cast<EQ::spells::CastingSlot>(Strings::ToUnsignedInt(GetEntityVariable(fmt::format("SpellGemHint_%d", spell_id)), static_cast<uint32>(EQ::spells::CastingSlot::MaxGems)));
+	EQ::spells::CastingSlot cast_slot = static_cast<EQ::spells::CastingSlot>(Strings::ToUnsignedInt(GetEntityVariable(fmt::format("SpellGemHint_{}", spell_id)), static_cast<uint32>(EQ::spells::CastingSlot::MaxGems)));
 	if (cast_slot >= EQ::spells::CastingSlot::Gem1 && cast_slot <= EQ::spells::CastingSlot::Gem12) {
 		float scalar = 1.0f;
 		if (IsBeneficialSpell(spell_id)) {

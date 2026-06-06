@@ -4134,6 +4134,10 @@ void Mob::DoBuffTic(const Buffs_Struct &buff, int slot, Mob *caster)
 	}
 
 	for (int i = 0; i < EFFECT_COUNT; i++) {
+		if (buff.spellid != ticking_spell_id || !IsValidSpell(buff.spellid)) {
+			break;
+		}
+
 		if (IsBlankSpellEffect(buff.spellid, i))
 			continue;
 
@@ -4561,7 +4565,7 @@ void Mob::DoBuffTic(const Buffs_Struct &buff, int slot, Mob *caster)
 // removes the buff in the buff slot 'slot'
 void Mob::BuffFadeBySlot(int slot, bool iRecalcBonuses, bool suppress, uint32 suppresstics)
 {
-	if(slot < 0 || slot > GetMaxTotalSlots())
+	if(slot < 0 || static_cast<uint32>(slot) >= GetMaxTotalSlots())
 		return;
 
 	if(!IsValidOrSuppressedSpell(buffs[slot].spellid))
@@ -4609,17 +4613,22 @@ void Mob::BuffFadeBySlot(int slot, bool iRecalcBonuses, bool suppress, uint32 su
 		}
 	}
 
-	for (int i=0; i < EFFECT_COUNT; i++)
-	{
-		if(IsBlankSpellEffect(buffs[slot].spellid, i))
-			continue;
+	if(!IsValidOrSuppressedSpell(buffs[slot].spellid))
+		return;
 
-		switch (spells[buffs[slot].spellid].effect_id[i])
+	const uint16 effect_spell_id = buffs[slot].spellid;
+	if (IsValidSpell(effect_spell_id)) {
+		for (int i=0; i < EFFECT_COUNT; i++)
 		{
+			if(IsBlankSpellEffect(effect_spell_id, i))
+				continue;
+
+			switch (spells[effect_spell_id].effect_id[i])
+			{
 			case SE_AddMeleeProc:
 			case SE_WeaponProc:
 			{
-				uint16 proc_id = GetProcID(buffs[slot].spellid, i);
+				uint16 proc_id = GetProcID(effect_spell_id, i);
 
 				// Special case for Vampiric Embrace. If this is not a Necromancer, the proc is different.
 				if (proc_id == SPELL_VAMPIRIC_EMBRACE && !(HasClass(Class::Necromancer))) {
@@ -4632,7 +4641,7 @@ void Mob::BuffFadeBySlot(int slot, bool iRecalcBonuses, bool suppress, uint32 su
 
 			case SE_DefensiveProc:
 			{
-				uint16 procid = GetProcID(buffs[slot].spellid, i);
+				uint16 procid = GetProcID(effect_spell_id, i);
 				RemoveDefensiveProc(procid);
 
 				break;
@@ -4640,7 +4649,7 @@ void Mob::BuffFadeBySlot(int slot, bool iRecalcBonuses, bool suppress, uint32 su
 
 			case SE_RangedProc:
 			{
-				uint16 procid = GetProcID(buffs[slot].spellid, i);
+				uint16 procid = GetProcID(effect_spell_id, i);
 				RemoveRangedProc(procid);
 				break;
 			}
@@ -4720,7 +4729,7 @@ void Mob::BuffFadeBySlot(int slot, bool iRecalcBonuses, bool suppress, uint32 su
 			case SE_Familiar:
 			{
 				if (!suppress) {
-					DismissFamiliar(buffs[slot].spellid);
+					DismissFamiliar(effect_spell_id);
 				}
 				break;
 			}
@@ -5006,6 +5015,7 @@ void Mob::BuffFadeBySlot(int slot, bool iRecalcBonuses, bool suppress, uint32 su
 					BuffFadeBySpellID(weaponstance.spellbonus_buff_spell_id);
 				}
 				weaponstance.spellbonus_enabled = false;
+			}
 			}
 		}
 	}
@@ -6910,8 +6920,8 @@ bool Mob::TryTriggerOnCastProc(uint16 focusspellid, uint16 spell_id, uint16 proc
 			LogSpells("Sympathetic Proc found new target with Implied Targeting: [{}]", new_target->GetCleanName());
 		}
 
-		if (!GetEntityVariable(fmt::format("SpellTargetHint_%d", spell_id)).empty()) {
-			Mob * hint_target = entity_list.GetMob(Strings::ToUnsignedInt(GetEntityVariable(fmt::format("SpellTargetHint_%d", spell_id))));
+		if (!GetEntityVariable(fmt::format("SpellTargetHint_{}", spell_id)).empty()) {
+			Mob * hint_target = entity_list.GetMob(Strings::ToUnsignedInt(GetEntityVariable(fmt::format("SpellTargetHint_{}", spell_id))));
 			if (hint_target) {
 				proc_target = hint_target;
 				LogSpells("Sympathetic Proc target found a target hint to [{}]", hint_target->GetCleanName());
@@ -6930,7 +6940,7 @@ bool Mob::TryTriggerOnCastProc(uint16 focusspellid, uint16 spell_id, uint16 proc
 			Mob* pet_target_override = entity_list.GetMob(GetSpellImpliedTargetID(proc_spellid,(GetTarget() ?  GetTarget()->GetID() : GetID())));
 			if (pet_target_override) {
 				proc_target = pet_target_override;
-				LogDebug("Sympathetic Proc found new target with Implied Targeting for pet spell: [{}]", new_target->GetCleanName());
+				LogDebug("Sympathetic Proc found new target with Implied Targeting for pet spell: [{}]", pet_target_override->GetCleanName());
 			}
 		}
 
@@ -8029,11 +8039,15 @@ void Mob::DispelMagic(Mob* caster, uint16 spell_id, int effect_value, bool detri
 	for (int slot = 0; slot < GetMaxTotalSlots(); ++slot) {
 		auto s = buffs[slot].spellid;
 
+		if (!IsValidSpell(s)) {
+			continue;
+		}
+
 		if (spells[s].short_buff_box) {
 			continue;
 		}
 
-		if (s == SPELL_UNKNOWN || spells[s].dispel_flag != 0 || IsDiscipline(s)) {
+		if (spells[s].dispel_flag != 0 || IsDiscipline(s)) {
 			continue;
 		}
 

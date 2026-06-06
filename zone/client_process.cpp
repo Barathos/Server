@@ -349,6 +349,8 @@ bool Client::Process() {
 			}
 		}
 
+		SpellProcess();
+
 		bool may_use_attacks = false;
 		/*
 			Things which prevent us from attacking:
@@ -623,7 +625,6 @@ bool Client::Process() {
 			ShieldAbilityFinish();
 		}
 
-		SpellProcess();
 		if (endupkeep_timer.Check() && !dead) {
 			DoEnduranceUpkeep();
 		}
