@@ -129,6 +129,7 @@ private:
 	void SendNativeFilterUpdate(Client *client);
 	void HandleLootAction(Client *client, const Seperator *sep);
 	void HandlePersonalLootCommand(Client *client, const Seperator *sep);
+	void InspectEntryForClient(Client *client, uint32 entry_id);
 	void LootEntryForClient(Client *client, uint32 entry_id);
 	bool LeaveEntryForClient(Client *client, uint32 entry_id, bool add_never_filter);
 	void FinalizeCorpse(Corpse *corpse, Client *coin_client);

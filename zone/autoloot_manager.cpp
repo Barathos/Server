@@ -143,6 +143,50 @@ namespace {
 		return item->Stackable ? std::max<uint32>(1, item_data->charges) : 1;
 	}
 
+	EQ::ItemInstance *CreateCorpseLootItemInstance(Client *client, const LootItem *item_data)
+	{
+		if (!client || !item_data) {
+			return nullptr;
+		}
+
+		const auto *item = database.GetItem(item_data->item_id);
+		if (!item) {
+			return nullptr;
+		}
+
+		auto *inst = database.CreateItem(
+			item,
+			item_data->charges,
+			item_data->aug_1,
+			item_data->aug_2,
+			item_data->aug_3,
+			item_data->aug_4,
+			item_data->aug_5,
+			item_data->aug_6,
+			item_data->attuned,
+			item_data->custom_data,
+			item_data->ornamenticon,
+			item_data->ornamentidfile,
+			item_data->ornament_hero_model
+		);
+
+		if (!inst) {
+			return nullptr;
+		}
+
+		if (item->RecastDelay) {
+			auto timestamps = database.GetItemRecastTimestamps(client->CharacterID());
+			if (item->RecastType != RECAST_TYPE_UNLINKED_ITEM) {
+				inst->SetRecastTimestamp(timestamps.count(item->RecastType) ? timestamps.at(item->RecastType) : 0);
+			}
+			else {
+				inst->SetRecastTimestamp(timestamps.count(item->ID) ? timestamps.at(item->ID) : 0);
+			}
+		}
+
+		return inst;
+	}
+
 	bool IsAutosellBag(uint32 item_id)
 	{
 		return item_id >= 45500 && item_id <= 45505;
@@ -1062,6 +1106,42 @@ void AutoLootManager::HandlePersonalLootCommand(Client *client, const Seperator 
 	client->Message(Chat::White, "Usage: #autoloot personal [lootall|leaveall]");
 }
 
+void AutoLootManager::InspectEntryForClient(Client *client, uint32 entry_id)
+{
+	auto iter = m_loot_entries.find(entry_id);
+	if (iter == m_loot_entries.end() || !IsEntryVisibleToClient(iter->second, client)) {
+		client->Message(Chat::Red, "That AutoLoot entry is no longer available.");
+		SendNativeUpdate(client);
+		return;
+	}
+
+	const auto entry = iter->second;
+	auto corpse = entity_list.GetCorpseByID(entry.corpse_id);
+	if (!corpse || !corpse->IsNPCCorpse()) {
+		m_loot_entries.erase(iter);
+		client->Message(Chat::Red, "That corpse is no longer available.");
+		SendNativeUpdate(client);
+		return;
+	}
+
+	auto item_data = corpse->GetItem(entry.loot_slot);
+	if (!item_data || item_data->item_id != entry.item_id) {
+		m_loot_entries.erase(iter);
+		client->Message(Chat::Red, "That item is no longer on the corpse.");
+		SendNativeUpdate(client);
+		return;
+	}
+
+	auto *inst = CreateCorpseLootItemInstance(client, item_data);
+	if (!inst) {
+		client->Message(Chat::Red, "That item could not be inspected.");
+		return;
+	}
+
+	client->SendItemPacket(0, inst, ItemPacketViewLink);
+	safe_delete(inst);
+}
+
 void AutoLootManager::LootEntryForClient(Client *client, uint32 entry_id)
 {
 	auto iter = m_loot_entries.find(entry_id);
@@ -1669,6 +1749,16 @@ void AutoLootManager::HandleAutolootCommand(Client *client, const Seperator *sep
 		return;
 	}
 
+	if (!strcasecmp(sep->arg[1], "inspect") || !strcasecmp(sep->arg[1], "preview")) {
+		if (arguments < 2 || !sep->IsNumber(2)) {
+			client->Message(Chat::White, "Usage: #autoloot inspect [Entry ID]");
+			return;
+		}
+
+		InspectEntryForClient(client, Strings::ToUnsignedInt(sep->arg[2]));
+		return;
+	}
+
 	if (!strcasecmp(sep->arg[1], "help")) {
 		SendHelp(client);
 		return;
@@ -2178,6 +2268,7 @@ void AutoLootManager::SendHelp(Client *client)
 	client->Message(Chat::White, "Usage: #autoloot on [both|include|exclude]");
 	client->Message(Chat::White, "Usage: #autoloot off");
 	client->Message(Chat::White, "Usage: #autoloot mode [both|include|exclude]");
+	client->Message(Chat::White, "Usage: #autoloot inspect [Entry ID]");
 	client->Message(Chat::White, "Usage: #autoloot nearby [radius]");
 	client->Message(Chat::White, "Usage: #autoloot group [status|help|none|solo|master|robin|killer|assign|needgreed|forceprocess|recover]");
 }

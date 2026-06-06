@@ -158,7 +158,7 @@
 		<LeftAnchorOffset>8</LeftAnchorOffset>
 		<TopAnchorOffset>234</TopAnchorOffset>
 		<RightAnchorOffset>8</RightAnchorOffset>
-		<BottomAnchorOffset>80</BottomAnchorOffset>
+		<BottomAnchorOffset>112</BottomAnchorOffset>
 		<TopAnchorToTop>true</TopAnchorToTop>
 		<BottomAnchorToTop>false</BottomAnchorToTop>
 		<LeftAnchorToLeft>true</LeftAnchorToLeft>
@@ -245,31 +245,91 @@
 		<Template>BDT_Normal</Template>
 	</Button>
 
-	<Button item="AALW_ApplyFiltersCheck">
-		<ScreenID>AALW_ApplyFiltersCheck</ScreenID>
+	<Button item="AALW_LootSettingsButton">
+		<ScreenID>AALW_LootSettingsButton</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<AutoStretch>true</AutoStretch>
-		<LeftAnchorOffset>286</LeftAnchorOffset>
-		<TopAnchorOffset>70</TopAnchorOffset>
-		<RightAnchorOffset>384</RightAnchorOffset>
-		<BottomAnchorOffset>48</BottomAnchorOffset>
+		<LeftAnchorOffset>362</LeftAnchorOffset>
+		<TopAnchorOffset>100</TopAnchorOffset>
+		<RightAnchorOffset>258</RightAnchorOffset>
+		<BottomAnchorOffset>78</BottomAnchorOffset>
 		<TopAnchorToTop>false</TopAnchorToTop>
 		<BottomAnchorToTop>false</BottomAnchorToTop>
-		<LeftAnchorToLeft>true</LeftAnchorToLeft>
-		<RightAnchorToLeft>true</RightAnchorToLeft>
-		<Location><X>286</X><Y>350</Y></Location>
-		<Size><CX>98</CX><CY>22</CY></Size>
-		<Text>AutoLoot</Text>
+		<LeftAnchorToLeft>false</LeftAnchorToLeft>
+		<RightAnchorToLeft>false</RightAnchorToLeft>
+		<Location><X>278</X><Y>350</Y></Location>
+		<Size><CX>104</CX><CY>22</CY></Size>
+		<Text>Loot Settings</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Open source-backed AutoLoot settings.</TooltipReference>
 		<Style_Transparent>false</Style_Transparent>
 		<Style_Checkbox>false</Style_Checkbox>
 		<Template>BDT_Normal</Template>
 	</Button>
 
+	<Button item="AALW_ApplyFiltersCheck">
+		<ScreenID>AALW_ApplyFiltersCheck</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<AutoStretch>true</AutoStretch>
+		<LeftAnchorOffset>248</LeftAnchorOffset>
+		<TopAnchorOffset>98</TopAnchorOffset>
+		<RightAnchorOffset>138</RightAnchorOffset>
+		<BottomAnchorOffset>80</BottomAnchorOffset>
+		<TopAnchorToTop>false</TopAnchorToTop>
+		<BottomAnchorToTop>false</BottomAnchorToTop>
+		<LeftAnchorToLeft>false</LeftAnchorToLeft>
+		<RightAnchorToLeft>false</RightAnchorToLeft>
+		<Location><X>392</X><Y>352</Y></Location>
+		<Size><CX>110</CX><CY>18</CY></Size>
+		<Text>Apply Filters</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Automatically apply Keep and Never filters when the server processes loot.</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<TextAlignCenter>false</TextAlignCenter>
+		<TextOffsetX>20</TextOffsetX>
+	</Button>
+
+	<Button item="AALW_GroupedByNpcCheck">
+		<ScreenID>AALW_GroupedByNpcCheck</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<AutoStretch>true</AutoStretch>
+		<LeftAnchorOffset>132</LeftAnchorOffset>
+		<TopAnchorOffset>98</TopAnchorOffset>
+		<RightAnchorOffset>12</RightAnchorOffset>
+		<BottomAnchorOffset>80</BottomAnchorOffset>
+		<TopAnchorToTop>false</TopAnchorToTop>
+		<BottomAnchorToTop>false</BottomAnchorToTop>
+		<LeftAnchorToLeft>false</LeftAnchorToLeft>
+		<RightAnchorToLeft>false</RightAnchorToLeft>
+		<Location><X>508</X><Y>352</Y></Location>
+		<Size><CX>120</CX><CY>18</CY></Size>
+		<Text>Group by NPC</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Sort visible rows by corpse/NPC name.</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<TextAlignCenter>false</TextAlignCenter>
+		<TextOffsetX>20</TextOffsetX>
+	</Button>
+
 	<Button item="AALW_NeedButton">
 		<ScreenID>AALW_NeedButton</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>392</X><Y>350</Y></Location>
+		<AutoStretch>true</AutoStretch>
+		<LeftAnchorOffset>248</LeftAnchorOffset>
+		<TopAnchorOffset>74</TopAnchorOffset>
+		<RightAnchorOffset>200</RightAnchorOffset>
+		<BottomAnchorOffset>52</BottomAnchorOffset>
+		<TopAnchorToTop>false</TopAnchorToTop>
+		<BottomAnchorToTop>false</BottomAnchorToTop>
+		<LeftAnchorToLeft>false</LeftAnchorToLeft>
+		<RightAnchorToLeft>false</RightAnchorToLeft>
+		<Location><X>392</X><Y>376</Y></Location>
 		<Size><CX>48</CX><CY>22</CY></Size>
 		<Text>Need</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
@@ -282,7 +342,16 @@
 	<Button item="AALW_GreedButton">
 		<ScreenID>AALW_GreedButton</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>444</X><Y>350</Y></Location>
+		<AutoStretch>true</AutoStretch>
+		<LeftAnchorOffset>196</LeftAnchorOffset>
+		<TopAnchorOffset>74</TopAnchorOffset>
+		<RightAnchorOffset>144</RightAnchorOffset>
+		<BottomAnchorOffset>52</BottomAnchorOffset>
+		<TopAnchorToTop>false</TopAnchorToTop>
+		<BottomAnchorToTop>false</BottomAnchorToTop>
+		<LeftAnchorToLeft>false</LeftAnchorToLeft>
+		<RightAnchorToLeft>false</RightAnchorToLeft>
+		<Location><X>444</X><Y>376</Y></Location>
 		<Size><CX>52</CX><CY>22</CY></Size>
 		<Text>Greed</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
@@ -295,7 +364,16 @@
 	<Button item="AALW_NoButton">
 		<ScreenID>AALW_NoButton</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>500</X><Y>350</Y></Location>
+		<AutoStretch>true</AutoStretch>
+		<LeftAnchorOffset>140</LeftAnchorOffset>
+		<TopAnchorOffset>74</TopAnchorOffset>
+		<RightAnchorOffset>102</RightAnchorOffset>
+		<BottomAnchorOffset>52</BottomAnchorOffset>
+		<TopAnchorToTop>false</TopAnchorToTop>
+		<BottomAnchorToTop>false</BottomAnchorToTop>
+		<LeftAnchorToLeft>false</LeftAnchorToLeft>
+		<RightAnchorToLeft>false</RightAnchorToLeft>
+		<Location><X>500</X><Y>376</Y></Location>
 		<Size><CX>38</CX><CY>22</CY></Size>
 		<Text>No</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
@@ -308,7 +386,16 @@
 	<Button item="AALW_AlwaysNeedButton">
 		<ScreenID>AALW_AlwaysNeedButton</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>542</X><Y>350</Y></Location>
+		<AutoStretch>true</AutoStretch>
+		<LeftAnchorOffset>98</LeftAnchorOffset>
+		<TopAnchorOffset>74</TopAnchorOffset>
+		<RightAnchorOffset>60</RightAnchorOffset>
+		<BottomAnchorOffset>52</BottomAnchorOffset>
+		<TopAnchorToTop>false</TopAnchorToTop>
+		<BottomAnchorToTop>false</BottomAnchorToTop>
+		<LeftAnchorToLeft>false</LeftAnchorToLeft>
+		<RightAnchorToLeft>false</RightAnchorToLeft>
+		<Location><X>542</X><Y>376</Y></Location>
 		<Size><CX>38</CX><CY>22</CY></Size>
 		<Text>AN</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
@@ -321,7 +408,16 @@
 	<Button item="AALW_AlwaysGreedButton">
 		<ScreenID>AALW_AlwaysGreedButton</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>584</X><Y>350</Y></Location>
+		<AutoStretch>true</AutoStretch>
+		<LeftAnchorOffset>56</LeftAnchorOffset>
+		<TopAnchorOffset>74</TopAnchorOffset>
+		<RightAnchorOffset>18</RightAnchorOffset>
+		<BottomAnchorOffset>52</BottomAnchorOffset>
+		<TopAnchorToTop>false</TopAnchorToTop>
+		<BottomAnchorToTop>false</BottomAnchorToTop>
+		<LeftAnchorToLeft>false</LeftAnchorToLeft>
+		<RightAnchorToLeft>false</RightAnchorToLeft>
+		<Location><X>584</X><Y>376</Y></Location>
 		<Size><CX>38</CX><CY>22</CY></Size>
 		<Text>AG</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
@@ -343,7 +439,7 @@
 		<BottomAnchorToTop>false</BottomAnchorToTop>
 		<LeftAnchorToLeft>true</LeftAnchorToLeft>
 		<RightAnchorToLeft>false</RightAnchorToLeft>
-		<Location><X>8</X><Y>382</Y></Location>
+		<Location><X>8</X><Y>414</Y></Location>
 		<Size><CX>606</CX><CY>18</CY></Size>
 		<Text>Waiting for AutoLoot snapshot...</Text>
 		<TextColor><R>220</R><G>230</G><B>255</B></TextColor>
@@ -354,7 +450,7 @@
 		<ScreenID>NativeAutoLootWnd</ScreenID>
 		<RelativePosition>false</RelativePosition>
 		<Location><X>80</X><Y>80</Y></Location>
-		<Size><CX>640</CX><CY>420</CY></Size>
+		<Size><CX>640</CX><CY>450</CY></Size>
 		<Text>Advanced Loot</Text>
 		<DrawTemplate>WDT_Def</DrawTemplate>
 		<Style_Titlebar>true</Style_Titlebar>
@@ -362,6 +458,8 @@
 		<Style_Minimizebox>true</Style_Minimizebox>
 		<Style_Border>true</Style_Border>
 		<Style_Sizable>true</Style_Sizable>
+		<MinHSize>640</MinHSize>
+		<MinVSize>420</MinVSize>
 		<Style_Transparent>false</Style_Transparent>
 		<Pieces>AALW_PersonalLabel</Pieces>
 		<Pieces>AALW_RuleSummaryLabel</Pieces>
@@ -379,7 +477,9 @@
 		<Pieces>AALW_RefreshButton</Pieces>
 		<Pieces>AALW_NearbyButton</Pieces>
 		<Pieces>AALW_EditFiltersButton</Pieces>
+		<Pieces>AALW_LootSettingsButton</Pieces>
 		<Pieces>AALW_ApplyFiltersCheck</Pieces>
+		<Pieces>AALW_GroupedByNpcCheck</Pieces>
 		<Pieces>AALW_NeedButton</Pieces>
 		<Pieces>AALW_GreedButton</Pieces>
 		<Pieces>AALW_NoButton</Pieces>
@@ -509,5 +609,246 @@
 		<Pieces>AALR_UnsetButton</Pieces>
 		<Pieces>AALR_RuleList</Pieces>
 		<Pieces>AALR_StatusLabel</Pieces>
+	</Screen>
+
+	<Label item="AALS_TitleLabel">
+		<ScreenID>AALS_TitleLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>8</X><Y>18</Y></Location>
+		<Size><CX>130</CX><CY>18</CY></Size>
+		<Text>Loot Settings</Text>
+		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="AALS_SummaryLabel">
+		<ScreenID>AALS_SummaryLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>126</X><Y>18</Y></Location>
+		<Size><CX>286</CX><CY>18</CY></Size>
+		<Text>Filter: both  Rules: 0 keep / 0 never</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="AALS_AutoLootCheck">
+		<ScreenID>AALS_AutoLootCheck</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>48</Y></Location>
+		<Size><CX>155</CX><CY>18</CY></Size>
+		<Text>Apply Filters</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Toggle server-side AutoLoot filter processing.</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<TextAlignCenter>false</TextAlignCenter>
+		<TextOffsetX>20</TextOffsetX>
+	</Button>
+
+	<Button item="AALS_NeedGreedCheck">
+		<ScreenID>AALS_NeedGreedCheck</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>176</X><Y>48</Y></Location>
+		<Size><CX>155</CX><CY>18</CY></Size>
+		<Text>Need/Greed</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Toggle server-side Need/Greed voting for grouped loot.</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<TextAlignCenter>false</TextAlignCenter>
+		<TextOffsetX>20</TextOffsetX>
+	</Button>
+
+	<Label item="AALS_GroupLabel">
+		<ScreenID>AALS_GroupLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>8</X><Y>82</Y></Location>
+		<Size><CX>110</CX><CY>18</CY></Size>
+		<Text>Group Loot</Text>
+		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="AALS_GroupSummaryLabel">
+		<ScreenID>AALS_GroupSummaryLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>126</X><Y>82</Y></Location>
+		<Size><CX>286</CX><CY>18</CY></Size>
+		<Text>Group: solo  Need/Greed: off  Assigned: none</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="AALS_GroupNoneButton">
+		<ScreenID>AALS_GroupNoneButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>112</Y></Location>
+		<Size><CX>66</CX><CY>22</CY></Size>
+		<Text>None</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Disable grouped AutoLoot handling.</TooltipReference>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="AALS_GroupSoloButton">
+		<ScreenID>AALS_GroupSoloButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>84</X><Y>112</Y></Location>
+		<Size><CX>66</CX><CY>22</CY></Size>
+		<Text>Solo</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Use solo AutoLoot behavior.</TooltipReference>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="AALS_GroupMasterButton">
+		<ScreenID>AALS_GroupMasterButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>156</X><Y>112</Y></Location>
+		<Size><CX>66</CX><CY>22</CY></Size>
+		<Text>Master</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Use master looter AutoLoot behavior.</TooltipReference>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="AALS_GroupRobinButton">
+		<ScreenID>AALS_GroupRobinButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>228</X><Y>112</Y></Location>
+		<Size><CX>66</CX><CY>22</CY></Size>
+		<Text>Robin</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Use round-robin AutoLoot behavior.</TooltipReference>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="AALS_GroupKillerButton">
+		<ScreenID>AALS_GroupKillerButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>300</X><Y>112</Y></Location>
+		<Size><CX>66</CX><CY>22</CY></Size>
+		<Text>Killer</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Give AutoLoot priority to the killer.</TooltipReference>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="AALS_AutoSellLabel">
+		<ScreenID>AALS_AutoSellLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>8</X><Y>158</Y></Location>
+		<Size><CX>110</CX><CY>18</CY></Size>
+		<Text>AutoSell</Text>
+		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="AALS_AutoSellPreviewButton">
+		<ScreenID>AALS_AutoSellPreviewButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>186</Y></Location>
+		<Size><CX>82</CX><CY>22</CY></Size>
+		<Text>Preview</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Preview sellable AutoLoot items on the server.</TooltipReference>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="AALS_AutoSellConfirmButton">
+		<ScreenID>AALS_AutoSellConfirmButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>100</X><Y>186</Y></Location>
+		<Size><CX>82</CX><CY>22</CY></Size>
+		<Text>Confirm</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Confirm the pending server AutoSell preview.</TooltipReference>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="AALS_AutoSellCancelButton">
+		<ScreenID>AALS_AutoSellCancelButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>188</X><Y>186</Y></Location>
+		<Size><CX>82</CX><CY>22</CY></Size>
+		<Text>Cancel</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Cancel the pending server AutoSell preview.</TooltipReference>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="AALS_RefreshButton">
+		<ScreenID>AALS_RefreshButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>236</Y></Location>
+		<Size><CX>82</CX><CY>22</CY></Size>
+		<Text>Refresh</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Refresh AutoLoot settings from the server.</TooltipReference>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="AALS_StatusLabel">
+		<ScreenID>AALS_StatusLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>286</Y></Location>
+		<Size><CX>390</CX><CY>18</CY></Size>
+		<Text>Waiting for AutoLoot settings...</Text>
+		<TextColor><R>220</R><G>230</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Screen item="NativeAutoLootSettingsWnd">
+		<ScreenID>NativeAutoLootSettingsWnd</ScreenID>
+		<RelativePosition>false</RelativePosition>
+		<Location><X>145</X><Y>145</Y></Location>
+		<Size><CX>420</CX><CY>330</CY></Size>
+		<Text>AutoLoot Settings</Text>
+		<DrawTemplate>WDT_Def</DrawTemplate>
+		<Style_Titlebar>true</Style_Titlebar>
+		<Style_Closebox>true</Style_Closebox>
+		<Style_Minimizebox>true</Style_Minimizebox>
+		<Style_Border>true</Style_Border>
+		<Style_Sizable>false</Style_Sizable>
+		<Style_Transparent>false</Style_Transparent>
+		<Pieces>AALS_TitleLabel</Pieces>
+		<Pieces>AALS_SummaryLabel</Pieces>
+		<Pieces>AALS_AutoLootCheck</Pieces>
+		<Pieces>AALS_NeedGreedCheck</Pieces>
+		<Pieces>AALS_GroupLabel</Pieces>
+		<Pieces>AALS_GroupSummaryLabel</Pieces>
+		<Pieces>AALS_GroupNoneButton</Pieces>
+		<Pieces>AALS_GroupSoloButton</Pieces>
+		<Pieces>AALS_GroupMasterButton</Pieces>
+		<Pieces>AALS_GroupRobinButton</Pieces>
+		<Pieces>AALS_GroupKillerButton</Pieces>
+		<Pieces>AALS_AutoSellLabel</Pieces>
+		<Pieces>AALS_AutoSellPreviewButton</Pieces>
+		<Pieces>AALS_AutoSellConfirmButton</Pieces>
+		<Pieces>AALS_AutoSellCancelButton</Pieces>
+		<Pieces>AALS_RefreshButton</Pieces>
+		<Pieces>AALS_StatusLabel</Pieces>
 	</Screen>
 </XML>
