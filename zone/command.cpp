@@ -225,6 +225,10 @@ int command_init(void)
 		command_add("raidloot", "[All|GroupLeader|RaidLeader|Selected] - Sets your Raid Loot Type if you have permission to do so.", AccountStatus::Player, command_raidloot) ||
 		command_add("randomfeatures", "Temporarily randomizes the Facial Features of your target", AccountStatus::QuestTroupe, command_randomfeatures) ||
 		command_add("refreshgroup", "Refreshes Group for you or your player target.", AccountStatus::Player, command_refreshgroup) ||
+		command_add("rep", "[refresh|list] - View your faction reputation standings", AccountStatus::Player, command_reputation) ||
+		command_add("reputation", "[refresh|list] - View your faction reputation standings", AccountStatus::Player, command_reputation) ||
+		command_add("tradeskill", "[makeall] - Custom tradeskill helper commands", AccountStatus::Player, command_tradeskill) ||
+		command_add("ts", "[makeall] - Short custom tradeskill helper commands", AccountStatus::Player, command_tradeskill) ||
 		command_add("reload", "Reloads different types of server data globally, use no argument for help menu.", AccountStatus::GMMgmt, command_reload) ||
 		command_add("rq", "Reloads quests (alias of #reload quests).", AccountStatus::GMMgmt, command_reload) ||
 		command_add("rl", "Reloads logs (alias of #reload logs).", AccountStatus::GMMgmt, command_reload) ||

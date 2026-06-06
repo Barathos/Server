@@ -2,21 +2,57 @@
 <XML ID="EQInterfaceDefinitionLanguage">
 	<Schema xmlns="EverQuestData" xmlns:dt="EverQuestDataTypes" />
 
+	<Label item="TRADESKILLS_TitleLabel">
+		<ScreenID>TRADESKILLS_TitleLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>16</X><Y>12</Y></Location>
+		<Size><CX>270</CX><CY>22</CY></Size>
+		<Text>Tradeskill Helper</Text>
+		<Font>4</Font>
+		<TextColor><R>248</R><G>189</G><B>33</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
 	<Label item="TRADESKILLS_StatusLabel">
 		<ScreenID>TRADESKILLS_StatusLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>12</X><Y>18</Y></Location>
-		<Size><CX>420</CX><CY>40</CY></Size>
-		<Text>Tradeskills native UI placeholder</Text>
+		<Location><X>16</X><Y>44</Y></Location>
+		<Size><CX>420</CX><CY>42</CY></Size>
+		<Text>Select a learned recipe, then use Make All.</Text>
+		<Font>2</Font>
 		<TextColor><R>220</R><G>230</G><B>255</B></TextColor>
 		<NoWrap>false</NoWrap>
 	</Label>
+
+	<Button item="TRADESKILLS_MakeAllButton">
+		<ScreenID>TRADESKILLS_MakeAllButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>16</X><Y>104</Y></Location>
+		<Size><CX>126</CX><CY>28</CY></Size>
+		<Text>Make All</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_BigNormal</Template>
+	</Button>
+
+	<Button item="TRADESKILLS_HelpButton">
+		<ScreenID>TRADESKILLS_HelpButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>154</X><Y>104</Y></Location>
+		<Size><CX>84</CX><CY>28</CY></Size>
+		<Text>Help</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_BigNormal</Template>
+	</Button>
 
 	<Screen item="NativeTradeskillsWnd">
 		<ScreenID>NativeTradeskillsWnd</ScreenID>
 		<RelativePosition>false</RelativePosition>
 		<Location><X>120</X><Y>90</Y></Location>
-		<Size><CX>460</CX><CY>180</CY></Size>
+		<Size><CX>460</CX><CY>158</CY></Size>
 		<Text>Tradeskills</Text>
 		<DrawTemplate>WDT_Def</DrawTemplate>
 		<Style_Titlebar>true</Style_Titlebar>
@@ -25,6 +61,9 @@
 		<Style_Border>true</Style_Border>
 		<Style_Sizable>false</Style_Sizable>
 		<Style_Transparent>false</Style_Transparent>
+		<Pieces>TRADESKILLS_TitleLabel</Pieces>
 		<Pieces>TRADESKILLS_StatusLabel</Pieces>
+		<Pieces>TRADESKILLS_MakeAllButton</Pieces>
+		<Pieces>TRADESKILLS_HelpButton</Pieces>
 	</Screen>
 </XML>

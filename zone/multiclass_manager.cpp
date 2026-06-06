@@ -70,6 +70,34 @@ bool IsPetClass(uint8 class_id)
 	return class_id == Class::Magician || class_id == Class::Necromancer || class_id == Class::Beastlord;
 }
 
+constexpr const char *PetClassOriginVariable = "pet_bag_origin_class";
+
+uint8 GetPetOriginClass(Mob *pet)
+{
+	if (!pet || !pet->IsNPC()) {
+		return Class::None;
+	}
+
+	auto *pet_npc = pet->CastToNPC();
+	const auto spell_id = pet_npc->GetPetSpellID();
+	if (spell_id) {
+		for (uint8 class_id = Class::Warrior; class_id <= Class::Berserker; ++class_id) {
+			if (IsPetClass(class_id) && GetSpellLevel(spell_id, class_id) < std::numeric_limits<uint8>::max()) {
+				return class_id;
+			}
+		}
+	}
+
+	if (pet_npc->EntityVariableExists(PetClassOriginVariable)) {
+		const auto class_id = static_cast<uint8>(Strings::ToInt(pet_npc->GetEntityVariable(PetClassOriginVariable)));
+		if (IsPetClass(class_id)) {
+			return class_id;
+		}
+	}
+
+	return Class::None;
+}
+
 bool IsPetHealthAction(const std::string &action_name)
 {
 	return action_name == "health" ||
@@ -2423,6 +2451,43 @@ bool MulticlassManager::SetFocusedPet(Client *client, uint16 pet_id)
 	return false;
 }
 
+Mob *MulticlassManager::GetPetForClass(Client *client, uint8 class_id, const std::vector<Mob *> &roster, std::string &status)
+{
+	if (!client || !IsPetClass(class_id)) {
+		status = "That class does not have a persistent pet command target.";
+		return nullptr;
+	}
+
+	if (!HasClass(client, class_id)) {
+		status = fmt::format("Your trio does not include {}.", ClassName(class_id, client->GetLevel()));
+		return nullptr;
+	}
+
+	for (auto *pet : roster) {
+		if (pet && GetPetOriginClass(pet) == class_id) {
+			return pet;
+		}
+	}
+
+	std::vector<uint8> pet_classes;
+	for (const auto slot_class_id : GetClassSlots(client)) {
+		if (IsPetClass(slot_class_id)) {
+			pet_classes.emplace_back(slot_class_id);
+		}
+	}
+
+	const auto class_slot = std::find(pet_classes.begin(), pet_classes.end(), class_id);
+	if (class_slot != pet_classes.end()) {
+		const auto roster_index = static_cast<size_t>(std::distance(pet_classes.begin(), class_slot));
+		if (roster_index < roster.size() && roster[roster_index]) {
+			return roster[roster_index];
+		}
+	}
+
+	status = fmt::format("No active {} pet was found.", ClassName(class_id, client->GetLevel()));
+	return nullptr;
+}
+
 bool MulticlassManager::ApplyStockPetCommand(Client *client, Mob *pet, uint32 command, Mob *target, std::string &status)
 {
 	if (!client || !pet || !pet->IsNPC()) {
@@ -2583,6 +2648,32 @@ bool MulticlassManager::HandleNativePetCommand(Client *client, const Seperator *
 
 	std::string action = sep->arg[2] ? sep->arg[2] : "";
 	auto action_name = Strings::ToLower(action);
+
+	const auto requested_class_id = ParseClassId(action.c_str());
+	if (IsPetClass(requested_class_id)) {
+		const std::string class_action = sep->arg[3] ? sep->arg[3] : "";
+		if (class_action.empty()) {
+			status = "Usage: /pet <nec|mag|bst> <action>";
+			return false;
+		}
+
+		auto *class_pet = GetPetForClass(client, requested_class_id, roster, status);
+		if (!class_pet) {
+			return false;
+		}
+
+		SetFocusedPet(client, class_pet->GetID());
+
+		std::string action_status;
+		if (!ApplyPetAction(client, class_pet, class_action, action_status)) {
+			status = fmt::format("{} pet: {}", ClassName(requested_class_id, client->GetLevel()), action_status);
+			return false;
+		}
+
+		status = fmt::format("{} pet: {}", ClassName(requested_class_id, client->GetLevel()), action_status);
+		return true;
+	}
+
 	if (action_name == "focus") {
 		const auto pet_id = static_cast<uint16>(Strings::ToUnsignedInt(sep->arg[3]));
 		if (!SetFocusedPet(client, pet_id)) {

@@ -48,10 +48,12 @@ RULE_BOOL(CustomFeatures, ItemRarityEnabled, true, "Enables the custom item rari
 RULE_BOOL(CustomFeatures, HpFixEnabled, true, "Enables the native high-HP client display helper and #hpfix tools.")
 RULE_BOOL(CustomFeatures, AiDialogueEnabled, true, "Enables the custom AI dialogue feature payload and related scripted NPC behavior.")
 RULE_BOOL(CustomFeatures, TradeskillsEnabled, true, "Enables custom native tradeskill feature behavior when wired by the server and client payload.")
+RULE_INT(CustomFeatures, TradeskillMakeAllLimit, 100, "Caps how many auto-combines a single Tradeskill Make-All request can perform.")
 RULE_BOOL(CustomFeatures, AugsInAugsEnabled, true, "Enables custom Augs-in-Augs feature behavior when wired by the server and client payload.")
 RULE_BOOL(CustomFeatures, DynamicQuestsEnabled, true, "Enables custom Dynamic Quests feature behavior when wired by the server and client payload.")
 RULE_BOOL(CustomFeatures, MqInterfaceEnabled, true, "Enables bundled MQ-derived native client interface helpers such as map and item display when shipped in the all-features DLL.")
 RULE_BOOL(CustomFeatures, PetBagsEnabled, true, "Enables Syncrosatchel pet bags that mirror class-specific bag contents onto summoned and charmed pets.")
+RULE_BOOL(CustomFeatures, FactionWindowEnabled, true, "Enables the custom faction reputation window and player-facing reputation command.")
 RULE_CATEGORY_END()
 
 RULE_CATEGORY(Character)

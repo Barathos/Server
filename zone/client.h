@@ -1029,6 +1029,54 @@ public:
 	bool BindWound(Mob* bindmob, bool start, bool fail = false);
 	void SetTradeskillObject(Object* object) { m_tradeskill_object = object; }
 	Object* GetTradeskillObject() { return m_tradeskill_object; }
+	void SetLastRecipeAutoCombine(const RecipeAutoCombine_Struct *recipe)
+	{
+		if (!recipe) {
+			m_has_last_recipe_auto_combine = false;
+			m_has_last_recipe_auto_combine_context = false;
+			return;
+		}
+
+		m_last_recipe_auto_combine = *recipe;
+		m_has_last_recipe_auto_combine = true;
+		m_has_last_recipe_auto_combine_context = true;
+	}
+	void SetLastRecipeAutoCombineContainer(uint32 object_type, uint32 some_id)
+	{
+		const bool same_context = m_has_last_recipe_auto_combine_context &&
+			m_last_recipe_auto_combine.object_type == object_type &&
+			m_last_recipe_auto_combine.some_id == some_id;
+
+		if (!same_context) {
+			m_last_recipe_auto_combine.recipe_id = 0;
+			m_has_last_recipe_auto_combine = false;
+		}
+
+		m_last_recipe_auto_combine.object_type = object_type;
+		m_last_recipe_auto_combine.some_id = some_id;
+		m_last_recipe_auto_combine.unknown1 = 0;
+		m_last_recipe_auto_combine.reply_code = 0;
+		m_has_last_recipe_auto_combine_context = true;
+		m_has_last_recipe_auto_combine = m_last_recipe_auto_combine.recipe_id != 0;
+	}
+	void SetLastRecipeAutoCombineRecipe(uint32 recipe_id)
+	{
+		if (!recipe_id || !m_has_last_recipe_auto_combine_context) {
+			return;
+		}
+
+		m_last_recipe_auto_combine.recipe_id = recipe_id;
+		m_has_last_recipe_auto_combine = true;
+	}
+	bool GetLastRecipeAutoCombine(RecipeAutoCombine_Struct &recipe) const
+	{
+		if (!m_has_last_recipe_auto_combine) {
+			return false;
+		}
+
+		recipe = m_last_recipe_auto_combine;
+		return true;
+	}
 	void SendTributes();
 	void SendGuildTributes();
 	void DoTributeUpdate();
@@ -2152,6 +2200,9 @@ private:
 	ExtendedProfile_Struct m_epp;
 	EQ::InventoryProfile m_inv;
 	Object* m_tradeskill_object;
+	RecipeAutoCombine_Struct m_last_recipe_auto_combine = {};
+	bool m_has_last_recipe_auto_combine = false;
+	bool m_has_last_recipe_auto_combine_context = false;
 	PetInfo m_petinfo; // current pet data, used while loading from and saving to DB
 	PetInfo m_suspendedminion; // pet data for our suspended minion.
 	MercInfo m_mercinfo[MAXMERCS]; // current mercenary

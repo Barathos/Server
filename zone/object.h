@@ -152,6 +152,8 @@ public:
 	static void HandleCombine(Client* user, const NewCombine_Struct* in_combine, Object *worldo);
 	static void HandleAugmentation(Client* user, const AugmentItem_Struct* in_augment, Object *worldo);
 	static void HandleAutoCombine(Client* user, const RecipeAutoCombine_Struct* rac);
+	static uint32 GetAutoCombineAvailableCount(Client* user, const RecipeAutoCombine_Struct* rac, uint32 cap);
+	static uint32 HandleAutoCombineAll(Client* user, const RecipeAutoCombine_Struct* rac, uint32 requested_limit = 0);
 
 	// Packet functions
 	void CreateSpawnPacket(EQApplicationPacket* app);

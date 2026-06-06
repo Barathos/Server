@@ -14,6 +14,7 @@
 namespace nativeinterface {
 	bool HandleChatMessage(const char* message);
 	bool HandleCommandLine(const char* line);
+	void Chat(const char* fmt, ...);
 	void Start(HMODULE module);
 	void Shutdown();
 }
@@ -72,6 +73,9 @@ static void NativeSpellForgeShowWindow(const std::string& payload);
 static void NativeItemForgeShowWindow(const std::string& payload);
 static void NativeAchievementEnsureWindow(bool show);
 static bool NativeAchievementParseTransport(const char* message);
+static void NativeFactionEnsureWindow(bool show);
+static bool NativeFactionParseTransport(const char* message);
+static void NativeTradeskillsEnsureWindow(bool show);
 static void NativeUIShowcaseEnsureWindow(bool show);
 static void NativeHpFixEnsureWindow(bool show);
 static void NativeMulticlassEnsureWindow(bool show);
@@ -335,6 +339,8 @@ static bool gNativeAutoLootChatHookInstalled = false;
 static bool gNativeAutoLootCommandHookInstalled = false;
 static bool gNativeAutoLootPulseHookInstalled = false;
 static bool gNativeAutoLootUiResetHookInstalled = false;
+static bool gNativeChatTimestampConfigLoaded = false;
+static bool gNativeChatTimestampEnabled = false;
 static bool gNativeAutoLootRequestedInitialStatus = false;
 static bool gNativeAutoLootPulseHookEnabled = true;
 static bool gNativeAutoLootWasInGame = false;
@@ -2865,6 +2871,173 @@ static bool gNativeAchievementRewardsDirty = true;
 static std::string gNativeAchievementDetailTitle = "Select an achievement";
 static std::string gNativeAchievementDetailDescription = "";
 
+struct NativeFactionRow
+{
+	int id = 0;
+	int raw_value = 0;
+	int modified_value = 0;
+	bool touched = false;
+	bool target = false;
+	std::string name = "Faction";
+	std::string standing = "Indifferently";
+};
+
+class NativeFactionWnd : public CCustomWnd
+{
+public:
+	NativeFactionWnd() : CCustomWnd((char*)"NativeFactionWnd")
+	{
+		CloseOnESC = 1;
+		SetWndNotification(NativeFactionWnd);
+
+		SummaryLabel = GetChildItem("NFW_SummaryLabel");
+		FactionList = (CListWnd*)GetChildItem("NFW_FactionList");
+		StatusLabel = GetChildItem("NFW_StatusLabel");
+		RefreshButton = (CButtonWnd*)GetChildItem("NFW_RefreshButton");
+		ListButton = (CButtonWnd*)GetChildItem("NFW_ListButton");
+
+		SetStatus("Use /rep to refresh. Target an NPC to pin its primary faction.");
+		RefreshRows();
+	}
+
+	int WndNotification(CXWnd* pWnd, unsigned int Message, void* unknown)
+	{
+		if (Message == XWM_CLOSE) {
+			pXWnd()->Show(0, 1);
+			return 1;
+		}
+
+		if (Message == XWM_LCLICK) {
+			if (pWnd == (CXWnd*)RefreshButton) {
+				NativeAutoLootSendCommand("/say #rep refresh");
+				SetStatus("Refreshing faction reputation...");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)ListButton) {
+				NativeAutoLootSendCommand("/say #rep list");
+				SetStatus("Printing faction standings to chat...");
+				return 1;
+			}
+		}
+
+		return CSidlScreenWnd::WndNotification(pWnd, Message, unknown);
+	}
+
+	void Layout()
+	{
+	}
+
+	void SetStatus(const char* text)
+	{
+		SetLabel(StatusLabel, text ? text : "");
+	}
+
+	void RefreshRows();
+
+private:
+	COLORREF RowColor(const std::string& standing) const
+	{
+		if (_stricmp(standing.c_str(), "Ally") == 0 || _stricmp(standing.c_str(), "Warmly") == 0) {
+			return 0xFF66FF66;
+		}
+
+		if (_stricmp(standing.c_str(), "Kindly") == 0 || _stricmp(standing.c_str(), "Amiably") == 0) {
+			return 0xFFB8FF8A;
+		}
+
+		if (_stricmp(standing.c_str(), "Indifferently") == 0) {
+			return 0xFFFFFFFF;
+		}
+
+		if (_stricmp(standing.c_str(), "Apprehensively") == 0 || _stricmp(standing.c_str(), "Dubiously") == 0) {
+			return 0xFFFFFF80;
+		}
+
+		return 0xFFFF9090;
+	}
+
+	void SetLabel(CXWnd* label, const char* text)
+	{
+		if (label) {
+			CXStr value(text ? text : "");
+			label->SetWindowTextA(value);
+		}
+	}
+
+	CXWnd* SummaryLabel = nullptr;
+	CListWnd* FactionList = nullptr;
+	CXWnd* StatusLabel = nullptr;
+	CButtonWnd* RefreshButton = nullptr;
+	CButtonWnd* ListButton = nullptr;
+};
+
+static NativeFactionWnd* gNativeFactionWnd = nullptr;
+static std::vector<NativeFactionRow> gNativeFactionRows;
+static std::string gNativeFactionStatus = "Use /rep to refresh. Target an NPC to pin its primary faction.";
+static int gNativeFactionTargetId = 0;
+static bool gNativeFactionLoading = false;
+static bool gNativeFactionRowsDirty = true;
+
+class NativeTradeskillsWnd : public CCustomWnd
+{
+public:
+	NativeTradeskillsWnd() : CCustomWnd((char*)"NativeTradeskillsWnd")
+	{
+		CloseOnESC = 1;
+		SetWndNotification(NativeTradeskillsWnd);
+
+		StatusLabel = GetChildItem("TRADESKILLS_StatusLabel");
+		MakeAllButton = (CButtonWnd*)GetChildItem("TRADESKILLS_MakeAllButton");
+		HelpButton = (CButtonWnd*)GetChildItem("TRADESKILLS_HelpButton");
+
+		SetStatus("Select a learned recipe, then use Make All.");
+	}
+
+	int WndNotification(CXWnd* pWnd, unsigned int Message, void* unknown)
+	{
+		if (Message == XWM_CLOSE) {
+			pXWnd()->Show(0, 1);
+			return 1;
+		}
+
+		if (Message == XWM_LCLICK) {
+			if (pWnd == (CXWnd*)MakeAllButton) {
+				NativeAutoLootSendCommand("/say #ts makeall");
+				SetStatus("Requesting Make All for the selected recipe...");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)HelpButton) {
+				NativeAutoLootSendCommand("/say #ts help");
+				SetStatus("Printing tradeskill helper commands to chat...");
+				return 1;
+			}
+		}
+
+		return CSidlScreenWnd::WndNotification(pWnd, Message, unknown);
+	}
+
+	void Layout()
+	{
+	}
+
+	void SetStatus(const char* text)
+	{
+		if (StatusLabel) {
+			CXStr value(text ? text : "");
+			StatusLabel->SetWindowTextA(value);
+		}
+	}
+
+private:
+	CXWnd* StatusLabel = nullptr;
+	CButtonWnd* MakeAllButton = nullptr;
+	CButtonWnd* HelpButton = nullptr;
+};
+
+static NativeTradeskillsWnd* gNativeTradeskillsWnd = nullptr;
+
 class NativeSpellForgeWnd : public CCustomWnd
 {
 public:
@@ -5392,6 +5565,91 @@ static void NativeAchievementEnsureWindow(bool show)
 	}
 }
 
+void NativeFactionWnd::RefreshRows()
+{
+	char summary[160];
+	sprintf_s(summary, "Faction rows %u  Target faction %s", static_cast<unsigned>(gNativeFactionRows.size()), gNativeFactionTargetId > 0 ? "pinned" : "none");
+	SetLabel(SummaryLabel, summary);
+	SetStatus(gNativeFactionStatus.c_str());
+
+	if (!FactionList || !gNativeFactionRowsDirty) {
+		return;
+	}
+
+	FactionList->DeleteAll();
+	if (gNativeFactionRows.empty()) {
+		CXStr dash("-");
+		const int row = FactionList->AddString(dash, 0xFFB0B0B0, 0, nullptr, nullptr);
+		CXStr empty("No faction standings loaded.");
+		FactionList->SetItemText(row, 1, &empty);
+		FactionList->SetItemText(row, 2, &dash);
+		FactionList->SetItemText(row, 3, &dash);
+		FactionList->SetItemText(row, 4, &dash);
+		FactionList->SetItemText(row, 5, &dash);
+		gNativeFactionRowsDirty = false;
+		return;
+	}
+
+	for (const NativeFactionRow& faction : gNativeFactionRows) {
+		const char* pin = faction.target ? "Target" : (faction.touched ? "Known" : "-");
+		CXStr pin_text(pin);
+		const int row = FactionList->AddString(pin_text, RowColor(faction.standing), static_cast<uint32_t>(faction.id), nullptr, nullptr);
+
+		char raw_text[32];
+		char modified_text[32];
+		sprintf_s(raw_text, "%d", faction.raw_value);
+		sprintf_s(modified_text, "%d", faction.modified_value);
+
+		CXStr name(faction.name.c_str());
+		CXStr standing(faction.standing.c_str());
+		CXStr raw(raw_text);
+		CXStr modified(modified_text);
+		CXStr known(faction.touched ? "Yes" : "No");
+		FactionList->SetItemText(row, 1, &name);
+		FactionList->SetItemText(row, 2, &standing);
+		FactionList->SetItemText(row, 3, &raw);
+		FactionList->SetItemText(row, 4, &modified);
+		FactionList->SetItemText(row, 5, &known);
+	}
+
+	gNativeFactionRowsDirty = false;
+}
+
+static void NativeFactionEnsureWindow(bool show)
+{
+	if (!pSidlMgr || !pWndMgr) {
+		return;
+	}
+
+	if (!gNativeFactionWnd) {
+		NativeAutoLootTrace("creating faction reputation window");
+		gNativeFactionWnd = new NativeFactionWnd();
+		gNativeFactionWnd->RefreshRows();
+		NativeAutoLootTrace("faction reputation window created");
+	}
+
+	if (show && gNativeFactionWnd) {
+		gNativeFactionWnd->pXWnd()->Show(1, 1);
+	}
+}
+
+static void NativeTradeskillsEnsureWindow(bool show)
+{
+	if (!pSidlMgr || !pWndMgr) {
+		return;
+	}
+
+	if (!gNativeTradeskillsWnd) {
+		NativeAutoLootTrace("creating tradeskills helper window");
+		gNativeTradeskillsWnd = new NativeTradeskillsWnd();
+		NativeAutoLootTrace("tradeskills helper window created");
+	}
+
+	if (show && gNativeTradeskillsWnd) {
+		gNativeTradeskillsWnd->pXWnd()->Show(1, 1);
+	}
+}
+
 void NativeAutoLootRulesWnd::SetLabel(CXWnd* label, const char* text)
 {
 	if (label) {
@@ -5796,6 +6054,291 @@ static bool NativeCommandMatch(const char* line, const char* command, const char
 	return true;
 }
 
+static void NativeChatTimestampConfigPath(char* path, size_t path_size)
+{
+	if (!path || !path_size) {
+		return;
+	}
+
+	if (gszEQPath[0]) {
+		sprintf_s(path, path_size, "%s\\native_interface.ini", gszEQPath);
+	}
+	else {
+		strcpy_s(path, path_size, "native_interface.ini");
+	}
+}
+
+static void NativeChatTimestampLoadConfig()
+{
+	if (gNativeChatTimestampConfigLoaded) {
+		return;
+	}
+
+	char path[MAX_PATH];
+	NativeChatTimestampConfigPath(path, sizeof(path));
+	gNativeChatTimestampEnabled = GetPrivateProfileIntA("Chat", "Timestamps", 0, path) != 0;
+	gNativeChatTimestampConfigLoaded = true;
+}
+
+static void NativeChatTimestampSaveConfig()
+{
+	char path[MAX_PATH];
+	NativeChatTimestampConfigPath(path, sizeof(path));
+	WritePrivateProfileStringA("Chat", "Timestamps", gNativeChatTimestampEnabled ? "1" : "0", path);
+}
+
+static void NativeChatTimestampStatus()
+{
+	NativeChatTimestampLoadConfig();
+	nativeinterface::Chat(
+		"Chat timestamps are %s. Use /timestamp on or /timestamp off.",
+		gNativeChatTimestampEnabled ? "ON" : "OFF"
+	);
+}
+
+static bool NativeChatTimestampHandleCommand(const char* line)
+{
+	if (!line) {
+		return false;
+	}
+
+	while (*line == ' ' || *line == '\t') {
+		++line;
+	}
+
+	const char* arguments = nullptr;
+	if (
+		!NativeCommandMatch(line, "/timestamp", &arguments) &&
+		!NativeCommandMatch(line, "/timestamps", &arguments)
+	) {
+		return false;
+	}
+
+	NativeChatTimestampLoadConfig();
+
+	if (!arguments || !arguments[0] || NativeCommandMatch(arguments, "toggle", nullptr)) {
+		gNativeChatTimestampEnabled = !gNativeChatTimestampEnabled;
+		NativeChatTimestampSaveConfig();
+		NativeChatTimestampStatus();
+		return true;
+	}
+
+	if (
+		NativeCommandMatch(arguments, "on", nullptr) ||
+		NativeCommandMatch(arguments, "1", nullptr) ||
+		NativeCommandMatch(arguments, "true", nullptr)
+	) {
+		gNativeChatTimestampEnabled = true;
+		NativeChatTimestampSaveConfig();
+		NativeChatTimestampStatus();
+		return true;
+	}
+
+	if (
+		NativeCommandMatch(arguments, "off", nullptr) ||
+		NativeCommandMatch(arguments, "0", nullptr) ||
+		NativeCommandMatch(arguments, "false", nullptr)
+	) {
+		gNativeChatTimestampEnabled = false;
+		NativeChatTimestampSaveConfig();
+		NativeChatTimestampStatus();
+		return true;
+	}
+
+	if (
+		NativeCommandMatch(arguments, "status", nullptr) ||
+		NativeCommandMatch(arguments, "show", nullptr)
+	) {
+		NativeChatTimestampStatus();
+		return true;
+	}
+
+	nativeinterface::Chat("Usage: /timestamp [on|off|toggle|status]");
+	return true;
+}
+
+static bool NativeChatTimestampFormatLine(const char* message, char* output, size_t output_size)
+{
+	if (!message || !message[0] || !output || output_size == 0) {
+		return false;
+	}
+
+	NativeChatTimestampLoadConfig();
+	if (!gNativeChatTimestampEnabled) {
+		return false;
+	}
+
+	SYSTEMTIME now;
+	GetLocalTime(&now);
+	_snprintf_s(
+		output,
+		output_size,
+		_TRUNCATE,
+		"[%02u:%02u:%02u] %s",
+		static_cast<unsigned>(now.wHour),
+		static_cast<unsigned>(now.wMinute),
+		static_cast<unsigned>(now.wSecond),
+		message
+	);
+
+	return true;
+}
+
+static bool NativePetClassTokenMatch(const char* token, size_t token_length)
+{
+	if (!token || token_length == 0 || token_length >= 32) {
+		return false;
+	}
+
+	char normalized[32];
+	_snprintf_s(normalized, sizeof(normalized), _TRUNCATE, "%.*s", static_cast<int>(token_length), token);
+	for (char *current = normalized; *current; ++current) {
+		*current = static_cast<char>(std::tolower(static_cast<unsigned char>(*current)));
+	}
+
+	return !strcmp(normalized, "nec") ||
+		!strcmp(normalized, "necro") ||
+		!strcmp(normalized, "necromancer") ||
+		!strcmp(normalized, "mag") ||
+		!strcmp(normalized, "mage") ||
+		!strcmp(normalized, "magician") ||
+		!strcmp(normalized, "bst") ||
+		!strcmp(normalized, "beast") ||
+		!strcmp(normalized, "beastlord");
+}
+
+static bool NativePetClassRewriteCommand(const char* line, char* output, size_t output_size)
+{
+	if (!line || !output || !output_size) {
+		return false;
+	}
+
+	while (*line == ' ' || *line == '\t') {
+		++line;
+	}
+
+	const char* arguments = nullptr;
+	if (!NativeCommandMatch(line, "/pet", &arguments) || !arguments || !arguments[0]) {
+		return false;
+	}
+
+	while (*arguments == ' ' || *arguments == '\t') {
+		++arguments;
+	}
+
+	const char* token_end = arguments;
+	while (*token_end && *token_end != ' ' && *token_end != '\t') {
+		++token_end;
+	}
+
+	const auto token_length = static_cast<size_t>(token_end - arguments);
+	if (!NativePetClassTokenMatch(arguments, token_length)) {
+		return false;
+	}
+
+	while (*token_end == ' ' || *token_end == '\t') {
+		++token_end;
+	}
+
+	if (*token_end) {
+		_snprintf_s(output, output_size, _TRUNCATE, "/say #mc pet %.*s %s", static_cast<int>(token_length), arguments, token_end);
+	}
+	else {
+		_snprintf_s(output, output_size, _TRUNCATE, "/say #mc pet %.*s", static_cast<int>(token_length), arguments);
+	}
+
+	return true;
+}
+
+static bool NativeTradeskillsLocalCommand(const char* line)
+{
+	if (!line) {
+		return false;
+	}
+
+	while (*line == ' ' || *line == '\t') {
+		++line;
+	}
+
+	const char* arguments = nullptr;
+	if (
+		!NativeCommandMatch(line, "/tradeskills", &arguments) &&
+		!NativeCommandMatch(line, "/tradeskill", &arguments) &&
+		!NativeCommandMatch(line, "/tradeskillui", &arguments) &&
+		!NativeCommandMatch(line, "/makeallwindow", &arguments)
+	) {
+		return false;
+	}
+
+	if (
+		!arguments ||
+		!arguments[0] ||
+		NativeCommandMatch(arguments, "open", nullptr) ||
+		NativeCommandMatch(arguments, "window", nullptr) ||
+		NativeCommandMatch(arguments, "ui", nullptr) ||
+		NativeCommandMatch(arguments, "panel", nullptr)
+	) {
+		NativeTradeskillsEnsureWindow(true);
+		if (gNativeTradeskillsWnd) {
+			gNativeTradeskillsWnd->SetStatus("Select a learned recipe, then use Make All.");
+		}
+		return true;
+	}
+
+	return false;
+}
+
+static bool NativeTradeskillsRewriteCommand(const char* line, char* output, size_t output_size)
+{
+	if (!line || !output || !output_size) {
+		return false;
+	}
+
+	while (*line == ' ' || *line == '\t') {
+		++line;
+	}
+
+	const char* arguments = nullptr;
+	if (NativeCommandMatch(line, "/makeall", &arguments)) {
+		if (!arguments || !arguments[0]) {
+			strcpy_s(output, output_size, "/say #ts makeall");
+		}
+		else {
+			_snprintf_s(output, output_size, _TRUNCATE, "/say #ts makeall %s", arguments);
+		}
+		return true;
+	}
+
+	if (
+		!NativeCommandMatch(line, "/tradeskills", &arguments) &&
+		!NativeCommandMatch(line, "/tradeskill", &arguments) &&
+		!NativeCommandMatch(line, "/ts", &arguments)
+	) {
+		return false;
+	}
+
+	if (!arguments || !arguments[0]) {
+		return false;
+	}
+
+	const char* make_all_arguments = nullptr;
+	if (
+		NativeCommandMatch(arguments, "makeall", &make_all_arguments) ||
+		NativeCommandMatch(arguments, "all", &make_all_arguments)
+	) {
+		if (!make_all_arguments || !make_all_arguments[0]) {
+			strcpy_s(output, output_size, "/say #ts makeall");
+		}
+		else {
+			_snprintf_s(output, output_size, _TRUNCATE, "/say #ts makeall %s", make_all_arguments);
+		}
+		return true;
+	}
+
+	_snprintf_s(output, output_size, _TRUNCATE, "/say #ts %s", arguments);
+	return true;
+}
+
 static bool NativeUIShowcaseHandleCommand(const char* line)
 {
 	if (!line) {
@@ -6061,6 +6604,47 @@ static bool NativeAchievementRewriteCommand(const char* line, char* output, size
 	return true;
 }
 
+static bool NativeFactionRewriteCommand(const char* line, char* output, size_t output_size)
+{
+	if (!line || !output || !output_size) {
+		return false;
+	}
+
+	while (*line == ' ' || *line == '\t') {
+		++line;
+	}
+
+	const char* arguments = nullptr;
+	if (
+		!NativeCommandMatch(line, "/rep", &arguments) &&
+		!NativeCommandMatch(line, "/reputation", &arguments) &&
+		!NativeCommandMatch(line, "/factionwindow", &arguments) &&
+		!NativeCommandMatch(line, "/factionstatus", &arguments)
+	) {
+		return false;
+	}
+
+	if (!arguments || !arguments[0]) {
+		strcpy_s(output, output_size, "/say #rep refresh");
+		return true;
+	}
+
+	if (
+		NativeCommandMatch(arguments, "open", nullptr) ||
+		NativeCommandMatch(arguments, "window", nullptr) ||
+		NativeCommandMatch(arguments, "ui", nullptr) ||
+		NativeCommandMatch(arguments, "panel", nullptr) ||
+		NativeCommandMatch(arguments, "refresh", nullptr) ||
+		NativeCommandMatch(arguments, "status", nullptr)
+	) {
+		strcpy_s(output, output_size, "/say #rep refresh");
+		return true;
+	}
+
+	sprintf_s(output, output_size, "/say #rep %s", arguments);
+	return true;
+}
+
 class NativeAutoLootCommandHook
 {
 public:
@@ -6072,8 +6656,29 @@ public:
 			return;
 		}
 
+		if (NativeChatTimestampHandleCommand(line)) {
+			NativeAutoLootTrace("handled chat timestamp command: %s", line ? line : "");
+			return;
+		}
+
+		if (NativeTradeskillsLocalCommand(line)) {
+			NativeAutoLootTrace("handled local tradeskills command: %s", line ? line : "");
+			return;
+		}
+
 		char rewritten[256];
 
+		if (NativeTradeskillsRewriteCommand(line, rewritten, sizeof(rewritten))) {
+			NativeAutoLootTrace("rewrite command: %s -> %s", line ? line : "", rewritten);
+			Trampoline(player, rewritten);
+			return;
+		}
+
+		if (NativePetClassRewriteCommand(line, rewritten, sizeof(rewritten))) {
+			NativeAutoLootTrace("rewrite command: %s -> %s", line ? line : "", rewritten);
+			Trampoline(player, rewritten);
+			return;
+		}
 
 		if (NativeMulticlassRewriteCommand(line, rewritten, sizeof(rewritten))) {
 			NativeAutoLootTrace("rewrite command: %s -> %s", line ? line : "", rewritten);
@@ -6082,6 +6687,12 @@ public:
 		}
 
 		if (NativeAchievementRewriteCommand(line, rewritten, sizeof(rewritten))) {
+			NativeAutoLootTrace("rewrite command: %s -> %s", line ? line : "", rewritten);
+			Trampoline(player, rewritten);
+			return;
+		}
+
+		if (NativeFactionRewriteCommand(line, rewritten, sizeof(rewritten))) {
 			NativeAutoLootTrace("rewrite command: %s -> %s", line ? line : "", rewritten);
 			Trampoline(player, rewritten);
 			return;
@@ -6738,6 +7349,78 @@ static bool NativeAchievementParseTransport(const char* message)
 	return true;
 }
 
+static bool NativeFactionParseTransport(const char* message)
+{
+	if (!message || !message[0] || !NativeStartsWith(message, "FACTION|")) {
+		return false;
+	}
+
+	if (NativeStartsWith(message, "FACTION|window|clear")) {
+		gNativeFactionLoading = true;
+		gNativeFactionRows.clear();
+		gNativeFactionTargetId = 0;
+		gNativeFactionStatus = "Loading faction reputation...";
+		gNativeFactionRowsDirty = true;
+		if (gNativeFactionWnd) {
+			gNativeFactionWnd->RefreshRows();
+		}
+		return true;
+	}
+
+	if (NativeStartsWith(message, "FACTION|summary|")) {
+		const std::string payload(message + strlen("FACTION|summary|"));
+		gNativeFactionTargetId = NativeToInt(NativeGetPairValue(payload, "target"));
+		gNativeFactionStatus = NativeGetPairValue(payload, "status");
+		if (gNativeFactionStatus.empty()) {
+			gNativeFactionStatus = "Faction reputation refreshed.";
+		}
+		if (gNativeFactionWnd && !gNativeFactionLoading) {
+			gNativeFactionWnd->RefreshRows();
+		}
+		return true;
+	}
+
+	if (NativeStartsWith(message, "FACTION|row|")) {
+		const std::string payload(message + strlen("FACTION|row|"));
+		NativeFactionRow row;
+		row.id = NativeToInt(NativeGetPairValue(payload, "id"));
+		row.name = NativeGetPairValue(payload, "name");
+		row.raw_value = NativeToInt(NativeGetPairValue(payload, "raw"));
+		row.modified_value = NativeToInt(NativeGetPairValue(payload, "mod"));
+		row.standing = NativeGetPairValue(payload, "standing");
+		row.touched = NativeToBool(NativeGetPairValue(payload, "touched"));
+		row.target = NativeToBool(NativeGetPairValue(payload, "target"));
+		if (row.name.empty()) {
+			char name[48];
+			sprintf_s(name, "Faction %d", row.id);
+			row.name = name;
+		}
+		if (row.standing.empty()) {
+			row.standing = "Unknown";
+		}
+		if (row.id > 0) {
+			gNativeFactionRows.push_back(row);
+			gNativeFactionRowsDirty = true;
+		}
+		if (gNativeFactionWnd && !gNativeFactionLoading) {
+			gNativeFactionWnd->RefreshRows();
+		}
+		return true;
+	}
+
+	if (NativeStartsWith(message, "FACTION|window|show")) {
+		gNativeFactionLoading = false;
+		NativeFactionEnsureWindow(true);
+		if (gNativeFactionWnd) {
+			gNativeFactionWnd->RefreshRows();
+			gNativeFactionWnd->SetStatus(gNativeFactionStatus.c_str());
+		}
+		return true;
+	}
+
+	return true;
+}
+
 static bool NativeAutoLootParseTransport(const char* message)
 {
 	if (!message || !message[0]) {
@@ -6758,6 +7441,10 @@ static bool NativeAutoLootParseTransport(const char* message)
 	}
 
 	if (NativeMulticlassParseTransport(message)) {
+		return true;
+	}
+
+	if (NativeFactionParseTransport(message)) {
 		return true;
 	}
 
@@ -6956,7 +7643,7 @@ static bool NativeAutoLootParseTransport(const char* message)
 		return true;
 	}
 
-	if (strstr(message, "You say, '#autoloot") || strstr(message, "You say, '#lootfilter") || strstr(message, "You say, '#livespell") || strstr(message, "You say, '#itemforge") || strstr(message, "You say, '#ach") || strstr(message, "You say, '#mc") || strstr(message, "You say, '#multiclass") || strstr(message, "You say, '#nativeui") || strstr(message, "You say, '#showcase") || strstr(message, "You say, '#hpfix")) {
+	if (strstr(message, "You say, '#autoloot") || strstr(message, "You say, '#lootfilter") || strstr(message, "You say, '#livespell") || strstr(message, "You say, '#itemforge") || strstr(message, "You say, '#ach") || strstr(message, "You say, '#rep") || strstr(message, "You say, '#ts") || strstr(message, "You say, '#tradeskill") || strstr(message, "You say, '#mc") || strstr(message, "You say, '#multiclass") || strstr(message, "You say, '#nativeui") || strstr(message, "You say, '#showcase") || strstr(message, "You say, '#hpfix")) {
 		return true;
 	}
 
@@ -6973,6 +7660,12 @@ public:
 
 		const bool native_interface_handled = nativeinterface::HandleChatMessage(szMsg);
 		if (NativeAutoLootParseTransport(szMsg) || native_interface_handled) {
+			return;
+		}
+
+		char stamped[4096];
+		if (NativeChatTimestampFormatLine(szMsg, stamped, sizeof(stamped))) {
+			Trampoline(stamped, dwColor, EqLog, dopercentsubst);
 			return;
 		}
 
@@ -7030,6 +7723,15 @@ static void NativeAchievementResetState()
 	gNativeAchievementDetailDescription.clear();
 }
 
+static void NativeFactionResetState()
+{
+	gNativeFactionRows.clear();
+	gNativeFactionStatus = "Use /rep to refresh. Target an NPC to pin its primary faction.";
+	gNativeFactionTargetId = 0;
+	gNativeFactionLoading = false;
+	gNativeFactionRowsDirty = true;
+}
+
 static bool NativeAutoLootHasRuntimeWindows()
 {
 	return
@@ -7039,6 +7741,8 @@ static bool NativeAutoLootHasRuntimeWindows()
 		gNativeSpellForgeWnd ||
 		gNativeItemForgeWnd ||
 		gNativeAchievementWnd ||
+		gNativeFactionWnd ||
+		gNativeTradeskillsWnd ||
 		gNativeUIShowcaseWnd ||
 		gNativeHpFixWnd ||
 		gNativeMulticlassWnd ||
@@ -7070,6 +7774,8 @@ static void NativeAutoLootDestroyRuntimeWindows()
 	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeSpellForgeWnd, "Spell Forge");
 	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeItemForgeWnd, "Item Forge");
 	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeAchievementWnd, "Achievement");
+	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeFactionWnd, "Faction reputation");
+	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeTradeskillsWnd, "Tradeskills helper");
 	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeUIShowcaseWnd, "Native UI showcase");
 	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeHpFixWnd, "HP Fix");
 	NativeMulticlassDestroyRuntimeWindows();
@@ -7101,6 +7807,7 @@ static void NativeAutoLootResetSessionRequests()
 	gNativeMulticlassSentStatus = false;
 	NativeMulticlassResetSessionState(true);
 	NativeAchievementResetState();
+	NativeFactionResetState();
 }
 
 static void NativeAutoLootResetClientUiSession(const char* reason)
@@ -7129,6 +7836,7 @@ static void NativeAutoLootResetClientUiSession(const char* reason)
 	gNativeMulticlassSentStatus = false;
 	NativeMulticlassResetSessionState(false);
 	NativeAchievementResetState();
+	NativeFactionResetState();
 }
 
 static void NativeAutoLootMaybeSendInitialRequests()
@@ -7221,6 +7929,14 @@ static void NativeAutoLootPulse()
 
 	if (gNativeAchievementWnd) {
 		gNativeAchievementWnd->Layout();
+	}
+
+	if (gNativeFactionWnd) {
+		gNativeFactionWnd->Layout();
+	}
+
+	if (gNativeTradeskillsWnd) {
+		gNativeTradeskillsWnd->Layout();
 	}
 
 	if (gNativeUIShowcaseWnd) {
@@ -7381,6 +8097,16 @@ static void ShutdownAutoLootNative()
 	if (gNativeAchievementWnd) {
 		delete gNativeAchievementWnd;
 		gNativeAchievementWnd = nullptr;
+	}
+
+	if (gNativeFactionWnd) {
+		delete gNativeFactionWnd;
+		gNativeFactionWnd = nullptr;
+	}
+
+	if (gNativeTradeskillsWnd) {
+		delete gNativeTradeskillsWnd;
+		gNativeTradeskillsWnd = nullptr;
 	}
 
 	if (gNativeUIShowcaseWnd) {

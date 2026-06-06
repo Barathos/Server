@@ -32,11 +32,121 @@
 
 #include <algorithm>
 #include <list>
+#include <unordered_map>
+#include <vector>
 
 extern QueryServ* QServ;
 extern WorldServer worldserver;
 
 static const EQ::skills::SkillType TradeskillUnknown = EQ::skills::Skill1HBlunt; /* an arbitrary non-tradeskill */
+
+namespace {
+
+struct AutoCombineComponent {
+	uint32 item_id = 0;
+	uint32 required_count = 0;
+};
+
+uint32 CountPersonalInventoryItem(Client *user, uint32 item_id)
+{
+	if (!user || !item_id) {
+		return 0;
+	}
+
+	uint32 quantity = 0;
+	auto &inventory = user->GetInv();
+	auto count_slot = [&quantity, &inventory, item_id](int16 slot_id) {
+		auto *inst = inventory.GetItem(slot_id);
+		if (!inst || inst->GetID() != item_id) {
+			return;
+		}
+
+		quantity += inst->IsStackable() ? (inst->GetCharges() <= 0 ? 1 : inst->GetCharges()) : 1;
+	};
+
+	for (int16 slot_id = EQ::invslot::GENERAL_BEGIN; slot_id <= EQ::invslot::GENERAL_END; ++slot_id) {
+		count_slot(slot_id);
+	}
+
+	for (int16 slot_id = EQ::invbag::GENERAL_BAGS_BEGIN; slot_id <= EQ::invbag::GENERAL_BAGS_END; ++slot_id) {
+		count_slot(slot_id);
+	}
+
+	return quantity;
+}
+
+std::vector<AutoCombineComponent> LoadAutoCombineComponents(uint32 recipe_id)
+{
+	std::vector<AutoCombineComponent> components;
+	if (!recipe_id) {
+		return components;
+	}
+
+	const auto query = fmt::format(
+		"SELECT item_id, componentcount "
+		"FROM tradeskill_recipe_entries "
+		"WHERE componentcount > 0 AND recipe_id = {}",
+		recipe_id
+	);
+
+	auto results = content_db.QueryDatabase(query);
+	if (!results.Success() || results.RowCount() < 1 || results.RowCount() > 10) {
+		return components;
+	}
+
+	std::unordered_map<uint32, uint32> required_by_item;
+	for (auto row = results.begin(); row != results.end(); ++row) {
+		const auto item_id = Strings::ToUnsignedInt(row[0]);
+		const auto component_count = Strings::ToUnsignedInt(row[1]);
+		if (!item_id || !component_count) {
+			continue;
+		}
+
+		required_by_item[item_id] += component_count;
+	}
+
+	components.reserve(required_by_item.size());
+	for (const auto &[item_id, required_count] : required_by_item) {
+		components.push_back({item_id, required_count});
+	}
+
+	return components;
+}
+
+bool AutoCombineRecipeUsable(Client *user, const RecipeAutoCombine_Struct *rac, DBTradeskillRecipe_Struct &spec)
+{
+	if (!user || !rac) {
+		return false;
+	}
+
+	if (!content_db.GetTradeRecipe(rac->recipe_id, rac->object_type, rac->some_id, user, &spec)) {
+		return false;
+	}
+
+	if ((spec.must_learn & 0xf) && !spec.has_learnt) {
+		return false;
+	}
+
+	if (spec.skill_needed > 0 && user->GetSkill(spec.tradeskill) < spec.skill_needed) {
+		return false;
+	}
+
+	if (spec.tradeskill == EQ::skills::SkillAlchemy) {
+		return user->GetClass() == Class::Shaman && user->GetLevel() >= MIN_LEVEL_ALCHEMY;
+	}
+
+	if (spec.tradeskill == EQ::skills::SkillTinkering) {
+		return user->GetRace() == Race::Gnome;
+	}
+
+	if (spec.tradeskill == EQ::skills::SkillMakePoison) {
+		return user->GetClass() == Class::Rogue;
+	}
+
+	return true;
+}
+
+} // namespace
 
 void Object::HandleAugmentation(Client* user, const AugmentItem_Struct* in_augment, Object *worldo)
 {
@@ -801,6 +911,81 @@ void Object::HandleAutoCombine(Client* user, const RecipeAutoCombine_Struct* rac
 			parse->EventPlayer(EVENT_COMBINE_FAILURE, user, spec.name, spec.recipe_id);
 		}
 	}
+}
+
+uint32 Object::GetAutoCombineAvailableCount(Client* user, const RecipeAutoCombine_Struct* rac, uint32 cap)
+{
+	if (!user || !rac || !cap) {
+		return 0;
+	}
+
+	DBTradeskillRecipe_Struct spec;
+	if (!AutoCombineRecipeUsable(user, rac, spec)) {
+		return 0;
+	}
+
+	if (user->CheckTradeskillLoreConflict(rac->recipe_id)) {
+		return 0;
+	}
+
+	const auto components = LoadAutoCombineComponents(rac->recipe_id);
+	if (components.empty()) {
+		return 0;
+	}
+
+	uint32 available = cap;
+	for (const auto &component : components) {
+		if (!component.item_id || !component.required_count) {
+			return 0;
+		}
+
+		const auto item_count = CountPersonalInventoryItem(user, component.item_id);
+		available = std::min<uint32>(available, item_count / component.required_count);
+	}
+
+	return available;
+}
+
+uint32 Object::HandleAutoCombineAll(Client* user, const RecipeAutoCombine_Struct* rac, uint32 requested_limit)
+{
+	if (!user || !rac) {
+		return 0;
+	}
+
+	if (!RuleB(CustomFeatures, TradeskillsEnabled)) {
+		user->Message(Chat::White, "Tradeskill Make-All is disabled on this server.");
+		return 0;
+	}
+
+	const auto rule_limit = RuleI(CustomFeatures, TradeskillMakeAllLimit);
+	if (rule_limit <= 0) {
+		user->Message(Chat::White, "Tradeskill Make-All is disabled by server limit.");
+		return 0;
+	}
+
+	const auto combine_limit = requested_limit > 0 ?
+		std::min<uint32>(requested_limit, static_cast<uint32>(rule_limit)) :
+		static_cast<uint32>(rule_limit);
+	const auto available = GetAutoCombineAvailableCount(user, rac, combine_limit);
+	if (!available) {
+		user->Message(Chat::Skills, "Make All: no available combines were found for the last selected recipe.");
+		return 0;
+	}
+
+	user->Message(Chat::Skills, fmt::format("Make All: attempting {} combine{}.", available, available == 1 ? "" : "s").c_str());
+
+	uint32 attempted = 0;
+	for (; attempted < available; ++attempted) {
+		HandleAutoCombine(user, rac);
+
+		if ((attempted + 1) < available && user->CheckTradeskillLoreConflict(rac->recipe_id)) {
+			++attempted;
+			break;
+		}
+	}
+
+	user->Message(Chat::Skills, fmt::format("Make All: completed {} combine attempt{}.", attempted, attempted == 1 ? "" : "s").c_str());
+	return attempted;
 }
 
 void Client::SendTradeskillSearchResults(

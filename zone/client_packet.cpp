@@ -13261,6 +13261,7 @@ void Client::Handle_OP_RecipeAutoCombine(const EQApplicationPacket *app)
 	}
 
 	RecipeAutoCombine_Struct* rac = (RecipeAutoCombine_Struct*)app->pBuffer;
+	SetLastRecipeAutoCombine(rac);
 
 	Object::HandleAutoCombine(this, rac);
 	return;
@@ -13274,6 +13275,7 @@ void Client::Handle_OP_RecipeDetails(const EQApplicationPacket *app)
 		return;
 	}
 	uint32 *recipe_id = (uint32*)app->pBuffer;
+	SetLastRecipeAutoCombineRecipe(*recipe_id);
 
 	SendTradeskillDetails(*recipe_id);
 
@@ -13289,6 +13291,7 @@ void Client::Handle_OP_RecipesFavorite(const EQApplicationPacket *app)
 	}
 
 	TradeskillFavorites_Struct* tsf = (TradeskillFavorites_Struct*)app->pBuffer;
+	SetLastRecipeAutoCombineContainer(tsf->object_type, tsf->some_id);
 
 	LogDebug("Requested Favorites for: [{}] - [{}]\n", tsf->object_type, tsf->some_id);
 
@@ -13397,6 +13400,10 @@ void Client::Handle_OP_RecipesSearch(const EQApplicationPacket *app)
 
 	auto* p_recipes_search_struct = (RecipesSearch_Struct*)app->pBuffer;
 	p_recipes_search_struct->query[55] = '\0';	//just to be sure.
+	SetLastRecipeAutoCombineContainer(
+		p_recipes_search_struct->object_type,
+		p_recipes_search_struct->some_id
+	);
 
 	LogTradeskills(
 		"Requested search recipes for object_type [{}] some_id [{}]",

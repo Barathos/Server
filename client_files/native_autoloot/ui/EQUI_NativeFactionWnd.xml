@@ -1,0 +1,100 @@
+<?xml version="1.0"?>
+<XML ID="EQInterfaceDefinitionLanguage">
+	<Schema xmlns="EverQuestData" xmlns:dt="EverQuestDataTypes" />
+
+	<Label item="NFW_TitleLabel">
+		<ScreenID>NFW_TitleLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>16</X><Y>12</Y></Location>
+		<Size><CX>220</CX><CY>22</CY></Size>
+		<Text>Faction Reputation</Text>
+		<Font>4</Font>
+		<TextColor><R>248</R><G>189</G><B>33</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="NFW_SummaryLabel">
+		<ScreenID>NFW_SummaryLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>16</X><Y>40</Y></Location>
+		<Size><CX>500</CX><CY>20</CY></Size>
+		<Text>Waiting for faction data.</Text>
+		<Font>2</Font>
+		<TextColor><R>220</R><G>230</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="NFW_RefreshButton">
+		<ScreenID>NFW_RefreshButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>524</X><Y>36</Y></Location>
+		<Size><CX>76</CX><CY>24</CY></Size>
+		<Text>Refresh</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_BigNormal</Template>
+	</Button>
+
+	<Button item="NFW_ListButton">
+		<ScreenID>NFW_ListButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>608</X><Y>36</Y></Location>
+		<Size><CX>62</CX><CY>24</CY></Size>
+		<Text>Chat</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_BigNormal</Template>
+	</Button>
+
+	<Listbox item="NFW_FactionList">
+		<ScreenID>NFW_FactionList</ScreenID>
+		<DrawTemplate>WDT_Inner</DrawTemplate>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>72</Y></Location>
+		<Size><CX>656</CX><CY>318</CY></Size>
+		<Style_Border>true</Style_Border>
+		<Style_VScroll>true</Style_VScroll>
+		<Style_HScroll>false</Style_HScroll>
+		<Style_Transparent>false</Style_Transparent>
+		<Columns><Width>52</Width><Heading>Pin</Heading></Columns>
+		<Columns><Width>220</Width><Heading>Faction</Heading></Columns>
+		<Columns><Width>112</Width><Heading>Standing</Heading></Columns>
+		<Columns><Width>76</Width><Heading>Raw</Heading></Columns>
+		<Columns><Width>86</Width><Heading>Modified</Heading></Columns>
+		<Columns><Width>82</Width><Heading>Known</Heading></Columns>
+	</Listbox>
+
+	<Label item="NFW_StatusLabel">
+		<ScreenID>NFW_StatusLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>16</X><Y>398</Y></Location>
+		<Size><CX>654</CX><CY>34</CY></Size>
+		<Text>Use /rep to refresh. Target an NPC to pin its primary faction.</Text>
+		<Font>2</Font>
+		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
+		<NoWrap>false</NoWrap>
+	</Label>
+
+	<Screen item="NativeFactionWnd">
+		<ScreenID>NativeFactionWnd</ScreenID>
+		<RelativePosition>false</RelativePosition>
+		<Location><X>90</X><Y>80</Y></Location>
+		<Size><CX>684</CX><CY>444</CY></Size>
+		<Text>Faction Reputation</Text>
+		<DrawTemplate>WDT_Def</DrawTemplate>
+		<Style_Titlebar>true</Style_Titlebar>
+		<Style_Closebox>true</Style_Closebox>
+		<Style_Minimizebox>true</Style_Minimizebox>
+		<Style_Border>true</Style_Border>
+		<Style_Sizable>false</Style_Sizable>
+		<Style_Transparent>false</Style_Transparent>
+		<Pieces>NFW_TitleLabel</Pieces>
+		<Pieces>NFW_SummaryLabel</Pieces>
+		<Pieces>NFW_RefreshButton</Pieces>
+		<Pieces>NFW_ListButton</Pieces>
+		<Pieces>NFW_FactionList</Pieces>
+		<Pieces>NFW_StatusLabel</Pieces>
+	</Screen>
+</XML>

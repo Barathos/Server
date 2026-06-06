@@ -110,6 +110,7 @@ private:
 	bool ApplyStockPetCommand(Client *client, Mob *pet, uint32 command, Mob *target, std::string &status);
 	bool ApplyPetAction(Client *client, Mob *pet, const std::string &action, std::string &status);
 	Mob *GetFocusedPet(Client *client);
+	Mob *GetPetForClass(Client *client, uint8 class_id, const std::vector<Mob *> &roster, std::string &status);
 	bool SchemaAvailable();
 	bool MelodySchemaAvailable();
 	BardMelodySlots LoadBardMelody(Client *client);

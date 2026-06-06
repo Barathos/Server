@@ -44,6 +44,7 @@ set(zone_sources
     exp.cpp
     expedition_request.cpp
     fastmath.cpp
+    faction_reputation_manager.cpp
     fearpath.cpp
     forage.cpp
     global_loot_manager.cpp
@@ -148,6 +149,7 @@ set(zone_headers
     encounter.h
     entity.h
     event_codes.h
+    faction_reputation_manager.h
     expedition_request.h
     fastmath.h
     forage.h
@@ -519,6 +521,7 @@ set(gm_command_sources
     gm_commands/raidloot.cpp
     gm_commands/randomfeatures.cpp
     gm_commands/refreshgroup.cpp
+    gm_commands/reputation.cpp
     gm_commands/reload.cpp
     gm_commands/removeitem.cpp
     gm_commands/repop.cpp
@@ -657,6 +660,7 @@ set(gm_command_sources
     gm_commands/suspendmulti.cpp
     gm_commands/takeplatinum.cpp
     gm_commands/task.cpp
+    gm_commands/tradeskill.cpp
     gm_commands/traindisc.cpp
     gm_commands/tune.cpp
     gm_commands/undye.cpp

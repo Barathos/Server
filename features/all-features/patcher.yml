@@ -167,6 +167,8 @@ files:
     destination: uifiles/default/EQUI_NativeAugsInAugsWnd.xml
   - source: client_files/native_autoloot/ui/EQUI_NativeDynamicQuestsWnd.xml
     destination: uifiles/default/EQUI_NativeDynamicQuestsWnd.xml
+  - source: client_files/native_autoloot/ui/EQUI_NativeFactionWnd.xml
+    destination: uifiles/default/EQUI_NativeFactionWnd.xml
 generated:
   eqhost: true
   equiXml: true
@@ -181,3 +183,4 @@ generated:
     - EQUI_NativeHpFixWnd.xml
     - EQUI_NativeAugsInAugsWnd.xml
     - EQUI_NativeDynamicQuestsWnd.xml
+    - EQUI_NativeFactionWnd.xml
