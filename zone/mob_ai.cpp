@@ -2089,9 +2089,20 @@ void Mob::StartEnrage()
 		return;
 	}
 
-	if(RuleB(NPC, LiveLikeEnrage) && !((IsPet() && !IsCharmed() && GetOwner() && GetOwner()->IsOfClientBot()) ||
-		(CastToNPC()->GetSwarmOwner() && entity_list.GetMob(CastToNPC()->GetSwarmOwner())->IsOfClientBot()))) {
-		return;
+	if (RuleB(NPC, LiveLikeEnrage)) {
+		bool has_client_bot_owner = IsPet() && !IsCharmed() && GetOwner() && GetOwner()->IsOfClientBot();
+
+		if (!has_client_bot_owner && IsNPC()) {
+			const uint32 swarm_owner_id = CastToNPC()->GetSwarmOwner();
+			if (swarm_owner_id) {
+				Mob *swarm_owner = entity_list.GetMob(swarm_owner_id);
+				has_client_bot_owner = swarm_owner && swarm_owner->IsOfClientBot();
+			}
+		}
+
+		if (!has_client_bot_owner) {
+			return;
+		}
 	}
 
 	Timer *timer = GetSpecialAbilityTimer(SpecialAbility::Enrage);

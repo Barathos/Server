@@ -1560,13 +1560,20 @@ bool Bot::LoadPet()
 		return false;
 	}
 
-	MakePet(pet_spell_id, spells[pet_spell_id].teleport_zone, pet_name.c_str());
-	if (!GetPet()->IsNPC()) {
+	if (!IsValidSpell(pet_spell_id)) {
+		bot_owner->Message(Chat::White, "Invalid saved pet spell id for %s's pet", GetCleanName());
 		DeletePet();
 		return false;
 	}
 
-	NPC *pet_inst = GetPet()->CastToNPC();
+	MakePet(pet_spell_id, spells[pet_spell_id].teleport_zone, pet_name.c_str());
+	Mob *pet_mob = GetPet();
+	if (!pet_mob || !pet_mob->IsNPC()) {
+		DeletePet();
+		return false;
+	}
+
+	NPC *pet_inst = pet_mob->CastToNPC();
 
 	SpellBuff_Struct pet_buffs[PET_BUFF_COUNT];
 	memset(pet_buffs, 0, (sizeof(SpellBuff_Struct) * PET_BUFF_COUNT));
