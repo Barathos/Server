@@ -317,6 +317,7 @@ public:
 	uint32	GetMaxDamage(uint8 tlevel);
 	void	SetTaunting(bool is_taunting);
 	bool	IsTaunting() const { return taunting; }
+	void	SendPetStatsWindow(Client *c);
 	void	PickPocket(Client* thief);
 	void	Disarm(Client* client, int chance);
 	void	StartSwarmTimer(uint32 duration) { swarm_timer.Start(duration); }

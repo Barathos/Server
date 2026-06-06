@@ -39,6 +39,7 @@
 #include "common/strings.h"
 #include "zone/bot.h"
 #include "zone/client.h"
+#include "zone/dialogue_window.h"
 #include "zone/entity.h"
 #include "zone/npc_scale_manager.h"
 #include "zone/quest_parser_collection.h"
@@ -4180,6 +4181,198 @@ int NPC::GetPetOriginClass()
 	}
 
 	return Class::None;
+}
+
+void NPC::SendPetStatsWindow(Client *c)
+{
+	if (!c || !GetOwner() || !GetOwner()->IsClient() || c->GetID() != GetOwnerID()) {
+		return;
+	}
+
+	const std::string standard_text = "white";
+	const std::string header_color  = "royal_blue";
+
+	const auto cell = [&](const std::string &message) {
+		return DialogueWindow::TableCell(DialogueWindow::ColorMessage(standard_text, message));
+	};
+
+	const auto row = [&](const std::string &name, const std::string &value) {
+		return DialogueWindow::TableRow(cell(name) + cell(value));
+	};
+
+	const auto paired_row = [&](const std::string &left_name, const std::string &left_value, const std::string &right_name, const std::string &right_value) {
+		return DialogueWindow::TableRow(cell(left_name) + cell(left_value) + cell(right_name) + cell(right_value));
+	};
+
+	std::string final_string;
+
+	final_string += DialogueWindow::ColorMessage(header_color, "Basic");
+	final_string += DialogueWindow::Table(
+		row("Name", GetCleanName()) +
+		row("Level", Strings::Commify(GetLevel())) +
+		row("Pet Origin", GetPlayerClassAbbreviation(GetPetOriginClass()))
+	);
+
+	const auto current_hp = GetHP();
+	const auto max_hp     = GetMaxHP();
+	const auto hp_percent = max_hp > 0 ? (static_cast<float>(current_hp) / static_cast<float>(max_hp)) * 100.0f : 0.0f;
+	const auto hp_color   = hp_percent >= 75.0f ? "green" : hp_percent >= 25.0f ? "green_yellow" : "red";
+
+	final_string += DialogueWindow::ColorMessage(header_color, "Health");
+	final_string += DialogueWindow::Table(
+		DialogueWindow::TableRow(
+			cell("Hit Points") +
+			DialogueWindow::TableCell(
+				fmt::format(
+					"{} / {} ({:.1f}%)",
+					DialogueWindow::ColorMessage(hp_color, Strings::Commify(current_hp)),
+					DialogueWindow::ColorMessage(standard_text, Strings::Commify(max_hp)),
+					hp_percent
+				)
+			)
+		)
+	);
+
+	const auto *primary_weapon   = GetInv().GetItem(EQ::invslot::slotPrimary);
+	const auto *secondary_weapon = GetInv().GetItem(EQ::invslot::slotSecondary);
+
+	const auto has_primary_weapon = primary_weapon && primary_weapon->GetItem();
+	const auto has_two_hander = has_primary_weapon && (
+		primary_weapon->GetItem()->ItemType == EQ::item::ItemType2HSlash ||
+		primary_weapon->GetItem()->ItemType == EQ::item::ItemType2HBlunt ||
+		primary_weapon->GetItem()->ItemType == EQ::item::ItemType2HPiercing
+	);
+
+	const auto adjusted_delay = [&](int delay) {
+		if (delay <= 0) {
+			delay = 35;
+		}
+
+		const auto scaled_delay = delay * 100;
+		const auto haste        = GetHaste();
+
+		if (haste <= 0) {
+			return scaled_delay;
+		}
+
+		if (haste < 100) {
+			return static_cast<int>(scaled_delay * (2.0f - (static_cast<float>(haste) / 100.0f)));
+		}
+
+		return static_cast<int>(scaled_delay / (static_cast<float>(haste) / 100.0f));
+	};
+
+	const auto primary_weapon_damage = has_primary_weapon ? primary_weapon->GetItemWeaponDamage(true) : 0;
+	const auto primary_delay = has_primary_weapon && primary_weapon->GetItem()->Delay > 0 ?
+		primary_weapon->GetItem()->Delay :
+		GetAttackDelay();
+
+	std::string combat_rows;
+	combat_rows += row(
+		"Main Hand",
+		fmt::format(
+			"DMG {}-{}, Delay {}",
+			Strings::Commify(GetMinDamage()),
+			Strings::Commify(GetBaseDamage() + primary_weapon_damage),
+			Strings::Commify(adjusted_delay(primary_delay) / 100)
+		)
+	);
+
+	if (!has_two_hander && secondary_weapon && secondary_weapon->GetItem()) {
+		const auto secondary_weapon_damage = secondary_weapon->GetItemWeaponDamage(true);
+		const auto secondary_delay = secondary_weapon->GetItem()->Delay > 0 ?
+			secondary_weapon->GetItem()->Delay :
+			GetAttackDelay();
+
+		combat_rows += row(
+			"Off Hand",
+			fmt::format(
+				"DMG {}-{}, Delay {}",
+				Strings::Commify(static_cast<int>(GetMinDamage() * 0.62f)),
+				Strings::Commify(static_cast<int>((GetMinDamage() + secondary_weapon_damage) * 0.62f)),
+				Strings::Commify(adjusted_delay(secondary_delay) / 100)
+			)
+		);
+	}
+
+	combat_rows += row("ATK", Strings::Commify(GetATK()));
+	combat_rows += row("MIT", Strings::Commify(GetMitigationAC()));
+	combat_rows += row("EVA", Strings::Commify(GetTotalDefense()));
+
+	final_string += DialogueWindow::ColorMessage(header_color, "Combat");
+	final_string += DialogueWindow::Table(combat_rows);
+
+	std::string ability_rows;
+	ability_rows += paired_row(
+		"Haste",
+		fmt::format("{}%", Strings::Commify(GetHaste() - 100)),
+		"HP Regen",
+		fmt::format("{}/tick", Strings::Commify(GetHPRegen()))
+	);
+	ability_rows += paired_row(
+		"Spell Shield",
+		fmt::format("{}%", Strings::Commify(spellbonuses.SpellShield + itembonuses.SpellShield)),
+		"DoT Shield",
+		fmt::format("{}%", Strings::Commify(spellbonuses.DoTShielding + itembonuses.DoTShielding))
+	);
+	ability_rows += paired_row(
+		"Shielding",
+		fmt::format("{}%", Strings::Commify(spellbonuses.MeleeMitigation + itembonuses.MeleeMitigation)),
+		"DS Mitigation",
+		fmt::format("{}%", Strings::Commify(spellbonuses.DSMitigation + itembonuses.DSMitigation))
+	);
+	ability_rows += paired_row(
+		"Spell Damage",
+		Strings::Commify(spellbonuses.SpellDmg + itembonuses.SpellDmg),
+		"Heal Amount",
+		Strings::Commify(spellbonuses.HealAmt + itembonuses.HealAmt)
+	);
+
+	final_string += DialogueWindow::ColorMessage(header_color, "Special Abilities");
+	final_string += DialogueWindow::Table(ability_rows);
+
+	final_string += DialogueWindow::ColorMessage(header_color, "Statistics and Resistances");
+	final_string += DialogueWindow::Table(
+		paired_row("Agility", Strings::Commify(GetAGI()), "Cold", Strings::Commify(GetCR())) +
+		paired_row("Dexterity", Strings::Commify(GetDEX()), "Disease", Strings::Commify(GetDR())) +
+		paired_row("Intelligence", Strings::Commify(GetINT()), "Fire", Strings::Commify(GetFR())) +
+		paired_row("Stamina", Strings::Commify(GetSTA()), "Magic", Strings::Commify(GetMR())) +
+		paired_row("Strength", Strings::Commify(GetSTR()), "Poison", Strings::Commify(GetPR())) +
+		paired_row("Wisdom", Strings::Commify(GetWIS()), "Charisma", Strings::Commify(GetCHA()))
+	);
+
+	std::string equipment_rows;
+	for (int slot_id = EQ::invslot::EQUIPMENT_BEGIN; slot_id <= EQ::invslot::EQUIPMENT_END; ++slot_id) {
+		if (slot_id == EQ::invslot::slotCharm || slot_id == EQ::invslot::slotPowerSource || slot_id == EQ::invslot::slotAmmo) {
+			continue;
+		}
+
+		const auto *item = GetInv().GetItem(slot_id);
+		if (!item || !item->GetItem()) {
+			continue;
+		}
+
+		equipment_rows += row(EQ::invslot::GetInvPossessionsSlotName(slot_id), item->GetItem()->Name);
+	}
+
+	if (!equipment_rows.empty()) {
+		final_string += DialogueWindow::ColorMessage(header_color, "Equipment");
+		final_string += DialogueWindow::Table(equipment_rows);
+	}
+
+	c->SendWindow(
+		POPUPID_PET_STATS_WINDOW,
+		0,
+		0,
+		"",
+		"",
+		0,
+		0,
+		nullptr,
+		fmt::format("Pet Stats: {}", GetCleanName()).c_str(),
+		"%s",
+		final_string.c_str()
+	);
 }
 
 bool NPC::CanPetTakeItem(const EQ::ItemInstance *inst)

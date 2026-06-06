@@ -228,6 +228,7 @@ const uint32      POPUPID_DIAWIND_ONE            = 99999;
 const uint32      POPUPID_DIAWIND_TWO            = 100000;
 const uint32      POPUPID_UPDATE_SHOWSTATSWINDOW = 1000000;
 const uint32      POPUPID_REPLACE_SPELLWINDOW    = 1000001;
+const uint32      POPUPID_PET_STATS_WINDOW       = 0x42069;
 
 struct ClientReward
 {

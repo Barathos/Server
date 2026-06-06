@@ -70,6 +70,16 @@ bool IsPetClass(uint8 class_id)
 	return class_id == Class::Magician || class_id == Class::Necromancer || class_id == Class::Beastlord;
 }
 
+bool IsPetHealthAction(const std::string &action_name)
+{
+	return action_name == "health" ||
+		action_name == "healthreport" ||
+		action_name == "hp" ||
+		action_name == "stats" ||
+		action_name == "inventory" ||
+		action_name == "inv";
+}
+
 bool IsTankClass(uint8 class_id)
 {
 	return class_id == Class::Warrior || class_id == Class::Paladin || class_id == Class::ShadowKnight;
@@ -1628,7 +1638,7 @@ void MulticlassManager::SendHelp(Client *client)
 	client->Message(Chat::White, "#mc itemcheck [cursor|slot <slot>|item <id>] [equip_slot] - Player-facing item eligibility check.");
 	client->Message(Chat::White, "#mc refresh - Resend inventory item usability to this client.");
 	client->Message(Chat::White, "#mc pets - Open or refresh the standalone native pet console.");
-	client->Message(Chat::White, "#mc petcmd <pet-id|active|all> <attack|back|follow|guard|health> - Macro-friendly pet control.");
+	client->Message(Chat::White, "#mc petcmd <pet-id|active|all> <attack|back|follow|guard|health|hp|stats|inventory> - Macro-friendly pet control.");
 	client->Message(Chat::White, "#mc disc - Open or refresh the native Multiclass discipline bridge.");
 	client->Message(Chat::White, "Player flow should go through the native Multiclass UI, not typed commands.");
 }
@@ -2543,7 +2553,7 @@ bool MulticlassManager::ApplyPetAction(Client *client, Mob *pet, const std::stri
 		return ApplyStockPetCommand(client, pet, PET_GETLOST, nullptr, status);
 	}
 
-	if (action_name == "health") {
+	if (IsPetHealthAction(action_name)) {
 		ApplyStockPetCommand(client, pet, PET_HEALTHREPORT, nullptr, status);
 		status = "Pet health reported.";
 		return true;
@@ -2603,7 +2613,7 @@ bool MulticlassManager::HandleNativePetCommand(Client *client, const Seperator *
 			action_name == "follow" ||
 			action_name == "guard" ||
 			action_name == "guardme" ||
-			action_name == "health"
+			IsPetHealthAction(action_name)
 		));
 
 	if (target_arg != "all" && Strings::IsNumber(target_arg)) {
