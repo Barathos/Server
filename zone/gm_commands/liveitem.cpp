@@ -33,6 +33,7 @@
 #include <limits>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 namespace {
 	bool LiveItemsEnabled()
@@ -173,6 +174,7 @@ namespace {
 	}
 
 	constexpr const char *LiveItemForgeNextBucket = "live_item_forge.next_item_id";
+	constexpr const char *LiveItemForgeDraftBucketPrefix = "live_item_forge_draft_";
 
 	struct ItemForgeDefinition {
 		uint32 item_id = 0;
@@ -266,11 +268,102 @@ namespace {
 		return value.empty() ? fallback : Strings::ToInt(value);
 	}
 
+	std::string SanitizeItemForgeName(const std::string &name)
+	{
+		auto decoded = DecodeItemForgeText(name);
+		if (decoded.empty()) {
+			return {};
+		}
+
+		for (auto &ch : decoded) {
+			if (std::isspace(static_cast<unsigned char>(ch))) {
+				ch = '_';
+			}
+		}
+
+		return decoded;
+	}
+
+	std::string ItemForgeDraftBucketKey(Client *c)
+	{
+		return fmt::format("{}{}", LiveItemForgeDraftBucketPrefix, c->CharacterID());
+	}
+
+	bool ParseItemForgeToken(const std::string &token, std::string &key, std::string &value)
+	{
+		const auto separator = token.find('=');
+		if (separator == std::string::npos) {
+			return false;
+		}
+
+		key = Strings::ToLower(token.substr(0, separator));
+		value = token.substr(separator + 1);
+		return !key.empty() && !value.empty();
+	}
+
+	std::vector<std::pair<std::string, std::string>> ParseItemForgeDraft(const std::string &draft)
+	{
+		std::vector<std::pair<std::string, std::string>> values;
+		const auto tokens = Strings::Split(draft, ' ');
+		for (const auto &token : tokens) {
+			std::string key;
+			std::string value;
+			if (ParseItemForgeToken(token, key, value)) {
+				values.emplace_back(key, value);
+			}
+		}
+
+		return values;
+	}
+
+	std::string BuildItemForgeDraft(const std::vector<std::pair<std::string, std::string>> &values)
+	{
+		std::vector<std::string> tokens;
+		tokens.reserve(values.size());
+		for (const auto &[key, value] : values) {
+			if (!key.empty() && !value.empty()) {
+				tokens.emplace_back(fmt::format("{}={}", key, value));
+			}
+		}
+
+		return Strings::Join(tokens, " ");
+	}
+
+	void SetItemForgeDraftValue(std::vector<std::pair<std::string, std::string>> &values, const std::string &key, const std::string &value)
+	{
+		for (auto &[existing_key, existing_value] : values) {
+			if (existing_key == key) {
+				existing_value = value;
+				return;
+			}
+		}
+
+		values.emplace_back(key, value);
+	}
+
+	std::string GetItemForgeDraftValue(const std::vector<std::pair<std::string, std::string>> &values, const std::string &key)
+	{
+		const auto wanted = Strings::ToLower(key);
+		for (const auto &[existing_key, existing_value] : values) {
+			if (existing_key == wanted) {
+				return existing_value;
+			}
+		}
+
+		return {};
+	}
+
+	int GetItemForgeDraftInt(const std::vector<std::pair<std::string, std::string>> &values, const std::string &key, const int fallback)
+	{
+		const auto value = GetItemForgeDraftValue(values, key);
+		return value.empty() ? fallback : Strings::ToInt(value);
+	}
+
 	uint32 BuildSlotMask(const std::initializer_list<int> slots)
 	{
 		uint32 mask = 0;
 		for (const auto slot : slots) {
-			mask |= static_cast<uint32>(1 << slot);
+			mask |= static_cast<uint32>(1u << slot);
 		}
 
 		return mask;
@@ -307,6 +400,22 @@ namespace {
 	void ApplyItemForgeType(ItemsRepository::Items &item, const ItemForgeDefinition &definition)
 	{
 		const auto type = Strings::ToLower(definition.item_type);
+		if (type == "augment" || type == "aug") {
+			item.itemtype = EQ::item::ItemTypeAugmentation;
+			item.slots = 0;
+			item.icon = 646;
+			item.augtype = 7;
+			item.augslot1type = 0;
+			item.augslot1visible = 0;
+			item.augslot2type = 0;
+			item.augslot2visible = 0;
+			item.damage = 0;
+			item.delay = 0;
+			item.haste = 0;
+			item.ac = std::max(item.ac, 3);
+			return;
+		}
+
 		if (type == "armor") {
 			item.itemtype = EQ::item::ItemTypeArmor;
 			item.slots = BuildSlotMask({EQ::invslot::slotChest});
@@ -350,11 +459,106 @@ namespace {
 			return;
 		}
 
-	item.itemtype = EQ::item::ItemType1HSlash;
-	item.slots = BuildSlotMask({EQ::invslot::slotPrimary, EQ::invslot::slotSecondary});
-	item.icon = 519;
-}
-	bool CreateForgedLiveItem(Client *c, ItemForgeDefinition definition)
+		item.itemtype = EQ::item::ItemType1HSlash;
+		item.slots = BuildSlotMask({EQ::invslot::slotPrimary, EQ::invslot::slotSecondary});
+		item.icon = 519;
+	}
+
+	bool ApplyItemForgeNamedStat(ItemsRepository::Items &item, const std::string &raw_key, const int value)
+	{
+		const auto key = Strings::ToLower(raw_key);
+		if (key == "str" || key == "astr") { item.astr = value; return true; }
+		if (key == "sta" || key == "con" || key == "asta") { item.asta = value; return true; }
+		if (key == "dex" || key == "adex") { item.adex = value; return true; }
+		if (key == "agi" || key == "aagi") { item.aagi = value; return true; }
+		if (key == "int" || key == "aint") { item.aint = value; return true; }
+		if (key == "wis" || key == "awis") { item.awis = value; return true; }
+		if (key == "cha" || key == "acha") { item.acha = value; return true; }
+		if (key == "hp") { item.hp = value; return true; }
+		if (key == "mana") { item.mana = value; return true; }
+		if (key == "endur" || key == "endurance") { item.endur = value; return true; }
+		if (key == "ac") { item.ac = value; return true; }
+		if (key == "atk" || key == "attack") { item.attack = value; return true; }
+		if (key == "accuracy") { item.accuracy = value; return true; }
+		if (key == "avoidance") { item.avoidance = value; return true; }
+		if (key == "regen") { item.regen = value; return true; }
+		if (key == "manaregen") { item.manaregen = value; return true; }
+		if (key == "enduranceregen" || key == "endregen") { item.enduranceregen = value; return true; }
+		if (key == "haste") { item.haste = value; return true; }
+		if (key == "damage") { item.damage = value; return true; }
+		if (key == "delay") { item.delay = value; return true; }
+		if (key == "mr") { item.mr = value; return true; }
+		if (key == "fr") { item.fr = value; return true; }
+		if (key == "cr") { item.cr = value; return true; }
+		if (key == "pr") { item.pr = value; return true; }
+		if (key == "dr") { item.dr = value; return true; }
+		if (key == "svcorruption" || key == "corrup") { item.svcorruption = value; return true; }
+		if (key == "shielding") { item.shielding = value; return true; }
+		if (key == "spellshield") { item.spellshield = value; return true; }
+		if (key == "dotshielding") { item.dotshielding = value; return true; }
+		if (key == "stunresist") { item.stunresist = value; return true; }
+		if (key == "strikethrough") { item.strikethrough = value; return true; }
+		if (key == "damageshield") { item.damageshield = value; return true; }
+		if (key == "dsmitigation") { item.dsmitigation = value; return true; }
+		if (key == "healamt") { item.healamt = value; return true; }
+		if (key == "spelldmg") { item.spelldmg = value; return true; }
+		if (key == "clairvoyance") { item.clairvoyance = value; return true; }
+		if (key == "backstabdmg") { item.backstabdmg = value; return true; }
+		if (key == "heroic_str") { item.heroic_str = value; return true; }
+		if (key == "heroic_sta" || key == "heroic_con") { item.heroic_sta = value; return true; }
+		if (key == "heroic_dex") { item.heroic_dex = value; return true; }
+		if (key == "heroic_agi") { item.heroic_agi = value; return true; }
+		if (key == "heroic_int") { item.heroic_int = value; return true; }
+		if (key == "heroic_wis") { item.heroic_wis = value; return true; }
+		if (key == "heroic_cha") { item.heroic_cha = value; return true; }
+		if (key == "heroic_mr") { item.heroic_mr = value; return true; }
+		if (key == "heroic_fr") { item.heroic_fr = value; return true; }
+		if (key == "heroic_cr") { item.heroic_cr = value; return true; }
+		if (key == "heroic_pr") { item.heroic_pr = value; return true; }
+		if (key == "heroic_dr") { item.heroic_dr = value; return true; }
+		if (key == "heroic_svcorrup" || key == "heroic_corrup") { item.heroic_svcorrup = value; return true; }
+		return false;
+	}
+
+	void ApplyItemForgeNamedStats(ItemsRepository::Items &item, const Seperator *sep)
+	{
+		for (int index = 2; index <= sep->argnum; ++index) {
+			std::string key;
+			std::string value;
+			if (!ParseItemForgeToken(sep->arg[index], key, value)) {
+				continue;
+			}
+
+			if (key.empty() || value.empty() || key == "name" || key == "type") {
+				continue;
+			}
+
+			ApplyItemForgeNamedStat(item, key, Strings::ToInt(value));
+		}
+	}
+
+	void ApplyItemForgeNamedStats(ItemsRepository::Items &item, const std::vector<std::pair<std::string, std::string>> &values)
+	{
+		for (const auto &[key, value] : values) {
+			if (key.empty() || value.empty() || key == "name" || key == "type") {
+				continue;
+			}
+
+			ApplyItemForgeNamedStat(item, key, Strings::ToInt(value));
+		}
+	}
+
+	const char *ItemForgeStatPayload()
+	{
+		return "hp,mana,endur,ac,str,sta,dex,agi,int,wis,cha,mr,fr,cr,pr,dr,svcorruption,"
+		       "attack,accuracy,avoidance,regen,manaregen,enduranceregen,haste,damage,delay,"
+		       "shielding,spellshield,dotshielding,stunresist,strikethrough,damageshield,"
+		       "dsmitigation,healamt,spelldmg,clairvoyance,backstabdmg,heroic_str,heroic_sta,"
+		       "heroic_dex,heroic_agi,heroic_int,heroic_wis,heroic_cha,heroic_mr,heroic_fr,"
+		       "heroic_cr,heroic_pr,heroic_dr,heroic_svcorrup";
+	}
+
+	bool CreateForgedLiveItem(Client *c, ItemForgeDefinition definition, const Seperator *sep = nullptr, const std::vector<std::pair<std::string, std::string>> *named_values = nullptr)
 	{
 		definition.item_id = FindFreeForgedLiveItemID();
 		definition.name = DecodeItemForgeText(definition.name);
@@ -403,6 +607,12 @@ namespace {
 		item.updated = std::time(nullptr);
 
 		ApplyItemForgeType(item, definition);
+		if (sep) {
+			ApplyItemForgeNamedStats(item, sep);
+		}
+		if (named_values) {
+			ApplyItemForgeNamedStats(item, *named_values);
+		}
 
 		ItemsRepository::InsertOne(database, item);
 		if (!ItemsRepository::FindOne(database, definition.item_id).id) {
@@ -427,7 +637,8 @@ namespace {
 	void SendItemForgeUsage(Client *c)
 	{
 		c->Message(Chat::White, "Usage: #itemforge dialog");
-		c->Message(Chat::White, "Usage: #itemforge craft type=weapon name=Storm_Blade hp=50 mana=20 ac=5 damage=12 delay=24 haste=5");
+		c->Message(Chat::White, "Usage: #itemforge craft type=weapon name=Storm_Blade hp=50 mana=20 ac=5 damage=12 delay=24 haste=5 str=10 heroic_str=2");
+		c->Message(Chat::White, "Usage: #itemforge draft type=weapon name=Storm_Blade; #itemforge set hp=50; #itemforge finish");
 	}
 }
 
@@ -446,10 +657,111 @@ void command_itemforge(Client *c, const Seperator *sep)
 
 	const bool is_dialog = !strcasecmp(sep->arg[1], "dialog") || !strcasecmp(sep->arg[1], "open");
 	const bool is_craft = !strcasecmp(sep->arg[1], "craft") || !strcasecmp(sep->arg[1], "create");
+	const bool is_draft = !strcasecmp(sep->arg[1], "draft") || !strcasecmp(sep->arg[1], "begin");
+	const bool is_set = !strcasecmp(sep->arg[1], "set");
+	const bool is_finish = !strcasecmp(sep->arg[1], "finish");
+	const bool is_reset = !strcasecmp(sep->arg[1], "reset");
 
 	if (is_dialog) {
 		c->Message(Chat::White, "Opening the Item Forge.");
-		c->Message(Chat::White, "LIVEITEM|ui|open|types=weapon,armor,jewelry,charm,shield|max_hp=500|max_mana=500|max_ac=100|max_damage=100|max_haste=50");
+		c->Message(
+			Chat::White,
+			fmt::format(
+				"LIVEITEM|ui|open|types=weapon,armor,jewelry,charm,shield,augment|max_hp=500|max_mana=500|max_ac=100|max_damage=100|max_haste=50|stats={}",
+				ItemForgeStatPayload()
+			).c_str()
+		);
+		return;
+	}
+
+	if (is_draft) {
+		auto values = ParseItemForgeDraft("");
+		for (int index = 2; index <= sep->argnum; ++index) {
+			std::string key;
+			std::string value;
+			if (ParseItemForgeToken(sep->arg[index], key, value)) {
+				if (key == "name") {
+					value = SanitizeItemForgeName(value);
+				}
+				SetItemForgeDraftValue(values, key, value);
+			}
+		}
+
+		if (GetItemForgeDraftValue(values, "type").empty()) {
+			SetItemForgeDraftValue(values, "type", "weapon");
+		}
+
+		if (GetItemForgeDraftValue(values, "name").empty()) {
+			SetItemForgeDraftValue(values, "name", "Forged_Item");
+		}
+
+		DataBucket::SetData(&database, ItemForgeDraftBucketKey(c), BuildItemForgeDraft(values), "60");
+		c->Message(Chat::White, "Item Forge draft started.");
+		return;
+	}
+
+	if (is_set) {
+		if (arguments < 2) {
+			c->Message(Chat::White, "Usage: #itemforge set hp=50");
+			return;
+		}
+
+		auto values = ParseItemForgeDraft(DataBucket::GetData(&database, ItemForgeDraftBucketKey(c)));
+		if (values.empty()) {
+			SetItemForgeDraftValue(values, "type", "weapon");
+			SetItemForgeDraftValue(values, "name", "Forged_Item");
+		}
+
+		std::string key;
+		std::string value;
+		if (!ParseItemForgeToken(sep->arg[2], key, value)) {
+			c->Message(Chat::White, "Usage: #itemforge set hp=50");
+			return;
+		}
+
+		if (key == "name") {
+			value = SanitizeItemForgeName(value);
+		}
+
+		SetItemForgeDraftValue(values, key, value);
+		DataBucket::SetData(&database, ItemForgeDraftBucketKey(c), BuildItemForgeDraft(values), "60");
+		return;
+	}
+
+	if (is_finish) {
+		const auto draft_key = ItemForgeDraftBucketKey(c);
+		auto values = ParseItemForgeDraft(DataBucket::GetData(&database, draft_key));
+		if (values.empty()) {
+			c->Message(Chat::White, "No Item Forge draft is active. Reopen the forge and try again.");
+			return;
+		}
+
+		ItemForgeDefinition definition;
+		const auto item_type = GetItemForgeDraftValue(values, "type");
+		const auto name = GetItemForgeDraftValue(values, "name");
+		if (!item_type.empty()) {
+			definition.item_type = item_type;
+		}
+
+		if (!name.empty()) {
+			definition.name = name;
+		}
+
+		definition.hp = GetItemForgeDraftInt(values, "hp", definition.hp);
+		definition.mana = GetItemForgeDraftInt(values, "mana", definition.mana);
+		definition.ac = GetItemForgeDraftInt(values, "ac", definition.ac);
+		definition.damage = GetItemForgeDraftInt(values, "damage", definition.damage);
+		definition.delay = GetItemForgeDraftInt(values, "delay", definition.delay);
+		definition.haste = GetItemForgeDraftInt(values, "haste", definition.haste);
+
+		CreateForgedLiveItem(c, definition, nullptr, &values);
+		DataBucket::DeleteData(&database, draft_key);
+		return;
+	}
+
+	if (is_reset) {
+		DataBucket::DeleteData(&database, ItemForgeDraftBucketKey(c));
+		c->Message(Chat::White, "Item Forge draft cleared.");
 		return;
 	}
 
@@ -486,7 +798,7 @@ void command_itemforge(Client *c, const Seperator *sep)
 		definition.haste = (arguments >= 8 && sep->IsNumber(8)) ? Strings::ToInt(sep->arg[8]) : definition.haste;
 	}
 
-	CreateForgedLiveItem(c, definition);
+	CreateForgedLiveItem(c, definition, sep);
 }
 
 void command_liveitem(Client *c, const Seperator *sep)

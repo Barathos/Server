@@ -3476,6 +3476,11 @@ public:
 		StatsTab = (CButtonWnd*)GetChildItem("AIFW_StatsTab");
 		CombatTab = (CButtonWnd*)GetChildItem("AIFW_CombatTab");
 		ReviewTab = (CButtonWnd*)GetChildItem("AIFW_ReviewTab");
+		Step1Button = (CButtonWnd*)GetChildItem("AIFW_Step1Button");
+		Step5Button = (CButtonWnd*)GetChildItem("AIFW_Step5Button");
+		Step10Button = (CButtonWnd*)GetChildItem("AIFW_Step10Button");
+		Step25Button = (CButtonWnd*)GetChildItem("AIFW_Step25Button");
+		Step50Button = (CButtonWnd*)GetChildItem("AIFW_Step50Button");
 		FormPage = GetChildItem("AIFW_FormPage");
 		StatsPage = GetChildItem("AIFW_StatsPage");
 		CombatPage = GetChildItem("AIFW_CombatPage");
@@ -3514,10 +3519,12 @@ public:
 		ReviewNameLabel = GetChildItem("AIFW_ReviewNameLabel");
 		ReviewTypeLabel = GetChildItem("AIFW_ReviewTypeLabel");
 		ReviewStatsLabel = GetChildItem("AIFW_ReviewStatsLabel");
+		ReviewResistsLabel = GetChildItem("AIFW_ReviewResistsLabel");
 		ReviewCombatLabel = GetChildItem("AIFW_ReviewCombatLabel");
 		CreateButton = (CButtonWnd*)GetChildItem("AIFW_CreateButton");
 		StatusLabel = GetChildItem("AIFW_StatusLabel");
 
+		InitForgeFields();
 		SetEditText(DefaultItemName().c_str());
 		ShowPage(PageForm);
 		SetStatus("Choose an item form, then tune stats and combat values.");
@@ -3552,6 +3559,11 @@ public:
 				return 1;
 			}
 
+			if (HandleStepClick(pWnd)) {
+				UpdateView();
+				return 1;
+			}
+
 			if (pWnd == (CXWnd*)WeaponButton) {
 				SelectType(0);
 				return 1;
@@ -3577,74 +3589,7 @@ public:
 				return 1;
 			}
 
-			if (pWnd == (CXWnd*)HPMinusButton) {
-				HP = ClampInt(HP - 25, 0, 500);
-				UpdateView();
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)HPPlusButton) {
-				HP = ClampInt(HP + 25, 0, 500);
-				UpdateView();
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)ManaMinusButton) {
-				Mana = ClampInt(Mana - 25, 0, 500);
-				UpdateView();
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)ManaPlusButton) {
-				Mana = ClampInt(Mana + 25, 0, 500);
-				UpdateView();
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)ACMinusButton) {
-				AC = ClampInt(AC - 5, 0, 100);
-				UpdateView();
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)ACPlusButton) {
-				AC = ClampInt(AC + 5, 0, 100);
-				UpdateView();
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)DamageMinusButton) {
-				Damage = ClampInt(Damage - 2, 0, 100);
-				UpdateView();
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)DamagePlusButton) {
-				Damage = ClampInt(Damage + 2, 0, 100);
-				UpdateView();
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)DelayMinusButton) {
-				Delay = ClampInt(Delay - 2, 10, 60);
-				UpdateView();
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)DelayPlusButton) {
-				Delay = ClampInt(Delay + 2, 10, 60);
-				UpdateView();
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)HasteMinusButton) {
-				Haste = ClampInt(Haste - 5, 0, 50);
-				UpdateView();
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)HastePlusButton) {
-				Haste = ClampInt(Haste + 5, 0, 50);
+			if (HandleForgeFieldClick(pWnd)) {
 				UpdateView();
 				return 1;
 			}
@@ -3861,8 +3806,13 @@ private:
 
 	void SelectType(int index)
 	{
+		const std::string current_name = ReadName();
+		const std::string previous_default = DefaultItemName();
+
 		TypeIndex = ClampInt(index, 0, 4);
-		SetEditText(DefaultItemName().c_str());
+		if (current_name.empty() || current_name == previous_default) {
+			SetEditText(DefaultItemName().c_str());
+		}
 		SetStatus("Item form changed.");
 		UpdateView();
 	}
@@ -3883,6 +3833,11 @@ private:
 		SetButtonText(StatsTab, CurrentPage == PageStats ? "> Stats <" : "Stats");
 		SetButtonText(CombatTab, CurrentPage == PageCombat ? "> Combat <" : "Combat");
 		SetButtonText(ReviewTab, CurrentPage == PageReview ? "> Review <" : "Review");
+		SetButtonText(Step1Button, StepIndex == 0 ? "> 1 <" : "1");
+		SetButtonText(Step5Button, StepIndex == 1 ? "> 5 <" : "5");
+		SetButtonText(Step10Button, StepIndex == 2 ? "> 10 <" : "10");
+		SetButtonText(Step25Button, StepIndex == 3 ? "> 25 <" : "25");
+		SetButtonText(Step50Button, StepIndex == 4 ? "> 50 <" : "50");
 	}
 
 	void UpdateView()
@@ -3895,57 +3850,309 @@ private:
 		SetButtonText(ShieldButton, TypeIndex == 4 ? "* Shield" : "Shield");
 		SetLabel(TypeHintLabel, TypeHint());
 
-		char text[192];
-		sprintf_s(text, "%d", HP);
-		SetLabel(HPValueLabel, text);
-		sprintf_s(text, "%d", Mana);
-		SetLabel(ManaValueLabel, text);
-		sprintf_s(text, "%d", AC);
-		SetLabel(ACValueLabel, text);
-		sprintf_s(text, "Stat ranges: HP 0-500, Mana 0-500, AC 0-100.");
+		UpdateForgeFieldLabels();
+		char text[256];
+		sprintf_s(text, "Use -/+ to tune every core stat, resist, heroic, and mod field.");
 		SetLabel(StatsHintLabel, text);
-
-		sprintf_s(text, "%d", UsesCombatValues() ? Damage : 0);
-		SetLabel(DamageValueLabel, text);
-		sprintf_s(text, "%d", UsesCombatValues() ? Delay : 0);
-		SetLabel(DelayValueLabel, text);
-		sprintf_s(text, "%d%%", UsesCombatValues() ? Haste : 0);
-		SetLabel(HasteValueLabel, text);
 		SetLabel(CombatHintLabel, UsesCombatValues() ? "Weapon values apply to blades. Other forms keep these at zero." : "This item form ignores weapon damage, delay, and haste.");
 
 		const std::string name = ReadName();
 		SetLabel(ReviewNameLabel, name.c_str());
-		sprintf_s(text, "%s item, summoned directly to your cursor.", TypeLabel());
-		SetLabel(ReviewTypeLabel, text);
-		sprintf_s(text, "HP %d, Mana %d, AC %d.", HP, Mana, AC);
-		SetLabel(ReviewStatsLabel, text);
-		sprintf_s(text, "Damage %d, Delay %d, Haste %d%%.", UsesCombatValues() ? Damage : 0, UsesCombatValues() ? Delay : 0, UsesCombatValues() ? Haste : 0);
-		SetLabel(ReviewCombatLabel, text);
+		SetLabel(ReviewTypeLabel, BuildReviewHeader().c_str());
+		SetLabel(ReviewStatsLabel, BuildReviewStats().c_str());
+		SetLabel(ReviewResistsLabel, BuildReviewResists().c_str());
+		SetLabel(ReviewCombatLabel, BuildReviewMods().c_str());
 	}
 
 	void CreateItem()
 	{
 		const std::string encoded_name = EncodeName(ReadName());
-		char command[256];
-		sprintf_s(
-			command,
-			"/say #itemforge craft type=%s hp=%d mana=%d ac=%d damage=%d delay=%d haste=%d name=%s",
-			TypeKey(),
-			HP,
-			Mana,
-			AC,
-			UsesCombatValues() ? Damage : 0,
-			UsesCombatValues() ? Delay : 24,
-			UsesCombatValues() ? Haste : 0,
-			encoded_name.c_str()
-		);
+		std::string command = std::string("/say #itemforge draft type=") + TypeKey() + " name=" + encoded_name;
+		NativeAutoLootSendCommand(command.c_str());
 
-		NativeAutoLootSendCommand(command);
+		for (const auto& field : ForgeFields) {
+			if (!UsesCombatValues() && field.combat) {
+				continue;
+			}
+
+			if (field.value == 0) {
+				continue;
+			}
+
+			command = "/say #itemforge set ";
+			command += field.key;
+			command += "=";
+			command += std::to_string(field.value);
+			NativeAutoLootSendCommand(command.c_str());
+		}
+
+		NativeAutoLootSendCommand("/say #itemforge finish");
 		SetStatus("Creating item. Watch chat and your cursor.");
 	}
 
+	struct ForgeField {
+		const char* key;
+		const char* label;
+		const char* control_id;
+		int value;
+		int minimum;
+		int maximum;
+		int step;
+		bool combat;
+		CButtonWnd* minus;
+		CXWnd* value_label;
+		CButtonWnd* plus;
+	};
+
+	void InitForgeFields()
+	{
+		const ForgeField fields[ForgeFieldCount] = {
+			{ "hp", "HP", "HP", 50, 0, 500, 25, false, nullptr, nullptr, nullptr },
+			{ "mana", "Mana", "Mana", 25, 0, 500, 25, false, nullptr, nullptr, nullptr },
+			{ "endur", "Endurance", "Endur", 0, 0, 500, 25, false, nullptr, nullptr, nullptr },
+			{ "ac", "AC", "AC", 5, 0, 100, 5, false, nullptr, nullptr, nullptr },
+			{ "str", "STR", "Str", 0, 0, 100, 1, false, nullptr, nullptr, nullptr },
+			{ "sta", "STA/CON", "Sta", 0, 0, 100, 1, false, nullptr, nullptr, nullptr },
+			{ "dex", "DEX", "Dex", 0, 0, 100, 1, false, nullptr, nullptr, nullptr },
+			{ "agi", "AGI", "Agi", 0, 0, 100, 1, false, nullptr, nullptr, nullptr },
+			{ "int", "INT", "Int", 0, 0, 100, 1, false, nullptr, nullptr, nullptr },
+			{ "wis", "WIS", "Wis", 0, 0, 100, 1, false, nullptr, nullptr, nullptr },
+			{ "cha", "CHA", "Cha", 0, 0, 100, 1, false, nullptr, nullptr, nullptr },
+			{ "mr", "Magic Resist", "MR", 0, 0, 100, 5, false, nullptr, nullptr, nullptr },
+			{ "fr", "Fire Resist", "FR", 0, 0, 100, 5, false, nullptr, nullptr, nullptr },
+			{ "cr", "Cold Resist", "CR", 0, 0, 100, 5, false, nullptr, nullptr, nullptr },
+			{ "pr", "Poison Resist", "PR", 0, 0, 100, 5, false, nullptr, nullptr, nullptr },
+			{ "dr", "Disease Resist", "DR", 0, 0, 100, 5, false, nullptr, nullptr, nullptr },
+			{ "svcorruption", "Corruption Resist", "Corrup", 0, 0, 100, 5, false, nullptr, nullptr, nullptr },
+			{ "heroic_str", "Heroic STR", "HStr", 0, 0, 25, 1, false, nullptr, nullptr, nullptr },
+			{ "heroic_sta", "Heroic STA", "HSta", 0, 0, 25, 1, false, nullptr, nullptr, nullptr },
+			{ "heroic_dex", "Heroic DEX", "HDex", 0, 0, 25, 1, false, nullptr, nullptr, nullptr },
+			{ "heroic_agi", "Heroic AGI", "HAgi", 0, 0, 25, 1, false, nullptr, nullptr, nullptr },
+			{ "heroic_int", "Heroic INT", "HInt", 0, 0, 25, 1, false, nullptr, nullptr, nullptr },
+			{ "heroic_wis", "Heroic WIS", "HWis", 0, 0, 25, 1, false, nullptr, nullptr, nullptr },
+			{ "heroic_cha", "Heroic CHA", "HCha", 0, 0, 25, 1, false, nullptr, nullptr, nullptr },
+			{ "heroic_mr", "Heroic MR", "HMR", 0, 0, 25, 1, false, nullptr, nullptr, nullptr },
+			{ "heroic_fr", "Heroic FR", "HFR", 0, 0, 25, 1, false, nullptr, nullptr, nullptr },
+			{ "heroic_cr", "Heroic CR", "HCR", 0, 0, 25, 1, false, nullptr, nullptr, nullptr },
+			{ "heroic_pr", "Heroic PR", "HPR", 0, 0, 25, 1, false, nullptr, nullptr, nullptr },
+			{ "heroic_dr", "Heroic DR", "HDR", 0, 0, 25, 1, false, nullptr, nullptr, nullptr },
+			{ "heroic_svcorrup", "Heroic Corrup", "HCorrup", 0, 0, 25, 1, false, nullptr, nullptr, nullptr },
+			{ "damage", "Damage", "Damage", 8, 0, 100, 2, true, nullptr, nullptr, nullptr },
+			{ "delay", "Delay", "Delay", 24, 10, 60, 2, true, nullptr, nullptr, nullptr },
+			{ "haste", "Haste", "Haste", 0, 0, 50, 5, true, nullptr, nullptr, nullptr },
+			{ "attack", "Attack", "Attack", 0, 0, 250, 5, false, nullptr, nullptr, nullptr },
+			{ "accuracy", "Accuracy", "Accuracy", 0, 0, 100, 1, false, nullptr, nullptr, nullptr },
+			{ "avoidance", "Avoidance", "Avoidance", 0, 0, 100, 1, false, nullptr, nullptr, nullptr },
+			{ "regen", "HP Regen", "Regen", 0, 0, 50, 1, false, nullptr, nullptr, nullptr },
+			{ "manaregen", "Mana Regen", "ManaRegen", 0, 0, 50, 1, false, nullptr, nullptr, nullptr },
+			{ "enduranceregen", "End Regen", "EndRegen", 0, 0, 50, 1, false, nullptr, nullptr, nullptr },
+			{ "shielding", "Shielding", "Shielding", 0, 0, 50, 1, false, nullptr, nullptr, nullptr },
+			{ "spellshield", "Spell Shield", "SpellShield", 0, 0, 50, 1, false, nullptr, nullptr, nullptr },
+			{ "dotshielding", "DoT Shield", "DotShield", 0, 0, 50, 1, false, nullptr, nullptr, nullptr },
+			{ "stunresist", "Stun Resist", "StunResist", 0, 0, 50, 1, false, nullptr, nullptr, nullptr },
+			{ "strikethrough", "Strikethrough", "Strikethrough", 0, 0, 50, 1, false, nullptr, nullptr, nullptr },
+			{ "damageshield", "Damage Shield", "DamageShield", 0, 0, 50, 1, false, nullptr, nullptr, nullptr },
+			{ "dsmitigation", "DS Mitigation", "DSMitigation", 0, 0, 50, 1, false, nullptr, nullptr, nullptr },
+			{ "healamt", "Heal Amount", "HealAmt", 0, 0, 250, 5, false, nullptr, nullptr, nullptr },
+			{ "spelldmg", "Spell Damage", "SpellDmg", 0, 0, 250, 5, false, nullptr, nullptr, nullptr },
+			{ "clairvoyance", "Clairvoyance", "Clairvoyance", 0, 0, 250, 5, false, nullptr, nullptr, nullptr },
+			{ "backstabdmg", "Backstab Dmg", "BackstabDmg", 0, 0, 250, 5, false, nullptr, nullptr, nullptr }
+		};
+
+		for (int i = 0; i < ForgeFieldCount; ++i) {
+			ForgeFields[i] = fields[i];
+			char id[80];
+			sprintf_s(id, "AIFW_%sMinusButton", ForgeFields[i].control_id);
+			ForgeFields[i].minus = (CButtonWnd*)GetChildItem(id);
+			sprintf_s(id, "AIFW_%sValueLabel", ForgeFields[i].control_id);
+			ForgeFields[i].value_label = GetChildItem(id);
+			sprintf_s(id, "AIFW_%sPlusButton", ForgeFields[i].control_id);
+			ForgeFields[i].plus = (CButtonWnd*)GetChildItem(id);
+		}
+	}
+
+	bool HandleForgeFieldClick(CXWnd* pWnd)
+	{
+		for (auto& field : ForgeFields) {
+			if (pWnd == (CXWnd*)field.minus) {
+				field.value = ClampInt(field.value - CurrentStep(), field.minimum, field.maximum);
+				return true;
+			}
+
+			if (pWnd == (CXWnd*)field.plus) {
+				field.value = ClampInt(field.value + CurrentStep(), field.minimum, field.maximum);
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	bool HandleStepClick(CXWnd* pWnd)
+	{
+		if (pWnd == (CXWnd*)Step1Button) { StepIndex = 0; return true; }
+		if (pWnd == (CXWnd*)Step5Button) { StepIndex = 1; return true; }
+		if (pWnd == (CXWnd*)Step10Button) { StepIndex = 2; return true; }
+		if (pWnd == (CXWnd*)Step25Button) { StepIndex = 3; return true; }
+		if (pWnd == (CXWnd*)Step50Button) { StepIndex = 4; return true; }
+		return false;
+	}
+
+	int CurrentStep() const
+	{
+		static const int steps[5] = { 1, 5, 10, 25, 50 };
+		return steps[ClampInt(StepIndex, 0, 4)];
+	}
+
+	void UpdateForgeFieldLabels()
+	{
+		char text[32];
+		for (const auto& field : ForgeFields) {
+			const int value = (!UsesCombatValues() && field.combat) ? 0 : field.value;
+			sprintf_s(text, "%d", value);
+			SetLabel(field.value_label, text);
+		}
+	}
+
+	int FieldValue(const char* key) const
+	{
+		for (const auto& field : ForgeFields) {
+			if (!strcmp(field.key, key)) {
+				if (!UsesCombatValues() && field.combat) {
+					return 0;
+				}
+
+				return field.value;
+			}
+		}
+
+		return 0;
+	}
+
+	const char* SlotLine() const
+	{
+		switch (TypeIndex) {
+		case 1:
+			return "Chest";
+		case 2:
+			return "Finger";
+		case 3:
+			return "Charm";
+		case 4:
+			return "Secondary";
+		default:
+			return "Primary Secondary";
+		}
+	}
+
+	std::string BuildReviewHeader() const
+	{
+		char text[256];
+		sprintf_s(
+			text,
+			"Magic, No Trade, Quest\nClass: ALL\nRace: ALL\n%s",
+			SlotLine()
+		);
+		return text;
+	}
+
+	void AppendReviewLine(std::string& text, const char* left_label, int left_value, const char* right_label = nullptr, int right_value = 0) const
+	{
+		if (left_value == 0 && (!right_label || right_value == 0)) {
+			return;
+		}
+
+		char line[128];
+		if (right_label && right_value != 0) {
+			sprintf_s(line, "%-18s %4d    %-18s %4d\n", left_label, left_value, right_label, right_value);
+		}
+		else {
+			sprintf_s(line, "%-18s %4d\n", left_label, left_value);
+		}
+
+		text += line;
+	}
+
+	std::string BuildReviewStats() const
+	{
+		char base[256];
+		sprintf_s(
+			base,
+			"Size: LARGE          AC: %d\nWeight: 0.8          HP: %d\n                     Mana: %d\n                     End: %d\n\n",
+			FieldValue("ac"),
+			FieldValue("hp"),
+			FieldValue("mana"),
+			FieldValue("endur")
+		);
+
+		std::string text = base;
+		AppendReviewLine(text, "Strength:", FieldValue("str"));
+		AppendReviewLine(text, "Stamina:", FieldValue("sta"));
+		AppendReviewLine(text, "Dexterity:", FieldValue("dex"));
+		AppendReviewLine(text, "Agility:", FieldValue("agi"));
+		AppendReviewLine(text, "Intelligence:", FieldValue("int"));
+		AppendReviewLine(text, "Wisdom:", FieldValue("wis"));
+		AppendReviewLine(text, "Charisma:", FieldValue("cha"));
+		AppendReviewLine(text, "Heroic STR:", FieldValue("heroic_str"));
+		AppendReviewLine(text, "Heroic STA:", FieldValue("heroic_sta"));
+		AppendReviewLine(text, "Heroic DEX:", FieldValue("heroic_dex"));
+		AppendReviewLine(text, "Heroic AGI:", FieldValue("heroic_agi"));
+		AppendReviewLine(text, "Heroic INT:", FieldValue("heroic_int"));
+		AppendReviewLine(text, "Heroic WIS:", FieldValue("heroic_wis"));
+		AppendReviewLine(text, "Heroic CHA:", FieldValue("heroic_cha"));
+		return text;
+	}
+
+	std::string BuildReviewResists() const
+	{
+		std::string text;
+		AppendReviewLine(text, "Magic Resist:", FieldValue("mr"));
+		AppendReviewLine(text, "Fire Resist:", FieldValue("fr"));
+		AppendReviewLine(text, "Cold Resist:", FieldValue("cr"));
+		AppendReviewLine(text, "Poison Resist:", FieldValue("pr"));
+		AppendReviewLine(text, "Disease Resist:", FieldValue("dr"));
+		AppendReviewLine(text, "Corruption:", FieldValue("svcorruption"));
+		AppendReviewLine(text, "Heroic MR:", FieldValue("heroic_mr"));
+		AppendReviewLine(text, "Heroic FR:", FieldValue("heroic_fr"));
+		AppendReviewLine(text, "Heroic CR:", FieldValue("heroic_cr"));
+		AppendReviewLine(text, "Heroic PR:", FieldValue("heroic_pr"));
+		AppendReviewLine(text, "Heroic DR:", FieldValue("heroic_dr"));
+		AppendReviewLine(text, "Heroic Corrup:", FieldValue("heroic_svcorrup"));
+		return text.empty() ? "No resists selected." : text;
+	}
+
+	std::string BuildReviewMods() const
+	{
+		std::string text;
+		if (UsesCombatValues()) {
+			char weapon[128];
+			sprintf_s(weapon, "Base Dmg: %d        Delay: %d\n", FieldValue("damage"), FieldValue("delay"));
+			text += weapon;
+			AppendReviewLine(text, "Haste:", FieldValue("haste"));
+		}
+
+		AppendReviewLine(text, "Attack:", FieldValue("attack"), "Accuracy:", FieldValue("accuracy"));
+		AppendReviewLine(text, "Avoidance:", FieldValue("avoidance"), "HP Regen:", FieldValue("regen"));
+		AppendReviewLine(text, "Mana Regen:", FieldValue("manaregen"), "End Regen:", FieldValue("enduranceregen"));
+		AppendReviewLine(text, "Shielding:", FieldValue("shielding"), "Spell Shield:", FieldValue("spellshield"));
+		AppendReviewLine(text, "DoT Shield:", FieldValue("dotshielding"), "Stun Resist:", FieldValue("stunresist"));
+		AppendReviewLine(text, "Strikethrough:", FieldValue("strikethrough"), "Damage Shield:", FieldValue("damageshield"));
+		AppendReviewLine(text, "DS Mitigation:", FieldValue("dsmitigation"), "Heal Amount:", FieldValue("healamt"));
+		AppendReviewLine(text, "Spell Damage:", FieldValue("spelldmg"), "Clairvoyance:", FieldValue("clairvoyance"));
+		AppendReviewLine(text, "Backstab Dmg:", FieldValue("backstabdmg"));
+
+		if (text.empty()) {
+			return "No combat or mod values selected.";
+		}
+
+		return text;
+	}
+
+	static const int ForgeFieldCount = 50;
+	ForgeField ForgeFields[ForgeFieldCount];
 	ItemPage CurrentPage = PageForm;
 	int TypeIndex = 0;
+	int StepIndex = 1;
 	int HP = 50;
 	int Mana = 25;
 	int AC = 5;
@@ -3957,6 +4164,11 @@ private:
 	CButtonWnd* StatsTab = nullptr;
 	CButtonWnd* CombatTab = nullptr;
 	CButtonWnd* ReviewTab = nullptr;
+	CButtonWnd* Step1Button = nullptr;
+	CButtonWnd* Step5Button = nullptr;
+	CButtonWnd* Step10Button = nullptr;
+	CButtonWnd* Step25Button = nullptr;
+	CButtonWnd* Step50Button = nullptr;
 	CXWnd* FormPage = nullptr;
 	CXWnd* StatsPage = nullptr;
 	CXWnd* CombatPage = nullptr;
@@ -3991,6 +4203,7 @@ private:
 	CXWnd* ReviewNameLabel = nullptr;
 	CXWnd* ReviewTypeLabel = nullptr;
 	CXWnd* ReviewStatsLabel = nullptr;
+	CXWnd* ReviewResistsLabel = nullptr;
 	CXWnd* ReviewCombatLabel = nullptr;
 	CButtonWnd* CreateButton = nullptr;
 	CXWnd* StatusLabel = nullptr;
