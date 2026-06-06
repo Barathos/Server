@@ -151,6 +151,7 @@ namespace EQ
 
 		// Accessors
 		const uint32 GetID() const { return ((m_item) ? m_item->ID : 0); }
+		uint32 GetClientItemID() const;
 		const uint32 GetItemScriptID() const { return ((m_item) ? m_item->ScriptFileID : 0); }
 		bool RefreshItemData(const ItemData *item);
 		const ItemData* GetItem() const;

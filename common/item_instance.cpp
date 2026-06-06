@@ -25,6 +25,7 @@
 
 #include <algorithm>
 #include <climits>
+#include <cstdlib>
 #include <cstring>
 #include <limits>
 #include <type_traits>
@@ -1289,6 +1290,23 @@ void EQ::ItemInstance::ClearDynamicItemData()
 bool EQ::ItemInstance::HasDynamicItemData() const
 {
 	return m_dynamicItem != nullptr;
+}
+
+uint32 EQ::ItemInstance::GetClientItemID() const
+{
+	if (!m_item) {
+		return 0;
+	}
+
+	if (!m_dynamicItem) {
+		return m_item->ID;
+	}
+
+	constexpr uint32 DynamicClientItemIDMin   = 950000;
+	constexpr uint32 DynamicClientItemIDRange = 49999;
+	const auto serial = static_cast<uint32>(std::abs(m_SerialNumber));
+
+	return DynamicClientItemIDMin + (serial % DynamicClientItemIDRange);
 }
 
 // Clone a type of EQ::ItemInstance object

@@ -30,6 +30,7 @@ public:
 		TEST_ADD(DynamicItemTest::DynamicDataCopiesAndClears);
 		TEST_ADD(DynamicItemTest::DynamicDataChangesSerialNumber);
 		TEST_ADD(DynamicItemTest::DynamicDataRebuildsAfterBaseRefresh);
+		TEST_ADD(DynamicItemTest::DynamicItemsUseInstanceClientItemIDs);
 	}
 
 private:
@@ -172,5 +173,28 @@ private:
 		const auto serial_after_refresh = inst.GetSerialNumber();
 		TEST_ASSERT(!inst.RefreshItemData(&base));
 		TEST_ASSERT_EQUALS(serial_after_refresh, inst.GetSerialNumber());
+	}
+
+	void DynamicItemsUseInstanceClientItemIDs()
+	{
+		auto base = BuildSword();
+		EQ::ItemInstance first(&base, 1);
+		EQ::ItemInstance second(&base, 1);
+
+		TEST_ASSERT_EQUALS(first.GetClientItemID(), base.ID);
+
+		first.SetSerialNumber(100);
+		second.SetSerialNumber(101);
+		first.SetDynamicItemModifier("hp", 20);
+		second.SetDynamicItemModifier("hp", 30);
+
+		first.SetSerialNumber(100);
+		second.SetSerialNumber(101);
+
+		TEST_ASSERT(first.GetClientItemID() != base.ID);
+		TEST_ASSERT(second.GetClientItemID() != base.ID);
+		TEST_ASSERT(first.GetClientItemID() != second.GetClientItemID());
+		TEST_ASSERT_EQUALS(first.GetID(), base.ID);
+		TEST_ASSERT_EQUALS(second.GetID(), base.ID);
 	}
 };

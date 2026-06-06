@@ -977,6 +977,10 @@ bool SharedDatabase::GetInventory(Client *c)
 			inst->SetCustomDataString(row.custom_data);
 		}
 
+		if (row.guid != 0) {
+			inst->SetSerialNumber(row.guid);
+		}
+
 		inst->SetOrnamentIcon(ornament_icon);
 		inst->SetOrnamentationIDFile(ornament_idfile);
 		inst->SetOrnamentHeroModel(item->HerosForgeModel);

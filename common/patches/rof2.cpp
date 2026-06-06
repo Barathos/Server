@@ -6567,7 +6567,7 @@ namespace RoF2
 		RoF2::structs::ItemBodyStruct ibs;
 		memset(&ibs, 0, sizeof(RoF2::structs::ItemBodyStruct));
 
-		ibs.id = item->ID;
+		ibs.id = inst->GetClientItemID();
 		ibs.weight = item->Weight;
 		ibs.norent = item->NoRent;
 		ibs.nodrop = item->NoDrop;

@@ -5296,7 +5296,7 @@ namespace RoF
 		RoF::structs::ItemBodyStruct ibs;
 		memset(&ibs, 0, sizeof(RoF::structs::ItemBodyStruct));
 
-		ibs.id = item->ID;
+		ibs.id = inst->GetClientItemID();
 		ibs.weight = item->Weight;
 		ibs.norent = item->NoRent;
 		ibs.nodrop = item->NoDrop;

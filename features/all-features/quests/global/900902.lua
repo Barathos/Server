@@ -5,6 +5,7 @@ local TEMPLATE_ITEM_ID = 199207
 local DEFAULT_NAME = "Bloodbound Augment"
 local ALL_EQUIPMENT_SLOTS = 8388607
 local ALL_AUGMENT_TYPES = 2147483647
+local CURSOR_SLOT = 33
 
 local function live_items_enabled()
 	local value = eq.get_rule("CustomFeatures:LiveItemsEnabled")
@@ -79,8 +80,12 @@ local function say_link(command, label)
 	return eq.say_link(command, false, label or command)
 end
 
+local function bucket_prefix(client)
+	return "live_items_orin_shardwork." .. client:CharacterID()
+end
+
 local function bucket_name(client, key)
-	return "live_items_orin_shardwork." .. client:CharacterID() .. "." .. key
+	return bucket_prefix(client) .. "." .. key
 end
 
 local function get_bucket(client, key)
@@ -120,11 +125,7 @@ local function sanitize_name(name)
 end
 
 local function reset_build(client)
-	set_bucket(client, "started", "")
-	set_bucket(client, "name", "")
-	for _, key in ipairs(upgrade_order) do
-		set_count(client, key, 0)
-	end
+	client:DeleteBucket(bucket_prefix(client))
 end
 
 local function start_build(client)
@@ -293,6 +294,11 @@ local function set_build_name(e, raw_name)
 	e.self:QuestSay(e.other, "The augment will be named '" .. name .. "'.")
 end
 
+local function cursor_is_empty(client)
+	local inst = client:GetInventory():GetItem(CURSOR_SLOT)
+	return not inst or not inst.valid
+end
+
 local function create_augment(client, field_totals, total_cost)
 	local name = get_build_name(client)
 	local summary = summarize_fields(field_totals)
@@ -352,6 +358,11 @@ local function confirm_build(e)
 		return
 	end
 
+	if not cursor_is_empty(e.other) then
+		e.self:QuestSay(e.other, "Clear your cursor before finishing the shardwork, or the new augment can be hidden behind the item you are already holding.")
+		return
+	end
+
 	local balance = e.other:GetAlternateCurrencyValue(CURRENCY_ID) or 0
 	if balance < total_cost then
 		e.self:QuestSay(e.other, "You need " .. total_cost .. " " .. CURRENCY_NAME .. ", but you only have " .. balance .. ".")
@@ -374,7 +385,12 @@ local function confirm_build(e)
 	end
 
 	local reward_name = get_build_name(e.other)
-	e.other:RewardLiveItem(augment)
+	if not e.other:RewardLiveItem(augment) then
+		e.other:AddAlternateCurrencyValue(CURRENCY_ID, total_cost)
+		e.other:Message(13, "The augment weave finished, but I could not place it on your cursor. Your " .. CURRENCY_NAME .. " were returned.")
+		return
+	end
+
 	reset_build(e.other)
 	e.self:QuestSay(e.other, "Done. The Blood Shards are bound into " .. reward_name .. ": " .. summary .. ".")
 end
