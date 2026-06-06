@@ -98,7 +98,9 @@ private:
 		std::string corpse_name;
 		std::string state = "waiting";
 		std::string rule = "-";
+		std::map<uint32, VoteChoice> votes;
 		time_t created_at = 0;
+		time_t vote_started_at = 0;
 	};
 
 	CharacterSettings GetCharacterSettings(uint32 character_id, bool create_enabled = false);
@@ -131,6 +133,10 @@ private:
 	void HandleLootAction(Client *client, const Seperator *sep);
 	void HandlePersonalLootCommand(Client *client, const Seperator *sep);
 	void InspectEntryForClient(Client *client, uint32 entry_id);
+	void RecordSharedVote(Client *client, uint32 entry_id, VoteChoice choice, bool set_always_rule);
+	void ResolveSharedVote(uint32 entry_id, bool timeout);
+	std::vector<Client *> GetEligibleSharedLootClients(const LootEntry &entry, Corpse *corpse);
+	void SendSharedLootUpdate(const std::vector<Client *> &clients);
 	void LootEntryForClient(Client *client, uint32 entry_id);
 	bool LeaveEntryForClient(Client *client, uint32 entry_id, bool add_never_filter);
 	void FinalizeCorpse(Corpse *corpse, Client *coin_client);

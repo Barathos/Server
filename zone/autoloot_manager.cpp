@@ -261,6 +261,34 @@ namespace {
 
 		return AutoLootManager::VoteChoice::Pass;
 	}
+
+	std::string VoteChoiceState(AutoLootManager::VoteChoice choice)
+	{
+		switch (choice) {
+		case AutoLootManager::VoteChoice::Need:
+			return "need";
+		case AutoLootManager::VoteChoice::Greed:
+			return "greed";
+		case AutoLootManager::VoteChoice::Pass:
+			return "no";
+		default:
+			return "waiting";
+		}
+	}
+
+	std::string VoteChoiceLabel(AutoLootManager::VoteChoice choice)
+	{
+		switch (choice) {
+		case AutoLootManager::VoteChoice::Need:
+			return "Need";
+		case AutoLootManager::VoteChoice::Greed:
+			return "Greed";
+		case AutoLootManager::VoteChoice::Pass:
+			return "No";
+		default:
+			return "Waiting";
+		}
+	}
 }
 
 void AutoLootManager::Process()
@@ -288,6 +316,17 @@ void AutoLootManager::Process()
 
 	for (const auto vote_id : expired_votes) {
 		ProcessVote(vote_id, true);
+	}
+
+	std::vector<uint32> expired_shared_votes;
+	for (const auto &[entry_id, entry] : m_loot_entries) {
+		if (entry.shared && entry.vote_started_at > 0 && entry.vote_started_at <= now - kNeedGreedSeconds) {
+			expired_shared_votes.push_back(entry_id);
+		}
+	}
+
+	for (const auto entry_id : expired_shared_votes) {
+		ResolveSharedVote(entry_id, true);
 	}
 
 	for (auto iter = m_autosell_sessions.begin(); iter != m_autosell_sessions.end();) {
@@ -1023,7 +1062,13 @@ void AutoLootManager::SendNativeSnapshot(Client *client)
 
 		auto corpse = entity_list.GetCorpseByID(entry.corpse_id);
 		const bool locked = corpse && (corpse->IsLocked() || corpse->IsBeingLooted() || !corpse->CanPlayerLoot(client->CharacterID()));
-		const auto state = locked ? std::string("locked") : entry.state;
+		auto state = locked ? std::string("locked") : entry.state;
+		if (!locked && entry.shared) {
+			auto vote_iter = entry.votes.find(client->CharacterID());
+			if (vote_iter != entry.votes.end()) {
+				state = VoteChoiceState(vote_iter->second);
+			}
+		}
 		client->Message(
 			Chat::White,
 			fmt::format(
@@ -1132,6 +1177,12 @@ void AutoLootManager::HandleLootAction(Client *client, const Seperator *sep)
 	}
 
 	if (action == "leave" || action == "pass" || action == "no") {
+		auto iter = m_loot_entries.find(entry_id);
+		if (iter != m_loot_entries.end() && IsEntryVisibleToClient(iter->second, client) && iter->second.shared) {
+			RecordSharedVote(client, entry_id, VoteChoice::Pass, false);
+			return;
+		}
+
 		LeaveEntryForClient(client, entry_id, false);
 		SendNativeUpdate(client);
 		return;
@@ -1156,12 +1207,19 @@ void AutoLootManager::HandleLootAction(Client *client, const Seperator *sep)
 			return;
 		}
 
-		iter->second.state = action;
 		bool filter_changed = false;
-		if (action == "alwaysneed") {
+		if (action == "alwaysneed" || action == "alwaysgreed") {
 			SetFilter(client->CharacterID(), iter->second.item_id, "include");
 			filter_changed = true;
 		}
+
+		if (iter->second.shared) {
+			const auto choice = (action == "need" || action == "alwaysneed") ? VoteChoice::Need : VoteChoice::Greed;
+			RecordSharedVote(client, entry_id, choice, filter_changed);
+			return;
+		}
+
+		iter->second.state = action;
 		client->Message(Chat::White, fmt::format("AutoLoot marked {} as {}.", iter->second.item_name, action).c_str());
 		if (filter_changed) {
 			SendNativeFilterUpdate(client);
@@ -1248,6 +1306,249 @@ void AutoLootManager::InspectEntryForClient(Client *client, uint32 entry_id)
 
 	client->SendItemPacket(0, inst, ItemPacketViewLink);
 	safe_delete(inst);
+}
+
+std::vector<Client *> AutoLootManager::GetEligibleSharedLootClients(const LootEntry &entry, Corpse *corpse)
+{
+	std::vector<Client *> clients;
+	if (!entry.shared || !entry.group_id || !corpse) {
+		return clients;
+	}
+
+	Group *group = nullptr;
+	for (auto &[client_id, candidate] : entity_list.GetClientList()) {
+		if (!candidate || !candidate->GetGroup() || candidate->GetGroup()->GetID() != entry.group_id) {
+			continue;
+		}
+
+		group = candidate->GetGroup();
+		break;
+	}
+
+	if (!group) {
+		return clients;
+	}
+
+	clients = GetGroupClients(group);
+	clients.erase(
+		std::remove_if(
+			clients.begin(),
+			clients.end(),
+			[corpse](Client *client) { return !client || !corpse->CanPlayerLoot(client->CharacterID()); }
+		),
+		clients.end()
+	);
+
+	return clients;
+}
+
+void AutoLootManager::SendSharedLootUpdate(const std::vector<Client *> &clients)
+{
+	for (auto client : clients) {
+		if (client) {
+			SendNativeUpdate(client);
+		}
+	}
+}
+
+void AutoLootManager::RecordSharedVote(Client *client, uint32 entry_id, VoteChoice choice, bool set_always_rule)
+{
+	auto iter = m_loot_entries.find(entry_id);
+	if (iter == m_loot_entries.end() || !IsEntryVisibleToClient(iter->second, client)) {
+		client->Message(Chat::Red, "That AutoLoot entry is no longer available.");
+		SendNativeUpdate(client);
+		return;
+	}
+
+	auto &entry = iter->second;
+	if (!entry.shared) {
+		entry.state = VoteChoiceState(choice);
+		client->Message(Chat::White, fmt::format("AutoLoot marked {} as {}.", entry.item_name, VoteChoiceState(choice)).c_str());
+		SendNativeUpdate(client);
+		return;
+	}
+
+	auto corpse = entity_list.GetCorpseByID(entry.corpse_id);
+	if (!corpse || !corpse->IsNPCCorpse()) {
+		m_loot_entries.erase(iter);
+		client->Message(Chat::Red, "That corpse is no longer available.");
+		SendNativeUpdate(client);
+		return;
+	}
+
+	auto eligible_clients = GetEligibleSharedLootClients(entry, corpse);
+	const bool client_is_eligible = std::any_of(
+		eligible_clients.begin(),
+		eligible_clients.end(),
+		[client](Client *candidate) { return candidate && candidate->CharacterID() == client->CharacterID(); }
+	);
+
+	if (!client_is_eligible) {
+		client->Message(Chat::Red, "You are not eligible to vote on that AutoLoot item.");
+		SendNativeUpdate(client);
+		return;
+	}
+
+	std::map<uint32, VoteChoice> refreshed_votes;
+	for (auto eligible : eligible_clients) {
+		auto vote_iter = entry.votes.find(eligible->CharacterID());
+		refreshed_votes[eligible->CharacterID()] = vote_iter != entry.votes.end() ? vote_iter->second : VoteChoice::Unset;
+	}
+
+	entry.votes.swap(refreshed_votes);
+	entry.votes[client->CharacterID()] = choice;
+	entry.vote_started_at = entry.vote_started_at > 0 ? entry.vote_started_at : std::time(nullptr);
+	entry.state = "rolling";
+	if (set_always_rule) {
+		entry.rule = "always";
+	}
+
+	const auto choice_label = VoteChoiceLabel(choice);
+	const auto message = fmt::format("{} voted {} on {}.", client->GetCleanName(), choice_label, entry.item_name);
+	for (auto eligible : eligible_clients) {
+		if (eligible) {
+			eligible->Message(Chat::Yellow, message.c_str());
+		}
+	}
+
+	const bool complete = std::all_of(
+		entry.votes.begin(),
+		entry.votes.end(),
+		[](const auto &vote) { return vote.second != VoteChoice::Unset; }
+	);
+
+	if (complete) {
+		ResolveSharedVote(entry_id, false);
+		return;
+	}
+
+	SendSharedLootUpdate(eligible_clients);
+}
+
+void AutoLootManager::ResolveSharedVote(uint32 entry_id, bool timeout)
+{
+	auto iter = m_loot_entries.find(entry_id);
+	if (iter == m_loot_entries.end()) {
+		return;
+	}
+
+	auto entry = iter->second;
+	if (!entry.shared || entry.votes.empty()) {
+		return;
+	}
+
+	auto corpse = entity_list.GetCorpseByID(entry.corpse_id);
+	if (!corpse || !corpse->IsNPCCorpse()) {
+		m_loot_entries.erase(iter);
+		return;
+	}
+
+	auto eligible_clients = GetEligibleSharedLootClients(entry, corpse);
+	if (eligible_clients.empty()) {
+		m_loot_entries.erase(iter);
+		corpse->ResetDecayTimer();
+		return;
+	}
+
+	if (!timeout) {
+		for (auto client : eligible_clients) {
+			auto vote_iter = entry.votes.find(client->CharacterID());
+			if (vote_iter == entry.votes.end() || vote_iter->second == VoteChoice::Unset) {
+				return;
+			}
+		}
+	}
+
+	std::vector<uint32> need;
+	std::vector<uint32> greed;
+	for (auto client : eligible_clients) {
+		auto vote_iter = entry.votes.find(client->CharacterID());
+		if (vote_iter == entry.votes.end()) {
+			continue;
+		}
+
+		if (vote_iter->second == VoteChoice::Need) {
+			need.push_back(client->CharacterID());
+		}
+		else if (vote_iter->second == VoteChoice::Greed) {
+			greed.push_back(client->CharacterID());
+		}
+	}
+
+	std::vector<uint32> pool = !need.empty() ? need : greed;
+	if (pool.empty()) {
+		const auto message = fmt::format("Need/Greed roll for {} ended with no winner; it remains on {}.", entry.item_name, entry.corpse_name);
+		for (auto client : eligible_clients) {
+			if (client) {
+				client->Message(Chat::Yellow, message.c_str());
+			}
+		}
+
+		m_loot_entries.erase(iter);
+		corpse->ResetDecayTimer();
+		SendSharedLootUpdate(eligible_clients);
+		return;
+	}
+
+	const uint32 winner_character_id = pool[zone ? zone->random.Int(0, static_cast<int>(pool.size() - 1)) : 0];
+	auto winner = entity_list.GetClientByCharID(winner_character_id);
+	if (!winner || !corpse->CanPlayerLoot(winner->CharacterID())) {
+		const auto message = fmt::format("Need/Greed winner for {} is no longer eligible; it remains on {}.", entry.item_name, entry.corpse_name);
+		for (auto client : eligible_clients) {
+			if (client) {
+				client->Message(Chat::Yellow, message.c_str());
+			}
+		}
+
+		iter->second.state = "waiting";
+		iter->second.votes.clear();
+		iter->second.vote_started_at = 0;
+		corpse->ResetDecayTimer();
+		SendSharedLootUpdate(eligible_clients);
+		return;
+	}
+
+	auto result = corpse->AutoLootItem(winner, entry.loot_slot, true);
+	if (result.IsSuccess()) {
+		const auto winning_choice = std::find(need.begin(), need.end(), winner_character_id) != need.end() ? "Need" : "Greed";
+		const auto message = fmt::format(
+			"{} won {} with {}{}.",
+			winner->GetCleanName(),
+			entry.item_name,
+			winning_choice,
+			timeout ? " after timeout" : ""
+		);
+		for (auto client : eligible_clients) {
+			if (client) {
+				client->Message(Chat::Yellow, message.c_str());
+			}
+		}
+
+		const auto winner_settings = GetCharacterSettings(winner->CharacterID());
+		if (winner_settings.log_enabled) {
+			Audit(winner->CharacterID(), "shared_roll_loot", result.item_id, result.item_count, entry.corpse_name);
+		}
+
+		m_loot_entries.erase(entry_id);
+		FinalizeCorpse(corpse, winner);
+		SendSharedLootUpdate(eligible_clients);
+		return;
+	}
+
+	auto update_iter = m_loot_entries.find(entry_id);
+	if (update_iter != m_loot_entries.end()) {
+		update_iter->second.state = result.code == CorpseAutoLootResultCode::InventoryFull ? "inventory_full" : "failed";
+		update_iter->second.votes.clear();
+		update_iter->second.vote_started_at = 0;
+	}
+
+	const auto message = fmt::format("{} could not receive {}; it remains on {}.", winner->GetCleanName(), entry.item_name, entry.corpse_name);
+	for (auto client : eligible_clients) {
+		if (client) {
+			client->Message(Chat::Yellow, message.c_str());
+		}
+	}
+	SendSharedLootUpdate(eligible_clients);
 }
 
 void AutoLootManager::LootEntryForClient(Client *client, uint32 entry_id)
