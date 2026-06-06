@@ -143,6 +143,11 @@ namespace {
 		return item->Stackable ? std::max<uint32>(1, item_data->charges) : 1;
 	}
 
+	std::string QuantitySuffix(uint32 quantity)
+	{
+		return quantity > 1 ? fmt::format(" x{}", quantity) : "";
+	}
+
 	EQ::ItemInstance *CreateCorpseLootItemInstance(Client *client, const LootItem *item_data)
 	{
 		if (!client || !item_data) {
@@ -347,6 +352,15 @@ void AutoLootManager::SaveCharacterSettings(uint32 character_id, const Character
 			settings.log_enabled ? 1 : 0
 		)
 	);
+}
+
+void AutoLootManager::DebugMessage(Client *client, const CharacterSettings &settings, const std::string &message)
+{
+	if (!client || !settings.debug_enabled || message.empty()) {
+		return;
+	}
+
+	client->Message(Chat::Yellow, fmt::format("[AutoLoot Debug] {}", message).c_str());
 }
 
 AutoLootManager::GroupSettings AutoLootManager::GetGroupSettings(uint32 group_id)
@@ -753,7 +767,42 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 	}
 
 	auto settings = GetCharacterSettings(autoloot_client->CharacterID());
+	bool drop_debug_sent = false;
+	auto send_drop_debug = [&]() {
+		if (drop_debug_sent || !settings.debug_enabled) {
+			return;
+		}
+
+		drop_debug_sent = true;
+		uint32 visible_loot = 0;
+		for (auto item_data : corpse->GetLootItems()) {
+			if (!item_data || !item_data->item_id || IsBagChildSlot(item_data->equip_slot)) {
+				continue;
+			}
+
+			++visible_loot;
+			const auto *item = database.GetItem(item_data->item_id);
+			const auto item_name = item ? item->Name : fmt::format("Unknown Item {}", item_data->item_id);
+			DebugMessage(
+				autoloot_client,
+				settings,
+				fmt::format(
+					"{} dropped {}{}.",
+					corpse->GetCleanName(),
+					item_name,
+					QuantitySuffix(GetCorpseItemQuantity(corpse, item_data->lootslot))
+				)
+			);
+		}
+
+		if (!visible_loot) {
+			DebugMessage(autoloot_client, settings, fmt::format("{} had no top-level loot for AutoLoot.", corpse->GetCleanName()));
+		}
+	};
+
 	if (!settings.enabled) {
+		send_drop_debug();
+		DebugMessage(autoloot_client, settings, fmt::format("{} was not queued because AutoLoot is off for this character.", corpse->GetCleanName()));
 		return false;
 	}
 
@@ -762,6 +811,8 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 	if (group) {
 		group_settings = GetGroupSettings(group->GetID());
 		if (NormalizeGroupMode(group_settings.loot_mode) == "none") {
+			send_drop_debug();
+			DebugMessage(autoloot_client, settings, fmt::format("{} was not queued because group AutoLoot mode is none.", corpse->GetCleanName()));
 			return false;
 		}
 	}
@@ -774,6 +825,7 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 
 		loot_slots.push_back(item_data->lootslot);
 	}
+	send_drop_debug();
 
 	const auto corpse_id = corpse->GetID();
 	const auto corpse_name = corpse->GetCleanName();
@@ -781,22 +833,64 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 	std::vector<std::pair<Client *, uint32>> auto_loot_entries;
 	for (const auto loot_slot : loot_slots) {
 		auto item_data = corpse->GetItem(loot_slot);
-		if (!item_data || !item_data->item_id || HasQueuedEntry(corpse->GetID(), loot_slot)) {
+		if (!item_data || !item_data->item_id) {
+			continue;
+		}
+
+		const auto *item = database.GetItem(item_data->item_id);
+		const auto item_name = item ? item->Name : fmt::format("Unknown Item {}", item_data->item_id);
+		const auto quantity = GetCorpseItemQuantity(corpse, loot_slot);
+		if (HasQueuedEntry(corpse->GetID(), loot_slot)) {
+			DebugMessage(
+				autoloot_client,
+				settings,
+				fmt::format(
+					"{}{} from {} was skipped because that corpse slot is already queued.",
+					item_name,
+					QuantitySuffix(quantity),
+					corpse_name
+				)
+			);
 			continue;
 		}
 
 		const auto filter_action = GetFilterAction(autoloot_client->CharacterID(), item_data->item_id, settings.filter_mode);
 		if (filter_action == "skip") {
+			DebugMessage(
+				autoloot_client,
+				settings,
+				fmt::format(
+					"{}{} from {} ignored by AutoLoot filter (mode: {}).",
+					item_name,
+					QuantitySuffix(quantity),
+					corpse_name,
+					settings.filter_mode
+				)
+			);
 			continue;
 		}
 
 		auto recipient = DetermineRecipient(autoloot_client, corpse, group_settings);
 		if (!recipient || !corpse->CanPlayerLoot(recipient->CharacterID())) {
+			DebugMessage(
+				autoloot_client,
+				settings,
+				fmt::format(
+					"{}{} from {} was not queued because no eligible recipient could loot it.",
+					item_name,
+					QuantitySuffix(quantity),
+					corpse_name
+				)
+			);
 			continue;
 		}
 
-		const auto *item = database.GetItem(item_data->item_id);
 		if (!item) {
+			DebugMessage(
+				autoloot_client,
+				settings,
+				fmt::format("Item {} from {} was not queued because item data could not be loaded.", item_data->item_id, corpse_name)
+			);
 			continue;
 		}
 
@@ -806,7 +900,7 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 		entry.loot_slot = loot_slot;
 		entry.item_id = item_data->item_id;
 		entry.icon_id = item->Icon;
-		entry.quantity = GetCorpseItemQuantity(corpse, loot_slot);
+		entry.quantity = quantity;
 		entry.owner_character_id = recipient->CharacterID();
 		entry.group_id = group ? group->GetID() : 0;
 		entry.shared = group && group->GroupCount() > 1 && NormalizeGroupMode(group_settings.loot_mode) != "solo";
@@ -822,6 +916,20 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 
 		m_loot_entries[entry.entry_id] = entry;
 		queued = true;
+		DebugMessage(
+			autoloot_client,
+			settings,
+			fmt::format(
+				"{}{} from {} added to AutoLoot for {} (entry {}, rule: {}, state: {}).",
+				entry.item_name,
+				QuantitySuffix(entry.quantity),
+				entry.corpse_name,
+				recipient->GetCleanName(),
+				entry.entry_id,
+				entry.rule,
+				entry.state
+			)
+		);
 
 		if (filter_action == "loot" && entry.state != "rolling") {
 			auto_loot_entries.emplace_back(recipient, entry.entry_id);
@@ -1173,15 +1281,22 @@ void AutoLootManager::LootEntryForClient(Client *client, uint32 entry_id)
 	if (!recipient || !corpse->CanPlayerLoot(recipient->CharacterID())) {
 		iter->second.state = "denied";
 		client->Message(Chat::Red, "You cannot loot that corpse.");
+		DebugMessage(client, GetCharacterSettings(client->CharacterID()), fmt::format("{}{} from {} could not be looted because corpse access was denied.", entry.item_name, QuantitySuffix(entry.quantity), entry.corpse_name));
 		return;
 	}
 
+	const auto recipient_settings = GetCharacterSettings(recipient->CharacterID());
 	auto result = corpse->AutoLootItem(recipient, entry.loot_slot, true);
 
 	if (result.IsSuccess()) {
-		if (GetCharacterSettings(recipient->CharacterID()).log_enabled) {
+		if (recipient_settings.log_enabled) {
 			Audit(recipient->CharacterID(), "queued_loot", result.item_id, result.item_count, corpse->GetCleanName());
 		}
+		DebugMessage(
+			recipient,
+			recipient_settings,
+			fmt::format("{} looted {}{} from {}.", recipient->GetCleanName(), entry.item_name, QuantitySuffix(result.item_count), entry.corpse_name)
+		);
 		m_loot_entries.erase(entry_id);
 		FinalizeCorpse(corpse, recipient);
 		return;
@@ -1192,9 +1307,26 @@ void AutoLootManager::LootEntryForClient(Client *client, uint32 entry_id)
 		if (result.code == CorpseAutoLootResultCode::PartialStacked && result.remaining_count > 0) {
 			update_iter->second.quantity = result.remaining_count;
 			update_iter->second.state = "inventory_full";
+			DebugMessage(
+				recipient,
+				recipient_settings,
+				fmt::format("{} partially looted {} from {}; {} remain because inventory filled.", recipient->GetCleanName(), entry.item_name, entry.corpse_name, result.remaining_count)
+			);
 		}
 		else {
 			update_iter->second.state = result.code == CorpseAutoLootResultCode::InventoryFull ? "inventory_full" : "failed";
+			DebugMessage(
+				recipient,
+				recipient_settings,
+				fmt::format(
+					"{}{} from {} was not looted (result {}, remaining {}).",
+					entry.item_name,
+					QuantitySuffix(entry.quantity),
+					entry.corpse_name,
+					static_cast<int>(result.code),
+					result.remaining_count
+				)
+			);
 		}
 	}
 }
@@ -1796,14 +1928,14 @@ void AutoLootManager::HandleAutolootCommand(Client *client, const Seperator *sep
 		return;
 	}
 
-	if (!strcasecmp(sep->arg[1], "debug") || !strcasecmp(sep->arg[1], "log")) {
+	if (!strcasecmp(sep->arg[1], "debug") || !strcasecmp(sep->arg[1], "verbose") || !strcasecmp(sep->arg[1], "log")) {
 		if (arguments < 2) {
-			client->Message(Chat::White, "Usage: #autoloot debug [on|off] or #autoloot log [on|off]");
+			client->Message(Chat::White, "Usage: #autoloot debug [on|off], #autoloot verbose [on|off], or #autoloot log [on|off]");
 			return;
 		}
 
 		const bool enabled = Strings::ToBool(sep->arg[2]);
-		if (!strcasecmp(sep->arg[1], "debug")) {
+		if (!strcasecmp(sep->arg[1], "debug") || !strcasecmp(sep->arg[1], "verbose")) {
 			settings.debug_enabled = enabled;
 		}
 		else {
@@ -1811,7 +1943,14 @@ void AutoLootManager::HandleAutolootCommand(Client *client, const Seperator *sep
 		}
 
 		SaveCharacterSettings(client->CharacterID(), settings);
-		client->Message(Chat::White, fmt::format("AutoLoot {} {}.", sep->arg[1], enabled ? "enabled" : "disabled").c_str());
+		client->Message(
+			Chat::White,
+			fmt::format(
+				"AutoLoot {} {}.",
+				!strcasecmp(sep->arg[1], "log") ? "log" : "debug chat",
+				enabled ? "enabled" : "disabled"
+			).c_str()
+		);
 		RefreshWindowIfRequested(this, client, sep);
 		return;
 	}
@@ -2268,6 +2407,8 @@ void AutoLootManager::SendHelp(Client *client)
 	client->Message(Chat::White, "Usage: #autoloot on [both|include|exclude]");
 	client->Message(Chat::White, "Usage: #autoloot off");
 	client->Message(Chat::White, "Usage: #autoloot mode [both|include|exclude]");
+	client->Message(Chat::White, "Usage: #autoloot debug [on|off] or #autoloot verbose [on|off]");
+	client->Message(Chat::White, "Usage: #autoloot log [on|off]");
 	client->Message(Chat::White, "Usage: #autoloot inspect [Entry ID]");
 	client->Message(Chat::White, "Usage: #autoloot nearby [radius]");
 	client->Message(Chat::White, "Usage: #autoloot group [status|help|none|solo|master|robin|killer|assign|needgreed|forceprocess|recover]");

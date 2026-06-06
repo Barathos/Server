@@ -105,6 +105,7 @@ private:
 	void SaveCharacterSettings(uint32 character_id, const CharacterSettings &settings);
 	GroupSettings GetGroupSettings(uint32 group_id);
 	void SaveGroupSettings(uint32 group_id, const GroupSettings &settings);
+	void DebugMessage(Client *client, const CharacterSettings &settings, const std::string &message);
 
 	bool ShouldLootItem(uint32 character_id, uint32 item_id, const std::string &filter_mode);
 	std::string GetFilterAction(uint32 character_id, uint32 item_id, const std::string &filter_mode);
