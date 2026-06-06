@@ -75,6 +75,8 @@ static void NativeAchievementEnsureWindow(bool show);
 static bool NativeAchievementParseTransport(const char* message);
 static void NativeFactionEnsureWindow(bool show);
 static bool NativeFactionParseTransport(const char* message);
+static void NativeDpsEnsureWindow(bool show);
+static bool NativeDpsParseTransport(const char* message);
 static void NativeTradeskillsEnsureWindow(bool show);
 static void NativeUIShowcaseEnsureWindow(bool show);
 static void NativeHpFixEnsureWindow(bool show);
@@ -85,6 +87,8 @@ static void NativeMulticlassEnsureDisciplineWindow(bool show);
 static bool NativeMulticlassParseTransport(const char* message);
 static void NativeMulticlassInstallContextMenuHook();
 static void NativeMulticlassMaintainPresentationUI();
+static bool NativeAutoFollowLocalCommand(const char* line);
+static void NativeAutoFollowPulse();
 
 static bool gNativeAutoLootGroupByNpcDisplay = false;
 
@@ -2915,8 +2919,102 @@ struct NativeFactionRow
 	int modified_value = 0;
 	bool touched = false;
 	bool target = false;
+	bool pinned = false;
+	bool hidden = false;
 	std::string name = "Faction";
 	std::string standing = "Indifferently";
+	std::string section = "All";
+};
+
+struct NativeDpsRow
+{
+	int actor_id = 0;
+	int owner_id = 0;
+	unsigned long long damage = 0;
+	unsigned long long healing = 0;
+	unsigned long long incoming = 0;
+	unsigned long long dps = 0;
+	unsigned long long hps = 0;
+	int pct = 0;
+	std::string actor = "Actor";
+	std::string source = "Source";
+};
+
+class NativeDpsWnd : public CCustomWnd
+{
+public:
+	NativeDpsWnd() : CCustomWnd((char*)"NativeDpsWnd")
+	{
+		CloseOnESC = 1;
+		SetWndNotification(NativeDpsWnd);
+
+		SummaryLabel = GetChildItem("NDPS_SummaryLabel");
+		DpsList = (CListWnd*)GetChildItem("NDPS_DpsList");
+		StatusLabel = GetChildItem("NDPS_StatusLabel");
+		RefreshButton = (CButtonWnd*)GetChildItem("NDPS_RefreshButton");
+		ResetButton = (CButtonWnd*)GetChildItem("NDPS_ResetButton");
+		LiveButton = (CButtonWnd*)GetChildItem("NDPS_LiveButton");
+
+		SetStatus("Waiting for DPS data.");
+		RefreshRows();
+	}
+
+	int WndNotification(CXWnd* pWnd, unsigned int Message, void* unknown)
+	{
+		if (Message == XWM_CLOSE) {
+			pXWnd()->Show(0, 1);
+			return 1;
+		}
+
+		if (Message == XWM_LCLICK) {
+			if (pWnd == (CXWnd*)RefreshButton) {
+				NativeAutoLootSendCommand("/say #dps");
+				SetStatus("Refreshing DPS parser...");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)ResetButton) {
+				NativeAutoLootSendCommand("/say #dps reset");
+				SetStatus("Resetting DPS parser...");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)LiveButton) {
+				NativeAutoLootSendCommand("/say #dps live on");
+				SetStatus("Requesting live DPS updates...");
+				return 1;
+			}
+		}
+
+		return CSidlScreenWnd::WndNotification(pWnd, Message, unknown);
+	}
+
+	void Layout()
+	{
+	}
+
+	void SetStatus(const char* text)
+	{
+		SetLabel(StatusLabel, text ? text : "");
+	}
+
+	void RefreshRows();
+
+private:
+	void SetLabel(CXWnd* label, const char* text)
+	{
+		if (label) {
+			CXStr value(text ? text : "");
+			label->SetWindowTextA(value);
+		}
+	}
+
+	CXWnd* SummaryLabel = nullptr;
+	CListWnd* DpsList = nullptr;
+	CXWnd* StatusLabel = nullptr;
+	CButtonWnd* RefreshButton = nullptr;
+	CButtonWnd* ResetButton = nullptr;
+	CButtonWnd* LiveButton = nullptr;
 };
 
 class NativeFactionWnd : public CCustomWnd
@@ -2932,8 +3030,12 @@ public:
 		StatusLabel = GetChildItem("NFW_StatusLabel");
 		RefreshButton = (CButtonWnd*)GetChildItem("NFW_RefreshButton");
 		ListButton = (CButtonWnd*)GetChildItem("NFW_ListButton");
+		PinButton = (CButtonWnd*)GetChildItem("NFW_PinButton");
+		HideButton = (CButtonWnd*)GetChildItem("NFW_HideButton");
+		ShowButton = (CButtonWnd*)GetChildItem("NFW_ShowButton");
+		HiddenButton = (CButtonWnd*)GetChildItem("NFW_HiddenButton");
 
-		SetStatus("Use /rep to refresh. Target an NPC to pin its primary faction.");
+		SetStatus("Use /rep to refresh. Select a row to pin, hide, or unhide it.");
 		RefreshRows();
 	}
 
@@ -2956,6 +3058,45 @@ public:
 				SetStatus("Printing faction standings to chat...");
 				return 1;
 			}
+
+			if (pWnd == (CXWnd*)PinButton) {
+				const int faction_id = SelectedFactionId();
+				if (faction_id > 0) {
+					char command[80];
+					sprintf_s(command, "/say #rep pin %d", faction_id);
+					NativeAutoLootSendCommand(command);
+					SetStatus("Pinning selected faction...");
+				}
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)HideButton) {
+				const int faction_id = SelectedFactionId();
+				if (faction_id > 0) {
+					char command[80];
+					sprintf_s(command, "/say #rep hide %d", faction_id);
+					NativeAutoLootSendCommand(command);
+					SetStatus("Hiding selected faction...");
+				}
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)ShowButton) {
+				const int faction_id = SelectedFactionId();
+				if (faction_id > 0) {
+					char command[80];
+					sprintf_s(command, "/say #rep show %d", faction_id);
+					NativeAutoLootSendCommand(command);
+					SetStatus("Unhiding selected faction...");
+				}
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)HiddenButton) {
+				NativeAutoLootSendCommand("/say #rep hidden");
+				SetStatus("Loading hidden factions...");
+				return 1;
+			}
 		}
 
 		return CSidlScreenWnd::WndNotification(pWnd, Message, unknown);
@@ -2973,6 +3114,20 @@ public:
 	void RefreshRows();
 
 private:
+	int SelectedFactionId() const
+	{
+		if (!FactionList) {
+			return 0;
+		}
+
+		const int selected = FactionList->GetCurSel();
+		if (selected < 0) {
+			return 0;
+		}
+
+		return static_cast<int>(FactionList->GetItemData(selected));
+	}
+
 	COLORREF RowColor(const std::string& standing) const
 	{
 		if (_stricmp(standing.c_str(), "Ally") == 0 || _stricmp(standing.c_str(), "Warmly") == 0) {
@@ -3007,14 +3162,32 @@ private:
 	CXWnd* StatusLabel = nullptr;
 	CButtonWnd* RefreshButton = nullptr;
 	CButtonWnd* ListButton = nullptr;
+	CButtonWnd* PinButton = nullptr;
+	CButtonWnd* HideButton = nullptr;
+	CButtonWnd* ShowButton = nullptr;
+	CButtonWnd* HiddenButton = nullptr;
 };
 
 static NativeFactionWnd* gNativeFactionWnd = nullptr;
 static std::vector<NativeFactionRow> gNativeFactionRows;
 static std::string gNativeFactionStatus = "Use /rep to refresh. Target an NPC to pin its primary faction.";
 static int gNativeFactionTargetId = 0;
+static std::string gNativeFactionMode = "";
+static std::string gNativeFactionSearch = "";
 static bool gNativeFactionLoading = false;
 static bool gNativeFactionRowsDirty = true;
+
+static NativeDpsWnd* gNativeDpsWnd = nullptr;
+static std::vector<NativeDpsRow> gNativeDpsRows;
+static std::string gNativeDpsStatus = "Waiting for DPS data.";
+static std::string gNativeDpsTarget = "";
+static int gNativeDpsEncounterId = 0;
+static int gNativeDpsElapsedMs = 0;
+static unsigned long long gNativeDpsDamage = 0;
+static unsigned long long gNativeDpsHealing = 0;
+static unsigned long long gNativeDpsIncoming = 0;
+static bool gNativeDpsLoading = false;
+static bool gNativeDpsRowsDirty = true;
 
 class NativeTradeskillsWnd : public CCustomWnd
 {
@@ -5605,7 +5778,14 @@ static void NativeAchievementEnsureWindow(bool show)
 void NativeFactionWnd::RefreshRows()
 {
 	char summary[160];
-	sprintf_s(summary, "Faction rows %u  Target faction %s", static_cast<unsigned>(gNativeFactionRows.size()), gNativeFactionTargetId > 0 ? "pinned" : "none");
+	sprintf_s(
+		summary,
+		"Faction rows %u  Target %s%s%s",
+		static_cast<unsigned>(gNativeFactionRows.size()),
+		gNativeFactionTargetId > 0 ? "selected" : "none",
+		gNativeFactionMode.empty() ? "" : "  Mode ",
+		gNativeFactionMode.empty() ? "" : gNativeFactionMode.c_str()
+	);
 	SetLabel(SummaryLabel, summary);
 	SetStatus(gNativeFactionStatus.c_str());
 
@@ -5628,7 +5808,7 @@ void NativeFactionWnd::RefreshRows()
 	}
 
 	for (const NativeFactionRow& faction : gNativeFactionRows) {
-		const char* pin = faction.target ? "Target" : (faction.touched ? "Known" : "-");
+		const char* pin = faction.target ? "Target" : (faction.pinned ? "Pinned" : (faction.hidden ? "Hidden" : (faction.touched ? "Changed" : "-")));
 		CXStr pin_text(pin);
 		const int row = FactionList->AddString(pin_text, RowColor(faction.standing), static_cast<uint32_t>(faction.id), nullptr, nullptr);
 
@@ -5641,7 +5821,7 @@ void NativeFactionWnd::RefreshRows()
 		CXStr standing(faction.standing.c_str());
 		CXStr raw(raw_text);
 		CXStr modified(modified_text);
-		CXStr known(faction.touched ? "Yes" : "No");
+		CXStr known(faction.section.empty() ? (faction.touched ? "Changed" : "All") : faction.section.c_str());
 		FactionList->SetItemText(row, 1, &name);
 		FactionList->SetItemText(row, 2, &standing);
 		FactionList->SetItemText(row, 3, &raw);
@@ -5650,6 +5830,74 @@ void NativeFactionWnd::RefreshRows()
 	}
 
 	gNativeFactionRowsDirty = false;
+}
+
+void NativeDpsWnd::RefreshRows()
+{
+	char summary[192];
+	sprintf_s(
+		summary,
+		"%s  %llu dmg / %llu heal / %llu inc  %.1fs",
+		gNativeDpsTarget.empty() ? "No encounter" : gNativeDpsTarget.c_str(),
+		gNativeDpsDamage,
+		gNativeDpsHealing,
+		gNativeDpsIncoming,
+		gNativeDpsElapsedMs > 0 ? static_cast<double>(gNativeDpsElapsedMs) / 1000.0 : 0.0
+	);
+	SetLabel(SummaryLabel, summary);
+	SetStatus(gNativeDpsStatus.c_str());
+
+	if (!DpsList || !gNativeDpsRowsDirty) {
+		return;
+	}
+
+	DpsList->DeleteAll();
+	if (gNativeDpsRows.empty()) {
+		CXStr dash("-");
+		const int row = DpsList->AddString(dash, 0xFFB0B0B0, 0, nullptr, nullptr);
+		CXStr empty("No DPS rows loaded.");
+		DpsList->SetItemText(row, 1, &empty);
+		for (int column = 2; column <= 7; ++column) {
+			DpsList->SetItemText(row, column, &dash);
+		}
+		gNativeDpsRowsDirty = false;
+		return;
+	}
+
+	for (const NativeDpsRow& dps : gNativeDpsRows) {
+		CXStr actor(dps.actor.c_str());
+		const int row = DpsList->AddString(actor, 0xFFFFFFFF, static_cast<uint32_t>(dps.actor_id), nullptr, nullptr);
+
+		char damage[32];
+		char dps_text[32];
+		char healing[32];
+		char hps_text[32];
+		char incoming[32];
+		char pct[32];
+		sprintf_s(damage, "%llu", dps.damage);
+		sprintf_s(dps_text, "%llu", dps.dps);
+		sprintf_s(healing, "%llu", dps.healing);
+		sprintf_s(hps_text, "%llu", dps.hps);
+		sprintf_s(incoming, "%llu", dps.incoming);
+		sprintf_s(pct, "%d%%", dps.pct);
+
+		CXStr source(dps.source.c_str());
+		CXStr damage_str(damage);
+		CXStr dps_str(dps_text);
+		CXStr healing_str(healing);
+		CXStr hps_str(hps_text);
+		CXStr incoming_str(incoming);
+		CXStr pct_str(pct);
+		DpsList->SetItemText(row, 1, &source);
+		DpsList->SetItemText(row, 2, &damage_str);
+		DpsList->SetItemText(row, 3, &dps_str);
+		DpsList->SetItemText(row, 4, &healing_str);
+		DpsList->SetItemText(row, 5, &hps_str);
+		DpsList->SetItemText(row, 6, &incoming_str);
+		DpsList->SetItemText(row, 7, &pct_str);
+	}
+
+	gNativeDpsRowsDirty = false;
 }
 
 static void NativeFactionEnsureWindow(bool show)
@@ -5667,6 +5915,24 @@ static void NativeFactionEnsureWindow(bool show)
 
 	if (show && gNativeFactionWnd) {
 		gNativeFactionWnd->pXWnd()->Show(1, 1);
+	}
+}
+
+static void NativeDpsEnsureWindow(bool show)
+{
+	if (!pSidlMgr || !pWndMgr) {
+		return;
+	}
+
+	if (!gNativeDpsWnd) {
+		NativeAutoLootTrace("creating DPS parser window");
+		gNativeDpsWnd = new NativeDpsWnd();
+		gNativeDpsWnd->RefreshRows();
+		NativeAutoLootTrace("DPS parser window created");
+	}
+
+	if (show && gNativeDpsWnd) {
+		gNativeDpsWnd->pXWnd()->Show(1, 1);
 	}
 }
 
@@ -6682,6 +6948,202 @@ static bool NativeFactionRewriteCommand(const char* line, char* output, size_t o
 	return true;
 }
 
+static bool NativeDpsRewriteCommand(const char* line, char* output, size_t output_size)
+{
+	if (!line || !output || !output_size) {
+		return false;
+	}
+
+	while (*line == ' ' || *line == '\t') {
+		++line;
+	}
+
+	const char* arguments = nullptr;
+	if (
+		!NativeCommandMatch(line, "/dps", &arguments) &&
+		!NativeCommandMatch(line, "/dpsparser", &arguments) &&
+		!NativeCommandMatch(line, "/damageparser", &arguments)
+	) {
+		return false;
+	}
+
+	if (!arguments || !arguments[0]) {
+		strcpy_s(output, output_size, "/say #dps");
+		return true;
+	}
+
+	if (
+		NativeCommandMatch(arguments, "open", nullptr) ||
+		NativeCommandMatch(arguments, "window", nullptr) ||
+		NativeCommandMatch(arguments, "ui", nullptr) ||
+		NativeCommandMatch(arguments, "refresh", nullptr)
+	) {
+		strcpy_s(output, output_size, "/say #dps");
+		return true;
+	}
+
+	sprintf_s(output, output_size, "/say #dps %s", arguments);
+	return true;
+}
+
+static bool NativeUseItemRewriteCommand(const char* line, char* output, size_t output_size)
+{
+	if (!line || !output || !output_size) {
+		return false;
+	}
+
+	while (*line == ' ' || *line == '\t') {
+		++line;
+	}
+
+	const char* arguments = nullptr;
+	if (!NativeCommandMatch(line, "/useitem", &arguments)) {
+		return false;
+	}
+
+	if (!arguments || !arguments[0]) {
+		strcpy_s(output, output_size, "/say #useitem");
+		return true;
+	}
+
+	sprintf_s(output, output_size, "/say #useitem %s", arguments);
+	return true;
+}
+
+static bool gNativeAutoFollowEnabled = false;
+static DWORD gNativeAutoFollowTargetId = 0;
+static float gNativeAutoFollowDistance = 20.0f;
+static float gNativeAutoFollowLastDistance = 0.0f;
+static int gNativeAutoFollowStuckPulses = 0;
+
+static PSPAWNINFO NativeAutoFollowTarget()
+{
+	if (gNativeAutoFollowTargetId) {
+		return (PSPAWNINFO)GetSpawnByID(gNativeAutoFollowTargetId);
+	}
+
+	return pTarget ? (PSPAWNINFO)pTarget : nullptr;
+}
+
+static void NativeAutoFollowStop(const char* reason)
+{
+	gNativeAutoFollowEnabled = false;
+	gNativeAutoFollowTargetId = 0;
+	gNativeAutoFollowStuckPulses = 0;
+	if (pCharSpawn) {
+		((PSPAWNINFO)pCharSpawn)->WhoFollowing = nullptr;
+	}
+	NativeAutoLootSendCommand("/follow off");
+	if (reason && reason[0]) {
+		nativeinterface::Chat("AutoFollow: %s", reason);
+	}
+}
+
+static bool NativeAutoFollowLocalCommand(const char* line)
+{
+	if (!line) {
+		return false;
+	}
+
+	while (*line == ' ' || *line == '\t') {
+		++line;
+	}
+
+	const char* arguments = nullptr;
+	if (
+		!NativeCommandMatch(line, "/afollow", &arguments) &&
+		!NativeCommandMatch(line, "/autofollow", &arguments)
+	) {
+		return false;
+	}
+
+	if (arguments && NativeCommandMatch(arguments, "off", nullptr)) {
+		NativeAutoFollowStop("off");
+		return true;
+	}
+
+	if (arguments && NativeCommandMatch(arguments, "status", nullptr)) {
+		nativeinterface::Chat(
+			"AutoFollow: %s, distance %.0f",
+			gNativeAutoFollowEnabled ? "on" : "off",
+			gNativeAutoFollowDistance
+		);
+		return true;
+	}
+
+	const char* distance_args = nullptr;
+	if (arguments && NativeCommandMatch(arguments, "distance", &distance_args)) {
+		const float distance = distance_args && distance_args[0] ? static_cast<float>(atof(distance_args)) : 0.0f;
+		if (distance >= 8.0f && distance <= 80.0f) {
+			gNativeAutoFollowDistance = distance;
+			nativeinterface::Chat("AutoFollow: distance set to %.0f", gNativeAutoFollowDistance);
+		} else {
+			nativeinterface::Chat("AutoFollow: distance must be 8 to 80.");
+		}
+		return true;
+	}
+
+	if (!pCharSpawn || !pTarget || pTarget == pCharSpawn) {
+		nativeinterface::Chat("AutoFollow: target a player or NPC first.");
+		return true;
+	}
+
+	PSPAWNINFO target = (PSPAWNINFO)pTarget;
+	gNativeAutoFollowEnabled = true;
+	gNativeAutoFollowTargetId = target->SpawnID;
+	gNativeAutoFollowLastDistance = DistanceToSpawn((PSPAWNINFO)pCharSpawn, target);
+	gNativeAutoFollowStuckPulses = 0;
+	NativeAutoLootSendCommand("/follow");
+	nativeinterface::Chat("AutoFollow: following %s at %.0f.", target->DisplayedName[0] ? target->DisplayedName : target->Name, gNativeAutoFollowDistance);
+	return true;
+}
+
+static void NativeAutoFollowPulse()
+{
+	if (!gNativeAutoFollowEnabled || !pCharSpawn || !pLocalPlayer) {
+		return;
+	}
+
+	PSPAWNINFO target = NativeAutoFollowTarget();
+	if (!target) {
+		NativeAutoFollowStop("target lost");
+		return;
+	}
+
+	PSPAWNINFO self = (PSPAWNINFO)pCharSpawn;
+	const float distance = DistanceToSpawn(self, target);
+	if (distance > 250.0f) {
+		NativeAutoFollowStop("target too far");
+		return;
+	}
+
+	if (distance <= gNativeAutoFollowDistance) {
+		self->WhoFollowing = nullptr;
+		gNativeAutoFollowStuckPulses = 0;
+		gNativeAutoFollowLastDistance = distance;
+		return;
+	}
+
+	if (!self->WhoFollowing) {
+		if (!pTarget || ((PSPAWNINFO)pTarget)->SpawnID != gNativeAutoFollowTargetId) {
+			NativeAutoFollowStop("target no longer selected");
+			return;
+		}
+		NativeAutoLootSendCommand("/follow");
+	}
+
+	if (distance >= gNativeAutoFollowLastDistance - 1.0f) {
+		++gNativeAutoFollowStuckPulses;
+	} else {
+		gNativeAutoFollowStuckPulses = 0;
+	}
+	gNativeAutoFollowLastDistance = distance;
+
+	if (gNativeAutoFollowStuckPulses > 120) {
+		NativeAutoFollowStop("stuck");
+	}
+}
+
 class NativeAutoLootCommandHook
 {
 public:
@@ -6700,6 +7162,11 @@ public:
 
 		if (NativeTradeskillsLocalCommand(line)) {
 			NativeAutoLootTrace("handled local tradeskills command: %s", line ? line : "");
+			return;
+		}
+
+		if (NativeAutoFollowLocalCommand(line)) {
+			NativeAutoLootTrace("handled local autofollow command: %s", line ? line : "");
 			return;
 		}
 
@@ -6730,6 +7197,18 @@ public:
 		}
 
 		if (NativeFactionRewriteCommand(line, rewritten, sizeof(rewritten))) {
+			NativeAutoLootTrace("rewrite command: %s -> %s", line ? line : "", rewritten);
+			Trampoline(player, rewritten);
+			return;
+		}
+
+		if (NativeDpsRewriteCommand(line, rewritten, sizeof(rewritten))) {
+			NativeAutoLootTrace("rewrite command: %s -> %s", line ? line : "", rewritten);
+			Trampoline(player, rewritten);
+			return;
+		}
+
+		if (NativeUseItemRewriteCommand(line, rewritten, sizeof(rewritten))) {
 			NativeAutoLootTrace("rewrite command: %s -> %s", line ? line : "", rewritten);
 			Trampoline(player, rewritten);
 			return;
@@ -7396,6 +7875,8 @@ static bool NativeFactionParseTransport(const char* message)
 		gNativeFactionLoading = true;
 		gNativeFactionRows.clear();
 		gNativeFactionTargetId = 0;
+		gNativeFactionMode.clear();
+		gNativeFactionSearch.clear();
 		gNativeFactionStatus = "Loading faction reputation...";
 		gNativeFactionRowsDirty = true;
 		if (gNativeFactionWnd) {
@@ -7407,6 +7888,8 @@ static bool NativeFactionParseTransport(const char* message)
 	if (NativeStartsWith(message, "FACTION|summary|")) {
 		const std::string payload(message + strlen("FACTION|summary|"));
 		gNativeFactionTargetId = NativeToInt(NativeGetPairValue(payload, "target"));
+		gNativeFactionMode = NativeGetPairValue(payload, "mode");
+		gNativeFactionSearch = NativeGetPairValue(payload, "search");
 		gNativeFactionStatus = NativeGetPairValue(payload, "status");
 		if (gNativeFactionStatus.empty()) {
 			gNativeFactionStatus = "Faction reputation refreshed.";
@@ -7427,6 +7910,9 @@ static bool NativeFactionParseTransport(const char* message)
 		row.standing = NativeGetPairValue(payload, "standing");
 		row.touched = NativeToBool(NativeGetPairValue(payload, "touched"));
 		row.target = NativeToBool(NativeGetPairValue(payload, "target"));
+		row.pinned = NativeToBool(NativeGetPairValue(payload, "pinned"));
+		row.hidden = NativeToBool(NativeGetPairValue(payload, "hidden"));
+		row.section = NativeGetPairValue(payload, "section");
 		if (row.name.empty()) {
 			char name[48];
 			sprintf_s(name, "Faction %d", row.id);
@@ -7458,6 +7944,81 @@ static bool NativeFactionParseTransport(const char* message)
 	return true;
 }
 
+static bool NativeDpsParseTransport(const char* message)
+{
+	if (!message || !message[0] || !NativeStartsWith(message, "DPS|")) {
+		return false;
+	}
+
+	if (NativeStartsWith(message, "DPS|window|clear")) {
+		gNativeDpsLoading = true;
+		gNativeDpsRows.clear();
+		gNativeDpsRowsDirty = true;
+		gNativeDpsStatus = "Loading DPS parser...";
+		if (gNativeDpsWnd) {
+			gNativeDpsWnd->RefreshRows();
+		}
+		return true;
+	}
+
+	if (NativeStartsWith(message, "DPS|summary|")) {
+		const std::string payload(message + strlen("DPS|summary|"));
+		gNativeDpsEncounterId = NativeToInt(NativeGetPairValue(payload, "id"));
+		gNativeDpsTarget = NativeGetPairValue(payload, "target");
+		gNativeDpsElapsedMs = NativeToInt(NativeGetPairValue(payload, "elapsed"));
+		gNativeDpsDamage = _strtoui64(NativeGetPairValue(payload, "damage").c_str(), nullptr, 10);
+		gNativeDpsHealing = _strtoui64(NativeGetPairValue(payload, "healing").c_str(), nullptr, 10);
+		gNativeDpsIncoming = _strtoui64(NativeGetPairValue(payload, "incoming").c_str(), nullptr, 10);
+		gNativeDpsStatus = NativeGetPairValue(payload, "status");
+		if (gNativeDpsStatus.empty()) {
+			gNativeDpsStatus = "DPS parser refreshed.";
+		}
+		if (gNativeDpsWnd && !gNativeDpsLoading) {
+			gNativeDpsWnd->RefreshRows();
+		}
+		return true;
+	}
+
+	if (NativeStartsWith(message, "DPS|row|")) {
+		const std::string payload(message + strlen("DPS|row|"));
+		NativeDpsRow row;
+		row.actor_id = NativeToInt(NativeGetPairValue(payload, "actor_id"));
+		row.owner_id = NativeToInt(NativeGetPairValue(payload, "owner_id"));
+		row.actor = NativeGetPairValue(payload, "actor");
+		row.source = NativeGetPairValue(payload, "source");
+		row.damage = _strtoui64(NativeGetPairValue(payload, "damage").c_str(), nullptr, 10);
+		row.healing = _strtoui64(NativeGetPairValue(payload, "healing").c_str(), nullptr, 10);
+		row.incoming = _strtoui64(NativeGetPairValue(payload, "incoming").c_str(), nullptr, 10);
+		row.dps = _strtoui64(NativeGetPairValue(payload, "dps").c_str(), nullptr, 10);
+		row.hps = _strtoui64(NativeGetPairValue(payload, "hps").c_str(), nullptr, 10);
+		row.pct = NativeToInt(NativeGetPairValue(payload, "pct"));
+		if (row.actor.empty()) {
+			row.actor = "Actor";
+		}
+		if (row.source.empty()) {
+			row.source = row.actor;
+		}
+		gNativeDpsRows.push_back(row);
+		gNativeDpsRowsDirty = true;
+		if (gNativeDpsWnd && !gNativeDpsLoading) {
+			gNativeDpsWnd->RefreshRows();
+		}
+		return true;
+	}
+
+	if (NativeStartsWith(message, "DPS|window|show")) {
+		gNativeDpsLoading = false;
+		NativeDpsEnsureWindow(true);
+		if (gNativeDpsWnd) {
+			gNativeDpsWnd->RefreshRows();
+			gNativeDpsWnd->SetStatus(gNativeDpsStatus.c_str());
+		}
+		return true;
+	}
+
+	return true;
+}
+
 static bool NativeAutoLootParseTransport(const char* message)
 {
 	if (!message || !message[0]) {
@@ -7482,6 +8043,10 @@ static bool NativeAutoLootParseTransport(const char* message)
 	}
 
 	if (NativeFactionParseTransport(message)) {
+		return true;
+	}
+
+	if (NativeDpsParseTransport(message)) {
 		return true;
 	}
 
@@ -7765,8 +8330,32 @@ static void NativeFactionResetState()
 	gNativeFactionRows.clear();
 	gNativeFactionStatus = "Use /rep to refresh. Target an NPC to pin its primary faction.";
 	gNativeFactionTargetId = 0;
+	gNativeFactionMode.clear();
+	gNativeFactionSearch.clear();
 	gNativeFactionLoading = false;
 	gNativeFactionRowsDirty = true;
+}
+
+static void NativeDpsResetState()
+{
+	gNativeDpsRows.clear();
+	gNativeDpsStatus = "Waiting for DPS data.";
+	gNativeDpsTarget.clear();
+	gNativeDpsEncounterId = 0;
+	gNativeDpsElapsedMs = 0;
+	gNativeDpsDamage = 0;
+	gNativeDpsHealing = 0;
+	gNativeDpsIncoming = 0;
+	gNativeDpsLoading = false;
+	gNativeDpsRowsDirty = true;
+}
+
+static void NativeAutoFollowResetState()
+{
+	gNativeAutoFollowEnabled = false;
+	gNativeAutoFollowTargetId = 0;
+	gNativeAutoFollowLastDistance = 0.0f;
+	gNativeAutoFollowStuckPulses = 0;
 }
 
 static bool NativeAutoLootHasRuntimeWindows()
@@ -7779,6 +8368,7 @@ static bool NativeAutoLootHasRuntimeWindows()
 		gNativeItemForgeWnd ||
 		gNativeAchievementWnd ||
 		gNativeFactionWnd ||
+		gNativeDpsWnd ||
 		gNativeTradeskillsWnd ||
 		gNativeUIShowcaseWnd ||
 		gNativeHpFixWnd ||
@@ -7812,6 +8402,7 @@ static void NativeAutoLootDestroyRuntimeWindows()
 	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeItemForgeWnd, "Item Forge");
 	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeAchievementWnd, "Achievement");
 	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeFactionWnd, "Faction reputation");
+	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeDpsWnd, "DPS parser");
 	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeTradeskillsWnd, "Tradeskills helper");
 	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeUIShowcaseWnd, "Native UI showcase");
 	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeHpFixWnd, "HP Fix");
@@ -7845,6 +8436,8 @@ static void NativeAutoLootResetSessionRequests()
 	NativeMulticlassResetSessionState(true);
 	NativeAchievementResetState();
 	NativeFactionResetState();
+	NativeDpsResetState();
+	NativeAutoFollowResetState();
 }
 
 static void NativeAutoLootResetClientUiSession(const char* reason)
@@ -7874,6 +8467,8 @@ static void NativeAutoLootResetClientUiSession(const char* reason)
 	NativeMulticlassResetSessionState(false);
 	NativeAchievementResetState();
 	NativeFactionResetState();
+	NativeDpsResetState();
+	NativeAutoFollowResetState();
 }
 
 static void NativeAutoLootMaybeSendInitialRequests()
@@ -7972,6 +8567,10 @@ static void NativeAutoLootPulse()
 		gNativeFactionWnd->Layout();
 	}
 
+	if (gNativeDpsWnd) {
+		gNativeDpsWnd->Layout();
+	}
+
 	if (gNativeTradeskillsWnd) {
 		gNativeTradeskillsWnd->Layout();
 	}
@@ -8001,6 +8600,7 @@ static void NativeAutoLootPulse()
 	}
 
 	NativeMulticlassMaintainPresentationUI();
+	NativeAutoFollowPulse();
 
 	if (!gNativeAutoLootRequestedInitialStatus) {
 		gNativeAutoLootRequestedInitialStatus = true;
@@ -8139,6 +8739,11 @@ static void ShutdownAutoLootNative()
 	if (gNativeFactionWnd) {
 		delete gNativeFactionWnd;
 		gNativeFactionWnd = nullptr;
+	}
+
+	if (gNativeDpsWnd) {
+		delete gNativeDpsWnd;
+		gNativeDpsWnd = nullptr;
 	}
 
 	if (gNativeTradeskillsWnd) {

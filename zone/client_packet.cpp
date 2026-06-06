@@ -9460,7 +9460,6 @@ void Client::Handle_OP_ItemPreviewRequest(const EQApplicationPacket* app)
 
 void Client::Handle_OP_ItemVerifyRequest(const EQApplicationPacket *app)
 {
-	using EQ::spells::CastingSlot;
 	if (app->size != sizeof(ItemVerifyRequest_Struct))
 	{
 		LogError("OP size error: OP_ItemVerifyRequest expected:[{}] got:[{}]", sizeof(ItemVerifyRequest_Struct), app->size);
@@ -9485,6 +9484,13 @@ void Client::Handle_OP_ItemVerifyRequest(const EQApplicationPacket *app)
 	QueuePacket(outapp);
 	safe_delete(outapp);
 
+	UseItemSlot(slot_id, target_id);
+}
+
+void Client::UseItemSlot(int32 slot_id, int32 target_id)
+{
+	using EQ::spells::CastingSlot;
+	int32 spell_id = 0;
 
 	if (IsAIControlled()) {
 		MessageString(Chat::Red, NOT_IN_CONTROL);
@@ -9492,7 +9498,7 @@ void Client::Handle_OP_ItemVerifyRequest(const EQApplicationPacket *app)
 	}
 
 	if (slot_id < 0) {
-		LogDebug("Unknown slot being used by [{}] slot being used is [{}]", GetName(), request->slot);
+		LogDebug("Unknown slot being used by [{}] slot being used is [{}]", GetName(), slot_id);
 		return;
 	}
 

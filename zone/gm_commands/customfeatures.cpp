@@ -13,7 +13,7 @@
 namespace {
 	void SendFeatureStatus(Client *c, const char *name, bool enabled)
 	{
-		c->Message(Chat::White, "{}: {}", name, enabled ? "enabled" : "disabled");
+		c->Message(Chat::White, "%s: %s", name, enabled ? "enabled" : "disabled");
 	}
 }
 
@@ -34,4 +34,11 @@ void command_customfeatures(Client *c, const Seperator *)
 	SendFeatureStatus(c, "Dynamic Quests", RuleB(CustomFeatures, DynamicQuestsEnabled));
 	SendFeatureStatus(c, "MQ Interface", RuleB(CustomFeatures, MqInterfaceEnabled));
 	SendFeatureStatus(c, "Pet Bags", RuleB(CustomFeatures, PetBagsEnabled));
+	SendFeatureStatus(c, "Faction Window", RuleB(CustomFeatures, FactionWindowEnabled));
+	SendFeatureStatus(c, "Faction Show All", RuleB(CustomFeatures, FactionWindowShowAllByDefault));
+	SendFeatureStatus(c, "DPS Parser", RuleB(CustomFeatures, DpsParserEnabled));
+	SendFeatureStatus(c, "Improved Autofollow", RuleB(CustomFeatures, ImprovedAutoFollowEnabled));
+	SendFeatureStatus(c, "UseItem Command", RuleB(CustomFeatures, UseItemCommandEnabled));
+	SendFeatureStatus(c, "Autoskills", RuleB(CustomFeatures, AutoskillsEnabled));
+	SendFeatureStatus(c, "Server Auth Stats", RuleB(CustomFeatures, ServerAuthStatsEnabled));
 }

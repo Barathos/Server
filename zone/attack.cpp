@@ -26,6 +26,7 @@
 #include "zone/achievement_manager.h"
 #include "zone/autoloot_manager.h"
 #include "zone/bot.h"
+#include "zone/dps_parser_manager.h"
 #include "zone/fastmath.h"
 #include "zone/lua_parser.h"
 #include "zone/mob.h"
@@ -4292,6 +4293,11 @@ void Mob::CommonDamage(Mob* attacker, int64 &damage, const uint16 spell_id, cons
 			damage = 0;
 		}
 
+		const int64 applied_damage = std::min<int64>(damage, std::max<int64>(GetHP(), 0));
+		if (applied_damage > 0) {
+			dps_parser_manager.RecordDamage(this, attacker, applied_damage, spell_id, skill_used);
+		}
+
 		SetHP(int64(GetHP() - damage));
 
 		if (HasDied()) {
@@ -4829,6 +4835,10 @@ void Mob::HealDamage(uint64 amount, Mob* caster, uint16 spell_id)
 		acthealed = (maxhp - curhp);
 	else
 		acthealed = amount;
+
+	if (acthealed > 0) {
+		dps_parser_manager.RecordHeal(this, caster, acthealed, spell_id);
+	}
 
 	if (acthealed > RuleI(Spells, HealAmountMessageFilterThreshold)) {
 		if (caster) {

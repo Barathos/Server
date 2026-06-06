@@ -2578,6 +2578,27 @@ INSERT INTO `merchantlist` (
 )",
 		.content_schema_update = true,
 	},
+	ManifestEntry{
+		.version = 16,
+		.description = "2026_06_06_custom_faction_window_preferences",
+		.check = "SHOW TABLES LIKE 'custom_faction_window_preferences'",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+CREATE TABLE `custom_faction_window_preferences` (
+  `character_id` INT UNSIGNED NOT NULL,
+  `faction_id` INT NOT NULL,
+  `pinned` TINYINT(1) NOT NULL DEFAULT 0,
+  `hidden` TINYINT(1) NOT NULL DEFAULT 0,
+  `section` VARCHAR(32) NOT NULL DEFAULT '',
+  `updated_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`character_id`, `faction_id`),
+  KEY `idx_character_hidden_pinned` (`character_id`, `hidden`, `pinned`),
+  KEY `idx_faction_id` (`faction_id`)
+);
+)",
+		.content_schema_update = false,
+	},
 };
 
 // see struct definitions for what each field does

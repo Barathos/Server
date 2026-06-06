@@ -9,6 +9,8 @@
 */
 #pragma once
 
+#include <string>
+
 class Client;
 class Seperator;
 
@@ -16,9 +18,11 @@ class FactionReputationManager {
 public:
 	void HandleCommand(Client *client, const Seperator *sep);
 	void SendNativeSnapshot(Client *client);
+	void SendNativeSnapshot(Client *client, const std::string &mode, const std::string &search);
 
 private:
 	void SendChatList(Client *client);
+	void SendChatList(Client *client, const std::string &mode, const std::string &search);
 };
 
 extern FactionReputationManager faction_reputation_manager;

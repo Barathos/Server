@@ -1218,6 +1218,7 @@ public:
 
 	void SendItemLink(const EQ::ItemInstance* inst, bool sendtoall=false);
 	void SendLootItemInPacket(const EQ::ItemInstance* inst, int16 slot_id);
+	void UseItemSlot(int32 slot_id, int32 target_id);
 	EQ::ItemInstance* CloneItemForMulticlassPresentation(const EQ::ItemInstance* inst);
 	void SendItemPacket(int16 slot_id, const EQ::ItemInstance* inst, ItemPacketType packet_type);
 	bool RefreshLiveItem(EQ::ItemInstance* inst);

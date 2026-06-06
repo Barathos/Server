@@ -34,6 +34,7 @@ set(zone_sources
     corpse.cpp
     dialogue_window.cpp
     doors.cpp
+    dps_parser_manager.cpp
     dynamic_zone.cpp
     effects.cpp
     embparser.cpp
@@ -143,6 +144,7 @@ set(zone_headers
     corpse.h
     dialogue_window.h
     doors.h
+    dps_parser_manager.h
     dynamic_zone.h
     embparser.h
     embperl.h
@@ -414,6 +416,7 @@ set(gm_command_sources
     gm_commands/doanim.cpp
     gm_commands/door.cpp
     gm_commands/door_manipulation.cpp
+    gm_commands/dps.cpp
     gm_commands/dye.cpp
     gm_commands/dz.cpp
     gm_commands/dzkickplayers.cpp
@@ -671,6 +674,7 @@ set(gm_command_sources
     gm_commands/unscribespells.cpp
     gm_commands/untraindisc.cpp
     gm_commands/untraindiscs.cpp
+    gm_commands/useitem.cpp
     gm_commands/wc.cpp
     gm_commands/worldshutdown.cpp
     gm_commands/worldwide.cpp

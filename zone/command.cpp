@@ -134,6 +134,7 @@ int command_init(void)
 		command_add("disablerecipe", "[Recipe ID] - Disables a Recipe", AccountStatus::QuestTroupe, command_disablerecipe) ||
 		command_add("disarmtrap", "Analog for ldon disarm trap for the newer clients since we still don't have it working.", AccountStatus::QuestTroupe, command_disarmtrap) ||
 		command_add("door", "Door editing command", AccountStatus::QuestTroupe, command_door) ||
+		command_add("dps", "[status|reset|summary|live on|live off] - Open and manage the native DPS parser", AccountStatus::Player, command_dps) ||
 		command_add("doanim", "[Animation ID|Animation Name] [Speed] - Send an animation by ID or name at the specified speed to you or your target (Speed is optional)", AccountStatus::Guide, command_doanim) ||
 		command_add("dye", "[slot|'help'] [red] [green] [blue] [use_tint] - Dyes the specified armor slot to Red, Green, and Blue provided, allows you to bypass darkness limits.", AccountStatus::ApprenticeGuide, command_dye) ||
 		command_add("dz", "Manage expeditions and dynamic zone instances", AccountStatus::QuestTroupe, command_dz) ||
@@ -226,8 +227,8 @@ int command_init(void)
 		command_add("raidloot", "[All|GroupLeader|RaidLeader|Selected] - Sets your Raid Loot Type if you have permission to do so.", AccountStatus::Player, command_raidloot) ||
 		command_add("randomfeatures", "Temporarily randomizes the Facial Features of your target", AccountStatus::QuestTroupe, command_randomfeatures) ||
 		command_add("refreshgroup", "Refreshes Group for you or your player target.", AccountStatus::Player, command_refreshgroup) ||
-		command_add("rep", "[refresh|list] - View your faction reputation standings", AccountStatus::Player, command_reputation) ||
-		command_add("reputation", "[refresh|list] - View your faction reputation standings", AccountStatus::Player, command_reputation) ||
+		command_add("rep", "[refresh|list|pin|unpin|hide|show|hidden|resetprefs|search] - View and customize faction reputation standings", AccountStatus::Player, command_reputation) ||
+		command_add("reputation", "[refresh|list|pin|unpin|hide|show|hidden|resetprefs|search] - View and customize faction reputation standings", AccountStatus::Player, command_reputation) ||
 		command_add("tradeskill", "[makeall] - Custom tradeskill helper commands", AccountStatus::Player, command_tradeskill) ||
 		command_add("ts", "[makeall] - Short custom tradeskill helper commands", AccountStatus::Player, command_tradeskill) ||
 		command_add("reload", "Reloads different types of server data globally, use no argument for help menu.", AccountStatus::GMMgmt, command_reload) ||
@@ -272,6 +273,7 @@ int command_init(void)
 		command_add("unscribespells", "Clear out your or your player target's spell book.", AccountStatus::GMCoder, command_unscribespells) ||
 		command_add("untraindisc", "[Spell ID] - Untrain your or your target's discipline by Spell ID", AccountStatus::GMCoder, command_untraindisc) ||
 		command_add("untraindiscs", "Untrains all disciplines from your target.", AccountStatus::GMCoder, command_untraindiscs) ||
+		command_add("useitem", "[item name] - Use a clickable carried item by name", AccountStatus::Player, command_useitem) ||
 		command_add("wc", "[Slot ID] [Material] [Hero Forge Model] [Elite Material] - Sets the specified slot for you or your target to a material, Hero Forge Model and Elite Material are optional", AccountStatus::GMMgmt, command_wc) ||
 		command_add("worldshutdown", "Shut down world and all zones", AccountStatus::GMMgmt, command_worldshutdown) ||
 		command_add("wp", "[add|delete] [grid_id] [pause] [waypoint_id] [-h] - Add or delete a waypoint by grid ID. (-h to use current heading)", AccountStatus::GMAreas, command_wp) ||
