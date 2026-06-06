@@ -22,7 +22,9 @@ constexpr uint32      THJ_FAKE_BAZAAR_ZONE_ID       = Zones::BAZAAR;
 constexpr uint32      THJ_FAKE_BAZAAR_SERIAL_BASE   = 2000000000;
 constexpr uint64      THJ_FAKE_BAZAAR_MAX_PRICE     = 2000000000;
 constexpr uint32      THJ_FAKE_BAZAAR_MAX_PER_TRADER = 200;
-constexpr const char *THJ_FAKE_BAZAAR_CONFIG_PREFIX  = "THJFakeBazaar.";
+constexpr const char *THJ_FAKE_BAZAAR_CONFIG_PREFIX  = "THJFB.";
+constexpr const char *THJ_FAKE_BAZAAR_LEGACY_CONFIG_PREFIX = "THJFakeBazaar.";
+constexpr size_t      THJ_FAKE_BAZAAR_VARIABLE_NAME_LIMIT = 25;
 constexpr const char *THJ_FAKE_BAZAAR_DEFAULT_ITEM_TYPES =
 	"0,1,2,3,4,5,8,10,45";
 constexpr uint32      THJ_FAKE_BAZAAR_DEFAULT_MAX_ITEM_LEVEL = 65;
@@ -195,17 +197,43 @@ static uint32 THJFakeBazaarPpToCopper(uint32 platinum)
 	));
 }
 
-static std::string THJFakeBazaarConfigVariableName(const std::string &key)
+static uint32 THJFakeBazaarConfigKeyHash(const std::string &key)
 {
-	return fmt::format("{}{}", THJ_FAKE_BAZAAR_CONFIG_PREFIX, key);
+	uint32 hash = 2166136261u;
+	for (const auto c : key) {
+		hash ^= static_cast<uint8>(std::tolower(static_cast<unsigned char>(c)));
+		hash *= 16777619u;
+	}
+
+	return hash;
 }
 
-static bool THJFakeBazaarConfigValueExists(const std::string &key, std::string &value)
+static std::string THJFakeBazaarConfigVariableName(const std::string &key)
+{
+	const auto readable_name = fmt::format("{}{}", THJ_FAKE_BAZAAR_CONFIG_PREFIX, key);
+	if (readable_name.size() <= THJ_FAKE_BAZAAR_VARIABLE_NAME_LIMIT) {
+		return readable_name;
+	}
+
+	return fmt::format(
+		"{}{:.10}.{:08X}",
+		THJ_FAKE_BAZAAR_CONFIG_PREFIX,
+		key,
+		THJFakeBazaarConfigKeyHash(key)
+	);
+}
+
+static std::string THJFakeBazaarLegacyConfigVariableName(const std::string &key)
+{
+	return fmt::format("{}{}", THJ_FAKE_BAZAAR_LEGACY_CONFIG_PREFIX, key);
+}
+
+static bool THJFakeBazaarConfigVariableExists(const std::string &variable_name, std::string &value)
 {
 	auto results = database.QueryDatabase(
 		fmt::format(
 			"SELECT `value` FROM `variables` WHERE `varname` = '{}' LIMIT 1",
-			Strings::Escape(THJFakeBazaarConfigVariableName(key))
+			Strings::Escape(variable_name)
 		)
 	);
 
@@ -216,6 +244,24 @@ static bool THJFakeBazaarConfigValueExists(const std::string &key, std::string &
 	auto row = results.begin();
 	value = row[0] ? row[0] : "";
 	return true;
+}
+
+static bool THJFakeBazaarConfigValueExists(const std::string &key, std::string &value)
+{
+	const auto variable_name = THJFakeBazaarConfigVariableName(key);
+	if (THJFakeBazaarConfigVariableExists(variable_name, value)) {
+		return true;
+	}
+
+	const auto legacy_variable_name = THJFakeBazaarLegacyConfigVariableName(key);
+	if (
+		legacy_variable_name.size() <= THJ_FAKE_BAZAAR_VARIABLE_NAME_LIMIT &&
+		legacy_variable_name != variable_name
+	) {
+		return THJFakeBazaarConfigVariableExists(legacy_variable_name, value);
+	}
+
+	return false;
 }
 
 static std::string THJFakeBazaarConfigString(const std::string &key, const std::string &default_value)
@@ -1590,7 +1636,7 @@ static void THJFakeBazaarConfigMessage(Client *c)
 			config.pricing.buyer_mundane_max_price / 1000
 		).c_str()
 	);
-	c->Message(Chat::White, "Use #fakebazaar set Key Value. Values are stored as variables named THJFakeBazaar.Key.");
+	c->Message(Chat::White, "Use #fakebazaar set Key Value. Values are stored as compact variables named THJFB.*.");
 	c->Message(Chat::White, "Common keys: SellerItems, BuyerLines, MinExpansion, MaxExpansion, IncludedZones, ExcludedZones, AllowedItemTypes, ExcludeTradeskillItems, ExcludeMerchantItems, ExcludeSpellScrolls, RequireEquipmentStats, MinimumEquipmentStatTotal, AutoRefreshEnabled, RefreshIntervalMinutes, BuyerMundaneMaxPricePP.");
 }
 
@@ -1617,10 +1663,10 @@ static void THJFakeBazaarSetConfig(Client *c, const Seperator *sep)
 	c->Message(
 		Chat::White,
 		fmt::format(
-			"Set {}{} = {}. Run #fakebazaar seed to apply it to new fake bazaar rows.",
-			THJ_FAKE_BAZAAR_CONFIG_PREFIX,
+			"Set {} = {} (stored as {}). Run #fakebazaar seed to apply it to new fake bazaar rows.",
 			key,
-			value
+			value,
+			THJFakeBazaarConfigVariableName(key)
 		).c_str()
 	);
 }
