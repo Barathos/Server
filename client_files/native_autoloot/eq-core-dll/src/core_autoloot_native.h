@@ -3178,12 +3178,14 @@ public:
 		}
 
 		if (pWnd == (CXWnd*)SearchEdit && Message == XWM_NEWVALUE) {
-			ApplySearchFromEdit(false);
-			return CSidlScreenWnd::WndNotification(pWnd, Message, unknown);
+			if (!UpdatingSearchText) {
+				ApplySearchFromEdit(false, true);
+			}
+			return 1;
 		}
 
 		if (pWnd == (CXWnd*)SearchEdit && Message == XWM_HITENTER) {
-			ApplySearchFromEdit(true);
+			ApplySearchFromEdit(true, true);
 			return 1;
 		}
 
@@ -3192,6 +3194,10 @@ public:
 
 	void Layout()
 	{
+		if (DeferredSearchRefresh) {
+			DeferredSearchRefresh = false;
+			RefreshRows();
+		}
 	}
 
 	void SetStatus(const char* text)
@@ -3202,9 +3208,9 @@ public:
 	void RefreshRows();
 
 private:
-	void ApplySearchFromEdit(bool server_search);
+	void ApplySearchFromEdit(bool server_search, bool defer_refresh = false);
 	void ClearSearch();
-	std::string ReadSearch() const;
+	std::string ReadSearch(bool prefer_input_text = true) const;
 	void SetSearchText(const char* text);
 
 	int SelectedFactionId() const
@@ -3262,6 +3268,8 @@ private:
 	CEditWnd* SearchEdit = nullptr;
 	CButtonWnd* SearchButton = nullptr;
 	CButtonWnd* ClearSearchButton = nullptr;
+	bool DeferredSearchRefresh = false;
+	bool UpdatingSearchText = false;
 };
 
 static NativeFactionWnd* gNativeFactionWnd = nullptr;
@@ -5871,21 +5879,40 @@ static void NativeAchievementEnsureWindow(bool show)
 	}
 }
 
-std::string NativeFactionWnd::ReadSearch() const
+std::string NativeFactionWnd::ReadSearch(bool prefer_input_text) const
 {
-	char text[96] = { 0 };
+	char input_text[96] = { 0 };
+	char window_text_buffer[96] = { 0 };
+	bool has_input_text = false;
+	bool has_window_text = false;
 	if (SearchEdit) {
-		__try {
-			CXStr window_text = ((CXWnd*)SearchEdit)->GetWindowTextA();
-			GetCXStr(window_text.Ptr, text, sizeof(text));
-		}
-		__except (EXCEPTION_EXECUTE_HANDLER) {
-			text[0] = 0;
+		if (SearchEdit->InputText) {
+			has_input_text = true;
+			GetCXStr(SearchEdit->InputText, input_text, sizeof(input_text));
 		}
 
-		if (!text[0] && SearchEdit->InputText) {
-			GetCXStr(SearchEdit->InputText, text, sizeof(text));
+		__try {
+			CXStr window_text = ((CXWnd*)SearchEdit)->GetWindowTextA();
+			if (window_text.Ptr) {
+				has_window_text = true;
+				GetCXStr(window_text.Ptr, window_text_buffer, sizeof(window_text_buffer));
+			}
 		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			has_window_text = false;
+			window_text_buffer[0] = 0;
+		}
+	}
+
+	const char* text = "";
+	if (prefer_input_text && has_input_text) {
+		text = input_text;
+	}
+	else if (has_window_text) {
+		text = window_text_buffer;
+	}
+	else if (has_input_text) {
+		text = input_text;
 	}
 
 	std::string search(text);
@@ -5908,20 +5935,27 @@ void NativeFactionWnd::SetSearchText(const char* text)
 
 	char buffer[96] = { 0 };
 	strncpy_s(buffer, sizeof(buffer), text ? text : "", _TRUNCATE);
+	UpdatingSearchText = true;
 	SetCXStr(&SearchEdit->InputText, buffer);
 	CXStr value(buffer);
 	((CXWnd*)SearchEdit)->SetWindowTextA(value);
+	UpdatingSearchText = false;
 }
 
-void NativeFactionWnd::ApplySearchFromEdit(bool server_search)
+void NativeFactionWnd::ApplySearchFromEdit(bool server_search, bool defer_refresh)
 {
-	const std::string search = ReadSearch();
+	const std::string search = ReadSearch(defer_refresh);
 	const bool changed = search != gNativeFactionSearch;
 	gNativeFactionSearch = search;
 
 	if (changed) {
 		gNativeFactionRowsDirty = true;
-		RefreshRows();
+		if (defer_refresh) {
+			DeferredSearchRefresh = true;
+		}
+		else {
+			RefreshRows();
+		}
 	}
 
 	if (!server_search) {
@@ -5942,6 +5976,7 @@ void NativeFactionWnd::ApplySearchFromEdit(bool server_search)
 void NativeFactionWnd::ClearSearch()
 {
 	gNativeFactionSearch.clear();
+	DeferredSearchRefresh = false;
 	SetSearchText("");
 	gNativeFactionRowsDirty = true;
 	RefreshRows();
