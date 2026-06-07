@@ -13,11 +13,52 @@
 #include "platform.h"
 
 #include <cstdio>
+#include <cctype>
+#include <cstdint>
+#include <filesystem>
 #include <vector>
 
 #ifdef _WINDOWS
 #define popen _popen
 #endif
+
+namespace {
+	thread_local std::vector<std::string> crash_context;
+}
+
+void PushCrashContext(const std::string& context)
+{
+	if (!context.empty()) {
+		crash_context.push_back(context);
+	}
+}
+
+void PopCrashContext()
+{
+	if (!crash_context.empty()) {
+		crash_context.pop_back();
+	}
+}
+
+std::vector<std::string> GetCrashContext()
+{
+	return crash_context;
+}
+
+CrashContextScope::CrashContextScope(std::string context)
+{
+	if (!context.empty()) {
+		PushCrashContext(context);
+		active_ = true;
+	}
+}
+
+CrashContextScope::~CrashContextScope()
+{
+	if (active_) {
+		PopCrashContext();
+	}
+}
 
 void SendCrashReport(const std::string &crash_report)
 {
@@ -94,6 +135,7 @@ void SendCrashReport(const std::string &crash_report)
 }
 
 #if defined(_WINDOWS) && defined(CRASH_LOGGING)
+#include <dbghelp.h>
 #include "StackWalker.h"
 
 class EQEmuStackWalker : public StackWalker
@@ -128,6 +170,127 @@ public:
 private:
 	std::vector<std::string> _lines;
 };
+
+static std::string GetCrashDumpPath()
+{
+	char module_path[MAX_PATH] = {};
+	GetModuleFileNameA(nullptr, module_path, MAX_PATH);
+
+	std::filesystem::path dump_dir = std::filesystem::current_path() / "crashdumps";
+	if (module_path[0] != '\0') {
+		const std::filesystem::path exe_path(module_path);
+		const auto exe_dir = exe_path.parent_path();
+		if (exe_dir.filename() == "bin") {
+			dump_dir = exe_dir.parent_path() / "crashdumps";
+		}
+	}
+
+	std::error_code error;
+	std::filesystem::create_directories(dump_dir, error);
+
+	SYSTEMTIME system_time;
+	GetLocalTime(&system_time);
+
+	auto process_name = GetPlatformName();
+	for (auto& character : process_name) {
+		if (!std::isalnum(static_cast<unsigned char>(character))) {
+			character = '_';
+		}
+	}
+
+	const auto dump_name = fmt::format(
+		"{}_pid{}_{}{:02}{:02}_{:02}{:02}{:02}_{:03}.dmp",
+		process_name,
+		GetCurrentProcessId(),
+		system_time.wYear,
+		system_time.wMonth,
+		system_time.wDay,
+		system_time.wHour,
+		system_time.wMinute,
+		system_time.wSecond,
+		system_time.wMilliseconds
+	);
+
+	return (dump_dir / dump_name).string();
+}
+
+static void WriteCrashDump(EXCEPTION_POINTERS* exception_info)
+{
+	const auto dbghelp = LoadLibraryA("dbghelp.dll");
+	if (!dbghelp) {
+		Log(Logs::General, Logs::Crash, "Crash dump: failed to load dbghelp.dll");
+		return;
+	}
+
+	using MiniDumpWriteDumpFunction = BOOL (WINAPI *)(
+		HANDLE,
+		DWORD,
+		HANDLE,
+		MINIDUMP_TYPE,
+		PMINIDUMP_EXCEPTION_INFORMATION,
+		PMINIDUMP_USER_STREAM_INFORMATION,
+		PMINIDUMP_CALLBACK_INFORMATION
+	);
+
+	const auto mini_dump_write_dump = reinterpret_cast<MiniDumpWriteDumpFunction>(
+		GetProcAddress(dbghelp, "MiniDumpWriteDump")
+	);
+	if (!mini_dump_write_dump) {
+		Log(Logs::General, Logs::Crash, "Crash dump: MiniDumpWriteDump was not available");
+		FreeLibrary(dbghelp);
+		return;
+	}
+
+	const auto dump_path = GetCrashDumpPath();
+	const auto dump_file = CreateFileA(
+		dump_path.c_str(),
+		GENERIC_WRITE,
+		0,
+		nullptr,
+		CREATE_ALWAYS,
+		FILE_ATTRIBUTE_NORMAL,
+		nullptr
+	);
+	if (dump_file == INVALID_HANDLE_VALUE) {
+		const auto line = fmt::format("Crash dump: failed to create [{}] error [{}]", dump_path, GetLastError());
+		Log(Logs::General, Logs::Crash, line.c_str());
+		FreeLibrary(dbghelp);
+		return;
+	}
+
+	MINIDUMP_EXCEPTION_INFORMATION dump_exception_info = {};
+	dump_exception_info.ThreadId = GetCurrentThreadId();
+	dump_exception_info.ExceptionPointers = exception_info;
+	dump_exception_info.ClientPointers = FALSE;
+
+	const auto dump_type = static_cast<MINIDUMP_TYPE>(
+		MiniDumpWithFullMemory |
+		MiniDumpWithHandleData |
+		MiniDumpWithThreadInfo |
+		MiniDumpWithUnloadedModules
+	);
+
+	const auto wrote_dump = mini_dump_write_dump(
+		GetCurrentProcess(),
+		GetCurrentProcessId(),
+		dump_file,
+		dump_type,
+		&dump_exception_info,
+		nullptr,
+		nullptr
+	);
+
+	CloseHandle(dump_file);
+	FreeLibrary(dbghelp);
+
+	if (wrote_dump) {
+		const auto line = fmt::format("Crash dump written: [{}]", dump_path);
+		Log(Logs::General, Logs::Crash, line.c_str());
+	} else {
+		const auto line = fmt::format("Crash dump: MiniDumpWriteDump failed for [{}] error [{}]", dump_path, GetLastError());
+		Log(Logs::General, Logs::Crash, line.c_str());
+	}
+}
 
 LONG WINAPI windows_exception_handler(EXCEPTION_POINTERS *ExceptionInfo)
 {
@@ -197,6 +360,50 @@ LONG WINAPI windows_exception_handler(EXCEPTION_POINTERS *ExceptionInfo)
 			Log(Logs::General, Logs::Crash, "Unknown Exception");
 			break;
 	}
+
+	{
+		const auto record = ExceptionInfo->ExceptionRecord;
+		const auto exception_address = reinterpret_cast<uintptr_t>(record->ExceptionAddress);
+		const auto line = fmt::format(
+			"Exception detail: code [0x{:08X}] address [0x{:016X}] flags [0x{:08X}] parameters [{}]",
+			static_cast<uint32>(record->ExceptionCode),
+			static_cast<uint64>(exception_address),
+			static_cast<uint32>(record->ExceptionFlags),
+			static_cast<uint32>(record->NumberParameters)
+		);
+		Log(Logs::General, Logs::Crash, line.c_str());
+
+		if (record->ExceptionCode == EXCEPTION_ACCESS_VIOLATION && record->NumberParameters >= 2) {
+			const auto operation = record->ExceptionInformation[0];
+			const auto address = record->ExceptionInformation[1];
+			const char* operation_name = "unknown";
+			if (operation == 0) {
+				operation_name = "read";
+			} else if (operation == 1) {
+				operation_name = "write";
+			} else if (operation == 8) {
+				operation_name = "execute";
+			}
+
+			const auto access_line = fmt::format(
+				"Access violation detail: attempted [{}] at address [0x{:016X}]",
+				operation_name,
+				static_cast<uint64>(address)
+			);
+			Log(Logs::General, Logs::Crash, access_line.c_str());
+		}
+	}
+
+	const auto context = GetCrashContext();
+	if (!context.empty()) {
+		Log(Logs::General, Logs::Crash, "Crash context:");
+		for (size_t i = 0; i < context.size(); ++i) {
+			const auto line = fmt::format("  [{}] {}", i, context[i]);
+			Log(Logs::General, Logs::Crash, line.c_str());
+		}
+	}
+
+	WriteCrashDump(ExceptionInfo);
 
 	if(EXCEPTION_STACK_OVERFLOW != ExceptionInfo->ExceptionRecord->ExceptionCode)
 	{

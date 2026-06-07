@@ -23,6 +23,7 @@
 #include "../common/misc_functions.h"
 #include "../common/strings.h"
 #include "../common/features.h"
+#include "../common/crash.h"
 #include "masterentity.h"
 #include "embparser.h"
 #include "questmgr.h"
@@ -32,6 +33,66 @@
 #include <sstream>
 
 extern Zone* zone;
+
+static std::string PerlembCrashTrim(std::string value)
+{
+	std::replace(value.begin(), value.end(), '\r', ' ');
+	std::replace(value.begin(), value.end(), '\n', ' ');
+	std::replace(value.begin(), value.end(), '\t', ' ');
+
+	constexpr size_t max_length = 240;
+	if (value.length() > max_length) {
+		value.resize(max_length);
+		value += "...";
+	}
+
+	return value;
+}
+
+static std::string PerlembCrashDescribeMob(const char* label, Mob* mob)
+{
+	if (!mob) {
+		return fmt::format("{}=null", label);
+	}
+
+	const char* mob_type = "mob";
+	if (mob->IsClient()) {
+		mob_type = "client";
+	} else if (mob->IsNPC()) {
+		mob_type = "npc";
+	} else if (mob->IsBot()) {
+		mob_type = "bot";
+	} else if (mob->IsMerc()) {
+		mob_type = "merc";
+	} else if (mob->IsCorpse()) {
+		mob_type = "corpse";
+	}
+
+	return fmt::format(
+		"{}={} name=\"{}\" entity_id={} npc_type_id={} level={}",
+		label,
+		mob_type,
+		PerlembCrashTrim(mob->GetName() ? mob->GetName() : ""),
+		mob->GetID(),
+		mob->GetNPCTypeID(),
+		mob->GetLevel()
+	);
+}
+
+static std::string PerlembCrashDescribeZone()
+{
+	if (!zone) {
+		return "zone=null";
+	}
+
+	return fmt::format(
+		"zone={} zone_id={} instance_id={} instance_version={}",
+		zone->GetShortName(),
+		zone->GetZoneID(),
+		zone->GetInstanceID(),
+		zone->GetInstanceVersion()
+	);
+}
 
 #ifdef EMBPERL_XS
 void perl_register_quest();
@@ -257,6 +318,7 @@ void PerlembParser::ReloadQuests()
 
 	errors_.clear();
 	npc_quest_status_.clear();
+	quest_file_by_package_.clear();
 
 	global_npc_quest_status_    = questUnloaded;
 	player_quest_status_        = questUnloaded;
@@ -336,6 +398,21 @@ int PerlembParser::EventCommon(
 	);
 
 	const std::string& sub_name = QuestEventSubroutines[event_id];
+	const auto quest_file_iter = quest_file_by_package_.find(package_name);
+	const auto quest_file = quest_file_iter != quest_file_by_package_.end() ? quest_file_iter->second : "";
+	CrashContextScope crash_context(fmt::format(
+		"PerlQuest package={} script=\"{}\" sub={} object_id={} global={} extra_data={} data=\"{}\" {} {} {}",
+		package_name,
+		PerlembCrashTrim(quest_file),
+		sub_name,
+		object_id,
+		is_global ? 1 : 0,
+		extra_data,
+		PerlembCrashTrim(data ? data : ""),
+		PerlembCrashDescribeZone(),
+		PerlembCrashDescribeMob("quest_mob", npc_mob),
+		PerlembCrashDescribeMob("initiator", mob)
+	));
 
 	if (!perl->SubExists(package_name.c_str(), sub_name.c_str())) {
 		return 0;
@@ -693,6 +770,7 @@ void PerlembParser::LoadNPCScript(std::string filename, int npc_id)
 	}
 
 	npc_quest_status_[npc_id] = questLoaded;
+	quest_file_by_package_[package_name] = filename;
 }
 
 void PerlembParser::LoadGlobalNPCScript(std::string filename)
@@ -717,6 +795,7 @@ void PerlembParser::LoadGlobalNPCScript(std::string filename)
 	}
 
 	global_npc_quest_status_ = questLoaded;
+	quest_file_by_package_["qst_global_npc"] = filename;
 }
 
 void PerlembParser::LoadPlayerScript(std::string filename)
@@ -741,6 +820,7 @@ void PerlembParser::LoadPlayerScript(std::string filename)
 	}
 
 	player_quest_status_ = questLoaded;
+	quest_file_by_package_["qst_player"] = filename;
 }
 
 void PerlembParser::LoadGlobalPlayerScript(std::string filename)
@@ -765,6 +845,7 @@ void PerlembParser::LoadGlobalPlayerScript(std::string filename)
 	}
 
 	global_player_quest_status_ = questLoaded;
+	quest_file_by_package_["qst_global_player"] = filename;
 }
 
 void PerlembParser::LoadItemScript(std::string filename, EQ::ItemInstance* inst)
@@ -800,6 +881,7 @@ void PerlembParser::LoadItemScript(std::string filename, EQ::ItemInstance* inst)
 	}
 
 	item_quest_status_[inst->GetID()] = questLoaded;
+	quest_file_by_package_[package_name] = filename;
 }
 
 void PerlembParser::LoadSpellScript(std::string filename, uint32 spell_id)
@@ -835,6 +917,7 @@ void PerlembParser::LoadSpellScript(std::string filename, uint32 spell_id)
 	}
 
 	spell_quest_status_[spell_id] = questLoaded;
+	quest_file_by_package_[package_name] = filename;
 }
 
 void PerlembParser::AddVar(std::string name, std::string val)
@@ -1099,6 +1182,13 @@ int PerlembParser::SendCommands(
 
 		//now call the requested sub
 		const std::string& sub_key = fmt::format("{}::{}", prefix, event_id);
+		CrashContextScope crash_context(fmt::format(
+			"PerlSub sub={} object_id={} {} {}",
+			sub_key,
+			object_id,
+			PerlembCrashDescribeMob("other", other),
+			PerlembCrashDescribeMob("mob", mob)
+		));
 		ret_value = perl->dosub(sub_key.c_str());
 
 #ifdef EMBPERL_XS_CLASSES
@@ -2579,6 +2669,7 @@ void PerlembParser::LoadBotScript(std::string filename)
 	}
 
 	bot_quest_status_ = questLoaded;
+	quest_file_by_package_["qst_bot"] = filename;
 }
 
 void PerlembParser::LoadGlobalBotScript(std::string filename)
@@ -2603,6 +2694,7 @@ void PerlembParser::LoadGlobalBotScript(std::string filename)
 	}
 
 	global_bot_quest_status_ = questLoaded;
+	quest_file_by_package_["qst_global_bot"] = filename;
 }
 
 bool PerlembParser::BotHasQuestSub(QuestEventID event_id)
@@ -2699,6 +2791,7 @@ void PerlembParser::LoadMercScript(std::string filename)
 	}
 
 	merc_quest_status_ = questLoaded;
+	quest_file_by_package_["qst_merc"] = filename;
 }
 
 void PerlembParser::LoadGlobalMercScript(std::string filename)
@@ -2723,6 +2816,7 @@ void PerlembParser::LoadGlobalMercScript(std::string filename)
 	}
 
 	global_merc_quest_status_ = questLoaded;
+	quest_file_by_package_["qst_global_merc"] = filename;
 }
 
 bool PerlembParser::MercHasQuestSub(QuestEventID event_id)

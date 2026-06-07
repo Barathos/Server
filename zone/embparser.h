@@ -287,6 +287,7 @@ private:
 	std::map<uint32, PerlQuestStatus> npc_quest_status_;
 	std::map<uint32, PerlQuestStatus> item_quest_status_;
 	std::map<uint32, PerlQuestStatus> spell_quest_status_;
+	std::map<std::string, std::string> quest_file_by_package_;
 
 	PerlQuestStatus global_npc_quest_status_;
 	PerlQuestStatus player_quest_status_;
