@@ -16,6 +16,7 @@ class Seperator;
 class FellowshipManager {
 public:
 	void HandleCommand(Client *client, const Seperator *sep);
+	void HandleClientPacket(Client *client, const EQApplicationPacket *app) const;
 	void LogDiscoveryPacket(Client *client, const EQApplicationPacket *app, const char *context) const;
 };
 

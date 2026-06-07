@@ -80,6 +80,63 @@ struct PendingInvite {
 
 std::map<uint32, PendingInvite> pending_invites;
 
+uint32 ReadUInt32OrZero(const EQApplicationPacket *app, uint32 offset)
+{
+	if (!app || !app->pBuffer || app->size < offset + sizeof(uint32)) {
+		return 0;
+	}
+
+	return app->ReadUInt32(offset);
+}
+
+uint32 CountNonZeroBytes(const EQApplicationPacket *app)
+{
+	if (!app || !app->pBuffer) {
+		return 0;
+	}
+
+	uint32 count = 0;
+	for (uint32 offset = 0; offset < app->size; ++offset) {
+		if (app->pBuffer[offset] != 0) {
+			++count;
+		}
+	}
+
+	return count;
+}
+
+std::string DescribeNonZeroOffsets(const EQApplicationPacket *app, uint32 max_offsets = 24)
+{
+	if (!app || !app->pBuffer || app->size == 0) {
+		return "none";
+	}
+
+	std::vector<std::string> offsets;
+	uint32 total = 0;
+
+	for (uint32 offset = 0; offset < app->size; ++offset) {
+		const auto value = app->pBuffer[offset];
+		if (value == 0) {
+			continue;
+		}
+
+		++total;
+		if (offsets.size() < max_offsets) {
+			offsets.emplace_back(fmt::format("{}=0x{:02x}", offset, static_cast<uint32>(value)));
+		}
+	}
+
+	if (offsets.empty()) {
+		return "none";
+	}
+
+	if (total > offsets.size()) {
+		offsets.emplace_back(fmt::format("...{} more", total - static_cast<uint32>(offsets.size())));
+	}
+
+	return Strings::Join(offsets, ",");
+}
+
 uint32 ToUInt(const char *value)
 {
 	return value ? Strings::ToUnsignedInt(value) : 0;
@@ -941,6 +998,41 @@ void FellowshipManager::HandleCommand(Client *client, const Seperator *sep)
 	}
 
 	SendHelp(client);
+}
+
+void FellowshipManager::HandleClientPacket(Client *client, const EQApplicationPacket *app) const
+{
+	if (
+		!RuleB(CustomFeatures, FellowshipsEnabled) ||
+		!RuleB(CustomFeatures, FellowshipOpcodeDiscoveryEnabled) ||
+		!client ||
+		!app
+	) {
+		return;
+	}
+
+	const auto action = ReadUInt32OrZero(app, 0);
+	const auto field_04 = ReadUInt32OrZero(app, 4);
+	const auto field_08 = ReadUInt32OrZero(app, 8);
+	const auto field_12 = ReadUInt32OrZero(app, 12);
+	const auto possible_create = action == 1 && app->Size() == 1078;
+
+	LogInfo(
+		"Fellowship client packet character [{}] emu [{}] protocol [{:#06x}] payload_size [{}] wire_size [{}] action [{}] field_04 [{}] field_08 [{}] field_12 [{}] non_zero_bytes [{}] non_zero_offsets [{}]{} {}",
+		client->GetCleanName(),
+		OpcodeManager::EmuToName(app->GetOpcode()),
+		app->GetProtocolOpcode(),
+		app->size,
+		app->Size(),
+		action,
+		field_04,
+		field_08,
+		field_12,
+		CountNonZeroBytes(app),
+		DescribeNonZeroOffsets(app),
+		possible_create ? " possible_create" : "",
+		DumpPacketToString(app)
+	);
 }
 
 void FellowshipManager::LogDiscoveryPacket(Client *client, const EQApplicationPacket *app, const char *context) const
