@@ -382,6 +382,7 @@ set(gm_command_sources
     bot_commands/bot_view_combos.cpp
     command.cpp
     gm_commands/acceptrules.cpp
+    gm_commands/aaexp.cpp
     gm_commands/achievements.cpp
     gm_commands/advnpcspawn.cpp
     gm_commands/aggrozone.cpp

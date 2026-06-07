@@ -129,6 +129,8 @@ files:
     destination: uifiles/default/EQUI_NativeAchievementWnd.xml
   - source: client_files/native_autoloot/ui/EQUI_Inventory.xml
     destination: uifiles/default/EQUI_Inventory.xml
+  - source: client_files/native_autoloot/ui/EQUI_AAWindow.xml
+    destination: uifiles/default/EQUI_AAWindow.xml
   - source: client_files/native_autoloot/ui/Achievement_account_unlock_color.tga
     destination: uifiles/default/Achievement_account_unlock_color.tga
   - source: client_files/native_autoloot/ui/Achievement_achieved_color.tga

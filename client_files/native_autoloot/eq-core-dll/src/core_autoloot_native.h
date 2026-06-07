@@ -7212,6 +7212,33 @@ static bool NativeUseItemRewriteCommand(const char* line, char* output, size_t o
 	return true;
 }
 
+static bool NativeAAExpRewriteCommand(const char* line, char* output, size_t output_size)
+{
+	if (!line || !output || !output_size) {
+		return false;
+	}
+
+	while (*line == ' ' || *line == '\t') {
+		++line;
+	}
+
+	const char* arguments = nullptr;
+	if (
+		!NativeCommandMatch(line, "/aaexp", &arguments) &&
+		!NativeCommandMatch(line, "/aaxp", &arguments)
+	) {
+		return false;
+	}
+
+	if (!arguments || !arguments[0]) {
+		strcpy_s(output, output_size, "/say #aaexp status");
+		return true;
+	}
+
+	sprintf_s(output, output_size, "/say #aaexp %s", arguments);
+	return true;
+}
+
 static bool gNativeAutoFollowEnabled = false;
 static DWORD gNativeAutoFollowTargetId = 0;
 static float gNativeAutoFollowDistance = 20.0f;
@@ -7411,6 +7438,12 @@ public:
 		}
 
 		if (NativeUseItemRewriteCommand(line, rewritten, sizeof(rewritten))) {
+			NativeAutoLootTrace("rewrite command: %s -> %s", line ? line : "", rewritten);
+			Trampoline(player, rewritten);
+			return;
+		}
+
+		if (NativeAAExpRewriteCommand(line, rewritten, sizeof(rewritten))) {
 			NativeAutoLootTrace("rewrite command: %s -> %s", line ? line : "", rewritten);
 			Trampoline(player, rewritten);
 			return;

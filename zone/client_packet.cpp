@@ -1943,23 +1943,16 @@ void Client::Handle_OP_AAAction(const EQApplicationPacket *app)
 		PurchaseAlternateAdvancementRank(action->ability);
 	}
 	else if (action->action == aaActionDisableEXP) { //Turn Off AA Exp
-		if (m_epp.perAA > 0) {
-			MessageString(Chat::White, AA_OFF);
-		}
-
-		m_epp.perAA = 0;
-		SendAlternateAdvancementStats();
+		SetAAEXPPercentage(0);
 	}
 	else if (action->action == aaActionSetEXP) {
-		if (m_epp.perAA == 0)
-			MessageString(Chat::White, AA_ON);
-		m_epp.perAA = action->exp_value;
-		if (m_epp.perAA < 0 || m_epp.perAA > 100)
-			m_epp.perAA = 0;	// stop exploit with sanity check
+		if (GetLevel() < 51 && !RuleB(AA, AllowAAExpBelowLevel51)) {
+			SetAAEXPPercentage(0);
+			return;
+		}
 
-								// send an update
-		SendAlternateAdvancementStats();
-		SendAlternateAdvancementTable();
+		const auto percentage = EQ::Clamp(static_cast<int>(action->exp_value), 0, 100);
+		SetAAEXPPercentage(static_cast<uint8>(percentage));
 	}
 	else {
 		LogAA("Unknown AA action : [{}] [{}] [{}] [{}]", action->action, action->ability, action->target_id, action->exp_value);

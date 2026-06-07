@@ -96,6 +96,8 @@ int command_init(void)
 
 	if (
 		command_add("acceptrules", "[acceptrules] - Accept the EQEmu Agreement", AccountStatus::Player, command_acceptrules) ||
+		command_add("aaexp", "[0-100|off|status] - Set your AA experience allocation percentage", AccountStatus::Player, command_aaexp) ||
+		command_add("aaxp", "[0-100|off|status] - Set your AA experience allocation percentage", AccountStatus::Player, command_aaexp) ||
 		command_add("ach", "[window|status|categories|category|detail|check] - View and update custom achievements", AccountStatus::Player, command_ach) ||
 		command_add("achievement", "[window|status|categories|category|detail|check] - View and update custom achievements", AccountStatus::Player, command_ach) ||
 		command_add("achievements", "[window|status|categories|category|detail|check] - View and update custom achievements", AccountStatus::Player, command_ach) ||
