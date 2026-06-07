@@ -504,7 +504,7 @@ void MulticlassManager::HandleCommand(Client *client, const Seperator *sep)
 		RefreshAlternateAdvancementTable(target_client);
 		RefreshClientAfterMulticlassProfileChange(target_client);
 		SendNativeSnapshot(target_client, "Inventory item usability refreshed.", false, false);
-		client->Message(Chat::White, fmt::format("Refreshed Multiclass item presentation for {}.", target_client->GetCleanName()).c_str());
+		client->Message(Chat::White, "%s", fmt::format("Refreshed Multiclass item presentation for {}.", target_client->GetCleanName()).c_str());
 		return;
 	}
 
@@ -541,6 +541,7 @@ void MulticlassManager::HandleCommand(Client *client, const Seperator *sep)
 			if (SaveProfile(profile, "admin_reweave_grant")) {
 				client->Message(
 					Chat::White,
+					"%s",
 					fmt::format(
 						"Granted {} reweave{} to {}. Available: {}.",
 						grant_count,
@@ -560,11 +561,11 @@ void MulticlassManager::HandleCommand(Client *client, const Seperator *sep)
 		const auto slot_id = static_cast<uint8>(Strings::ToUnsignedInt(sep->arg[2]));
 		const auto class_id = ParseClassId(sep->arg[3]);
 		if (!ReweaveProfileSlot(target_client, slot_id, class_id, "admin_reweave", status)) {
-			client->Message(Chat::White, status.c_str());
+			client->Message(Chat::White, "%s", status.c_str());
 			return;
 		}
 
-		client->Message(Chat::White, status.c_str());
+		client->Message(Chat::White, "%s", status.c_str());
 		RefreshAlternateAdvancementTable(target_client);
 		SendNativeSnapshot(target_client, status, false, false);
 		return;
@@ -587,6 +588,7 @@ void MulticlassManager::HandleCommand(Client *client, const Seperator *sep)
 		if (SetProfile(target_client, class_slot_1, class_slot_2, class_slot_3, "admin")) {
 			client->Message(
 				Chat::White,
+				"%s",
 				fmt::format(
 					"Multiclass trio set for {}: {} / {} / {}.",
 					target_client->GetCleanName(),
@@ -1325,6 +1327,7 @@ uint16 MulticlassManager::SeedEligibleSkills(Client *client, bool notify)
 		const auto extra_count = seeded_names.size() - preview_count;
 		client->Message(
 			Chat::Skills,
+			"%s",
 			fmt::format(
 				"Multiclass unlocked {} class skill{}: {}{}.",
 				seeded_names.size(),
@@ -1635,12 +1638,9 @@ bool MulticlassManager::SendNativeSpellLevelPatchRow(Client *client, uint16 spel
 		return false;
 	}
 
-	if (spells[spell_id].classes[presentation_class - 1] == best_level) {
-		return false;
-	}
-
 	client->Message(
 		Chat::White,
+		"%s",
 		fmt::format(
 			"MULTICLASS|spell_level|id={}|level={}|presentation={}",
 			spell_id,
@@ -1691,6 +1691,7 @@ void MulticlassManager::SendStatus(Client *client)
 	const auto profile = LoadProfile(target_client->CharacterID());
 	client->Message(
 		Chat::White,
+		"%s",
 		fmt::format(
 			"Multiclass profile for {}: {} / {} / {} [{}]. Multiple pets: {}. Locked: {}. Reweaves: {}.",
 			target_client->GetCleanName(),
@@ -1754,6 +1755,7 @@ void MulticlassManager::SendDiagnostics(Client *client, const char *topic)
 
 			client->Message(
 				Chat::White,
+				"%s",
 				fmt::format(
 					"Multiclass skill diagnostics for {}: {} active / {} eligible; {} ready to seed.",
 					target_client->GetCleanName(),
@@ -1763,7 +1765,7 @@ void MulticlassManager::SendDiagnostics(Client *client, const char *topic)
 				).c_str()
 			);
 			if (!missing_preview.empty()) {
-				client->Message(Chat::White, fmt::format("Ready preview: {}.", JoinValues(missing_preview, ", ")).c_str());
+				client->Message(Chat::White, "%s", fmt::format("Ready preview: {}.", JoinValues(missing_preview, ", ")).c_str());
 			}
 			return;
 		}
@@ -1791,6 +1793,7 @@ void MulticlassManager::SendDiagnostics(Client *client, const char *topic)
 
 			client->Message(
 				Chat::White,
+				"%s",
 				fmt::format(
 					"Multiclass spell diagnostics for {}: {} scribed, {} usable by trio, {} require native off-presentation display patches.",
 					target_client->GetCleanName(),
@@ -1819,6 +1822,7 @@ void MulticlassManager::SendDiagnostics(Client *client, const char *topic)
 
 			client->Message(
 				Chat::White,
+				"%s",
 				fmt::format(
 					"Multiclass discipline diagnostics for {}: {} learned, {} usable by trio.",
 					target_client->GetCleanName(),
@@ -1860,6 +1864,7 @@ void MulticlassManager::SendDiagnostics(Client *client, const char *topic)
 
 			client->Message(
 				Chat::White,
+				"%s",
 				fmt::format(
 					"Multiclass AA diagnostics for {}: AA class mask {}, normal class mask {}.",
 					target_client->GetCleanName(),
@@ -1869,6 +1874,7 @@ void MulticlassManager::SendDiagnostics(Client *client, const char *topic)
 			);
 			client->Message(
 				Chat::White,
+				"%s",
 				fmt::format(
 					"AA window candidates: {} visible definitions, {} learned/profile entries, {} first ranks purchasable, {} grant-only.",
 					visible_count,
@@ -1879,6 +1885,7 @@ void MulticlassManager::SendDiagnostics(Client *client, const char *topic)
 			);
 			client->Message(
 				Chat::White,
+				"%s",
 				fmt::format(
 					"Learned AA packet guard: {} / {} profile entries used. Current first goal is visibility; full buyout needs separate cap testing.",
 					learned_count,
@@ -1889,13 +1896,14 @@ void MulticlassManager::SendDiagnostics(Client *client, const char *topic)
 		}
 
 		if (topic_value == "melody" || topic_value == "bard" || topic_value == "songs") {
-			client->Message(Chat::White, BuildBardMelodySummary(target_client).c_str());
+			client->Message(Chat::White, "%s", BuildBardMelodySummary(target_client).c_str());
 			if (IsBard(target_client)) {
 				const auto slots = LoadBardMelody(target_client);
 				for (size_t i = 0; i < slots.size(); ++i) {
 					const auto spell_id = slots[i];
 					client->Message(
 						Chat::White,
+						"%s",
 						fmt::format(
 							"Melody slot {}: {}{}",
 							i + 1,
@@ -1909,10 +1917,10 @@ void MulticlassManager::SendDiagnostics(Client *client, const char *topic)
 		}
 
 		if (topic_value == "bonuses" || topic_value == "bonus" || topic_value == "resonance") {
-			client->Message(Chat::White, BuildTrioBonusSummary(target_client).c_str());
+			client->Message(Chat::White, "%s", BuildTrioBonusSummary(target_client).c_str());
 			const auto profile = LoadProfile(target_client->CharacterID());
 			const auto metadata = BuildTrioMetadata(profile);
-			client->Message(Chat::White, fmt::format("Resonance identity: {}. Roles: {}.", metadata.resonance, metadata.roles).c_str());
+			client->Message(Chat::White, "%s", fmt::format("Resonance identity: {}. Roles: {}.", metadata.resonance, metadata.roles).c_str());
 			return;
 		}
 
@@ -1920,6 +1928,7 @@ void MulticlassManager::SendDiagnostics(Client *client, const char *topic)
 			const auto roster = GetPetRoster(target_client);
 			client->Message(
 				Chat::White,
+				"%s",
 				fmt::format(
 					"Multiclass pet diagnostics for {}: {}/{} active roster pets. Focus: {}.",
 					target_client->GetCleanName(),
@@ -1934,6 +1943,7 @@ void MulticlassManager::SendDiagnostics(Client *client, const char *topic)
 				}
 				client->Message(
 					Chat::White,
+					"%s",
 					fmt::format(
 						"Pet {} [{}]: order {}, hp {:.0f}, mana {:.0f}, taunt {}, hold {}, nocast {}.",
 						pet->GetCleanName(),
@@ -1969,6 +1979,7 @@ void MulticlassManager::SendDiagnostics(Client *client, const char *topic)
 
 			client->Message(
 				Chat::White,
+				"%s",
 				fmt::format(
 					"Multiclass item diagnostics for {}: class mask {}, equipped usable {}, equipped blocked {}.",
 					target_client->GetCleanName(),
@@ -1987,6 +1998,7 @@ void MulticlassManager::SendDiagnostics(Client *client, const char *topic)
 	const auto slots = GetClassSlots(target_client);
 	client->Message(
 		Chat::White,
+		"%s",
 		fmt::format(
 			"Multiclass diagnostics for {}: slots [{} / {} / {}], class mask {}, AA mask {}.",
 			target_client->GetCleanName(),
@@ -1999,15 +2011,17 @@ void MulticlassManager::SendDiagnostics(Client *client, const char *topic)
 	);
 	client->Message(
 		Chat::White,
+		"%s",
 		fmt::format(
 			"Client presentation class: {}. Base server class remains {}.",
 			ClassName(GetClientPresentationClass(target_client), target_client->GetLevel()),
 			ClassName(target_client->GetClass(), target_client->GetLevel())
 		).c_str()
 	);
-	client->Message(Chat::White, BuildTrioBonusSummary(target_client).c_str());
+	client->Message(Chat::White, "%s", BuildTrioBonusSummary(target_client).c_str());
 	client->Message(
 		Chat::White,
+		"%s",
 		fmt::format(
 			"Caster flags: INT={}, WIS={}, Bard={}. Skill samples: Meditate cap {}, Dual Wield cap {}, Defense cap {}.",
 			IsIntCaster(target_client) ? "yes" : "no",
@@ -2052,7 +2066,7 @@ void MulticlassManager::SendItemCheck(Client *requester, Client *target_client, 
 
 		const auto slot_id = static_cast<int16>(Strings::ToInt(value_text, -1));
 		if (!target_client->IsValidSlot(slot_id)) {
-			requester->Message(Chat::White, fmt::format("Slot {} is not valid for {}.", slot_id, target_client->GetCleanName()).c_str());
+			requester->Message(Chat::White, "%s", fmt::format("Slot {} is not valid for {}.", slot_id, target_client->GetCleanName()).c_str());
 			return;
 		}
 
@@ -2095,16 +2109,16 @@ void MulticlassManager::SendItemCheck(Client *requester, Client *target_client, 
 	}
 
 	if (!inst) {
-		requester->Message(Chat::White, fmt::format("No item found for {} on {}.", source, target_client->GetCleanName()).c_str());
+		requester->Message(Chat::White, "%s", fmt::format("No item found for {} on {}.", source, target_client->GetCleanName()).c_str());
 		safe_delete(created_inst);
 		return;
 	}
 
 	const auto report = BuildItemUseReport(target_client, inst, equipment_slot);
-	requester->Message(Chat::White, fmt::format("Checking {} for {}.", source, target_client->GetCleanName()).c_str());
-	requester->Message(Chat::White, report.c_str());
+	requester->Message(Chat::White, "%s", fmt::format("Checking {} for {}.", source, target_client->GetCleanName()).c_str());
+	requester->Message(Chat::White, "%s", report.c_str());
 	if (requester != target_client) {
-		target_client->Message(Chat::Yellow, report.c_str());
+		target_client->Message(Chat::Yellow, "%s", report.c_str());
 	}
 
 	safe_delete(created_inst);
@@ -2143,6 +2157,7 @@ void MulticlassManager::SendNativeSnapshot(Client *client, const std::string &st
 	client->Message(Chat::White, "MULTICLASS|window|clear");
 	client->Message(
 		Chat::White,
+		"%s",
 		fmt::format(
 			"MULTICLASS|profile|name={}|resonance={}|class1={}|class1_name={}|class2={}|class2_name={}|class3={}|class3_name={}|presentation={}|presentation_name={}|base={}|base_name={}|pets={}|locked={}|reweaves={}",
 			ProtocolValue(profile.trio_name),
@@ -2164,6 +2179,7 @@ void MulticlassManager::SendNativeSnapshot(Client *client, const std::string &st
 	);
 	client->Message(
 		Chat::White,
+		"%s",
 		fmt::format(
 			"MULTICLASS|vitals|mana={}|max_mana={}|endurance={}|max_endurance={}|class_mask={}|aa_mask={}|presentation={}|base={}",
 			current_mana,
@@ -2178,6 +2194,7 @@ void MulticlassManager::SendNativeSnapshot(Client *client, const std::string &st
 	);
 	client->Message(
 		Chat::White,
+		"%s",
 		fmt::format(
 			"MULTICLASS|trio|roles={}|resonance={}|summary={}",
 			ProtocolValue(metadata.roles),
@@ -2187,6 +2204,7 @@ void MulticlassManager::SendNativeSnapshot(Client *client, const std::string &st
 	);
 	client->Message(
 		Chat::White,
+		"%s",
 		fmt::format(
 			"MULTICLASS|skills|summary={}|unlocked={}",
 			ProtocolValue(BuildSkillSummary(client)),
@@ -2195,6 +2213,7 @@ void MulticlassManager::SendNativeSnapshot(Client *client, const std::string &st
 	);
 	client->Message(
 		Chat::White,
+		"%s",
 		fmt::format(
 			"MULTICLASS|bonuses|summary={}",
 			ProtocolValue(BuildTrioBonusSummary(client))
@@ -2202,6 +2221,7 @@ void MulticlassManager::SendNativeSnapshot(Client *client, const std::string &st
 	);
 	client->Message(
 		Chat::White,
+		"%s",
 		fmt::format(
 			"MULTICLASS|selection|can_choose={}|status={}",
 			profile.locked ? 0 : 1,
@@ -2213,6 +2233,7 @@ void MulticlassManager::SendNativeSnapshot(Client *client, const std::string &st
 	SendNativeDisciplines(client, false);
 	client->Message(
 		Chat::White,
+		"%s",
 		fmt::format(
 			"MULTICLASS|pet_roster|mode=live|count={}|limit={}|focus={}|policy={}|control={}",
 			pet_roster.size(),
@@ -2231,6 +2252,7 @@ void MulticlassManager::SendNativeSnapshot(Client *client, const std::string &st
 		auto *target = pet->GetTarget();
 		client->Message(
 			Chat::White,
+			"%s",
 			fmt::format(
 				"MULTICLASS|pet|id={}|name={}|hp={:.0f}|mana={:.0f}|target={}|taunt={}|hold={}|spellhold={}|order={}|focused={}",
 				pet->GetID(),
@@ -2276,12 +2298,9 @@ void MulticlassManager::SendNativeSpellLevelPatch(Client *client, uint8 presenta
 			continue;
 		}
 
-		if (spells[spell_id].classes[presentation_class - 1] == best_level) {
-			continue;
-		}
-
 		client->Message(
 			Chat::White,
+			"%s",
 			fmt::format(
 				"MULTICLASS|spell_level|id={}|level={}|presentation={}",
 				spell_id,
@@ -2294,6 +2313,7 @@ void MulticlassManager::SendNativeSpellLevelPatch(Client *client, uint8 presenta
 
 	client->Message(
 		Chat::White,
+		"%s",
 		fmt::format("MULTICLASS|spell_levels|end|count={}", patched_count).c_str()
 	);
 }
@@ -3189,6 +3209,7 @@ void MulticlassManager::SendNativeDisciplines(Client *client, bool show_discipli
 	client->Message(Chat::White, "MULTICLASS|disciplines|clear");
 	client->Message(
 		Chat::White,
+		"%s",
 		fmt::format(
 			"MULTICLASS|disciplines|summary|status={}|count={}|usable={}|ready={}",
 			ProtocolValue(status_text),
@@ -3201,6 +3222,7 @@ void MulticlassManager::SendNativeDisciplines(Client *client, bool show_discipli
 	for (const auto &row : rows) {
 		client->Message(
 			Chat::White,
+			"%s",
 			fmt::format(
 				"MULTICLASS|discipline|slot={}|id={}|name={}|level={}|timer={}|total={}|ready={}|state={}",
 				row.slot,
@@ -3215,7 +3237,7 @@ void MulticlassManager::SendNativeDisciplines(Client *client, bool show_discipli
 		);
 	}
 
-	client->Message(Chat::White, fmt::format("MULTICLASS|disciplines|end|count={}", rows.size()).c_str());
+	client->Message(Chat::White, "%s", fmt::format("MULTICLASS|disciplines|end|count={}", rows.size()).c_str());
 	if (show_discipline_window) {
 		client->Message(Chat::White, "MULTICLASS|discipline_window|show");
 	}
@@ -3231,6 +3253,7 @@ void MulticlassManager::SendNativeBardMelody(Client *client, bool show_melody_wi
 	const auto slots = has_bard ? LoadBardMelody(client) : BardMelodySlots{};
 	client->Message(
 		Chat::White,
+		"%s",
 		fmt::format(
 			"MULTICLASS|melody|has_bard={}|status={}",
 			has_bard ? 1 : 0,
@@ -3242,6 +3265,7 @@ void MulticlassManager::SendNativeBardMelody(Client *client, bool show_melody_wi
 		const auto spell_id = slots[i];
 		client->Message(
 			Chat::White,
+			"%s",
 			fmt::format(
 				"MULTICLASS|melody_slot|slot={}|id={}|name={}|level={}|state={}",
 				i + 1,
@@ -3269,6 +3293,7 @@ void MulticlassManager::SendNativeBardMelody(Client *client, bool show_melody_wi
 			const bool allowed = IsAllowedBardMelodySong(client, spell_id, &reason);
 			client->Message(
 				Chat::White,
+				"%s",
 				fmt::format(
 					"MULTICLASS|melody_song|id={}|name={}|level={}|allowed={}|reason={}",
 					spell_id,
@@ -3282,7 +3307,7 @@ void MulticlassManager::SendNativeBardMelody(Client *client, bool show_melody_wi
 		}
 	}
 
-	client->Message(Chat::White, fmt::format("MULTICLASS|melody_songs|end|count={}", candidate_count).c_str());
+	client->Message(Chat::White, "%s", fmt::format("MULTICLASS|melody_songs|end|count={}", candidate_count).c_str());
 	if (show_melody_window) {
 		client->Message(Chat::White, "MULTICLASS|melody_window|show");
 	}

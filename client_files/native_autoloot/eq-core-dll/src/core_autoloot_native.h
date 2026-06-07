@@ -1326,7 +1326,19 @@ static bool NativeMulticlassApplySpellLevelPatch(const std::string& payload)
 		return true;
 	}
 
-	spell->Level[presentation - 1] = static_cast<BYTE>(level);
+	auto apply_spell_level = [&](int class_id) {
+		if (NativeMulticlassIsPlayerClass(class_id)) {
+			spell->Level[class_id - 1] = static_cast<BYTE>(level);
+		}
+	};
+
+	apply_spell_level(presentation);
+	apply_spell_level(gNativeMulticlassState.presentation);
+	apply_spell_level(gNativeMulticlassState.base);
+	apply_spell_level(gNativeMulticlassState.class1);
+	apply_spell_level(gNativeMulticlassState.class2);
+	apply_spell_level(gNativeMulticlassState.class3);
+
 	gNativeMulticlassSpellLevelsById[spell_id] = level;
 
 	if (spell->Name[0]) {
@@ -8450,8 +8462,22 @@ public:
 	{
 		NativeAutoLootMaybeSendInitialRequests();
 
-		const bool native_interface_handled = nativeinterface::HandleChatMessage(szMsg);
-		if (NativeAutoLootParseTransport(szMsg) || native_interface_handled) {
+		// The transport parsers dereference the gNative*Wnd globals. When this DLL
+		// runs alongside MacroQuest the UI-reset hook is skipped (see
+		// NativeAutoLootInstallUiResetHook), so a /loadskin can tear the windows
+		// down without our globals being cleared. Guard the parse with SEH like the
+		// pulse hook does, and fall through to the trampoline so chat still shows.
+		bool transport_handled = false;
+		__try {
+			const bool native_interface_handled = nativeinterface::HandleChatMessage(szMsg);
+			transport_handled = NativeAutoLootParseTransport(szMsg) || native_interface_handled;
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			NativeAutoLootTrace("chat transport hook faulted; passing message through to client");
+			transport_handled = false;
+		}
+
+		if (transport_handled) {
 			return;
 		}
 

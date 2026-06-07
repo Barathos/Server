@@ -560,25 +560,6 @@
 		<Style_Transparent>false</Style_Transparent>
 		<!--<TooltipReference/>-->
 	</InvSlot>
-	<!-- IS_KRONO		   -->
-	<InvSlot item="InvSlotKrono">
-		<ScreenID>InvSlotKrono</ScreenID>
-		<RelativePosition>true</RelativePosition>
-		<Location>
-			<X>123</X>
-			<Y>360</Y>
-		</Location>
-		<Size>
-			<CX>42</CX>
-			<CY>42</CY>
-		</Size>
-		<Background>A_RecessedBox</Background>
-		<EQType>inventory/Krono</EQType>
-		<Style_VScroll>false</Style_VScroll>
-		<Style_HScroll>false</Style_HScroll>
-		<Style_Transparent>false</Style_Transparent>
-		<!--<TooltipReference/>-->
-	</InvSlot>
 	<!-- root inv slots, IS_B1 to IS_B10 -->
 	<InvSlot item="InvSlot23">
 		<ScreenID>InvSlot23</ScreenID>
@@ -644,61 +625,16 @@
 		<Background>A_RecessedBox</Background>
 		<EQType>inventory/Equip 32</EQType>
 	</InvSlot>
-	<Button item="IW_ConsumeKrono">
-		<ScreenID>IW_ConsumeKrono</ScreenID>
-		<Font>2</Font>
-		<RelativePosition>true</RelativePosition>
-		<Location>
-			<X>170</X>
-			<Y>360</Y>
-		</Location>
-		<Size>
-			<CX>90</CX>
-			<CY>20</CY>
-		</Size>
-		<Style_Transparent>false</Style_Transparent>
-		<Style_Checkbox>false</Style_Checkbox>
-		<Text>Consume Krono</Text>
-		<TextColor>
-			<R>255</R>
-			<G>255</G>
-			<B>255</B>
-		</TextColor>
-		<Template>BDT_Normal</Template>
-	</Button>
-	<Label item="IW_SubscriptionTime">
-		<ScreenID>IW_SubscriptionTime</ScreenID>
-		<RelativePosition>true</RelativePosition>
-		<Font>1</Font>
-		<EQType>334</EQType>
-		<Location>
-			<X>170</X>
-			<Y>385</Y>
-		</Location>
-		<Size>
-			<CX>128</CX>
-			<CY>30</CY>
-		</Size>
-		<Text>Gold Days Left: 185 days</Text>
-		<TextColor>
-			<R>255</R>
-			<G>255</G>
-			<B>255</B>
-		</TextColor>
-		<NoWrap>false</NoWrap>
-		<AlignCenter>false</AlignCenter>
-		<AlignRight>true</AlignRight>
-	</Label>
 	<Label item="IW_Name">
 		<ScreenID>NameLabel</ScreenID>
 		<EQType>1</EQType>
 		<RelativePosition>true</RelativePosition>
 		<Location>
-			<X>1</X>
-			<Y>2</Y>
+			<X>123</X>
+			<Y>360</Y>
 		</Location>
 		<Size>
-			<CX>112</CX>
+			<CX>140</CX>
 			<CY>14</CY>
 		</Size>
 		<Text>Playername123456</Text>
@@ -708,7 +644,7 @@
 			<B>255</B>
 		</TextColor>
 		<NoWrap>true</NoWrap>
-		<AlignCenter>false</AlignCenter>
+		<AlignCenter>true</AlignCenter>
 		<AlignRight>false</AlignRight>
 	</Label>
 	<Label item="IW_Level">
@@ -716,11 +652,11 @@
 		<EQType>2</EQType>
 		<RelativePosition>true</RelativePosition>
 		<Location>
-			<X>1</X>
-			<Y>16</Y>
+			<X>123</X>
+			<Y>374</Y>
 		</Location>
 		<Size>
-			<CX>25</CX>
+			<CX>140</CX>
 			<CY>14</CY>
 		</Size>
 		<Text>60 Shadow Knight</Text>
@@ -730,7 +666,7 @@
 			<B>255</B>
 		</TextColor>
 		<NoWrap>true</NoWrap>
-		<AlignCenter>false</AlignCenter>
+		<AlignCenter>true</AlignCenter>
 		<AlignRight>false</AlignRight>
 	</Label>
 	<Label item="IW_Class">
@@ -738,11 +674,11 @@
 		<RelativePosition>true</RelativePosition>
 		<Location>
 			<X>30</X>
-			<Y>16</Y>
+			<Y>2</Y>
 		</Location>
 		<Size>
 			<CX>90</CX>
-			<CY>100</CY>
+			<CY>42</CY>
 		</Size>
 		<Text>Shadow Knight</Text>
 		<TextColor>
@@ -759,11 +695,11 @@
 		<RelativePosition>true</RelativePosition>
 		<Location>
 			<X>2</X>
-			<Y>16</Y>
+			<Y>2</Y>
 		</Location>
 		<Size>
 			<CX>30</CX>
-			<CY>100</CY>
+			<CY>42</CY>
 		</Size>
 		<Text>SHD</Text>
 		<TextColor>
@@ -780,11 +716,11 @@
 		<EQType>4</EQType>
 		<RelativePosition>true</RelativePosition>
 		<Location>
-			<X>1</X>
-			<Y>30</Y>
+			<X>123</X>
+			<Y>388</Y>
 		</Location>
 		<Size>
-			<CX>112</CX>
+			<CX>140</CX>
 			<CY>14</CY>
 		</Size>
 		<Text>Mithaniel Marr</Text>
@@ -794,7 +730,7 @@
 			<B>255</B>
 		</TextColor>
 		<NoWrap>true</NoWrap>
-		<AlignCenter>false</AlignCenter>
+		<AlignCenter>true</AlignCenter>
 		<AlignRight>false</AlignRight>
 	</Label>
 	<Label item="IW_HP">
@@ -2429,10 +2365,7 @@
 		<Pieces>InvSlot20</Pieces>
 		<Pieces>InvSlot21</Pieces>
 		<Pieces>InvSlot22</Pieces>
-		<Pieces>InvSlotKrono</Pieces>
 		<Pieces>TileLayoutBox:IW_Slots</Pieces>
-		<Pieces>IW_ConsumeKrono</Pieces>
-		<Pieces>IW_SubscriptionTime</Pieces>
 		<Pieces>IW_Money0</Pieces>
 		<Pieces>IW_Money1</Pieces>
 		<Pieces>IW_Money2</Pieces>
