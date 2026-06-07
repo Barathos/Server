@@ -35,6 +35,9 @@
 build/
 enc_temp_folder/
 bin/
+!bin/
+bin/*
+!bin/dinput8.dll
 Debug/
 Release/
 *.aps
