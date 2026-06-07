@@ -26,6 +26,7 @@
 #include "common/rulesys.h"
 #include "common/say_link.h"
 #include "common/strings.h"
+#include "zone/autoloot_manager.h"
 #include "zone/bot.h"
 #include "zone/dynamic_zone.h"
 #include "zone/entity.h"
@@ -1804,6 +1805,25 @@ void Corpse::LootCorpseItem(Client *c, const EQApplicationPacket *app)
 
 	if (GetPlayerKillItem() <= 1 && item_data != 0) {
 		item = database.GetItem(item_data->item_id);
+	}
+
+	if (item_data && c->Admin() < AccountStatus::GMAdmin) {
+		std::string lock_reason;
+		if (auto_loot_manager.IsManualLootLocked(this, item_data->lootslot, &lock_reason)) {
+			c->Message(
+				Chat::Red,
+				fmt::format(
+					"{} Use the AutoLoot window or wait for the roll to finish.",
+					lock_reason
+				).c_str()
+			);
+			c->QueuePacket(app);
+			SendEndLootErrorPacket(c);
+			if (IsBeingLootedBy(c)) {
+				ResetLooter();
+			}
+			return;
+		}
 	}
 
 	if (item) {

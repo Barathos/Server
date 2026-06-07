@@ -41,6 +41,7 @@ public:
 	void HandleLootFilterCommand(Client *client, const Seperator *sep);
 	void HandleAutosellCommand(Client *client, const Seperator *sep);
 	void HandleNeedGreedCommand(Client *client, const Seperator *sep);
+	bool IsManualLootLocked(Corpse *corpse, uint16 loot_slot, std::string *reason = nullptr) const;
 
 private:
 	struct CharacterSettings {

@@ -1014,6 +1014,38 @@ bool AutoLootManager::HasQueuedEntry(uint16 corpse_id, uint16 loot_slot) const
 	return false;
 }
 
+bool AutoLootManager::IsManualLootLocked(Corpse *corpse, uint16 loot_slot, std::string *reason) const
+{
+	if (!AutoLootEnabled() || !corpse || !corpse->IsNPCCorpse()) {
+		return false;
+	}
+
+	auto item_data = corpse->GetItem(loot_slot);
+	if (!item_data || !item_data->item_id) {
+		return false;
+	}
+
+	const auto corpse_id = corpse->GetID();
+	for (const auto &[entry_id, entry] : m_loot_entries) {
+		if (!entry.shared || entry.corpse_id != corpse_id || entry.loot_slot != item_data->lootslot || entry.item_id != item_data->item_id) {
+			continue;
+		}
+
+		if (reason) {
+			if (entry.state == "rolling" || !entry.votes.empty()) {
+				*reason = fmt::format("{} is locked by group AutoLoot while a roll is active.", entry.item_name);
+			}
+			else {
+				*reason = fmt::format("{} is reserved by group AutoLoot.", entry.item_name);
+			}
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
 bool AutoLootManager::IsEntryVisibleToClient(const LootEntry &entry, Client *client) const
 {
 	if (!client) {
