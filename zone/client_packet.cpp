@@ -41,6 +41,7 @@
 #include "zone/dialogue_window.h"
 #include "zone/dynamic_zone.h"
 #include "zone/event_codes.h"
+#include "zone/fellowship_manager.h"
 #include "zone/gm_commands/door_manipulation.h"
 #include "zone/gm_commands/object_manipulation.h"
 #include "zone/guild_mgr.h"
@@ -485,6 +486,7 @@ int Client::HandlePacket(const EQApplicationPacket *app)
 	switch (client_state) {
 	case CLIENT_CONNECTING: {
 		if (ConnectingOpcodes.count(opcode) != 1) {
+			fellowship_manager.LogDiscoveryPacket(this, app, "connecting-unhandled");
 			if (parse->PlayerHasQuestSub(EVENT_UNHANDLED_OPCODE)) {
 				std::vector<std::any> args = {const_cast<EQApplicationPacket *>(app)};
 				parse->EventPlayer(EVENT_UNHANDLED_OPCODE, this, "", 1, &args);
@@ -510,6 +512,7 @@ int Client::HandlePacket(const EQApplicationPacket *app)
 		ClientPacketProc p;
 		p = ConnectedOpcodes[opcode];
 		if (p == nullptr) {
+			fellowship_manager.LogDiscoveryPacket(this, app, "connected-unhandled");
 			if (parse->PlayerHasQuestSub(EVENT_UNHANDLED_OPCODE)) {
 				std::vector<std::any> args = {const_cast<EQApplicationPacket *>(app)};
 				parse->EventPlayer(EVENT_UNHANDLED_OPCODE, this, "", 0, &args);

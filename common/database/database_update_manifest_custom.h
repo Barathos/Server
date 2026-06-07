@@ -2599,6 +2599,63 @@ CREATE TABLE `custom_faction_window_preferences` (
 )",
 		.content_schema_update = false,
 	},
+	ManifestEntry{
+		.version = 17,
+		.description = "2026_06_07_custom_fellowships",
+		.check = "SHOW TABLES LIKE 'custom_fellowships'",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+CREATE TABLE `custom_fellowships` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `leader_character_id` INT UNSIGNED NOT NULL DEFAULT 0,
+  `name` VARCHAR(64) NOT NULL DEFAULT '',
+  `motd` VARCHAR(1024) NOT NULL DEFAULT '',
+  `created_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  `updated_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `idx_leader` (`leader_character_id`)
+);
+
+CREATE TABLE `custom_fellowship_members` (
+  `fellowship_id` INT UNSIGNED NOT NULL,
+  `character_id` INT UNSIGNED NOT NULL,
+  `character_name` VARCHAR(64) NOT NULL DEFAULT '',
+  `rank` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  `sharing_enabled` TINYINT(1) NOT NULL DEFAULT 0,
+  `level` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  `class_id` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  `last_zone_id` INT UNSIGNED NOT NULL DEFAULT 0,
+  `last_instance_id` INT UNSIGNED NOT NULL DEFAULT 0,
+  `last_online` INT UNSIGNED NOT NULL DEFAULT 0,
+  `vitality_exp` BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  `vitality_aa_exp` BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  `joined_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  `updated_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`fellowship_id`, `character_id`),
+  UNIQUE KEY `uk_character` (`character_id`),
+  KEY `idx_fellowship_rank` (`fellowship_id`, `rank`)
+);
+
+CREATE TABLE `custom_fellowship_campfires` (
+  `fellowship_id` INT UNSIGNED NOT NULL,
+  `zone_id` INT UNSIGNED NOT NULL DEFAULT 0,
+  `instance_id` INT UNSIGNED NOT NULL DEFAULT 0,
+  `x` FLOAT NOT NULL DEFAULT 0,
+  `y` FLOAT NOT NULL DEFAULT 0,
+  `z` FLOAT NOT NULL DEFAULT 0,
+  `heading` FLOAT NOT NULL DEFAULT 0,
+  `campfire_type` VARCHAR(64) NOT NULL DEFAULT 'honor',
+  `created_by_character_id` INT UNSIGNED NOT NULL DEFAULT 0,
+  `created_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  `expires_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`fellowship_id`),
+  KEY `idx_zone_instance` (`zone_id`, `instance_id`),
+  KEY `idx_expires_at` (`expires_at`)
+);
+)",
+		.content_schema_update = false,
+	},
 };
 
 // see struct definitions for what each field does

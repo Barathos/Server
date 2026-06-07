@@ -63,6 +63,12 @@ RULE_BOOL(CustomFeatures, ImprovedAutoFollowEnabled, true, "Enables bundled nati
 RULE_BOOL(CustomFeatures, UseItemCommandEnabled, true, "Enables the player-facing #useitem command and native /useitem rewrite.")
 RULE_BOOL(CustomFeatures, AutoskillsEnabled, true, "Enables the custom player #autoskill command and automatic combat skill processing.")
 RULE_BOOL(CustomFeatures, ServerAuthStatsEnabled, true, "Enables custom server-authoritative stat packets consumed by the native client payload.")
+RULE_BOOL(CustomFeatures, FellowshipsEnabled, true, "Enables the custom fellowship persistence, testing command path, and campfire travel skeleton.")
+RULE_BOOL(CustomFeatures, FellowshipOpcodeDiscoveryEnabled, false, "Logs unhandled client packets while testing fellowship UI actions so RoF2 fellowship opcodes can be identified.")
+RULE_INT(CustomFeatures, FellowshipMaxMembers, 12, "Maximum number of members allowed in a fellowship.")
+RULE_INT(CustomFeatures, FellowshipCampfireRequiredNearbyMembers, 3, "Number of nearby online fellowship members required to create a campfire.")
+RULE_INT(CustomFeatures, FellowshipCampfireNearbyRadius, 100, "Distance in game units used when checking nearby members for fellowship campfire creation.")
+RULE_INT(CustomFeatures, FellowshipCampfireDurationSeconds, 14400, "Seconds before a basic fellowship campfire expires.")
 RULE_CATEGORY_END()
 
 RULE_CATEGORY(Character)

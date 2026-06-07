@@ -47,6 +47,7 @@ set(zone_sources
     fastmath.cpp
     faction_reputation_manager.cpp
     fearpath.cpp
+    fellowship_manager.cpp
     forage.cpp
     global_loot_manager.cpp
     groups.cpp
@@ -154,6 +155,7 @@ set(zone_headers
     faction_reputation_manager.h
     expedition_request.h
     fastmath.h
+    fellowship_manager.h
     forage.h
     global_loot_manager.h
     groups.h
@@ -430,6 +432,7 @@ set(gm_command_sources
     gm_commands/exptoggle.cpp
     gm_commands/faction.cpp
     gm_commands/faction_association.cpp
+    gm_commands/fellowship.cpp
     gm_commands/feature.cpp
     gm_commands/find.cpp
     gm_commands/find/find_aa.cpp

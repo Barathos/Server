@@ -41,4 +41,6 @@ void command_customfeatures(Client *c, const Seperator *)
 	SendFeatureStatus(c, "UseItem Command", RuleB(CustomFeatures, UseItemCommandEnabled));
 	SendFeatureStatus(c, "Autoskills", RuleB(CustomFeatures, AutoskillsEnabled));
 	SendFeatureStatus(c, "Server Auth Stats", RuleB(CustomFeatures, ServerAuthStatsEnabled));
+	SendFeatureStatus(c, "Fellowships", RuleB(CustomFeatures, FellowshipsEnabled));
+	SendFeatureStatus(c, "Fellowship Opcode Discovery", RuleB(CustomFeatures, FellowshipOpcodeDiscoveryEnabled));
 }
