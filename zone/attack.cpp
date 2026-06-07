@@ -1968,22 +1968,36 @@ bool Client::Death(Mob* killer_mob, int64 damage, uint16 spell, EQ::skills::Skil
 			{
 				NPC* pet = mob->CastToNPC();
 
-				if (pet && !(FindSpellBookSlotBySpellID(pet->GetPetSpellID()) >= 0 || GetInv().IsClickEffectEquipped(pet->GetPetSpellID()))) {
+				if (!pet || pet->IsCharmed()) {
+					continue;
+				}
+
+				auto pet_spell_id = pet->GetPetSpellID();
+				if (
+					!pet_spell_id ||
+					!IsValidSpell(pet_spell_id) ||
+					!IsSummonPetSpell(pet_spell_id) ||
+					spells[pet_spell_id].teleport_zone[0] == '\0'
+				) {
 					RemovePet(pet);
-					LogError("Removing pet due to missing spell or click effect Spell ID: [{}]", pet->GetPetSpellID());
+					LogError("Removing pet due to non-restorable spell ID: [{}]", pet_spell_id);
+					continue;
+				}
+
+				if (!(FindSpellBookSlotBySpellID(pet_spell_id) >= 0 || GetInv().IsClickEffectEquipped(pet_spell_id))) {
+					RemovePet(pet);
+					LogError("Removing pet due to missing spell or click effect Spell ID: [{}]", pet_spell_id);
 				} else {
-					if (pet && pet->GetPetSpellID()) {
-						PetInfo newPetInfo = PetInfo();
-						memset(&newPetInfo, 0, sizeof(PetInfo));
-						newPetInfo.SpellID = pet->GetPetSpellID();
-						newPetInfo.HP = pet->GetHP();
-						newPetInfo.Mana = pet->GetMana();
-						pet->GetPetState(newPetInfo.Buffs, newPetInfo.Items, newPetInfo.Name);
-						newPetInfo.petpower = pet->GetPetPower();
-						newPetInfo.size = pet->GetSize();
-						newPetInfo.taunting = pet->IsTaunting();
-						m_petinfomulti.push_back(newPetInfo);
-					}
+					PetInfo newPetInfo = PetInfo();
+					memset(&newPetInfo, 0, sizeof(PetInfo));
+					newPetInfo.SpellID = pet_spell_id;
+					newPetInfo.HP = pet->GetHP();
+					newPetInfo.Mana = pet->GetMana();
+					pet->GetPetState(newPetInfo.Buffs, newPetInfo.Items, newPetInfo.Name);
+					newPetInfo.petpower = pet->GetPetPower();
+					newPetInfo.size = pet->GetSize();
+					newPetInfo.taunting = pet->IsTaunting();
+					m_petinfomulti.push_back(newPetInfo);
 				}
 			}
 		}

@@ -2,6 +2,7 @@
 #include "../thj_fake_bazaar.h"
 #include "../../common/eq_constants.h"
 #include "../../common/mysql_request_row.h"
+#include "../../common/mysql_request_result.h"
 #include "../../common/repositories/buyer_buy_lines_repository.h"
 #include "../../common/repositories/buyer_repository.h"
 #include "../../common/repositories/buyer_trade_items_repository.h"
@@ -24,6 +25,7 @@ constexpr uint64      THJ_FAKE_BAZAAR_MAX_PRICE     = 2000000000;
 constexpr uint32      THJ_FAKE_BAZAAR_MAX_PER_TRADER = 200;
 constexpr const char *THJ_FAKE_BAZAAR_CONFIG_PREFIX  = "THJFB.";
 constexpr const char *THJ_FAKE_BAZAAR_LEGACY_CONFIG_PREFIX = "THJFakeBazaar.";
+constexpr const char *THJ_FAKE_BAZAAR_ITEM_POOL_TABLE = "thj_fake_bazaar_item_pool";
 constexpr size_t      THJ_FAKE_BAZAAR_VARIABLE_NAME_LIMIT = 25;
 constexpr const char *THJ_FAKE_BAZAAR_DEFAULT_ITEM_TYPES =
 	"0,1,2,3,4,5,8,10,45";
@@ -122,6 +124,14 @@ struct THJFakeBazaarPricingSettings {
 	uint32 backstab_damage_weight;
 	uint32 bag_slot_weight;
 	uint32 bag_weight_reduction_weight;
+	uint32 family_upgrade_value_percent;
+	uint32 high_impact_premium_max_percent;
+	uint32 high_impact_spell_damage_weight;
+	uint32 high_impact_heal_amount_weight;
+	uint32 high_impact_haste_weight;
+	uint32 high_impact_heroic_stat_weight;
+	uint32 high_impact_weapon_ratio_weight;
+	uint32 high_impact_weapon_damage_weight;
 	uint32 buyer_min_base_price;
 	uint32 buyer_max_price;
 	uint32 buyer_vendor_weight_percent;
@@ -153,6 +163,8 @@ struct THJFakeBazaarConfig {
 	uint32                       require_equipment_stats;
 	uint32                       minimum_equipment_stat_total;
 	uint32                       include_item_variants;
+	uint32                       use_cached_item_pool;
+	uint32                       allow_live_item_scan;
 	uint32                       auto_refresh_enabled;
 	uint32                       refresh_on_startup;
 	uint32                       refresh_when_empty;
@@ -175,6 +187,14 @@ struct THJFakeBazaarClearResult {
 struct THJFakeBazaarZoneDropCandidate {
 	uint32             zone_id;
 	THJFakeBazaarItem item;
+};
+
+struct THJFakeBazaarItemPricingContext {
+	uint64 exact_base_value = 0;
+	uint64 family_base_value = 0;
+	uint64 high_impact_value = 0;
+	uint64 family_high_impact_value = 0;
+	uint32 family_base_item_id = 0;
 };
 
 static uint32 THJFakeBazaarRowUInt(const char *value)
@@ -583,6 +603,22 @@ static std::string THJFakeBazaarZoneSql(const THJFakeBazaarConfig &config)
 	return Strings::Implode("\n\t\t\t\t\t", clauses);
 }
 
+static std::string THJFakeBazaarPoolZoneSql(const THJFakeBazaarConfig &config)
+{
+	std::vector<std::string> clauses;
+	const auto included_zones = THJFakeBazaarZoneListSql(config.included_zones);
+	if (!included_zones.empty()) {
+		clauses.push_back(fmt::format("AND p.zone_short_name IN ({})", included_zones));
+	}
+
+	const auto excluded_zones = THJFakeBazaarZoneListSql(config.excluded_zones);
+	if (!excluded_zones.empty()) {
+		clauses.push_back(fmt::format("AND p.zone_short_name NOT IN ({})", excluded_zones));
+	}
+
+	return Strings::Implode("\n\t\t\t\t\t", clauses);
+}
+
 static THJFakeBazaarConfig THJFakeBazaarLoadConfig()
 {
 	THJFakeBazaarConfig config{};
@@ -608,6 +644,8 @@ static THJFakeBazaarConfig THJFakeBazaarLoadConfig()
 	config.require_equipment_stats    = THJFakeBazaarConfigUInt("RequireEquipmentStats", 1, 0, 1);
 	config.minimum_equipment_stat_total = THJFakeBazaarConfigUInt("MinimumEquipmentStatTotal", 1, 0, 1000);
 	config.include_item_variants      = THJFakeBazaarConfigUInt("IncludeItemVariants", 1, 0, 1);
+	config.use_cached_item_pool       = THJFakeBazaarConfigUInt("UseCachedItemPool", 1, 0, 1);
+	config.allow_live_item_scan       = THJFakeBazaarConfigUInt("AllowLiveItemScan", 0, 0, 1);
 	config.auto_refresh_enabled       = THJFakeBazaarConfigUInt("AutoRefreshEnabled", 1, 0, 1);
 	config.refresh_on_startup         = THJFakeBazaarConfigUInt("RefreshOnStartup", 1, 0, 1);
 	config.refresh_when_empty         = THJFakeBazaarConfigUInt("RefreshWhenEmpty", 1, 0, 1);
@@ -650,6 +688,14 @@ static THJFakeBazaarConfig THJFakeBazaarLoadConfig()
 	config.pricing.backstab_damage_weight      = THJFakeBazaarConfigUInt("BackstabDamageWeightCopper", 3000, 0, 10000000);
 	config.pricing.bag_slot_weight             = THJFakeBazaarConfigUInt("BagSlotWeightCopper", 50000, 0, 10000000);
 	config.pricing.bag_weight_reduction_weight = THJFakeBazaarConfigUInt("BagWeightReductionWeightCopper", 1000, 0, 10000000);
+	config.pricing.family_upgrade_value_percent = THJFakeBazaarConfigUInt("FamilyUpgradeValuePercent", 75, 0, 100);
+	config.pricing.high_impact_premium_max_percent = THJFakeBazaarConfigUInt("HighImpactPremiumMaxPercent", 100, 0, 300);
+	config.pricing.high_impact_spell_damage_weight = THJFakeBazaarConfigUInt("HighImpactSpellDamageWeightCopper", 50000, 0, 10000000);
+	config.pricing.high_impact_heal_amount_weight = THJFakeBazaarConfigUInt("HighImpactHealAmountWeightCopper", 50000, 0, 10000000);
+	config.pricing.high_impact_haste_weight = THJFakeBazaarConfigUInt("HighImpactHasteWeightCopper", 20000, 0, 10000000);
+	config.pricing.high_impact_heroic_stat_weight = THJFakeBazaarConfigUInt("HighImpactHeroicStatWeightCopper", 25000, 0, 10000000);
+	config.pricing.high_impact_weapon_ratio_weight = THJFakeBazaarConfigUInt("HighImpactWeaponRatioWeightCopper", 8000, 0, 10000000);
+	config.pricing.high_impact_weapon_damage_weight = THJFakeBazaarConfigUInt("HighImpactWeaponDamageWeightCopper", 3000, 0, 10000000);
 	config.pricing.buyer_min_base_price        = THJFakeBazaarConfigPp("BuyerMinBasePricePP", 1, 0, 2000000);
 	config.pricing.buyer_max_price             = THJFakeBazaarConfigPp("BuyerMaxPricePP", 10000, 1, 2000000);
 	config.pricing.buyer_vendor_weight_percent = THJFakeBazaarConfigUInt("BuyerVendorWeightPercent", 500, 0, 10000);
@@ -735,6 +781,7 @@ static void THJFakeBazaarUsage(Client *c)
 	c->Message(Chat::White, "#fakebazaar status");
 	c->Message(Chat::White, "#fakebazaar clear");
 	c->Message(Chat::White, "#fakebazaar refresh [force]");
+	c->Message(Chat::White, "#fakebazaar pool status");
 	c->Message(
 		Chat::White,
 		"#fakebazaar seed [seller_items] [buyer_lines] [seller_count] [buyer_count] [seller_mult_min] [seller_mult_max] [buyer_mult_min] [buyer_mult_max] [max_expansion] [drops_per_zone] [min_expansion]"
@@ -955,7 +1002,213 @@ static std::vector<THJFakeBazaarItem> THJFakeBazaarLoadFallbackItems(
 	return items;
 }
 
-static std::vector<THJFakeBazaarItem> THJFakeBazaarLoadItems(
+static std::vector<THJFakeBazaarItem> THJFakeBazaarSelectZoneDropItems(
+	MySQLRequestResult &results,
+	uint32 item_count,
+	const THJFakeBazaarSeedSettings &settings,
+	std::unordered_set<uint32> &chosen_item_ids
+)
+{
+	std::vector<THJFakeBazaarItem> items;
+	if (!item_count || !results.Success() || !results.RowCount()) {
+		return items;
+	}
+
+	std::random_device random_device;
+	std::mt19937       rng(random_device());
+
+	std::vector<THJFakeBazaarZoneDropCandidate> all_candidates;
+	std::vector<uint32>                         zone_ids;
+	std::unordered_map<uint32, std::vector<THJFakeBazaarItem>> zone_items;
+	std::unordered_set<uint32> seen_zone_ids;
+
+	all_candidates.reserve(results.RowCount());
+
+	for (auto row = results.begin(); row != results.end(); ++row) {
+		const uint32 zone_id = THJFakeBazaarRowUInt(row[0]);
+		auto item = THJFakeBazaarItemFromRow(row, 1);
+		if (!zone_id || !item.id || item.name.empty()) {
+			continue;
+		}
+
+		if (seen_zone_ids.insert(zone_id).second) {
+			zone_ids.push_back(zone_id);
+		}
+
+		zone_items[zone_id].push_back(item);
+		all_candidates.push_back({zone_id, item});
+	}
+
+	for (auto &[zone_id, candidates] : zone_items) {
+		std::shuffle(candidates.begin(), candidates.end(), rng);
+	}
+
+	std::shuffle(zone_ids.begin(), zone_ids.end(), rng);
+
+	std::unordered_map<uint32, size_t> zone_positions;
+	items.reserve(item_count);
+
+	for (uint32 pass = 0; pass < settings.drops_per_zone && items.size() < item_count; ++pass) {
+		for (const auto zone_id : zone_ids) {
+			auto &candidates = zone_items[zone_id];
+			auto &position = zone_positions[zone_id];
+
+			while (position < candidates.size() && chosen_item_ids.find(candidates[position].id) != chosen_item_ids.end()) {
+				position++;
+			}
+
+			if (position >= candidates.size()) {
+				continue;
+			}
+
+			items.push_back(candidates[position]);
+			chosen_item_ids.insert(candidates[position].id);
+			position++;
+
+			if (items.size() >= item_count) {
+				break;
+			}
+		}
+	}
+
+	std::shuffle(all_candidates.begin(), all_candidates.end(), rng);
+	for (const auto &candidate : all_candidates) {
+		if (items.size() >= item_count) {
+			break;
+		}
+
+		if (!chosen_item_ids.insert(candidate.item.id).second) {
+			continue;
+		}
+
+		items.push_back(candidate.item);
+	}
+
+	return items;
+}
+
+static bool THJFakeBazaarItemPoolTableExists()
+{
+	auto results = content_db.QueryDatabase(
+		fmt::format("SHOW TABLES LIKE '{}'", THJ_FAKE_BAZAAR_ITEM_POOL_TABLE)
+	);
+
+	return results.Success() && results.RowCount() > 0;
+}
+
+static uint32 THJFakeBazaarItemPoolCount()
+{
+	if (!THJFakeBazaarItemPoolTableExists()) {
+		return 0;
+	}
+
+	auto results = content_db.QueryDatabase(
+		fmt::format("SELECT COUNT(*) FROM `{}`", THJ_FAKE_BAZAAR_ITEM_POOL_TABLE)
+	);
+
+	if (!results.Success() || !results.RowCount()) {
+		return 0;
+	}
+
+	auto row = results.begin();
+	return THJFakeBazaarRowUInt(row[0]);
+}
+
+static std::vector<THJFakeBazaarItem> THJFakeBazaarLoadCachedItems(
+	uint32 item_count,
+	const THJFakeBazaarSeedSettings &settings,
+	const THJFakeBazaarConfig &config
+)
+{
+	std::unordered_set<uint32> chosen_item_ids;
+	if (!item_count || !THJFakeBazaarItemPoolTableExists()) {
+		return THJFakeBazaarLoadFallbackItems(item_count, chosen_item_ids, settings, config);
+	}
+
+	auto results = content_db.QueryDatabase(
+		fmt::format(
+			R"(
+				SELECT p.zone_id, i.id, i.Name, i.icon, i.price, i.ldonprice, i.stackable, i.stacksize,
+					i.maxcharges, i.itemclass, i.itemtype, i.slots, i.bagslots, i.ac, i.hp, i.mana,
+					i.damage, i.reclevel, i.reqlevel, i.scrolleffect, i.focuseffect,
+					i.delay, i.endur, (i.astr + i.asta + i.aagi + i.adex + i.acha + i.aint + i.awis),
+					(i.cr + i.dr + i.pr + i.mr + i.fr + i.svcorruption),
+					(i.heroic_str + i.heroic_int + i.heroic_wis + i.heroic_agi + i.heroic_dex + i.heroic_sta + i.heroic_cha),
+					i.attack, i.regen, i.manaregen, i.enduranceregen, i.haste, i.damageshield,
+					i.proceffect, i.clickeffect, i.worneffect, i.bardeffect, i.elemdmgamt, i.backstabdmg,
+					i.spelldmg, i.healamt, i.combateffects, i.shielding, i.avoidance, i.accuracy, i.bagwr
+				FROM `{11}` AS p
+				INNER JOIN items AS i
+					ON i.id = p.item_id
+				WHERE p.min_expansion <= {1}
+					AND p.max_expansion >= {0}
+					{2}
+					AND i.id > 0
+					AND i.minstatus = 0
+					AND i.nodrop <> 0
+					AND i.norent <> 0
+					AND i.summonedflag = 0
+					AND i.notransfer = 0
+					AND i.Name <> ''
+					{3}
+					{4}
+					{5}
+					{6}
+					{7}
+					{8}
+					{9}
+					AND (
+						i.slots <> 0
+						OR i.bagslots > 0
+						OR i.itemtype IN ({10})
+						OR i.scrolleffect BETWEEN 1 AND 64999
+						OR i.focuseffect > 0
+					)
+					AND (
+						i.price > 0
+						OR i.ldonprice > 0
+						OR i.bagslots > 0
+						OR i.slots <> 0
+						OR i.scrolleffect BETWEEN 1 AND 64999
+						OR i.focuseffect > 0
+						OR i.ac > 0
+						OR i.hp > 0
+						OR i.mana > 0
+						OR i.damage > 0
+					)
+				ORDER BY p.zone_id ASC, p.item_id ASC
+			)",
+			settings.min_expansion,
+			settings.max_expansion,
+			THJFakeBazaarPoolZoneSql(config),
+			THJFakeBazaarNamePatternSql("i", config.excluded_name_patterns),
+			THJFakeBazaarLevelSql("i", config.min_item_level, config.max_item_level),
+			THJFakeBazaarRecipeExpansionSql("i", settings),
+			THJFakeBazaarTradeskillSql("i", config),
+			THJFakeBazaarMerchantListSql("i", config),
+			THJFakeBazaarSpellScrollSql("i", config),
+			THJFakeBazaarEquipmentStatsSql("i", config),
+			THJFakeBazaarUIntListSql(config.allowed_item_types, THJ_FAKE_BAZAAR_DEFAULT_ITEM_TYPES),
+			THJ_FAKE_BAZAAR_ITEM_POOL_TABLE
+		)
+	);
+
+	auto items = THJFakeBazaarSelectZoneDropItems(results, item_count, settings, chosen_item_ids);
+	if (items.size() < item_count) {
+		auto fallback_items = THJFakeBazaarLoadFallbackItems(
+			item_count - static_cast<uint32>(items.size()),
+			chosen_item_ids,
+			settings,
+			config
+		);
+
+		items.insert(items.end(), fallback_items.begin(), fallback_items.end());
+	}
+
+	return items;
+}
+
+static std::vector<THJFakeBazaarItem> THJFakeBazaarLoadLiveZoneDropItems(
 	uint32 item_count,
 	const THJFakeBazaarSeedSettings &settings,
 	const THJFakeBazaarConfig &config
@@ -1040,7 +1293,7 @@ static std::vector<THJFakeBazaarItem> THJFakeBazaarLoadItems(
 						OR i.mana > 0
 						OR i.damage > 0
 					)
-				ORDER BY z.zoneidnumber ASC, RAND()
+				ORDER BY z.zoneidnumber ASC, i.id ASC
 			)",
 			settings.min_expansion,
 			settings.max_expansion,
@@ -1062,75 +1315,7 @@ static std::vector<THJFakeBazaarItem> THJFakeBazaarLoadItems(
 		return THJFakeBazaarLoadFallbackItems(item_count, chosen_item_ids, settings, config);
 	}
 
-	std::random_device random_device;
-	std::mt19937       rng(random_device());
-
-	std::vector<THJFakeBazaarZoneDropCandidate> all_candidates;
-	std::vector<uint32>                         zone_ids;
-	std::unordered_map<uint32, std::vector<THJFakeBazaarItem>> zone_items;
-	std::unordered_set<uint32> seen_zone_ids;
-
-	all_candidates.reserve(results.RowCount());
-
-	for (auto row = results.begin(); row != results.end(); ++row) {
-		const uint32 zone_id = THJFakeBazaarRowUInt(row[0]);
-		auto item = THJFakeBazaarItemFromRow(row, 1);
-		if (!zone_id || !item.id || item.name.empty()) {
-			continue;
-		}
-
-		if (seen_zone_ids.insert(zone_id).second) {
-			zone_ids.push_back(zone_id);
-		}
-
-		zone_items[zone_id].push_back(item);
-		all_candidates.push_back({zone_id, item});
-	}
-
-	for (auto &[zone_id, candidates] : zone_items) {
-		std::shuffle(candidates.begin(), candidates.end(), rng);
-	}
-
-	std::shuffle(zone_ids.begin(), zone_ids.end(), rng);
-
-	std::unordered_map<uint32, size_t> zone_positions;
-	items.reserve(item_count);
-
-	for (uint32 pass = 0; pass < settings.drops_per_zone && items.size() < item_count; ++pass) {
-		for (const auto zone_id : zone_ids) {
-			auto &candidates = zone_items[zone_id];
-			auto &position = zone_positions[zone_id];
-
-			while (position < candidates.size() && chosen_item_ids.contains(candidates[position].id)) {
-				position++;
-			}
-
-			if (position >= candidates.size()) {
-				continue;
-			}
-
-			items.push_back(candidates[position]);
-			chosen_item_ids.insert(candidates[position].id);
-			position++;
-
-			if (items.size() >= item_count) {
-				break;
-			}
-		}
-	}
-
-	std::shuffle(all_candidates.begin(), all_candidates.end(), rng);
-	for (const auto &candidate : all_candidates) {
-		if (items.size() >= item_count) {
-			break;
-		}
-
-		if (!chosen_item_ids.insert(candidate.item.id).second) {
-			continue;
-		}
-
-		items.push_back(candidate.item);
-	}
+	items = THJFakeBazaarSelectZoneDropItems(results, item_count, settings, chosen_item_ids);
 
 	if (items.size() < item_count) {
 		auto fallback_items = THJFakeBazaarLoadFallbackItems(
@@ -1144,6 +1329,30 @@ static std::vector<THJFakeBazaarItem> THJFakeBazaarLoadItems(
 	}
 
 	return items;
+}
+
+static std::vector<THJFakeBazaarItem> THJFakeBazaarLoadItems(
+	uint32 item_count,
+	const THJFakeBazaarSeedSettings &settings,
+	const THJFakeBazaarConfig &config
+)
+{
+	if (!item_count) {
+		return {};
+	}
+
+	if (config.use_cached_item_pool) {
+		auto cached_items = THJFakeBazaarLoadCachedItems(item_count, settings, config);
+		if (!cached_items.empty() || !config.allow_live_item_scan) {
+			return cached_items;
+		}
+	}
+
+	if (!config.allow_live_item_scan) {
+		return {};
+	}
+
+	return THJFakeBazaarLoadLiveZoneDropItems(item_count, settings, config);
 }
 
 static uint64 THJFakeBazaarPositiveValue(int32 value)
@@ -1238,6 +1447,141 @@ static uint64 THJFakeBazaarBaseValue(
 	);
 }
 
+static uint32 THJFakeBazaarFamilyBaseItemID(uint32 item_id)
+{
+	if (item_id > THJ_FAKE_BAZAAR_LEGENDARY_ITEM_ID_OFFSET) {
+		return item_id - THJ_FAKE_BAZAAR_LEGENDARY_ITEM_ID_OFFSET;
+	}
+
+	if (item_id > THJ_FAKE_BAZAAR_ENCHANTED_ITEM_ID_OFFSET) {
+		return item_id - THJ_FAKE_BAZAAR_ENCHANTED_ITEM_ID_OFFSET;
+	}
+
+	return item_id;
+}
+
+static uint64 THJFakeBazaarHighImpactValue(
+	const THJFakeBazaarItem &item,
+	const THJFakeBazaarPricingSettings &pricing
+)
+{
+	uint64 score_value = 0;
+	score_value += THJFakeBazaarPositiveValue(item.spell_damage) * pricing.high_impact_spell_damage_weight;
+	score_value += THJFakeBazaarPositiveValue(item.heal_amount) * pricing.high_impact_heal_amount_weight;
+	score_value += THJFakeBazaarPositiveValue(item.haste) * pricing.high_impact_haste_weight;
+	score_value += THJFakeBazaarPositiveValue(item.heroic_stats) * pricing.high_impact_heroic_stat_weight;
+
+	const uint64 weapon_damage = static_cast<uint64>(item.damage) + item.elemental_damage;
+	if (weapon_damage > 0 && item.delay > 0) {
+		const uint64 ratio_score = weapon_damage * 100 / item.delay;
+		score_value += ratio_score * pricing.high_impact_weapon_ratio_weight;
+		score_value += weapon_damage * pricing.high_impact_weapon_damage_weight;
+	}
+
+	return std::min<uint64>(score_value, pricing.max_price);
+}
+
+static std::unordered_map<uint32, THJFakeBazaarItemPricingContext> THJFakeBazaarBuildPricingContexts(
+	const std::vector<THJFakeBazaarItem> &items,
+	const THJFakeBazaarPricingSettings &pricing
+)
+{
+	std::unordered_map<uint32, THJFakeBazaarItemPricingContext> contexts;
+	if (items.empty()) {
+		return contexts;
+	}
+
+	std::unordered_set<uint32> family_base_item_ids;
+	for (const auto &item : items) {
+		if (item.id) {
+			family_base_item_ids.insert(THJFakeBazaarFamilyBaseItemID(item.id));
+		}
+	}
+
+	std::unordered_map<uint32, THJFakeBazaarItemPricingContext> family_contexts;
+	std::vector<std::string> family_item_ids;
+	family_item_ids.reserve(family_base_item_ids.size() * 3);
+	for (const auto family_base_item_id : family_base_item_ids) {
+		THJFakeBazaarItemPricingContext family_context{};
+		family_context.family_base_item_id = family_base_item_id;
+		family_contexts[family_base_item_id] = family_context;
+		family_item_ids.push_back(std::to_string(family_base_item_id));
+		family_item_ids.push_back(std::to_string(family_base_item_id + THJ_FAKE_BAZAAR_ENCHANTED_ITEM_ID_OFFSET));
+		family_item_ids.push_back(std::to_string(family_base_item_id + THJ_FAKE_BAZAAR_LEGENDARY_ITEM_ID_OFFSET));
+	}
+
+	auto results = content_db.QueryDatabase(
+		fmt::format(
+			R"(
+				SELECT id, Name, icon, price, ldonprice, stackable, stacksize, maxcharges, itemclass, itemtype,
+					slots, bagslots, ac, hp, mana, damage, reclevel, reqlevel, scrolleffect, focuseffect,
+					delay, endur, (astr + asta + aagi + adex + acha + aint + awis),
+					(cr + dr + pr + mr + fr + svcorruption),
+					(heroic_str + heroic_int + heroic_wis + heroic_agi + heroic_dex + heroic_sta + heroic_cha),
+					attack, regen, manaregen, enduranceregen, haste, damageshield,
+					proceffect, clickeffect, worneffect, bardeffect, elemdmgamt, backstabdmg,
+					spelldmg, healamt, combateffects, shielding, avoidance, accuracy, bagwr
+				FROM items
+				WHERE id IN ({})
+					AND minstatus = 0
+					AND Name <> ''
+			)",
+			Strings::Implode(", ", family_item_ids)
+		)
+	);
+
+	if (results.Success() && results.RowCount()) {
+		for (auto row = results.begin(); row != results.end(); ++row) {
+			const auto family_item = THJFakeBazaarItemFromRow(row, 0);
+			auto &family_context = family_contexts[THJFakeBazaarFamilyBaseItemID(family_item.id)];
+			family_context.family_base_value = std::max(
+				family_context.family_base_value,
+				THJFakeBazaarBaseValue(family_item, pricing)
+			);
+			family_context.family_high_impact_value = std::max(
+				family_context.family_high_impact_value,
+				THJFakeBazaarHighImpactValue(family_item, pricing)
+			);
+		}
+	}
+
+	for (const auto &item : items) {
+		auto context = family_contexts[THJFakeBazaarFamilyBaseItemID(item.id)];
+		context.exact_base_value = THJFakeBazaarBaseValue(item, pricing);
+		context.high_impact_value = THJFakeBazaarHighImpactValue(item, pricing);
+		context.family_base_value = std::max(context.family_base_value, context.exact_base_value);
+		context.family_high_impact_value = std::max(context.family_high_impact_value, context.high_impact_value);
+		contexts[item.id] = context;
+	}
+
+	return contexts;
+}
+
+static uint64 THJFakeBazaarSellerBaseValue(
+	const THJFakeBazaarItem &item,
+	const THJFakeBazaarPricingSettings &pricing,
+	const THJFakeBazaarItemPricingContext *context
+)
+{
+	uint64 base_value = context ? context->exact_base_value : THJFakeBazaarBaseValue(item, pricing);
+	const uint64 family_value = context ? context->family_base_value : base_value;
+
+	if (pricing.family_upgrade_value_percent && family_value > base_value) {
+		base_value += (family_value - base_value) * pricing.family_upgrade_value_percent / 100;
+	}
+
+	const uint64 high_impact_value = context ?
+		std::max(context->high_impact_value, context->family_high_impact_value) :
+		THJFakeBazaarHighImpactValue(item, pricing);
+
+	if (pricing.high_impact_premium_max_percent && high_impact_value) {
+		const uint64 premium_cap = base_value * pricing.high_impact_premium_max_percent / 100;
+		base_value += std::min(high_impact_value, premium_cap);
+	}
+
+	return std::clamp<uint64>(base_value, 1, pricing.max_price);
+}
+
 static uint64 THJFakeBazaarEffectBonus(
 	const THJFakeBazaarItem &item,
 	const THJFakeBazaarPricingSettings &pricing,
@@ -1274,12 +1618,13 @@ static uint32 THJFakeBazaarRandomPrice(
 	uint32 min_multiplier,
 	uint32 max_multiplier,
 	const THJFakeBazaarPricingSettings &pricing,
+	const THJFakeBazaarItemPricingContext *context,
 	std::mt19937 &rng
 )
 {
 	std::uniform_int_distribution<uint32> multiplier_distribution(min_multiplier, max_multiplier);
 	const uint64 total =
-		(THJFakeBazaarBaseValue(item, pricing) * multiplier_distribution(rng)) +
+		(THJFakeBazaarSellerBaseValue(item, pricing, context) * multiplier_distribution(rng)) +
 		THJFakeBazaarEffectBonus(item, pricing, rng);
 
 	return static_cast<uint32>(std::clamp<uint64>(total, 1, pricing.max_price));
@@ -1499,15 +1844,40 @@ static void THJFakeBazaarStatus(Client *c)
 	const auto seller_listings = THJFakeBazaarSellerListingCount();
 	const auto buyers          = THJFakeBazaarBuyerCount();
 	const auto buyer_lines     = THJFakeBazaarBuyerLineCount();
+	const auto pool_rows       = THJFakeBazaarItemPoolCount();
 
 	c->Message(
 		Chat::White,
 		fmt::format(
-			"Fake bazaar status: {} seller characters, {} seller listings, {} system buyers, {} bounty buy lines.",
+			"Fake bazaar status: {} seller characters, {} seller listings, {} system buyers, {} bounty buy lines, {} cached pool rows.",
 			sellers,
 			seller_listings,
 			buyers,
-			buyer_lines
+			buyer_lines,
+			pool_rows
+		).c_str()
+	);
+}
+
+static void THJFakeBazaarPoolStatus(Client *c)
+{
+	const auto config = THJFakeBazaarLoadConfig();
+	c->Message(
+		Chat::White,
+		fmt::format(
+			"Fake bazaar item pool: {} cached rows, use_cached_item_pool={}, allow_live_item_scan={}, allow_global_fallback={}.",
+			THJFakeBazaarItemPoolCount(),
+			config.use_cached_item_pool,
+			config.allow_live_item_scan,
+			config.allow_global_fallback
+		).c_str()
+	);
+	c->Message(
+		Chat::White,
+		fmt::format(
+			"Fake bazaar item pool rebuild: last_rebuild_unix={} last_rebuild_rows={}. Rebuild the cache with tools/thj/Rebuild-ThjFakeBazaarItemPool.ps1 outside the zone process.",
+			THJFakeBazaarConfigString("PoolLastRebuildUnix", "0"),
+			THJFakeBazaarConfigString("PoolLastRebuildRows", "0")
 		).c_str()
 	);
 }
@@ -1520,8 +1890,10 @@ static std::vector<std::string> THJFakeBazaarConfigKeys()
 		"MinExpansion", "MaxExpansion", "DropsPerZone", "MinItemLevel", "MaxItemLevel",
 		"AllowGlobalFallback", "ExcludeTradeskillItems", "ExcludeMerchantItems", "ExcludeSpellScrolls",
 		"RequireEquipmentStats", "MinimumEquipmentStatTotal", "IncludeItemVariants",
+		"UseCachedItemPool", "AllowLiveItemScan",
 		"AutoRefreshEnabled", "RefreshOnStartup", "RefreshWhenEmpty", "RefreshIntervalMinutes",
 		"MinimumSellerListings", "MinimumBuyerLines", "LastSeedUnix",
+		"PoolLastRebuildUnix", "PoolLastRebuildRows",
 		"AllowedItemTypes", "IncludedZones", "ExcludedZones", "ExcludedNamePatterns",
 		"MinBasePricePP", "MaxPricePP", "VendorWeightPercent",
 		"BuyerMinBasePricePP", "BuyerMaxPricePP", "BuyerVendorWeightPercent",
@@ -1533,7 +1905,11 @@ static std::vector<std::string> THJFakeBazaarConfigKeys()
 		"DamageShieldWeightCopper", "SpellDamageWeightCopper", "HealAmountWeightCopper",
 		"Mod2WeightCopper", "WeaponRatioWeightCopper", "WeaponDamageWeightCopper",
 		"ElementalDamageWeightCopper", "BackstabDamageWeightCopper", "BagSlotWeightCopper",
-		"BagWeightReductionWeightCopper", "ProcEffectMinBonusPP", "ProcEffectMaxBonusPP",
+		"BagWeightReductionWeightCopper", "FamilyUpgradeValuePercent",
+		"HighImpactPremiumMaxPercent", "HighImpactSpellDamageWeightCopper",
+		"HighImpactHealAmountWeightCopper", "HighImpactHasteWeightCopper",
+		"HighImpactHeroicStatWeightCopper", "HighImpactWeaponRatioWeightCopper",
+		"HighImpactWeaponDamageWeightCopper", "ProcEffectMinBonusPP", "ProcEffectMaxBonusPP",
 		"ClickEffectMinBonusPP", "ClickEffectMaxBonusPP", "WornEffectMinBonusPP",
 		"WornEffectMaxBonusPP", "FocusEffectMinBonusPP", "FocusEffectMaxBonusPP",
 		"BardEffectMinBonusPP", "BardEffectMaxBonusPP"
@@ -1633,6 +2009,17 @@ static void THJFakeBazaarConfigMessage(Client *c)
 	c->Message(
 		Chat::White,
 		fmt::format(
+			"Fake bazaar cache: use_cached_item_pool={} allow_live_item_scan={} cached_rows={} pool_last_rebuild={} pool_last_rows={}.",
+			config.use_cached_item_pool,
+			config.allow_live_item_scan,
+			THJFakeBazaarItemPoolCount(),
+			THJFakeBazaarConfigString("PoolLastRebuildUnix", "0"),
+			THJFakeBazaarConfigString("PoolLastRebuildRows", "0")
+		).c_str()
+	);
+	c->Message(
+		Chat::White,
+		fmt::format(
 			"Fake bazaar item filters: exclude_tradeskill_items={} exclude_merchant_items={} exclude_spell_scrolls={} require_equipment_stats={} min_equipment_stat_total={} include_item_variants={}.",
 			config.exclude_tradeskill_items,
 			config.exclude_merchant_items,
@@ -1678,6 +2065,20 @@ static void THJFakeBazaarConfigMessage(Client *c)
 	c->Message(
 		Chat::White,
 		fmt::format(
+			"Fake bazaar seller premium: family_upgrade={}% high_impact_cap={}% spell_dmg={}pp heal={}pp haste={}pp heroic={}pp weapon_ratio={}pp weapon_dmg={}pp.",
+			config.pricing.family_upgrade_value_percent,
+			config.pricing.high_impact_premium_max_percent,
+			config.pricing.high_impact_spell_damage_weight / 1000,
+			config.pricing.high_impact_heal_amount_weight / 1000,
+			config.pricing.high_impact_haste_weight / 1000,
+			config.pricing.high_impact_heroic_stat_weight / 1000,
+			config.pricing.high_impact_weapon_ratio_weight / 1000,
+			config.pricing.high_impact_weapon_damage_weight / 1000
+		).c_str()
+	);
+	c->Message(
+		Chat::White,
+		fmt::format(
 			"Fake bazaar buyer pricing: min_base={}pp max={}pp vendor_weight={}%, stack_cap={}pp mundane_cap={}pp.",
 			config.pricing.buyer_min_base_price / 1000,
 			config.pricing.buyer_max_price / 1000,
@@ -1687,7 +2088,7 @@ static void THJFakeBazaarConfigMessage(Client *c)
 		).c_str()
 	);
 	c->Message(Chat::White, "Use #fakebazaar set Key Value. Values are stored as compact variables named THJFB.*.");
-	c->Message(Chat::White, "Common keys: SellerItems, BuyerLines, MinExpansion, MaxExpansion, IncludedZones, ExcludedZones, AllowedItemTypes, IncludeItemVariants, ExcludeTradeskillItems, ExcludeMerchantItems, ExcludeSpellScrolls, RequireEquipmentStats, MinimumEquipmentStatTotal, AutoRefreshEnabled, RefreshIntervalMinutes, BuyerMundaneMaxPricePP.");
+	c->Message(Chat::White, "Common keys: SellerItems, BuyerLines, MinExpansion, MaxExpansion, IncludedZones, ExcludedZones, AllowedItemTypes, IncludeItemVariants, UseCachedItemPool, AllowLiveItemScan, ExcludeTradeskillItems, ExcludeMerchantItems, ExcludeSpellScrolls, RequireEquipmentStats, MinimumEquipmentStatTotal, AutoRefreshEnabled, RefreshIntervalMinutes, BuyerMundaneMaxPricePP, FamilyUpgradeValuePercent, HighImpactPremiumMaxPercent, HighImpactSpellDamageWeightCopper, HighImpactHealAmountWeightCopper.");
 }
 
 static void THJFakeBazaarSetConfig(Client *c, const Seperator *sep)
@@ -1758,6 +2159,8 @@ static THJFakeBazaarActionResult THJFakeBazaarSeedRowsWithSettings(
 		);
 	}
 
+	const auto seller_pricing_contexts = THJFakeBazaarBuildPricingContexts(seed_items, config.pricing);
+
 	auto clear_result = THJFakeBazaarClear();
 	result.cleared_traders           = clear_result.traders;
 	result.cleared_buyers            = clear_result.buyers;
@@ -1813,6 +2216,7 @@ static THJFakeBazaarActionResult THJFakeBazaarSeedRowsWithSettings(
 
 	for (uint32 i = 0; i < settings.seller_items && i < seed_items.size(); ++i) {
 		const auto seller_index = i % seller_character_ids.size();
+		const auto pricing_context = seller_pricing_contexts.find(seed_items[i].id);
 		auto trader             = TraderRepository::NewEntity();
 		trader.char_id          = seller_character_ids[seller_index];
 		trader.item_id          = seed_items[i].id;
@@ -1823,6 +2227,7 @@ static THJFakeBazaarActionResult THJFakeBazaarSeedRowsWithSettings(
 			settings.seller_min_multiplier,
 			settings.seller_max_multiplier,
 			config.pricing,
+			pricing_context != seller_pricing_contexts.end() ? &pricing_context->second : nullptr,
 			rng
 		);
 		trader.slot_id               = static_cast<uint8>(seller_slot_counts[seller_index]++);
@@ -2081,11 +2486,22 @@ void command_fakebazaar(Client *c, const Seperator *sep)
 	const bool is_clear  = !strcasecmp(sep->arg[1], "clear");
 	const bool is_refresh = !strcasecmp(sep->arg[1], "refresh");
 	const bool is_status = !strcasecmp(sep->arg[1], "status");
+	const bool is_pool   = !strcasecmp(sep->arg[1], "pool");
 	const bool is_config = !strcasecmp(sep->arg[1], "config");
 	const bool is_set    = !strcasecmp(sep->arg[1], "set");
 
 	if (is_status) {
 		THJFakeBazaarStatus(c);
+		return;
+	}
+
+	if (is_pool) {
+		if (sep->argnum < 2 || !strcasecmp(sep->arg[2], "status")) {
+			THJFakeBazaarPoolStatus(c);
+			return;
+		}
+
+		THJFakeBazaarUsage(c);
 		return;
 	}
 

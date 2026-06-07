@@ -1810,7 +1810,14 @@ void Client::Handle_Connect_OP_ZoneEntry(const EQApplicationPacket *app)
 		for (int i = 0; i < m_petinfomulti.size(); i++) {
 			auto& pet_info = m_petinfomulti[i];
 
-			if (IsValidSpell(pet_info.SpellID) && GetAllPets().size() <= RuleI(Custom, AbsolutePetLimit)) {
+			if (
+				pet_info.SpellID != 0 &&
+				pet_info.SpellID != SPELL_UNKNOWN &&
+				IsValidSpell(pet_info.SpellID) &&
+				IsSummonPetSpell(pet_info.SpellID) &&
+				spells[pet_info.SpellID].teleport_zone[0] != '\0' &&
+				GetAllPets().size() <= RuleI(Custom, AbsolutePetLimit)
+			) {
 				// Create the pet using the stored data
 				MakePoweredPet(pet_info.SpellID, spells[pet_info.SpellID].teleport_zone, pet_info.petpower, pet_info.Name, pet_info.size);
 

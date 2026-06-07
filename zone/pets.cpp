@@ -286,6 +286,15 @@ void Mob::MakePoweredPet(uint16 spell_id, const char* pettype, int16 petpower,
 	//if(HasPet() || pettype == nullptr)
 	//	return;
 
+	if (!pettype || pettype[0] == '\0') {
+		LogError(
+			"Unable to create powered pet for spell_id [{}] ({}): empty pet type",
+			spell_id,
+			IsValidSpell(spell_id) ? spells[spell_id].name : "Unknown Spell"
+		);
+		return;
+	}
+
 	int16 act_power = 0; // The actual pet power we'll use.
 	if (petpower == -1) {
 		if (IsClient()) {

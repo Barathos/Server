@@ -2,6 +2,7 @@
 #include "../common/eqemu_logsys.h"
 #include "../common/extprofile.h"
 #include "../common/rulesys.h"
+#include "../common/spdat.h"
 #include "../common/strings.h"
 
 #include "client.h"
@@ -3164,7 +3165,33 @@ void ZoneDatabase::SavePetInfo(Client *client)
     std::vector<CharacterPetBuffsRepository::CharacterPetBuffs> pet_buffs;
     std::vector<CharacterPetInventoryRepository::CharacterPetInventory> inventory;
 
+	auto is_restorable_pet = [&](const PetInfo& p, uint32 pet_id) {
+		if (p.SpellID == 0 || p.SpellID == SPELL_UNKNOWN) {
+			return false;
+		}
+
+		if (
+			!IsValidSpell(p.SpellID) ||
+			!IsSummonPetSpell(p.SpellID) ||
+			spells[p.SpellID].teleport_zone[0] == '\0'
+		) {
+			LogInfo(
+				"Skipping saved pet state for character [{}] pet slot [{}]: non-restorable spell [{}] ({})",
+				client->CharacterID(),
+				pet_id,
+				p.SpellID,
+				IsValidSpell(p.SpellID) ? spells[p.SpellID].name : "Unknown Spell"
+			);
+			return false;
+		}
+
+		return true;
+	};
+
     auto save_pet_info = [&](PetInfo& p, uint32 pet_id) {
+		if (!is_restorable_pet(p, pet_id)) {
+			return;
+		}
 
         auto pet_info = CharacterPetInfoRepository::NewEntity();
         pet_info.char_id  = client->CharacterID();
@@ -3262,8 +3289,52 @@ void ZoneDatabase::LoadPetInfo(Client *client)
         return;
     }
 
+	auto delete_pet_state = [&](int32 pet_id) {
+		const auto pet_filter = fmt::format(
+			"`char_id` = {} AND `pet` = {}",
+			client->CharacterID(),
+			pet_id
+		);
+
+		CharacterPetInfoRepository::DeleteWhere(database, pet_filter);
+		CharacterPetBuffsRepository::DeleteWhere(database, pet_filter);
+		CharacterPetInventoryRepository::DeleteWhere(database, pet_filter);
+	};
+
+	auto is_restorable_pet_spell = [&](int32 spell_id) {
+		if (spell_id <= 0 || spell_id > 65535 || spell_id == SPELL_UNKNOWN) {
+			return false;
+		}
+
+		auto pet_spell_id = static_cast<uint16>(spell_id);
+		return (
+			IsValidSpell(pet_spell_id) &&
+			IsSummonPetSpell(pet_spell_id) &&
+			spells[pet_spell_id].teleport_zone[0] != '\0'
+		);
+	};
+
     // Load pet data into the vector and m_suspendedminion
     for (const auto& e : info) {
+		if (!is_restorable_pet_spell(e.spell_id)) {
+			if (e.spell_id > 0) {
+				const bool has_valid_spell_name = (
+					e.spell_id <= 65535 &&
+					IsValidSpell(static_cast<uint16>(e.spell_id))
+				);
+				LogError(
+					"Discarding saved pet state for character [{}] pet slot [{}]: non-restorable spell [{}] ({})",
+					client->CharacterID(),
+					e.pet,
+					e.spell_id,
+					has_valid_spell_name ? spells[static_cast<uint16>(e.spell_id)].name : "Unknown Spell"
+				);
+			}
+
+			delete_pet_state(e.pet);
+			continue;
+		}
+
         PetInfo p;
 		memset(&p, 0, sizeof(PetInfo));
 

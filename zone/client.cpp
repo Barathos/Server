@@ -1120,10 +1120,18 @@ bool Client::Save(uint8 iCommitNow) {
 			if (mob)
 			{
 				NPC* pet = mob->CastToNPC();
-				if (pet && pet->GetPetSpellID()) {
+				auto pet_spell_id = pet ? pet->GetPetSpellID() : 0;
+				if (
+					pet &&
+					!pet->IsCharmed() &&
+					pet_spell_id &&
+					IsValidSpell(pet_spell_id) &&
+					IsSummonPetSpell(pet_spell_id) &&
+					spells[pet_spell_id].teleport_zone[0] != '\0'
+				) {
 					PetInfo newPetInfo = PetInfo();
 					memset(&newPetInfo, 0, sizeof(PetInfo));
-					newPetInfo.SpellID = pet->GetPetSpellID();
+					newPetInfo.SpellID = pet_spell_id;
 					newPetInfo.HP = pet->GetHP();
 					newPetInfo.Mana = pet->GetMana();
 					pet->GetPetState(newPetInfo.Buffs, newPetInfo.Items, newPetInfo.Name);
@@ -7824,6 +7832,16 @@ void Client::SuspendMinion(int value)
 		pet = pet_mob->CastToNPC();
 	}
 
+	auto is_restorable_pet_spell = [](uint16 spell_id) {
+		return (
+			spell_id != 0 &&
+			spell_id != SPELL_UNKNOWN &&
+			IsValidSpell(spell_id) &&
+			IsSummonPetSpell(spell_id) &&
+			spells[spell_id].teleport_zone[0] != '\0'
+		);
+	};
+
 	if (pet && pet->IsCharmed()) {
 		MessageString(Chat::SpellFailure, ONLY_SUMMONED_PETS);
 		return;
@@ -7888,12 +7906,22 @@ void Client::SuspendMinion(int value)
 		}
 	};
 
-	bool valid_stored_pet	= m_suspendedminion.SpellID > 0;
+	bool valid_stored_pet	= is_restorable_pet_spell(m_suspendedminion.SpellID);
 	bool total_pet_limit 	= GetAllPets().size() <= RuleI(Custom, AbsolutePetLimit);
-	bool pet_slot_allowed 	= IsPetAllowed(m_suspendedminion.SpellID);
+	bool pet_slot_allowed 	= valid_stored_pet && IsPetAllowed(m_suspendedminion.SpellID);
 
-	bool valid_pet_to_store = pet && pet->GetPetSpellID();
+	bool valid_pet_to_store = pet && is_restorable_pet_spell(pet->GetPetSpellID());
 	bool pet_not_engaged 	= pet && !pet->IsEngaged();
+
+	if (m_suspendedminion.SpellID > 0 && !valid_stored_pet) {
+		LogError(
+			"Discarding suspended minion with non-restorable spell [{}] ({}) for character [{}]",
+			m_suspendedminion.SpellID,
+			IsValidSpell(m_suspendedminion.SpellID) ? spells[m_suspendedminion.SpellID].name : "Unknown Spell",
+			CharacterID()
+		);
+		memset(&m_suspendedminion, 0, sizeof(PetInfo));
+	}
 
 	if (valid_stored_pet) {
 		if (!total_pet_limit) {
