@@ -76,3 +76,6 @@ features/ai-npc-response/ai-bridge/.venv/
 features/ai-npc-response/ai-bridge/runtime/
 features/ai-npc-response/ai-bridge/ollama-models/
 features/ai-npc-response/ai-bridge/**/__pycache__/
+
+# Local multiclass planning notes
+features/multiclass/TRIO_NAMES.md
