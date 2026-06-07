@@ -6,101 +6,181 @@
 
 uint16 Perl_Buff_GetCasterID(Buffs_Struct* self)
 {
+	if (!self) {
+		return 0;
+	}
+
 	return self->casterid;
 }
 
 uint8 Perl_Buff_GetCasterLevel(Buffs_Struct* self)
 {
+	if (!self) {
+		return 0;
+	}
+
 	return self->casterlevel;
 }
 
 std::string Perl_Buff_GetCasterName(Buffs_Struct* self)
 {
+	if (!self) {
+		return {};
+	}
+
 	return self->caster_name;
 }
 
 int Perl_Buff_GetCastOnX(Buffs_Struct* self)
 {
+	if (!self) {
+		return 0;
+	}
+
 	return self->caston_x;
 }
 
 int Perl_Buff_GetCastOnY(Buffs_Struct* self)
 {
+	if (!self) {
+		return 0;
+	}
+
 	return self->caston_y;
 }
 
 int Perl_Buff_GetCastOnZ(Buffs_Struct* self)
 {
+	if (!self) {
+		return 0;
+	}
+
 	return self->caston_z;
 }
 
 uint32 Perl_Buff_GetCounters(Buffs_Struct* self)
 {
+	if (!self) {
+		return 0;
+	}
+
 	return self->counters;
 }
 
 uint32 Perl_Buff_GetDOTRune(Buffs_Struct* self)
 {
+	if (!self) {
+		return 0;
+	}
+
 	return self->dot_rune;
 }
 
 int Perl_Buff_GetExtraDIChance(Buffs_Struct* self)
 {
+	if (!self) {
+		return 0;
+	}
+
 	return self->ExtraDIChance;
 }
 
 uint32 Perl_Buff_GetInstrumentModifier(Buffs_Struct* self)
 {
+	if (!self) {
+		return 0;
+	}
+
 	return self->instrument_mod;
 }
 
 uint32 Perl_Buff_GetMagicRune(Buffs_Struct* self)
 {
+	if (!self) {
+		return 0;
+	}
+
 	return self->magic_rune;
 }
 
 uint32 Perl_Buff_GetMeleeRune(Buffs_Struct* self)
 {
+	if (!self) {
+		return 0;
+	}
+
 	return self->melee_rune;
 }
 
 uint32 Perl_Buff_GetNumberOfHits(Buffs_Struct* self)
 {
+	if (!self) {
+		return 0;
+	}
+
 	return self->hit_number;
 }
 
 int16 Perl_Buff_GetRootBreakChance(Buffs_Struct* self)
 {
+	if (!self) {
+		return 0;
+	}
+
 	return self->RootBreakChance;
 }
 
 uint16 Perl_Buff_GetSpellID(Buffs_Struct* self)
 {
+	if (!self) {
+		return SPELL_UNKNOWN;
+	}
+
 	return self->spellid;
 }
 
 int Perl_Buff_GetTicsRemaining(Buffs_Struct* self)
 {
+	if (!self) {
+		return 0;
+	}
+
 	return self->ticsremaining;
 }
 
 int Perl_Buff_GetVirusSpreadTime(Buffs_Struct* self)
 {
+	if (!self) {
+		return 0;
+	}
+
 	return self->virus_spread_time;
 }
 
 bool Perl_Buff_IsCasterClient(Buffs_Struct* self)
 {
+	if (!self) {
+		return false;
+	}
+
 	return self->client;
 }
 
 bool Perl_Buff_IsPersistentBuff(Buffs_Struct* self)
 {
+	if (!self) {
+		return false;
+	}
+
 	return self->persistant_buff;
 }
 
 bool Perl_Buff_SendsClientUpdate(Buffs_Struct* self)
 {
+	if (!self) {
+		return false;
+	}
+
 	return self->UpdateClient;
 }
 

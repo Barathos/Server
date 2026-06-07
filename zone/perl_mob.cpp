@@ -3448,9 +3448,21 @@ perl::array Perl_Mob_GetBuffs(Mob* self)
 {
 	perl::array result;
 
-	const auto &buffs = self->GetBuffs();
+	if (!self) {
+		return result;
+	}
 
-	for (int slot_id = 0; slot_id < (self->GetMaxBuffSlots() + self->GetMaxSongSlots()); slot_id++) {
+	auto *buffs = self->GetBuffs();
+	if (!buffs) {
+		return result;
+	}
+
+	const auto slot_count = self->GetMaxBuffSlots() + self->GetMaxSongSlots();
+	if (slot_count <= 0) {
+		return result;
+	}
+
+	for (int slot_id = 0; slot_id < slot_count; slot_id++) {
 		result.push_back(&buffs[slot_id]);
 	}
 

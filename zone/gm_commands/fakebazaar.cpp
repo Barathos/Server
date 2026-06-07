@@ -29,9 +29,11 @@ constexpr const char *THJ_FAKE_BAZAAR_DEFAULT_ITEM_TYPES =
 	"0,1,2,3,4,5,8,10,45";
 constexpr uint32      THJ_FAKE_BAZAAR_DEFAULT_MAX_ITEM_LEVEL = 65;
 constexpr const char *THJ_FAKE_BAZAAR_DEFAULT_EXCLUDED_NAME_PATTERNS =
-	"Deprecated%|%Test%|%(Enchanted)|%(Legendary)|%Defiant%|%Abstruse%|%August %|%Boundless%|"
+	"Deprecated%|%Test%|%Defiant%|%Abstruse%|%August %|%Boundless%|"
 	"%Castaway%|%Cosgrove%|%Crystalweave%|%Duskwoven%|%Ethermere%|%Fused Coral%|%Glacier Giant%|"
 	"%Glorious%|%Illustrious%|%Numinous%|%Regal %|%Shadowspin%|%Snowborn%|%Starglow%|%Transcendent%";
+constexpr uint32      THJ_FAKE_BAZAAR_ENCHANTED_ITEM_ID_OFFSET = 1000000;
+constexpr uint32      THJ_FAKE_BAZAAR_LEGENDARY_ITEM_ID_OFFSET = 2000000;
 
 struct THJFakeBazaarItem {
 	uint32      id;
@@ -150,6 +152,7 @@ struct THJFakeBazaarConfig {
 	uint32                       exclude_spell_scrolls;
 	uint32                       require_equipment_stats;
 	uint32                       minimum_equipment_stat_total;
+	uint32                       include_item_variants;
 	uint32                       auto_refresh_enabled;
 	uint32                       refresh_on_startup;
 	uint32                       refresh_when_empty;
@@ -326,6 +329,29 @@ static std::vector<std::string> THJFakeBazaarSplitConfigList(std::string value)
 	return entries;
 }
 
+static std::string THJFakeBazaarRemoveNamePatterns(
+	const std::string &patterns,
+	const std::vector<std::string> &removed_patterns
+)
+{
+	std::vector<std::string> kept_patterns;
+	for (const auto &pattern : THJFakeBazaarSplitConfigList(patterns)) {
+		bool remove_pattern = false;
+		for (const auto &removed_pattern : removed_patterns) {
+			if (Strings::EqualFold(pattern, removed_pattern)) {
+				remove_pattern = true;
+				break;
+			}
+		}
+
+		if (!remove_pattern) {
+			kept_patterns.push_back(pattern);
+		}
+	}
+
+	return Strings::Implode("|", kept_patterns);
+}
+
 static std::string THJFakeBazaarUIntListSql(const std::string &value, const std::string &default_value)
 {
 	std::vector<std::string> safe_entries;
@@ -379,6 +405,19 @@ static std::string THJFakeBazaarNamePatternSql(const std::string &table_alias, c
 	}
 
 	return Strings::Implode("\n\t\t\t\t\t", clauses);
+}
+
+static std::string THJFakeBazaarItemVariantJoinSql(const THJFakeBazaarConfig &config)
+{
+	if (!config.include_item_variants) {
+		return "i.id = base_i.id";
+	}
+
+	return fmt::format(
+		"i.id IN (base_i.id, base_i.id + {}, base_i.id + {})",
+		THJ_FAKE_BAZAAR_ENCHANTED_ITEM_ID_OFFSET,
+		THJ_FAKE_BAZAAR_LEGENDARY_ITEM_ID_OFFSET
+	);
 }
 
 static std::string THJFakeBazaarLevelSql(const std::string &table_alias, uint32 min_item_level, uint32 max_item_level)
@@ -568,6 +607,7 @@ static THJFakeBazaarConfig THJFakeBazaarLoadConfig()
 	config.exclude_spell_scrolls      = THJFakeBazaarConfigUInt("ExcludeSpellScrolls", 1, 0, 1);
 	config.require_equipment_stats    = THJFakeBazaarConfigUInt("RequireEquipmentStats", 1, 0, 1);
 	config.minimum_equipment_stat_total = THJFakeBazaarConfigUInt("MinimumEquipmentStatTotal", 1, 0, 1000);
+	config.include_item_variants      = THJFakeBazaarConfigUInt("IncludeItemVariants", 1, 0, 1);
 	config.auto_refresh_enabled       = THJFakeBazaarConfigUInt("AutoRefreshEnabled", 1, 0, 1);
 	config.refresh_on_startup         = THJFakeBazaarConfigUInt("RefreshOnStartup", 1, 0, 1);
 	config.refresh_when_empty         = THJFakeBazaarConfigUInt("RefreshWhenEmpty", 1, 0, 1);
@@ -578,6 +618,12 @@ static THJFakeBazaarConfig THJFakeBazaarLoadConfig()
 	config.included_zones             = THJFakeBazaarConfigString("IncludedZones", "");
 	config.excluded_zones             = THJFakeBazaarConfigString("ExcludedZones", "");
 	config.excluded_name_patterns     = THJFakeBazaarConfigString("ExcludedNamePatterns", THJ_FAKE_BAZAAR_DEFAULT_EXCLUDED_NAME_PATTERNS);
+	if (config.include_item_variants) {
+		config.excluded_name_patterns = THJFakeBazaarRemoveNamePatterns(
+			config.excluded_name_patterns,
+			{"%(Enchanted)", "%(Legendary)"}
+		);
+	}
 
 	config.pricing.min_base_price              = THJFakeBazaarConfigPp("MinBasePricePP", 5, 1, 2000000);
 	config.pricing.max_price                   = THJFakeBazaarConfigPp("MaxPricePP", 2000000, 1, 2000000);
@@ -947,8 +993,10 @@ static std::vector<THJFakeBazaarItem> THJFakeBazaarLoadItems(
 				INNER JOIN lootdrop_entries AS lde
 					ON lde.lootdrop_id = lte.lootdrop_id
 					AND lde.chance > 0
+				INNER JOIN items AS base_i
+					ON base_i.id = lde.item_id
 				INNER JOIN items AS i
-					ON i.id = lde.item_id
+					ON {11}
 				WHERE z.version = 0
 					AND z.expansion >= {0}
 					AND z.expansion <= {1}
@@ -1004,7 +1052,8 @@ static std::vector<THJFakeBazaarItem> THJFakeBazaarLoadItems(
 			THJFakeBazaarMerchantListSql("i", config),
 			THJFakeBazaarSpellScrollSql("i", config),
 			THJFakeBazaarEquipmentStatsSql("i", config),
-			THJFakeBazaarUIntListSql(config.allowed_item_types, THJ_FAKE_BAZAAR_DEFAULT_ITEM_TYPES)
+			THJFakeBazaarUIntListSql(config.allowed_item_types, THJ_FAKE_BAZAAR_DEFAULT_ITEM_TYPES),
+			THJFakeBazaarItemVariantJoinSql(config)
 		)
 	);
 
@@ -1470,7 +1519,7 @@ static std::vector<std::string> THJFakeBazaarConfigKeys()
 		"SellerMinMultiplier", "SellerMaxMultiplier", "BuyerMinMultiplier", "BuyerMaxMultiplier",
 		"MinExpansion", "MaxExpansion", "DropsPerZone", "MinItemLevel", "MaxItemLevel",
 		"AllowGlobalFallback", "ExcludeTradeskillItems", "ExcludeMerchantItems", "ExcludeSpellScrolls",
-		"RequireEquipmentStats", "MinimumEquipmentStatTotal",
+		"RequireEquipmentStats", "MinimumEquipmentStatTotal", "IncludeItemVariants",
 		"AutoRefreshEnabled", "RefreshOnStartup", "RefreshWhenEmpty", "RefreshIntervalMinutes",
 		"MinimumSellerListings", "MinimumBuyerLines", "LastSeedUnix",
 		"AllowedItemTypes", "IncludedZones", "ExcludedZones", "ExcludedNamePatterns",
@@ -1584,12 +1633,13 @@ static void THJFakeBazaarConfigMessage(Client *c)
 	c->Message(
 		Chat::White,
 		fmt::format(
-			"Fake bazaar item filters: exclude_tradeskill_items={} exclude_merchant_items={} exclude_spell_scrolls={} require_equipment_stats={} min_equipment_stat_total={}.",
+			"Fake bazaar item filters: exclude_tradeskill_items={} exclude_merchant_items={} exclude_spell_scrolls={} require_equipment_stats={} min_equipment_stat_total={} include_item_variants={}.",
 			config.exclude_tradeskill_items,
 			config.exclude_merchant_items,
 			config.exclude_spell_scrolls,
 			config.require_equipment_stats,
-			config.minimum_equipment_stat_total
+			config.minimum_equipment_stat_total,
+			config.include_item_variants
 		).c_str()
 	);
 	c->Message(
@@ -1637,7 +1687,7 @@ static void THJFakeBazaarConfigMessage(Client *c)
 		).c_str()
 	);
 	c->Message(Chat::White, "Use #fakebazaar set Key Value. Values are stored as compact variables named THJFB.*.");
-	c->Message(Chat::White, "Common keys: SellerItems, BuyerLines, MinExpansion, MaxExpansion, IncludedZones, ExcludedZones, AllowedItemTypes, ExcludeTradeskillItems, ExcludeMerchantItems, ExcludeSpellScrolls, RequireEquipmentStats, MinimumEquipmentStatTotal, AutoRefreshEnabled, RefreshIntervalMinutes, BuyerMundaneMaxPricePP.");
+	c->Message(Chat::White, "Common keys: SellerItems, BuyerLines, MinExpansion, MaxExpansion, IncludedZones, ExcludedZones, AllowedItemTypes, IncludeItemVariants, ExcludeTradeskillItems, ExcludeMerchantItems, ExcludeSpellScrolls, RequireEquipmentStats, MinimumEquipmentStatTotal, AutoRefreshEnabled, RefreshIntervalMinutes, BuyerMundaneMaxPricePP.");
 }
 
 static void THJFakeBazaarSetConfig(Client *c, const Seperator *sep)
