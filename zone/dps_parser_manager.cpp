@@ -45,7 +45,7 @@ void DpsParserManager::HandleCommand(Client *client, const Seperator *sep)
 	const std::string action = sep && sep->arg[1] ? Strings::ToLower(sep->arg[1]) : "";
 	if (action == "help") {
 		client->Message(Chat::White, "DPS parser commands:");
-		client->Message(Chat::White, "#dps - Open or refresh the native DPS parser.");
+		client->Message(Chat::White, "#dps - Open the native DPS parser and enable live updates.");
 		client->Message(Chat::White, "#dps summary - Print your current encounter summary.");
 		client->Message(Chat::White, "#dps reset - Clear active DPS parser encounters in this zone.");
 		client->Message(Chat::White, "#dps live on|off - Toggle automatic native DPS parser updates.");
@@ -70,6 +70,10 @@ void DpsParserManager::HandleCommand(Client *client, const Seperator *sep)
 		client->Message(Chat::White, "DPS parser is enabled. Live updates are %s.", IsLive(client) ? "on" : "off");
 		SendSnapshot(client, true);
 		return;
+	}
+
+	if (action.empty()) {
+		SetLive(client, true);
 	}
 
 	SendSnapshot(client, action != "summary");
@@ -479,6 +483,8 @@ void DpsParserManager::SendEncounter(Client *client, const Encounter *encounter,
 		);
 	}
 
+	client->Message(Chat::White, "DPS|window|end");
+
 	if (show_window) {
 		client->Message(Chat::White, "DPS|window|show");
 	}
@@ -496,6 +502,7 @@ void DpsParserManager::SendClear(Client *client, const std::string &status, bool
 		"%s",
 		fmt::format("DPS|summary|id=0|target_id=0|target=|elapsed=0|damage=0|healing=0|incoming=0|ended=1|status={}", Escape(status)).c_str()
 	);
+	client->Message(Chat::White, "DPS|window|end");
 
 	if (show_window) {
 		client->Message(Chat::White, "DPS|window|show");

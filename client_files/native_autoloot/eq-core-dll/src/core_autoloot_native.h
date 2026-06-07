@@ -667,6 +667,20 @@ static float NativeToFloat(const std::string& value, float fallback = 0.0f)
 	return static_cast<float>(atof(value.c_str()));
 }
 
+static std::string NativeLower(std::string value)
+{
+	for (char& ch : value) {
+		ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+	}
+
+	return value;
+}
+
+static bool NativeContainsLower(const std::string& value, const std::string& search_lower)
+{
+	return search_lower.empty() || NativeLower(value).find(search_lower) != std::string::npos;
+}
+
 struct NativeItemPowerInfo
 {
 	int item_id = 0;
@@ -2926,6 +2940,45 @@ struct NativeFactionRow
 	std::string section = "All";
 };
 
+static bool NativeFactionRowMatchesSearch(const NativeFactionRow& faction, const std::string& search_lower)
+{
+	if (search_lower.empty()) {
+		return true;
+	}
+
+	char id_text[32];
+	sprintf_s(id_text, "%d", faction.id);
+	if (strstr(id_text, search_lower.c_str())) {
+		return true;
+	}
+
+	if (
+		NativeContainsLower(faction.name, search_lower) ||
+		NativeContainsLower(faction.standing, search_lower) ||
+		NativeContainsLower(faction.section, search_lower)
+	) {
+		return true;
+	}
+
+	if (faction.target && NativeContainsLower("target", search_lower)) {
+		return true;
+	}
+
+	if (faction.pinned && NativeContainsLower("pinned", search_lower)) {
+		return true;
+	}
+
+	if (faction.hidden && NativeContainsLower("hidden", search_lower)) {
+		return true;
+	}
+
+	if (faction.touched && NativeContainsLower("changed", search_lower)) {
+		return true;
+	}
+
+	return false;
+}
+
 struct NativeDpsRow
 {
 	int actor_id = 0;
@@ -2968,8 +3021,8 @@ public:
 
 		if (Message == XWM_LCLICK) {
 			if (pWnd == (CXWnd*)RefreshButton) {
-				NativeAutoLootSendCommand("/say #dps");
-				SetStatus("Refreshing DPS parser...");
+				NativeAutoLootSendCommand("/say #dps live on");
+				SetStatus("Refreshing live DPS parser...");
 				return 1;
 			}
 
@@ -3034,6 +3087,9 @@ public:
 		HideButton = (CButtonWnd*)GetChildItem("NFW_HideButton");
 		ShowButton = (CButtonWnd*)GetChildItem("NFW_ShowButton");
 		HiddenButton = (CButtonWnd*)GetChildItem("NFW_HiddenButton");
+		SearchEdit = (CEditWnd*)GetChildItem("NFW_SearchEdit");
+		SearchButton = (CButtonWnd*)GetChildItem("NFW_SearchButton");
+		ClearSearchButton = (CButtonWnd*)GetChildItem("NFW_ClearSearchButton");
 
 		SetStatus("Use /rep to refresh. Select a row to pin, hide, or unhide it.");
 		RefreshRows();
@@ -3097,6 +3153,21 @@ public:
 				SetStatus("Loading hidden factions...");
 				return 1;
 			}
+
+			if (pWnd == (CXWnd*)SearchButton) {
+				ApplySearchFromEdit(true);
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)ClearSearchButton) {
+				ClearSearch();
+				return 1;
+			}
+		}
+
+		if (pWnd == (CXWnd*)SearchEdit && (Message == XWM_NEWVALUE || Message == XWM_HITENTER)) {
+			ApplySearchFromEdit(Message == XWM_HITENTER);
+			return 1;
 		}
 
 		return CSidlScreenWnd::WndNotification(pWnd, Message, unknown);
@@ -3114,6 +3185,11 @@ public:
 	void RefreshRows();
 
 private:
+	void ApplySearchFromEdit(bool server_search);
+	void ClearSearch();
+	std::string ReadSearch() const;
+	void SetSearchText(const char* text);
+
 	int SelectedFactionId() const
 	{
 		if (!FactionList) {
@@ -3166,6 +3242,9 @@ private:
 	CButtonWnd* HideButton = nullptr;
 	CButtonWnd* ShowButton = nullptr;
 	CButtonWnd* HiddenButton = nullptr;
+	CEditWnd* SearchEdit = nullptr;
+	CButtonWnd* SearchButton = nullptr;
+	CButtonWnd* ClearSearchButton = nullptr;
 };
 
 static NativeFactionWnd* gNativeFactionWnd = nullptr;
@@ -5775,16 +5854,99 @@ static void NativeAchievementEnsureWindow(bool show)
 	}
 }
 
+std::string NativeFactionWnd::ReadSearch() const
+{
+	char text[96] = { 0 };
+	if (SearchEdit && SearchEdit->InputText) {
+		GetCXStr(SearchEdit->InputText, text, sizeof(text));
+	}
+
+	std::string search(text);
+	while (!search.empty() && std::isspace(static_cast<unsigned char>(search.front()))) {
+		search.erase(search.begin());
+	}
+
+	while (!search.empty() && std::isspace(static_cast<unsigned char>(search.back()))) {
+		search.pop_back();
+	}
+
+	return search;
+}
+
+void NativeFactionWnd::SetSearchText(const char* text)
+{
+	if (!SearchEdit) {
+		return;
+	}
+
+	char buffer[96] = { 0 };
+	strncpy_s(buffer, sizeof(buffer), text ? text : "", _TRUNCATE);
+	SetCXStr(&SearchEdit->InputText, buffer);
+	CXStr value(buffer);
+	((CXWnd*)SearchEdit)->SetWindowTextA(value);
+}
+
+void NativeFactionWnd::ApplySearchFromEdit(bool server_search)
+{
+	const std::string search = ReadSearch();
+	const bool changed = search != gNativeFactionSearch;
+	gNativeFactionSearch = search;
+
+	if (changed) {
+		gNativeFactionRowsDirty = true;
+		RefreshRows();
+	}
+
+	if (!server_search) {
+		return;
+	}
+
+	if (search.empty()) {
+		NativeAutoLootSendCommand("/say #rep refresh");
+		SetStatus("Refreshing faction reputation...");
+		return;
+	}
+
+	const std::string command = std::string("/say #rep search ") + search;
+	NativeAutoLootSendCommand(command.c_str());
+	SetStatus("Searching faction reputation...");
+}
+
+void NativeFactionWnd::ClearSearch()
+{
+	gNativeFactionSearch.clear();
+	SetSearchText("");
+	gNativeFactionRowsDirty = true;
+	RefreshRows();
+	NativeAutoLootSendCommand("/say #rep refresh");
+	SetStatus("Clearing faction search...");
+}
+
 void NativeFactionWnd::RefreshRows()
 {
-	char summary[160];
+	if (SearchEdit && ReadSearch() != gNativeFactionSearch) {
+		SetSearchText(gNativeFactionSearch.c_str());
+	}
+
+	const std::string search_lower = NativeLower(gNativeFactionSearch);
+	unsigned visible_rows = 0;
+	for (const NativeFactionRow& faction : gNativeFactionRows) {
+		if (NativeFactionRowMatchesSearch(faction, search_lower)) {
+			++visible_rows;
+		}
+	}
+
+	char summary[192];
 	sprintf_s(
 		summary,
-		"Faction rows %u  Target %s%s%s",
+		"Faction rows %u/%u  Target %s%s%s%s%s",
+		visible_rows,
 		static_cast<unsigned>(gNativeFactionRows.size()),
 		gNativeFactionTargetId > 0 ? "selected" : "none",
 		gNativeFactionMode.empty() ? "" : "  Mode ",
-		gNativeFactionMode.empty() ? "" : gNativeFactionMode.c_str()
+		gNativeFactionMode.empty() ? "" : gNativeFactionMode.c_str(),
+		gNativeFactionSearch.empty() ? "" : "  Search ",
+		gNativeFactionSearch.empty() ? "" : gNativeFactionSearch.c_str()
 	);
 	SetLabel(SummaryLabel, summary);
 	SetStatus(gNativeFactionStatus.c_str());
@@ -5807,7 +5969,24 @@ void NativeFactionWnd::RefreshRows()
 		return;
 	}
 
+	if (visible_rows == 0) {
+		CXStr dash("-");
+		const int row = FactionList->AddString(dash, 0xFFB0B0B0, 0, nullptr, nullptr);
+		CXStr empty("No matching faction standings.");
+		FactionList->SetItemText(row, 1, &empty);
+		FactionList->SetItemText(row, 2, &dash);
+		FactionList->SetItemText(row, 3, &dash);
+		FactionList->SetItemText(row, 4, &dash);
+		FactionList->SetItemText(row, 5, &dash);
+		gNativeFactionRowsDirty = false;
+		return;
+	}
+
 	for (const NativeFactionRow& faction : gNativeFactionRows) {
+		if (!NativeFactionRowMatchesSearch(faction, search_lower)) {
+			continue;
+		}
+
 		const char* pin = faction.target ? "Target" : (faction.pinned ? "Pinned" : (faction.hidden ? "Hidden" : (faction.touched ? "Changed" : "-")));
 		CXStr pin_text(pin);
 		const int row = FactionList->AddString(pin_text, RowColor(faction.standing), static_cast<uint32_t>(faction.id), nullptr, nullptr);
@@ -6968,7 +7147,7 @@ static bool NativeDpsRewriteCommand(const char* line, char* output, size_t outpu
 	}
 
 	if (!arguments || !arguments[0]) {
-		strcpy_s(output, output_size, "/say #dps");
+		strcpy_s(output, output_size, "/say #dps live on");
 		return true;
 	}
 
@@ -6978,7 +7157,7 @@ static bool NativeDpsRewriteCommand(const char* line, char* output, size_t outpu
 		NativeCommandMatch(arguments, "ui", nullptr) ||
 		NativeCommandMatch(arguments, "refresh", nullptr)
 	) {
-		strcpy_s(output, output_size, "/say #dps");
+		strcpy_s(output, output_size, "/say #dps live on");
 		return true;
 	}
 
@@ -7876,7 +8055,6 @@ static bool NativeFactionParseTransport(const char* message)
 		gNativeFactionRows.clear();
 		gNativeFactionTargetId = 0;
 		gNativeFactionMode.clear();
-		gNativeFactionSearch.clear();
 		gNativeFactionStatus = "Loading faction reputation...";
 		gNativeFactionRowsDirty = true;
 		if (gNativeFactionWnd) {
@@ -7889,7 +8067,10 @@ static bool NativeFactionParseTransport(const char* message)
 		const std::string payload(message + strlen("FACTION|summary|"));
 		gNativeFactionTargetId = NativeToInt(NativeGetPairValue(payload, "target"));
 		gNativeFactionMode = NativeGetPairValue(payload, "mode");
-		gNativeFactionSearch = NativeGetPairValue(payload, "search");
+		const std::string server_search = NativeGetPairValue(payload, "search");
+		if (!server_search.empty() || gNativeFactionMode == "search") {
+			gNativeFactionSearch = server_search;
+		}
 		gNativeFactionStatus = NativeGetPairValue(payload, "status");
 		if (gNativeFactionStatus.empty()) {
 			gNativeFactionStatus = "Faction reputation refreshed.";
@@ -8002,6 +8183,15 @@ static bool NativeDpsParseTransport(const char* message)
 		gNativeDpsRowsDirty = true;
 		if (gNativeDpsWnd && !gNativeDpsLoading) {
 			gNativeDpsWnd->RefreshRows();
+		}
+		return true;
+	}
+
+	if (NativeStartsWith(message, "DPS|window|end")) {
+		gNativeDpsLoading = false;
+		if (gNativeDpsWnd) {
+			gNativeDpsWnd->RefreshRows();
+			gNativeDpsWnd->SetStatus(gNativeDpsStatus.c_str());
 		}
 		return true;
 	}
