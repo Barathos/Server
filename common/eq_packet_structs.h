@@ -1,35 +1,34 @@
-/*	EQEMu: Everquest Server Emulator
-	Copyright (C) 2001-2016 EQEMu Development Team (http://eqemulator.net)
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; version 2 of the License.
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
 	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY except by those people which sell it, which
-	are required to give you total support for your newly bought product;
-	without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-	A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
+#pragma once
 
-#ifndef EQ_PACKET_STRUCTS_H
-#define EQ_PACKET_STRUCTS_H
+#include "common/emu_constants.h"
+#include "common/textures.h"
+#include "common/types.h"
+#include "common/version.h"
 
+#include "cereal/archives/binary.hpp"
+#include "cereal/types/string.hpp"
+#include "cereal/types/vector.hpp"
 #include <list>
-#include <string.h>
+#include <cstring>
 #include <string>
-#include <time.h>
-#include "../cereal/include/cereal/archives/binary.hpp"
-#include "../cereal/include/cereal/types/string.hpp"
-#include "../cereal/include/cereal/types/vector.hpp"
-#include "../common/version.h"
-#include "emu_constants.h"
-#include "textures.h"
-#include "types.h"
+#include <ctime>
 
 static const uint32 BUFF_COUNT = 42;
 static const uint32 PET_BUFF_COUNT = 30;
@@ -45,6 +44,7 @@ static const uint32 ADVANCED_LORE_LENGTH = 8192;
 ** Compiler override to ensure
 ** byte aligned structures
 */
+#pragma pack(push)
 #pragma pack(1)
 
 struct LoginInfo {
@@ -1533,6 +1533,25 @@ struct ExpUpdate_Struct
 /*0000*/ uint32 exp;	// Current experience ratio from 0 to 330
 /*0004*/ uint32 aaxp;	// @BP ??
 };
+
+enum StatEntry
+{
+	statClassesBitmask = 1
+};
+
+#pragma pack(push, 1)
+struct StatEntry_Struct
+{
+/*0000*/ uint32 stat_key;
+/*0004*/ uint64 stat_value;
+};
+
+struct Stat_Struct
+{
+/*0000*/ uint32 count;
+/*0004*/ StatEntry_Struct entries[0];
+};
+#pragma pack(pop)
 
 /*
 ** Item Packet Struct - Works on a variety of opcodes
@@ -6236,6 +6255,12 @@ struct SuspendMercenary_Struct {
 /*0001*/
 };
 
+// [OPCode: 0x1b37 (RoF2)] [Client->Server] [Size: 4]
+struct SwitchMercenary_Struct {
+/*0000*/	uint32	MercIndex;	// 0-based UI index into owned merc list
+/*0004*/
+};
+
 // [OPCode: 0x2528] On Live as of April 2 2012 [Server->Client] [Size: 4]
 // Response to suspend merc with timestamp
 struct SuspendMercenaryResponse_Struct {
@@ -6562,7 +6587,4 @@ struct EvolveGetNextItem {
 };
 
 // Restore structure packing to default
-#pragma pack()
-
-#endif
-
+#pragma pack(pop)

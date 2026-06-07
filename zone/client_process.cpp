@@ -1,57 +1,52 @@
-/*	EQEMu: Everquest Server Emulator
-	Copyright (C) 2001-2003 EQEMu Development Team (http://eqemulator.net)
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; version 2 of the License.
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
 	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY except by those people which sell it, which
-	are required to give you total support for your newly bought product;
-	without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-	A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
 
+/*
 	client_process.cpp:
 	Handles client login sequence and packets sent from client to zone
 */
 
-#include "../common/eqemu_logsys.h"
-#include "../common/global_define.h"
+#include "client.h"
+
+#include "common/data_verification.h"
+#include "common/eqemu_logsys.h"
+#include "common/events/player_event_logs.h"
+#include "common/rulesys.h"
+#include "common/skills.h"
+#include "common/spdat.h"
+#include "common/strings.h"
+#include "zone/dynamic_zone.h"
+#include "zone/event_codes.h"
+#include "zone/guild_mgr.h"
+#include "zone/live_spell_manager.h"
+#include "zone/map.h"
+#include "zone/multiclass_manager.h"
+#include "zone/petitions.h"
+#include "zone/queryserv.h"
+#include "zone/quest_parser_collection.h"
+#include "zone/string_ids.h"
+#include "zone/water_map.h"
+#include "zone/worldserver.h"
+#include "zone/zone.h"
+#include "zone/zonedb.h"
+
 #include <iostream>
-
-#ifdef _WINDOWS
-	#define snprintf	_snprintf
-	#define strncasecmp	_strnicmp
-	#define strcasecmp	_stricmp
-#else
-	#include <pthread.h>
-	#include <sys/socket.h>
-	#include <netinet/in.h>
-	#include <unistd.h>
-#endif
-
-#include "../common/data_verification.h"
-#include "../common/rulesys.h"
-#include "../common/skills.h"
-#include "../common/spdat.h"
-#include "../common/strings.h"
-#include "dynamic_zone.h"
-#include "event_codes.h"
-#include "guild_mgr.h"
-#include "map.h"
-#include "petitions.h"
-#include "queryserv.h"
-#include "quest_parser_collection.h"
-#include "string_ids.h"
-#include "worldserver.h"
-#include "zone.h"
-#include "zonedb.h"
-#include "../common/events/player_event_logs.h"
-#include "water_map.h"
+#include <vector>
 
 extern QueryServ* QServ;
 extern Zone* zone;
@@ -245,6 +240,7 @@ bool Client::Process() {
 				}
 			}
 		}
+		multiclass_manager.ProcessBardMelody(this);
 
 		if (GetMerc()) {
 			UpdateMercTimer();
@@ -330,6 +326,9 @@ bool Client::Process() {
 		}
 
 		bool may_use_attacks = false;
+		const bool may_use_combat_actions = !IsAIControlled() && !dead
+			&& !(spellend_timer.Enabled() && casting_spell_id && !IsBardSong(casting_spell_id))
+			&& !IsStunned() && !IsFeared() && !IsMezzed() && GetAppearance() != eaDead && !IsMeleeDisabled();
 		/*
 			Things which prevent us from attacking:
 				- being under AI control, the AI does attacks
@@ -340,11 +339,9 @@ bool Client::Process() {
 				- having used a ranged weapon recently
 		*/
 		if (auto_attack) {
-			if (!IsAIControlled() && !dead
-				&& !(spellend_timer.Enabled() && casting_spell_id && !IsBardSong(casting_spell_id))
-				&& !IsStunned() && !IsFeared() && !IsMezzed() && GetAppearance() != eaDead && !IsMeleeDisabled()
-				)
+			if (may_use_combat_actions) {
 				may_use_attacks = true;
+			}
 
 			if (may_use_attacks && ranged_timer.Enabled()) {
 				//if the range timer is enabled, we need to consider it
@@ -462,7 +459,7 @@ bool Client::Process() {
 			}
 		}
 
-		if (GetClass() == Class::Warrior || GetClass() == Class::Berserker) {
+		if (multiclass_manager.HasClass(this, Class::Warrior) || multiclass_manager.HasClass(this, Class::Berserker)) {
 			if (!dead && !IsBerserk() && GetHPRatio() < RuleI(Combat, BerserkerFrenzyStart)) {
 				entity_list.MessageCloseString(this, false, 200, 0, BERSERK_START, GetName());
 				berserk = true;
@@ -497,6 +494,49 @@ bool Client::Process() {
 
 					DoAttackRounds(auto_attack_target, EQ::invslot::slotSecondary);
 				}
+			}
+		}
+
+		if (
+			RuleB(CustomFeatures, AutoskillsEnabled) &&
+			(AutoFireEnabled() || AutoAttackEnabled()) &&
+			auto_attack_target != nullptr &&
+			(may_use_attacks || (AutoFireEnabled() && may_use_combat_actions)) &&
+			attack_autoskill_timer.Check() &&
+			auto_attack_target->IsNPC()
+		) {
+			for (const auto skill : GetAutoSkillsList()) {
+				if (!GetAutoSkillStatus(skill)) {
+					continue;
+				}
+
+				if (skill == EQ::skills::SkillTaunt) {
+					if (!p_timers.Expired(&database, pTimerTaunt, false)) {
+						continue;
+					}
+
+					auto target = GetTarget();
+					if (!target || !target->IsNPC() || !zone->CanDoCombat()) {
+						continue;
+					}
+
+					if (DistanceSquared(GetPosition(), target->GetPosition()) > (RuleI(Skills, MaximumTauntDistance) * RuleI(Skills, MaximumTauntDistance))) {
+						continue;
+					}
+
+					auto hate_top = target->GetHateTop();
+					if (hate_top && hate_top->GetID() == GetID()) {
+						continue;
+					}
+
+					p_timers.Start(pTimerTaunt, TauntReuseTime - 1);
+					Taunt(target->CastToNPC(), false);
+					continue;
+				}
+
+				SetEntityVariable("auto_skill", "enabled");
+				DoClassAttacks(auto_attack_target, skill, false);
+				DeleteEntityVariable("auto_skill");
 			}
 		}
 
@@ -784,6 +824,17 @@ void Client::BulkSendInventoryItems()
 
 	EQ::OutBuffer ob;
 	EQ::OutBuffer::pos_type last_pos = ob.tellp();
+	std::vector<EQ::ItemInstance*> multiclass_presentation_items;
+
+	const auto serialize_inventory_item = [this, &multiclass_presentation_items, &ob](const EQ::ItemInstance* inst, int16 slot_id) {
+		auto *presentation_inst = CloneItemForMulticlassPresentation(inst);
+		const auto *serialized_inst = presentation_inst ? presentation_inst : inst;
+		serialized_inst->Serialize(ob, slot_id);
+
+		if (presentation_inst) {
+			multiclass_presentation_items.push_back(presentation_inst);
+		}
+	};
 
 	// Possessions items
 	for (int16 slot_id = EQ::invslot::POSSESSIONS_BEGIN; slot_id <= EQ::invslot::POSSESSIONS_END; slot_id++) {
@@ -792,7 +843,7 @@ void Client::BulkSendInventoryItems()
 			continue;
 		}
 
-		inst->Serialize(ob, slot_id);
+		serialize_inventory_item(inst, slot_id);
 
 		if (ob.tellp() == last_pos) {
 			LogInventory("Serialization failed on item slot [{}] during BulkSendInventoryItems. Item skipped", slot_id);
@@ -809,7 +860,7 @@ void Client::BulkSendInventoryItems()
 				continue;
 			}
 
-			inst->Serialize(ob, slot_id);
+			serialize_inventory_item(inst, slot_id);
 
 			if (ob.tellp() == last_pos) {
 				LogInventory("Serialization failed on item slot [{}] during BulkSendInventoryItems. Item skipped", slot_id);
@@ -825,7 +876,7 @@ void Client::BulkSendInventoryItems()
 				continue;
 			}
 
-			inst->Serialize(ob, slot_id);
+			serialize_inventory_item(inst, slot_id);
 
 			if (ob.tellp() == last_pos) {
 				LogInventory("Serialization failed on item slot [{}] during BulkSendInventoryItems. Item skipped", slot_id);
@@ -842,6 +893,10 @@ void Client::BulkSendInventoryItems()
 
 	QueuePacket(outapp);
 	safe_delete(outapp);
+
+	for (auto *inst : multiclass_presentation_items) {
+		safe_delete(inst);
+	}
 }
 
 void Client::BulkSendMerchantInventory(int merchant_id, int npcid) {
@@ -874,7 +929,7 @@ void Client::BulkSendMerchantInventory(int merchant_id, int npcid) {
 			DataBucketKey k = GetScopedBucketKeys();
 			k.key = bucket_name;
 
-			auto b = DataBucket::GetData(k);
+			auto b = DataBucket::GetData(&database, k);
 			if (b.value.empty()) {
 				continue;
 			}
@@ -892,7 +947,7 @@ void Client::BulkSendMerchantInventory(int merchant_id, int npcid) {
 			continue;
 		}
 
-		if (!(ml.classes_required & (1 << (GetClass() - 1)))) {
+		if (!(ml.classes_required & multiclass_manager.GetClassMask(this))) {
 			continue;
 		}
 
@@ -1163,6 +1218,7 @@ void Client::OPMemorizeSpell(const EQApplicationPacket* app)
 	}
 
 	const auto* m = (MemorizeSpell_Struct*) app->pBuffer;
+	LiveSpellManager::EnsureServerLoaded();
 
 	if (!IsValidSpell(m->spell_id)) {
 		Message(
@@ -1175,17 +1231,15 @@ void Client::OPMemorizeSpell(const EQApplicationPacket* app)
 		return;
 	}
 
+	const auto multiclass_spell_level = multiclass_manager.GetBestSpellLevel(this, m->spell_id);
 	if (
 		m->scribing != memSpellForget &&
-		(
-			!IsPlayerClass(GetClass()) ||
-			GetLevel() < spells[m->spell_id].classes[GetClass() - 1]
-		)
+		(!IsPlayerClass(GetClass()) || multiclass_spell_level == 255 || GetLevel() < multiclass_spell_level)
 	) {
 		MessageString(
 			Chat::Red,
 			SPELL_LEVEL_TO_LOW,
-			std::to_string(spells[m->spell_id].classes[GetClass() - 1]).c_str(),
+			std::to_string(multiclass_spell_level).c_str(),
 			spells[m->spell_id].name
 		);
 		return;
@@ -1201,7 +1255,7 @@ void Client::OPMemorizeSpell(const EQApplicationPacket* app)
 				if (
 					item &&
 					RuleB(Character, RestrictSpellScribing) &&
-					!item->IsEquipable(GetRace(), GetClass())
+					!multiclass_manager.CanUseItem(this, inst)
 				) {
 					MessageString(Chat::Red, CANNOT_USE_ITEM);
 					break;
@@ -1571,7 +1625,7 @@ void Client::OPMoveCoin(const EQApplicationPacket* app)
 				if (from_bucket == &m_pp.platinum_shared)
 					amount_to_add = 0 - amount_to_take;
 
-				database.SetSharedPlatinum(AccountID(),amount_to_add);
+				database.AddSharedPlatinum(AccountID(),amount_to_add);
 			}
 		}
 		else{
@@ -1632,7 +1686,7 @@ void Client::OPGMTraining(const EQApplicationPacket *app)
 	//you can only use your own trainer, client enforces this, but why trust it
 	if (!RuleB(Character, AllowCrossClassTrainers)) {
 		int trains_class = pTrainer->GetClass() - (Class::WarriorGM - Class::Warrior);
-		if (GetClass() != trains_class) {
+		if (!multiclass_manager.HasClass(this, trains_class)) {
 			safe_delete(outapp);
 			return;
 		}
@@ -1648,7 +1702,7 @@ void Client::OPGMTraining(const EQApplicationPacket *app)
 //#pragma GCC push_options
 //#pragma GCC optimize ("O0")
 	for (int sk = EQ::skills::Skill1HBlunt; sk <= EQ::skills::HIGHEST_SKILL; ++sk) {
-		if (sk == EQ::skills::SkillTinkering && GetRace() != GNOME) {
+		if (sk == EQ::skills::SkillTinkering && GetRace() != Race::Gnome) {
 			gmtrain->skills[sk] = 0; //Non gnomes can't tinker!
 		} else {
 			gmtrain->skills[sk] = GetMaxSkillAfterSpecializationRules((EQ::skills::SkillType)sk, MaxSkill((EQ::skills::SkillType)sk, GetClass(), RuleI(Character, MaxLevel)));
@@ -1657,7 +1711,7 @@ void Client::OPGMTraining(const EQApplicationPacket *app)
 		}
 	}
 
-	if (ClientVersion() < EQ::versions::ClientVersion::RoF2 && GetClass() == Class::Berserker) {
+	if (ClientVersion() < EQ::versions::ClientVersion::RoF2 && multiclass_manager.HasClass(this, Class::Berserker)) {
 		gmtrain->skills[EQ::skills::Skill1HPiercing] = gmtrain->skills[EQ::skills::Skill2HPiercing];
 		gmtrain->skills[EQ::skills::Skill2HPiercing] = 0;
 	}
@@ -1691,7 +1745,7 @@ void Client::OPGMEndTraining(const EQApplicationPacket *app)
 	//you can only use your own trainer, client enforces this, but why trust it
 	if (!RuleB(Character, AllowCrossClassTrainers)) {
 		int trains_class = pTrainer->GetClass() - (Class::WarriorGM - Class::Warrior);
-		if (GetClass() != trains_class)
+		if (!multiclass_manager.HasClass(this, trains_class))
 			return;
 	}
 
@@ -1722,7 +1776,7 @@ void Client::OPGMTrainSkill(const EQApplicationPacket *app)
 	//you can only use your own trainer, client enforces this, but why trust it
 	if (!RuleB(Character, AllowCrossClassTrainers)) {
 		int trains_class = pTrainer->GetClass() - (Class::WarriorGM - Class::Warrior);
-		if (GetClass() != trains_class)
+		if (!multiclass_manager.HasClass(this, trains_class))
 			return;
 	}
 

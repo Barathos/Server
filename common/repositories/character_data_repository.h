@@ -1,9 +1,26 @@
-#ifndef EQEMU_CHARACTER_DATA_REPOSITORY_H
-#define EQEMU_CHARACTER_DATA_REPOSITORY_H
+/*	EQEmu: EQEmulator
 
-#include "../database.h"
-#include "../strings.h"
-#include "base/base_character_data_repository.h"
+	Copyright (C) 2001-2026 EQEmu Development Team
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
+#pragma once
+
+#include "common/repositories/base/base_character_data_repository.h"
+
+#include "common/database.h"
+#include "common/strings.h"
 
 
 
@@ -191,6 +208,20 @@ public:
 
 		return character_ids;
 	}
-};
 
-#endif //EQEMU_CHARACTER_DATA_REPOSITORY_H
+	static uint32_t GetTotalTimePlayed(Database& db, uint32_t account_id)
+	{
+		auto query = fmt::format(
+			"SELECT SUM(time_played) FROM `character_data` WHERE `account_id` = {}",
+			account_id
+		);
+
+		auto results = db.QueryDatabase(query);
+		if (!results.Success()) {
+			return 0;
+		}
+
+		auto row = results.begin();
+		return Strings::ToUnsignedInt(row[0]);
+	}
+};

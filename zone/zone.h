@@ -1,55 +1,54 @@
-/*	EQEMu: Everquest Server Emulator
-	Copyright (C) 2001-2002 EQEMu Development Team (http://eqemu.org)
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; version 2 of the License.
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
 	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY except by those people which sell it, which
-	are required to give you total support for your newly bought product;
-	without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-	A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef ZONE_H
-#define ZONE_H
+#pragma once
 
-#include "../common/eqtime.h"
-#include "../common/linked_list.h"
-#include "../common/rulesys.h"
-#include "../common/types.h"
-#include "../common/random.h"
-#include "../common/strings.h"
-#include "zonedb.h"
-#include "../common/zone_store.h"
-#include "../common/repositories/grid_repository.h"
-#include "../common/repositories/grid_entries_repository.h"
-#include "../common/repositories/zone_points_repository.h"
-#include "qglobals.h"
-#include "spawn2.h"
-#include "spawngroup.h"
-#include "aa_ability.h"
-#include "pathfinder_interface.h"
-#include "global_loot_manager.h"
-#include "queryserv.h"
-#include "../common/discord/discord.h"
-#include "../common/repositories/dynamic_zone_templates_repository.h"
-#include "../common/repositories/npc_faction_repository.h"
-#include "../common/repositories/npc_faction_entries_repository.h"
-#include "../common/repositories/faction_association_repository.h"
-#include "../common/repositories/loottable_repository.h"
-#include "../common/repositories/loottable_entries_repository.h"
-#include "../common/repositories/lootdrop_repository.h"
-#include "../common/repositories/lootdrop_entries_repository.h"
-#include "../common/repositories/base_data_repository.h"
-#include "../common/repositories/skill_caps_repository.h"
-#include "../common/repositories/zone_state_spawns_repository.h"
-#include "../common/repositories/spawn2_disabled_repository.h"
-#include "../common/repositories/player_titlesets_repository.h"
+#include "common/discord/discord.h"
+#include "common/eqtime.h"
+#include "common/linked_list.h"
+#include "common/random.h"
+#include "common/repositories/base_data_repository.h"
+#include "common/repositories/dynamic_zone_templates_repository.h"
+#include "common/repositories/faction_association_repository.h"
+#include "common/repositories/grid_entries_repository.h"
+#include "common/repositories/grid_repository.h"
+#include "common/repositories/lootdrop_entries_repository.h"
+#include "common/repositories/lootdrop_repository.h"
+#include "common/repositories/loottable_entries_repository.h"
+#include "common/repositories/loottable_repository.h"
+#include "common/repositories/npc_faction_entries_repository.h"
+#include "common/repositories/npc_faction_repository.h"
+#include "common/repositories/player_titlesets_repository.h"
+#include "common/repositories/skill_caps_repository.h"
+#include "common/repositories/spawn2_disabled_repository.h"
+#include "common/repositories/zone_points_repository.h"
+#include "common/repositories/zone_state_spawns_repository.h"
+#include "common/rulesys.h"
+#include "common/strings.h"
+#include "common/types.h"
+#include "common/zone_store.h"
+#include "zone/aa_ability.h"
+#include "zone/global_loot_manager.h"
+#include "zone/pathfinder_interface.h"
+#include "zone/qglobals.h"
+#include "zone/queryserv.h"
+#include "zone/spawn2.h"
+#include "zone/spawngroup.h"
+#include "zone/zonedb.h"
 
 struct EXPModifier
 {
@@ -486,6 +485,26 @@ public:
 	static void ClearZoneState(uint32 zone_id, uint32 instance_id);
 	void ReloadMaps();
 
+	void Signal(int signal_id);
+	void SendPayload(int payload_id, std::string payload_value);
+
+	struct PausedZoneTimer {
+		std::string name;
+		uint32      remaining_time;
+	};
+
+	uint32 GetTimerDuration(std::string name);
+	uint32 GetTimerRemainingTime(std::string name);
+	bool HasTimer(std::string name);
+	bool IsPausedTimer(std::string name);
+	void PauseTimer(std::string name);
+	void ResumeTimer(std::string name);
+	void SetTimer(std::string name, uint32 duration);
+	void StopTimer(std::string name);
+	void StopAllTimers();
+	std::vector<std::string> GetPausedTimers();
+	std::vector<std::string> GetTimers();
+
 private:
 	bool      allow_mercs;
 	bool      can_bind;
@@ -552,6 +571,16 @@ private:
 	std::vector<BaseDataRepository::BaseData> m_base_data = { };
 
 	uint32_t m_zone_server_id = 0;
-};
 
-#endif
+	class ZoneTimer {
+	public:
+		inline ZoneTimer(std::string _name, uint32 duration)
+			: name(_name), timer_(duration) { timer_.Start(duration, false); }
+		std::string name;
+		Timer       timer_;
+	};
+
+	std::vector<ZoneTimer> zone_timers;
+	std::vector<PausedZoneTimer> paused_zone_timers;
+	std::deque<int> m_zone_signals;
+};

@@ -1,15 +1,31 @@
+/*	EQEmu: EQEmulator
 
+	Copyright (C) 2001-2026 EQEmu Development Team
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
 #include "merc.h"
-#include "client.h"
-#include "corpse.h"
-#include "entity.h"
-#include "groups.h"
-#include "mob.h"
-#include "quest_parser_collection.h"
 
-#include "zone.h"
-#include "string_ids.h"
-#include "../common/skill_caps.h"
+#include "common/skill_caps.h"
+#include "zone/client.h"
+#include "zone/corpse.h"
+#include "zone/entity.h"
+#include "zone/groups.h"
+#include "zone/mob.h"
+#include "zone/quest_parser_collection.h"
+#include "zone/string_ids.h"
+#include "zone/zone.h"
 
 extern volatile bool is_zone_loaded;
 
@@ -118,7 +134,7 @@ void Merc::CalcBonuses()
 	CalcMaxMana();
 	CalcMaxEndurance();
 
-	rooted = FindType(SE_Root);
+	rooted = FindType(SpellEffect::Root);
 }
 
 float Merc::GetDefaultSize() {
@@ -1730,7 +1746,7 @@ bool Merc::AICastSpell(int8 iChance, uint32 iSpellTypes) {
 									}
 									else {
 										//check for heal over time. if not present, try it first
-										if (!tar->FindType(SE_HealOverTime)) {
+										if (!tar->FindType(SpellEffect::HealOverTime)) {
 											selectedMercSpell = GetBestMercSpellForHealOverTime(this);
 
 											//get regular heal
@@ -1779,7 +1795,7 @@ bool Merc::AICastSpell(int8 iChance, uint32 iSpellTypes) {
 										if( !IsImmuneToSpell(selectedMercSpell.spellid, this)
 											&& (CanBuffStack(selectedMercSpell.spellid, mercLevel, true) >= 0)) {
 
-												if( GetArchetype() == Archetype::Melee && IsEffectInSpell(selectedMercSpell.spellid, SE_IncreaseSpellHaste)) {
+												if( GetArchetype() == Archetype::Melee && IsEffectInSpell(selectedMercSpell.spellid, SpellEffect::IncreaseSpellHaste)) {
 													continue;
 												}
 
@@ -1806,7 +1822,7 @@ bool Merc::AICastSpell(int8 iChance, uint32 iSpellTypes) {
 												if( !tar->IsImmuneToSpell(selectedMercSpell.spellid, this)
 													&& (tar->CanBuffStack(selectedMercSpell.spellid, mercLevel, true) >= 0)) {
 
-														if( tar->GetArchetype() == Archetype::Melee && IsEffectInSpell(selectedMercSpell.spellid, SE_IncreaseSpellHaste)) {
+														if( tar->GetArchetype() == Archetype::Melee && IsEffectInSpell(selectedMercSpell.spellid, SpellEffect::IncreaseSpellHaste)) {
 															continue;
 														}
 
@@ -2292,7 +2308,7 @@ int64 Merc::GetFocusEffect(focusType type, uint16 spell_id, bool from_buff_tic) 
 	if(type == focusReagentCost && IsSummonPetSpell(spell_id) && GetAA(aaElementalPact))
 		return 100;
 
-	if(type == focusReagentCost && (IsEffectInSpell(spell_id, SE_SummonItem) || IsSacrificeSpell(spell_id)))
+	if(type == focusReagentCost && (IsEffectInSpell(spell_id, SpellEffect::SummonItem) || IsSacrificeSpell(spell_id)))
 		return 0;
 	//Summon Spells that require reagents are typically imbue type spells, enchant metal, sacrifice and shouldn't be affected
 	//by reagent conservation for obvious reasons.
@@ -2620,7 +2636,7 @@ MercSpell Merc::GetBestMercSpellForVeryFastHeal(Merc* caster) {
 	result.time_cancast = 0;
 
 	if(caster) {
-		std::list<MercSpell> mercSpellList = GetMercSpellsForSpellEffect(caster, SE_CurrentHP);
+		std::list<MercSpell> mercSpellList = GetMercSpellsForSpellEffect(caster, SpellEffect::CurrentHP);
 
 		for (auto mercSpellListItr = mercSpellList.begin(); mercSpellListItr != mercSpellList.end();
 		     ++mercSpellListItr) {
@@ -2653,7 +2669,7 @@ MercSpell Merc::GetBestMercSpellForFastHeal(Merc* caster) {
 	result.time_cancast = 0;
 
 	if(caster) {
-		std::list<MercSpell> mercSpellList = GetMercSpellsForSpellEffect(caster, SE_CurrentHP);
+		std::list<MercSpell> mercSpellList = GetMercSpellsForSpellEffect(caster, SpellEffect::CurrentHP);
 
 		for (auto mercSpellListItr = mercSpellList.begin(); mercSpellListItr != mercSpellList.end();
 		     ++mercSpellListItr) {
@@ -2686,7 +2702,7 @@ MercSpell Merc::GetBestMercSpellForHealOverTime(Merc* caster) {
 	result.time_cancast = 0;
 
 	if(caster) {
-		std::list<MercSpell> mercHoTSpellList = GetMercSpellsForSpellEffect(caster, SE_HealOverTime);
+		std::list<MercSpell> mercHoTSpellList = GetMercSpellsForSpellEffect(caster, SpellEffect::HealOverTime);
 
 		for (auto mercSpellListItr = mercHoTSpellList.begin(); mercSpellListItr != mercHoTSpellList.end();
 		     ++mercSpellListItr) {
@@ -2727,7 +2743,7 @@ MercSpell Merc::GetBestMercSpellForPercentageHeal(Merc* caster) {
 	result.time_cancast = 0;
 
 	if(caster && caster->AI_HasSpells()) {
-		std::list<MercSpell> mercSpellList = GetMercSpellsForSpellEffect(caster, SE_CurrentHP);
+		std::list<MercSpell> mercSpellList = GetMercSpellsForSpellEffect(caster, SpellEffect::CurrentHP);
 
 		for (auto mercSpellListItr = mercSpellList.begin(); mercSpellListItr != mercSpellList.end();
 		     ++mercSpellListItr) {
@@ -2760,7 +2776,7 @@ MercSpell Merc::GetBestMercSpellForRegularSingleTargetHeal(Merc* caster) {
 	result.time_cancast = 0;
 
 	if(caster) {
-		std::list<MercSpell> mercSpellList = GetMercSpellsForSpellEffect(caster, SE_CurrentHP);
+		std::list<MercSpell> mercSpellList = GetMercSpellsForSpellEffect(caster, SpellEffect::CurrentHP);
 
 		for (auto mercSpellListItr = mercSpellList.begin(); mercSpellListItr != mercSpellList.end();
 		     ++mercSpellListItr) {
@@ -2793,7 +2809,7 @@ MercSpell Merc::GetFirstMercSpellForSingleTargetHeal(Merc* caster) {
 	result.time_cancast = 0;
 
 	if(caster) {
-		std::list<MercSpell> mercSpellList = GetMercSpellsForSpellEffect(caster, SE_CurrentHP);
+		std::list<MercSpell> mercSpellList = GetMercSpellsForSpellEffect(caster, SpellEffect::CurrentHP);
 
 		for (auto mercSpellListItr = mercSpellList.begin(); mercSpellListItr != mercSpellList.end();
 		     ++mercSpellListItr) {
@@ -2827,7 +2843,7 @@ MercSpell Merc::GetBestMercSpellForGroupHeal(Merc* caster) {
 	result.time_cancast = 0;
 
 	if(caster) {
-		std::list<MercSpell> mercSpellList = GetMercSpellsForSpellEffect(caster, SE_CurrentHP);
+		std::list<MercSpell> mercSpellList = GetMercSpellsForSpellEffect(caster, SpellEffect::CurrentHP);
 
 		for (auto mercSpellListItr = mercSpellList.begin(); mercSpellListItr != mercSpellList.end();
 		     ++mercSpellListItr) {
@@ -2860,7 +2876,7 @@ MercSpell Merc::GetBestMercSpellForGroupHealOverTime(Merc* caster) {
 	result.time_cancast = 0;
 
 	if(caster) {
-		std::list<MercSpell> mercHoTSpellList = GetMercSpellsForSpellEffect(caster, SE_HealOverTime);
+		std::list<MercSpell> mercHoTSpellList = GetMercSpellsForSpellEffect(caster, SpellEffect::HealOverTime);
 
 		for (auto mercSpellListItr = mercHoTSpellList.begin(); mercSpellListItr != mercHoTSpellList.end();
 		     ++mercSpellListItr) {
@@ -2901,7 +2917,7 @@ MercSpell Merc::GetBestMercSpellForGroupCompleteHeal(Merc* caster) {
 	result.time_cancast = 0;
 
 	if(caster) {
-		std::list<MercSpell> mercSpellList = GetMercSpellsForSpellEffect(caster, SE_CompleteHeal);
+		std::list<MercSpell> mercSpellList = GetMercSpellsForSpellEffect(caster, SpellEffect::CompleteHeal);
 
 		for (auto mercSpellListItr = mercSpellList.begin(); mercSpellListItr != mercSpellList.end();
 		     ++mercSpellListItr) {
@@ -2934,7 +2950,7 @@ MercSpell Merc::GetBestMercSpellForAETaunt(Merc* caster) {
 	result.time_cancast = 0;
 
 	if(caster) {
-		std::list<MercSpell> mercSpellList = GetMercSpellsForSpellEffect(caster, SE_Taunt);
+		std::list<MercSpell> mercSpellList = GetMercSpellsForSpellEffect(caster, SpellEffect::Taunt);
 
 		for (auto mercSpellListItr = mercSpellList.begin(); mercSpellListItr != mercSpellList.end();
 		     ++mercSpellListItr) {
@@ -2969,7 +2985,7 @@ MercSpell Merc::GetBestMercSpellForTaunt(Merc* caster) {
 	result.time_cancast = 0;
 
 	if(caster) {
-		std::list<MercSpell> mercSpellList = GetMercSpellsForSpellEffect(caster, SE_Taunt);
+		std::list<MercSpell> mercSpellList = GetMercSpellsForSpellEffect(caster, SpellEffect::Taunt);
 
 		for (auto mercSpellListItr = mercSpellList.begin(); mercSpellListItr != mercSpellList.end();
 		     ++mercSpellListItr) {
@@ -3002,7 +3018,7 @@ MercSpell Merc::GetBestMercSpellForHate(Merc* caster) {
 	result.time_cancast = 0;
 
 	if(caster) {
-		std::list<MercSpell> mercSpellList = GetMercSpellsForSpellEffect(caster, SE_InstantHate);
+		std::list<MercSpell> mercSpellList = GetMercSpellsForSpellEffect(caster, SpellEffect::InstantHate);
 
 		for (auto mercSpellListItr = mercSpellList.begin(); mercSpellListItr != mercSpellList.end();
 		     ++mercSpellListItr) {
@@ -3038,10 +3054,10 @@ MercSpell Merc::GetBestMercSpellForCure(Merc* caster, Mob *tar) {
 		return result;
 
 	int countNeedsCured = 0;
-	bool isPoisoned = tar->FindType(SE_PoisonCounter);
-	bool isDiseased = tar->FindType(SE_DiseaseCounter);
-	bool isCursed = tar->FindType(SE_CurseCounter);
-	bool isCorrupted = tar->FindType(SE_CorruptionCounter);
+	bool isPoisoned = tar->FindType(SpellEffect::PoisonCounter);
+	bool isDiseased = tar->FindType(SpellEffect::DiseaseCounter);
+	bool isCursed = tar->FindType(SpellEffect::CurseCounter);
+	bool isCorrupted = tar->FindType(SpellEffect::CorruptionCounter);
 
 	if(caster && caster->AI_HasSpells()) {
 		std::list<MercSpell> cureList = GetMercSpellsBySpellType(caster, SpellType_Cure);
@@ -3068,19 +3084,19 @@ MercSpell Merc::GetBestMercSpellForCure(Merc* caster, Mob *tar) {
 					if(selectedMercSpell.spellid == 0)
 						continue;
 
-					if(isPoisoned && IsEffectInSpell(itr->spellid, SE_PoisonCounter)) {
+					if(isPoisoned && IsEffectInSpell(itr->spellid, SpellEffect::PoisonCounter)) {
 						spellSelected = true;
 					}
-					else if(isDiseased && IsEffectInSpell(itr->spellid, SE_DiseaseCounter)) {
+					else if(isDiseased && IsEffectInSpell(itr->spellid, SpellEffect::DiseaseCounter)) {
 						spellSelected = true;
 					}
-					else if(isCursed && IsEffectInSpell(itr->spellid, SE_CurseCounter)) {
+					else if(isCursed && IsEffectInSpell(itr->spellid, SpellEffect::CurseCounter)) {
 						spellSelected = true;
 					}
-					else if(isCorrupted && IsEffectInSpell(itr->spellid, SE_CorruptionCounter)) {
+					else if(isCorrupted && IsEffectInSpell(itr->spellid, SpellEffect::CorruptionCounter)) {
 						spellSelected = true;
 					}
-					else if(IsEffectInSpell(itr->spellid, SE_DispelDetrimental)) {
+					else if(IsEffectInSpell(itr->spellid, SpellEffect::DispelDetrimental)) {
 						spellSelected = true;
 					}
 
@@ -3108,19 +3124,19 @@ MercSpell Merc::GetBestMercSpellForCure(Merc* caster, Mob *tar) {
 					if(selectedMercSpell.spellid == 0)
 						continue;
 
-					if(isPoisoned && IsEffectInSpell(itr->spellid, SE_PoisonCounter)) {
+					if(isPoisoned && IsEffectInSpell(itr->spellid, SpellEffect::PoisonCounter)) {
 						spellSelected = true;
 					}
-					else if(isDiseased && IsEffectInSpell(itr->spellid, SE_DiseaseCounter)) {
+					else if(isDiseased && IsEffectInSpell(itr->spellid, SpellEffect::DiseaseCounter)) {
 						spellSelected = true;
 					}
-					else if(isCursed && IsEffectInSpell(itr->spellid, SE_CurseCounter)) {
+					else if(isCursed && IsEffectInSpell(itr->spellid, SpellEffect::CurseCounter)) {
 						spellSelected = true;
 					}
-					else if(isCorrupted && IsEffectInSpell(itr->spellid, SE_CorruptionCounter)) {
+					else if(isCorrupted && IsEffectInSpell(itr->spellid, SpellEffect::CorruptionCounter)) {
 						spellSelected = true;
 					}
-					else if(IsEffectInSpell(itr->spellid, SE_DispelDetrimental)) {
+					else if(IsEffectInSpell(itr->spellid, SpellEffect::DispelDetrimental)) {
 						spellSelected = true;
 					}
 
@@ -3155,7 +3171,7 @@ MercSpell Merc::GetBestMercSpellForStun(Merc* caster) {
 	result.time_cancast = 0;
 
 	if(caster) {
-		std::list<MercSpell> mercSpellList = GetMercSpellsForSpellEffect(caster, SE_Stun);
+		std::list<MercSpell> mercSpellList = GetMercSpellsForSpellEffect(caster, SpellEffect::Stun);
 
 		for (auto mercSpellListItr = mercSpellList.begin(); mercSpellListItr != mercSpellList.end();
 		     ++mercSpellListItr) {
@@ -3492,7 +3508,7 @@ bool Merc::GetNeedsCured(Mob *tar) {
 	bool needCured = false;
 
 	if(tar) {
-		if(tar->FindType(SE_PoisonCounter) || tar->FindType(SE_DiseaseCounter) || tar->FindType(SE_CurseCounter) || tar->FindType(SE_CorruptionCounter)) {
+		if(tar->FindType(SpellEffect::PoisonCounter) || tar->FindType(SpellEffect::DiseaseCounter) || tar->FindType(SpellEffect::CurseCounter) || tar->FindType(SpellEffect::CorruptionCounter)) {
 			uint32 buff_count = tar->GetMaxTotalSlots();
 			int buffsWithCounters = 0;
 			needCured = true;
@@ -4869,14 +4885,8 @@ bool Client::CheckCanHireMerc(Mob* merchant, uint32 template_id) {
 
 	MercTemplate* mercTemplate = zone->GetMercTemplate(template_id);
 
-	//check for suspended merc
-	if(GetMercInfo().mercid != 0 && GetMercInfo().IsSuspended) {
-		SendMercResponsePackets(6);
-		return false;
-	}
-
-	// Check if max number of mercs is already reached
-	if(GetNumberOfMercenaries() >= MAXMERCS) {
+	// Check if all merc slots are full (counts both active and suspended mercs)
+	if (GetFirstFreeMercSlot() < 0) {
 		SendMercResponsePackets(6);
 		return false;
 	}
@@ -5030,8 +5040,21 @@ void Client::SuspendMercCommand() {
 				return;
 			}
 
+			// Suspend any currently active merc before unsuspending this one
+			Merc* active_merc = GetMerc();
+			if (active_merc) {
+				active_merc->Suspend();
+				SetMerc(nullptr);
+			}
+
 			// Get merc, assign it to client & spawn
-			Merc* merc = Merc::LoadMercenary(this, &zone->merc_templates[GetMercInfo().MercTemplateID], 0, true);
+			auto tmpl_it = zone->merc_templates.find(GetMercInfo().MercTemplateID);
+			if (tmpl_it == zone->merc_templates.end()) {
+				SendMercResponsePackets(3);
+				Log(Logs::General, Logs::Mercenaries, "SuspendMercCommand Invalid template for %s.", GetName());
+				return;
+			}
+			Merc* merc = Merc::LoadMercenary(this, &tmpl_it->second, 0, true);
 			if(merc)
 			{
 				SpawnMerc(merc, false);
@@ -5103,40 +5126,56 @@ void Client::SpawnMercOnZone() {
 
 	if(database.LoadMercenaryInfo(this))
 	{
-		if(!GetMercInfo().IsSuspended)
-		{
+		// Find the active (non-suspended) merc slot, or fall back to the first owned slot
+		int active_slot = -1;
+		int first_owned_slot = -1;
+		int max_slots = std::min(RuleI(Mercs, MaxMercSlots), MAXMERCS);
+		for (int slot = 0; slot < max_slots; slot++) {
+			if (GetMercInfo(slot).mercid != 0) {
+				if (first_owned_slot < 0) {
+					first_owned_slot = slot;
+				}
+				if (!GetMercInfo(slot).IsSuspended) {
+					active_slot = slot;
+					break;
+				}
+			}
+		}
+
+		if (active_slot >= 0) {
+			SetMercSlot(static_cast<uint8>(active_slot));
 			GetMercInfo().SuspendedTime = 0;
 			// Get merc, assign it to client & spawn
-			Merc* merc = Merc::LoadMercenary(this, &zone->merc_templates[GetMercInfo().MercTemplateID], 0, true);
-			if(merc)
-			{
-				SpawnMerc(merc, false);
+			auto tmpl_it = zone->merc_templates.find(GetMercInfo().MercTemplateID);
+			if (tmpl_it != zone->merc_templates.end()) {
+				Merc* merc = Merc::LoadMercenary(this, &tmpl_it->second, 0, true);
+				if (merc) {
+					SpawnMerc(merc, false);
+				}
 			}
-			Log(Logs::General, Logs::Mercenaries, "SpawnMercOnZone Normal Merc for %s.", GetName());
-		}
-		else
-		{
+			Log(Logs::General, Logs::Mercenaries, "SpawnMercOnZone Normal Merc (slot %i) for %s.", active_slot, GetName());
+		} else if (first_owned_slot >= 0) {
+			SetMercSlot(static_cast<uint8>(first_owned_slot));
 			int32 TimeDiff = GetMercInfo().SuspendedTime - time(nullptr);
-			if (TimeDiff > 0)
-			{
-				if (!GetPTimers().Enabled(pTimerMercSuspend))
-				{
-					// Start the timer to send the packet that refreshes the Unsuspend Button
+			if (TimeDiff > 0) {
+				if (!GetPTimers().Enabled(pTimerMercSuspend)) {
 					GetPTimers().Start(pTimerMercSuspend, TimeDiff);
 				}
 			}
-			// Send Mercenary Status/Timer packet
 			SendMercTimer(GetMerc());
+			Log(Logs::General, Logs::Mercenaries, "SpawnMercOnZone Suspended Merc (slot %i) for %s.", first_owned_slot, GetName());
+		} else {
+			Log(Logs::General, Logs::Mercenaries, "SpawnMercOnZone No valid merc slots found for %s.", GetName());
+		}
 
-			Log(Logs::General, Logs::Mercenaries, "SpawnMercOnZone Suspended Merc for %s.", GetName());
+		// Send merc personal info for all owned mercs (populates the Manage tab)
+		if (GetNumberOfMercenaries() > 0) {
+			SendMercPersonalInfo();
 		}
 	}
 	else
 	{
-		// No Merc Hired
-		// RoF+ displays a message from the following packet, which seems useless
-		//SendClearMercInfo();
-		Log(Logs::General, Logs::Mercenaries, "SpawnMercOnZone Failed to load Merc Info from the Database for %s.", GetName());
+		Log(Logs::General, Logs::Mercenaries, "SpawnMercOnZone No merc info in database for %s.", GetName());
 	}
 }
 
@@ -5307,8 +5346,17 @@ bool Client::DismissMerc(uint32 MercID) {
 		GetMerc()->Depop();
 	}
 
-	SendClearMercInfo();
+	// Clear the dismissed merc's slot data so it becomes available
+	memset(&GetMercInfo(), 0, sizeof(MercInfo));
+
 	SetMerc(nullptr);
+
+	// Update the client with remaining mercs or clear if none left
+	if (GetNumberOfMercenaries() > 0) {
+		SendMercPersonalInfo();
+	} else {
+		SendClearMercInfo();
+	}
 
 	return Dismissed;
 }
@@ -5561,6 +5609,17 @@ uint8 Client::GetNumberOfMercenaries()
 	}
 
 	return count;
+}
+
+int Client::GetFirstFreeMercSlot()
+{
+	int max_slots = std::min(RuleI(Mercs, MaxMercSlots), MAXMERCS);
+	for (int slot_id = 0; slot_id < max_slots; slot_id++) {
+		if (m_mercinfo[slot_id].mercid == 0) {
+			return slot_id;
+		}
+	}
+	return -1;
 }
 
 void Merc::SetMercData( uint32 template_id ) {

@@ -1,40 +1,37 @@
-/*	EQEMu: Everquest Server Emulator
-	Copyright (C) 2001-2002 EQEMu Development Team (http://eqemu.org)
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; version 2 of the License.
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
 	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY except by those people which sell it, which
-	are required to give you total support for your newly bought product;
-	without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-	A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
-
-#include "../common/global_define.h"
-#include "../common/eqemu_logsys.h"
-#include "../common/rulesys.h"
-#include "../common/strings.h"
-#include "../common/eq_packet_structs.h"
-#include "../common/misc_functions.h"
-#include "../common/events/player_event_logs.h"
-#include "../common/repositories/trader_repository.h"
-#include "../common/repositories/buyer_repository.h"
-#include "../common/repositories/buyer_buy_lines_repository.h"
-
 #include "client.h"
-#include "entity.h"
-#include "mob.h"
 
-#include "quest_parser_collection.h"
-#include "string_ids.h"
-#include "worldserver.h"
-#include "../common/bazaar.h"
+#include "common/bazaar.h"
+#include "common/eq_packet_structs.h"
+#include "common/eqemu_logsys.h"
+#include "common/events/player_event_logs.h"
+#include "common/misc_functions.h"
+#include "common/repositories/buyer_buy_lines_repository.h"
+#include "common/repositories/buyer_repository.h"
+#include "common/repositories/trader_repository.h"
+#include "common/rulesys.h"
+#include "common/strings.h"
+#include "zone/entity.h"
+#include "zone/mob.h"
+#include "zone/quest_parser_collection.h"
+#include "zone/string_ids.h"
+#include "zone/worldserver.h"
 #include <numeric>
 
 class QueryServ;
@@ -2949,6 +2946,20 @@ void Client::BuyTraderItemOutsideBazaar(TraderBuy_Struct *tbs, const EQApplicati
 		else {
 			charges = buy_item->GetCharges();
 		}
+	} else {
+		if (charges <= 0) {
+			LogTrading("Rejecting purchase with zero/negative quantity [{}] for stackable item [{}]",
+				charges, buy_item->GetItem()->Name);
+			in->method     = BazaarByParcel;
+			in->sub_action = Failed;
+			TraderRepository::UpdateActiveTransaction(database, trader_item.id, false);
+			TradeRequestFailed(app);
+			return;
+		}
+		if (charges > trader_item.item_charges) {
+			charges = trader_item.item_charges;
+		}
+		tbs->quantity = static_cast<uint32>(charges);
 	}
 
 	LogTrading(

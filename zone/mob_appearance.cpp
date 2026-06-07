@@ -1,34 +1,30 @@
-/**
- * EQEmulator: Everquest Server Emulator
- * Copyright (C) 2001-2018 EQEmulator Development Team (https://github.com/EQEmu/Server)
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY except by those people which sell it, which
- * are required to give you total support for your newly bought product;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- *
- */
+/*	EQEmu: EQEmulator
 
-#include "../common/data_verification.h"
-#include "../common/eqemu_logsys.h"
-#include "../common/item_data.h"
-#include "../common/spdat.h"
-#include "../common/strings.h"
+	Copyright (C) 2001-2026 EQEmu Development Team
 
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
 #include "mob.h"
-#include "quest_parser_collection.h"
-#include "zonedb.h"
 
-#include "bot.h"
+#include "common/data_verification.h"
+#include "common/eqemu_logsys.h"
+#include "common/item_data.h"
+#include "common/spdat.h"
+#include "common/strings.h"
+#include "zone/bot.h"
+#include "zone/quest_parser_collection.h"
+#include "zone/zonedb.h"
 
 void Mob::SetMobTextureProfile(
 	uint8 material_slot,
@@ -286,8 +282,8 @@ uint32 Mob::GetHerosForgeModel(uint8 material_slot) const
 					if (augment) {
 						item              = augment->GetItem();
 						heros_forge_model = item->HerosForgeModel;
-					} else if (inst->GetOrnamentHeroModel()) {
-						heros_forge_model = inst->GetOrnamentHeroModel();
+					} else if (inst->GetOrnamentHeroModel(material_slot)) {
+						heros_forge_model = inst->GetOrnamentHeroModel(material_slot);
 					}
 				}
 			}
@@ -421,7 +417,7 @@ void Mob::SendWearChange(uint8 material_slot, Client *one_client)
 		return key;
 	};
 
-	
+
 	auto dedupe_key = build_key(*w);
 	auto send_if_changed = [&](Client* client) {
 		auto& last_key = m_last_seen_wearchange[client->GetID()][material_slot];

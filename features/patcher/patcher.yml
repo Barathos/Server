@@ -1,0 +1,9 @@
+version: 1
+id: patcher
+label: Patcher
+client: rof
+files: []
+generated:
+  eqhost: true
+  equiXml: false
+  equiIncludes: []

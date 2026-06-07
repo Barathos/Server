@@ -1,0 +1,12 @@
+version: 1
+id: dynamic-quests
+label: Dynamic Quests
+client: rof
+files:
+  - source: client_files/native_autoloot/ui/EQUI_NativeDynamicQuestsWnd.xml
+    destination: uifiles/default/EQUI_NativeDynamicQuestsWnd.xml
+generated:
+  eqhost: true
+  equiXml: true
+  equiIncludes:
+    - EQUI_NativeDynamicQuestsWnd.xml

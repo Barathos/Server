@@ -1,14 +1,33 @@
-#include "player_event_logs.h"
-#include <cereal/archives/json.hpp>
+/*	EQEmu: EQEmulator
 
-#include "../platform.h"
-#include "../rulesys.h"
-#include "player_event_discord_formatter.h"
-#include "../repositories/player_event_loot_items_repository.h"
-#include "../repositories/player_event_merchant_sell_repository.h"
-#include "../repositories/player_event_merchant_purchase_repository.h"
-#include "../repositories/player_event_npc_handin_repository.h"
-#include "../repositories/player_event_npc_handin_entries_repository.h"
+	Copyright (C) 2001-2026 EQEmu Development Team
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
+#include "player_event_logs.h"
+
+#include "common/events/player_event_discord_formatter.h"
+#include "common/platform.h"
+#include "common/repositories/player_event_loot_items_repository.h"
+#include "common/repositories/player_event_merchant_purchase_repository.h"
+#include "common/repositories/player_event_merchant_sell_repository.h"
+#include "common/repositories/player_event_npc_handin_entries_repository.h"
+#include "common/repositories/player_event_npc_handin_repository.h"
+#include "common/rulesys.h"
+
+#include "cereal/archives/json.hpp"
+#include "fmt/ranges.h"
 
 const uint32 PROCESS_RETENTION_TRUNCATION_TIMER_INTERVAL = 60 * 60 * 1000; // 1 hour
 
@@ -37,12 +56,12 @@ void PlayerEventLogs::Init()
 	auto             s = PlayerEventLogSettingsRepository::All(*m_database);
 	std::vector<int> db{};
 	db.reserve(s.size());
-	for (auto &e: s) {
+	for (auto& e: s) {
 		if (e.id >= PlayerEvent::MAX) {
 			continue;
 		}
 		m_settings[e.id] = e;
-		db.emplace_back(e.id);
+		db.emplace_back(static_cast<int>(e.id));
 	}
 
 	std::vector<PlayerEventLogSettingsRepository::PlayerEventLogSettings> settings_to_insert{};

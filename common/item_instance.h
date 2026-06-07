@@ -1,43 +1,39 @@
-/*	EQEMu: Everquest Server Emulator
+/*	EQEmu: EQEmulator
 
-	Copyright (C) 2001-2016 EQEMu Development Team (http://eqemulator.net)
+	Copyright (C) 2001-2026 EQEmu Development Team
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; version 2 of the License.
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
 	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY except by those people which sell it, which
-	are required to give you total support for your newly bought product;
-	without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-	A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  04111-1307  USA
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
-
 // @merth notes:
 // These classes could be optimized with database reads/writes by storing
 // a status flag indicating how object needs to interact with database
 
-#ifndef COMMON_ITEM_INSTANCE_H
-#define COMMON_ITEM_INSTANCE_H
-#include "evolving_items.h"
+#pragma once
 
+#include "common/bodytypes.h"
+#include "common/deity.h"
+#include "common/eq_constants.h"
+#include "common/evolving_items.h"
+#include "common/item_data.h"
+#include "common/memory_buffer.h"
+#include "common/repositories/character_evolving_items_repository.h"
+#include "common/timer.h"
+
+#include <map>
 
 class ItemParse;			// Parses item packets
 class EvolveInfo;			// Stores information about an evolving item family
-
-#include "../common/eq_constants.h"
-#include "../common/item_data.h"
-#include "../common/timer.h"
-#include "../common/bodytypes.h"
-#include "../common/deity.h"
-#include "../common/memory_buffer.h"
-#include "../common/repositories/character_evolving_items_repository.h"
-
-#include <map>
 
 
 // Specifies usage type for item inside EQ::ItemInstance
@@ -155,8 +151,11 @@ namespace EQ
 
 		// Accessors
 		const uint32 GetID() const { return ((m_item) ? m_item->ID : 0); }
+		uint32 GetClientItemID() const;
 		const uint32 GetItemScriptID() const { return ((m_item) ? m_item->ScriptFileID : 0); }
+		bool RefreshItemData(const ItemData *item);
 		const ItemData* GetItem() const;
+		const ItemData* GetClientItem() const;
 		const ItemData* GetUnscaledItem() const;
 
 		const uint8 GetItemType() const { return m_item ? m_item->ItemType : 255; } // Return 255 so you know there's no valid item
@@ -191,6 +190,13 @@ namespace EQ
 		void SetCustomData(const std::string &identifier, float value);
 		void SetCustomData(const std::string &identifier, bool value);
 		void DeleteCustomData(const std::string& identifier);
+		void SetDynamicItemModifier(const std::string &identifier, int value);
+		void SetDynamicItemData(const std::string &identifier, const std::string& value);
+		void SetDynamicItemData(const std::string &identifier, int value);
+		void DeleteDynamicItemModifier(const std::string& identifier);
+		void DeleteDynamicItemData(const std::string& identifier);
+		void ClearDynamicItemData();
+		bool HasDynamicItemData() const;
 
 		// Allows treatment of this object as though it were a pointer to m_item
 		operator bool() const { return (m_item != nullptr); }
@@ -224,12 +230,14 @@ namespace EQ
 
 		void Initialize(SharedDatabase *db = nullptr);
 		void ScaleItem();
+		void RebuildDynamicItemData();
 
 		std::string Serialize(int16 slot_id) const { InternalSerializedItem_Struct s; s.slot_id = slot_id; s.inst = (const void*)this; std::string ser; ser.assign((char*)&s, sizeof(InternalSerializedItem_Struct)); return ser; }
 		void Serialize(OutBuffer& ob, int16 slot_id) const { InternalSerializedItem_Struct isi; isi.slot_id = slot_id; isi.inst = (const void*)this; ob.write((const char*)&isi, sizeof(isi)); }
 
 		inline int32 GetSerialNumber() const { return m_SerialNumber; }
 		inline void SetSerialNumber(int32 id) { m_SerialNumber = id; }
+		void AssignNewSerialNumber();
 
 		std::map<std::string, ::Timer>& GetTimers() const { return m_timers; }
 		void SetTimer(std::string name, uint32 time);
@@ -361,6 +369,7 @@ namespace EQ
 		uint32           m_exp{0};
 		int8             m_evolveLvl{0};
 		ItemData *       m_scaledItem{nullptr};
+		ItemData *       m_dynamicItem{nullptr};
 		bool             m_scaling{false};
 		uint32           m_ornamenticon{0};
 		uint32           m_ornamentidfile{0};
@@ -376,4 +385,3 @@ namespace EQ
 		mutable std::map<std::string, ::Timer> m_timers {};
 	};
 }
-#endif /*COMMON_ITEM_INSTANCE_H*/

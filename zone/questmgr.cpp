@@ -1,55 +1,51 @@
-/*	EQEMu: Everquest Server Emulator
-	Copyright (C) 2001-2005 EQEMu Development Team (http://eqemulator.net)
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; version 2 of the License.
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
 	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY except by those people which sell it, which
-	are required to give you total support for your newly bought product;
-	without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-	A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
+#include "common/classes.h"
+#include "common/data_verification.h"
+#include "common/events/player_event_logs.h"
+#include "common/repositories/account_repository.h"
+#include "common/repositories/completed_tasks_repository.h"
+#include "common/repositories/grid_entries_repository.h"
+#include "common/repositories/instance_list_repository.h"
+#include "common/repositories/tradeskill_recipe_repository.h"
+#include "common/rulesys.h"
+#include "common/say_link.h"
+#include "common/skills.h"
+#include "common/spdat.h"
+#include "common/strings.h"
+#include "zone/bot.h"
+#include "zone/dialogue_window.h"
+#include "zone/entity.h"
+#include "zone/event_codes.h"
+#include "zone/guild_mgr.h"
+#include "zone/qglobals.h"
+#include "zone/queryserv.h"
+#include "zone/quest_parser_collection.h"
+#include "zone/questmgr.h"
+#include "zone/spawn2.h"
+#include "zone/worldserver.h"
+#include "zone/zone.h"
+#include "zone/zonedb.h"
 
-#include "../common/classes.h"
-#include "../common/data_verification.h"
-#include "../common/global_define.h"
-#include "../common/rulesys.h"
-#include "../common/skills.h"
-#include "../common/spdat.h"
-#include "../common/strings.h"
-#include "../common/say_link.h"
-#include "../common/events/player_event_logs.h"
-
-#include "entity.h"
-#include "event_codes.h"
-#include "guild_mgr.h"
-#include "qglobals.h"
-#include "queryserv.h"
-#include "quest_parser_collection.h"
-#include "questmgr.h"
-#include "spawn2.h"
-#include "worldserver.h"
-#include "zone.h"
-#include "zonedb.h"
-#include "dialogue_window.h"
-
-#include "../common/repositories/account_repository.h"
-#include "../common/repositories/completed_tasks_repository.h"
-#include "../common/repositories/tradeskill_recipe_repository.h"
-#include "../common/repositories/instance_list_repository.h"
-#include "../common/repositories/grid_entries_repository.h"
-
+#include <climits>
 #include <iostream>
-#include <limits.h>
 #include <list>
-
-#include "bot.h"
+#include <numbers>
 
 extern QueryServ* QServ;
 extern Zone* zone;
@@ -64,10 +60,10 @@ QuestManager quest_manager;
 	EQ::ItemInstance* questitem = nullptr; \
 	const SPDat_Spell_Struct* questspell = nullptr; \
 	bool depop_npc = false; \
-	std::string encounter; \
+	std::string encounter = ""; \
 	do { \
-		if(!quests_running_.empty()) { \
-			running_quest e = quests_running_.top(); \
+		if(!m_running_quests.empty()) { \
+			RunningQuest e = m_running_quests.top(); \
 			owner = e.owner; \
 			initiator = e.initiator; \
 			questitem = e.questitem; \
@@ -124,33 +120,30 @@ void QuestManager::Process() {
 	}
 }
 
-void QuestManager::StartQuest(Mob *_owner, Client *_initiator, EQ::ItemInstance* _questitem, const SPDat_Spell_Struct* _questspell, std::string encounter) {
-	running_quest run;
-	run.owner = _owner;
-	run.initiator = _initiator;
-	run.questitem = _questitem;
-	run.questspell = _questspell;
-	run.depop_npc = false;
-	run.encounter = encounter;
-	quests_running_.push(run);
+void QuestManager::StartQuest(const RunningQuest& q)
+{
+	m_running_quests.push(q);
 }
 
 void QuestManager::EndQuest() {
-	running_quest run = quests_running_.top();
-	if(run.depop_npc && run.owner->IsNPC()) {
+	RunningQuest run = m_running_quests.top();
+
+	if (run.depop_npc && run.owner->IsNPC()) {
 		//clear out any timers for them...
 		std::list<QuestTimer>::iterator cur = QTimerList.begin(), end;
 
 		end = QTimerList.end();
 		while (cur != end) {
-			if (cur->mob == run.owner)
+			if (cur->mob == run.owner) {
 				cur = QTimerList.erase(cur);
-			else
+			} else {
 				++cur;
+			}
 		}
 		run.owner->Depop();
 	}
-	quests_running_.pop();
+
+	m_running_quests.pop();
 }
 
 void QuestManager::ClearAllTimers() {
@@ -1098,18 +1091,18 @@ void QuestManager::depop(int npc_type) {
 					tmp->CastToNPC()->Depop();
 				}
 				else {
-					running_quest e = quests_running_.top();
+					RunningQuest e = m_running_quests.top();
 					e.depop_npc = true;
-					quests_running_.pop();
-					quests_running_.push(e);
+					m_running_quests.pop();
+					m_running_quests.push(e);
 				}
 			}
 		}
 		else {	//depop self
-			running_quest e = quests_running_.top();
+			RunningQuest e = m_running_quests.top();
 			e.depop_npc = true;
-			quests_running_.pop();
-			quests_running_.push(e);
+			m_running_quests.pop();
+			m_running_quests.push(e);
 		}
 	}
 }
@@ -1606,7 +1599,7 @@ void QuestManager::save() {
 
 void QuestManager::faction(int faction_id, int faction_value, int temp) {
 	QuestManagerCurrentQuestVars();
-	running_quest run = quests_running_.top();
+	RunningQuest run = m_running_quests.top();
 	if(run.owner->IsCharmed() == false && initiator) {
 		if(faction_id != 0 && faction_value != 0) {
 			initiator->SetFactionLevel2(
@@ -2077,10 +2070,10 @@ void QuestManager::respawn(int npcTypeID, int grid) {
 	if (!owner || !owner->IsNPC())
 		return;
 
-	running_quest e = quests_running_.top();
+	RunningQuest e = m_running_quests.top();
 	e.depop_npc = true;
-	quests_running_.pop();
-	quests_running_.push(e);
+	m_running_quests.pop();
+	m_running_quests.push(e);
 
 	const NPCType* npcType = nullptr;
 	if ((npcType = content_db.LoadNPCTypesData(npcTypeID)))
@@ -2786,18 +2779,7 @@ bool QuestManager::createBot(const char *name, const char *lastname, uint8 level
 		}
 
 		std::string test_name = name;
-		bool available_flag = false;
-		if (!database.botdb.QueryNameAvailability(test_name, available_flag)) {
-			initiator->Message(
-				Chat::White,
-				fmt::format(
-					"Failed to query name availability for '{}'.",
-					test_name
-				).c_str()
-			);
-			return false;
-		}
-
+		bool available_flag = database.botdb.QueryNameAvailability(test_name);
 		if (!available_flag) {
 			initiator->Message(
 				Chat::White,
@@ -3980,81 +3962,90 @@ void QuestManager::ReloadZoneStaticData()
 	}
 }
 
-Client *QuestManager::GetInitiator() const {
-	if(!quests_running_.empty()) {
-		running_quest e = quests_running_.top();
+Client* QuestManager::GetInitiator() const
+{
+	if (!m_running_quests.empty()) {
+		RunningQuest e = m_running_quests.top();
 		return e.initiator;
 	}
 
 	return nullptr;
 }
 
-NPC *QuestManager::GetNPC() const {
-	if(!quests_running_.empty()) {
-		running_quest e = quests_running_.top();
+NPC* QuestManager::GetNPC() const
+{
+	if (!m_running_quests.empty()) {
+		RunningQuest e = m_running_quests.top();
 		return (e.owner && e.owner->IsNPC()) ? e.owner->CastToNPC() : nullptr;
 	}
 
 	return nullptr;
 }
 
-Bot *QuestManager::GetBot() const {
-	if (!quests_running_.empty()) {
-		running_quest e = quests_running_.top();
+Bot* QuestManager::GetBot() const
+{
+	if (!m_running_quests.empty()) {
+		RunningQuest e = m_running_quests.top();
 		return (e.owner && e.owner->IsBot()) ? e.owner->CastToBot() : nullptr;
 	}
 
 	return nullptr;
 }
 
-Merc *QuestManager::GetMerc() const {
-	if (!quests_running_.empty()) {
-		running_quest e = quests_running_.top();
+Merc* QuestManager::GetMerc() const
+{
+	if (!m_running_quests.empty()) {
+		RunningQuest e = m_running_quests.top();
 		return (e.owner && e.owner->IsMerc()) ? e.owner->CastToMerc() : nullptr;
 	}
 
 	return nullptr;
 }
 
-Mob *QuestManager::GetOwner() const {
-	if(!quests_running_.empty()) {
-		running_quest e = quests_running_.top();
+Mob* QuestManager::GetOwner() const
+{
+	if (!m_running_quests.empty()) {
+		RunningQuest e = m_running_quests.top();
 		return e.owner;
 	}
 
 	return nullptr;
 }
 
-EQ::InventoryProfile *QuestManager::GetInventory() const {
-	if(!quests_running_.empty()) {
-		running_quest e = quests_running_.top();
+EQ::InventoryProfile* QuestManager::GetInventory() const
+{
+	if (!m_running_quests.empty()) {
+		RunningQuest e = m_running_quests.top();
 		return &e.initiator->GetInv();
 	}
 
 	return nullptr;
 }
 
-EQ::ItemInstance *QuestManager::GetQuestItem() const {
-	if(!quests_running_.empty()) {
-		running_quest e = quests_running_.top();
+EQ::ItemInstance* QuestManager::GetQuestItem() const
+{
+	if (!m_running_quests.empty()) {
+		RunningQuest e = m_running_quests.top();
 		return e.questitem;
 	}
 
 	return nullptr;
 }
 
-const SPDat_Spell_Struct *QuestManager::GetQuestSpell() {
-	if(!quests_running_.empty()) {
-		running_quest e = quests_running_.top();
+const SPDat_Spell_Struct* QuestManager::GetQuestSpell()
+{
+	if (!m_running_quests.empty()) {
+		RunningQuest e = m_running_quests.top();
 		return e.questspell;
 	}
 
 	return nullptr;
 }
 
-std::string QuestManager::GetEncounter() const {
-	if(!quests_running_.empty()) {
-		running_quest e = quests_running_.top();
+std::string QuestManager::GetEncounter() const
+{
+	if (!m_running_quests.empty()) {
+		RunningQuest e = m_running_quests.top();
 		return e.encounter;
 	}
 
@@ -4582,7 +4573,7 @@ void QuestManager::SpawnCircle(uint32 npc_id, glm::vec4 position, float radius, 
 	glm::vec4 npc_position = position;
 
 	for (uint32 i = 0; i < points; i++) {
-		float angle = 2 * M_PI * i / points;
+		float angle = 2 * std::numbers::pi * i / points;
 
 		npc_position.x = position.x + radius * std::cos(angle);
 		npc_position.y = position.y + radius * std::sin(angle);
@@ -4660,4 +4651,34 @@ bool QuestManager::handin(std::map<std::string, uint32> required) {
 	}
 
 	return owner->CastToNPC()->CheckHandin(initiator, {}, required, {});
+}
+
+std::vector<std::string> QuestManager::GetPausedTimers(Mob* m)
+{
+	std::vector<std::string> v;
+
+	if (m && !PTimerList.empty()) {
+		for (auto e = PTimerList.begin(); e != PTimerList.end(); e++) {
+			if (e->owner == m) {
+				v.emplace_back(e->name);
+			}
+		}
+	}
+
+	return v;
+}
+
+std::vector<std::string> QuestManager::GetTimers(Mob* m)
+{
+	std::vector<std::string> v;
+
+	if (m && !QTimerList.empty()) {
+		for (auto e = QTimerList.begin(); e != QTimerList.end(); e++) {
+			if (e->mob == m) {
+				v.emplace_back(e->name);
+			}
+		}
+	}
+
+	return v;
 }

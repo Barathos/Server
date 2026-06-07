@@ -1,33 +1,33 @@
-/*	EQEMu: Everquest Server Emulator
-	Copyright (C) 2001-2002 EQEMu Development Team (http://eqemulator.net)
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; version 2 of the License.
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
 	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY except by those people which sell it, which
-	are required to give you total support for your newly bought product;
-	without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-	A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-	*/
-
-#include "../common/rulesys.h"
-#include "../common/strings.h"
-
-#include "client.h"
-#include "entity.h"
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
 #include "mob.h"
-#include "string_ids.h"
-#include "lua_parser.h"
-#include "npc.h"
-#include "bot.h"
 
-#include <string.h>
+#include "common/rulesys.h"
+#include "common/strings.h"
+#include "zone/bot.h"
+#include "zone/client.h"
+#include "zone/entity.h"
+#include "zone/lua_parser.h"
+#include "zone/multiclass_manager.h"
+#include "zone/npc.h"
+#include "zone/string_ids.h"
+
+#include <cstring>
 
 extern double frame_time;
 
@@ -103,10 +103,10 @@ int Mob::GetBaseSkillDamage(EQ::skills::SkillType skill, Mob *target)
 			}
 
 			if (RuleB(Character, ItemExtraSkillDamageCalcAsPercent) && GetSkillDmgAmt(skill) > 0) {
-				return static_cast<int>(ac_bonus + skill_bonus) * std::abs(GetSkillDmgAmt(skill) / 100);
+				return (base + static_cast<int>(ac_bonus + skill_bonus)) * std::abs(GetSkillDmgAmt(skill) / 100);
 			}
 
-			return static_cast<int>(ac_bonus + skill_bonus);
+			return base + static_cast<int>(ac_bonus + skill_bonus);
 		}
 		case EQ::skills::SkillKick:
 		case EQ::skills::SkillRoundKick: {
@@ -129,10 +129,10 @@ int Mob::GetBaseSkillDamage(EQ::skills::SkillType skill, Mob *target)
 			}
 
 			if (RuleB(Character, ItemExtraSkillDamageCalcAsPercent) && GetSkillDmgAmt(skill) > 0) {
-				return static_cast<int>(ac_bonus + skill_bonus) * std::abs(GetSkillDmgAmt(skill) / 100);
+				return (base + static_cast<int>(ac_bonus + skill_bonus)) * std::abs(GetSkillDmgAmt(skill) / 100);
 			}
 
-			return static_cast<int>(ac_bonus + skill_bonus);
+			return base + static_cast<int>(ac_bonus + skill_bonus);
 		}
 		case EQ::skills::SkillBash: {
 			float                  skill_bonus = skill_level / 10.0f;
@@ -161,10 +161,10 @@ int Mob::GetBaseSkillDamage(EQ::skills::SkillType skill, Mob *target)
 			}
 
 			if (RuleB(Character, ItemExtraSkillDamageCalcAsPercent) && GetSkillDmgAmt(skill) > 0) {
-				return static_cast<int>(ac_bonus + skill_bonus) * std::abs(GetSkillDmgAmt(skill) / 100);
+				return (base + static_cast<int>(ac_bonus + skill_bonus)) * std::abs(GetSkillDmgAmt(skill) / 100);
 			}
 
-			return static_cast<int>(ac_bonus + skill_bonus);
+			return base + static_cast<int>(ac_bonus + skill_bonus);
 		}
 		case EQ::skills::SkillBackstab: {
 			float skill_bonus = static_cast<float>(skill_level) * 0.02f;
@@ -329,9 +329,14 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk)
 		return;
 	}
 
+	const bool has_bard_class = multiclass_manager.HasClass(this, Class::Bard);
+	const bool has_berserker_class = multiclass_manager.HasClass(this, Class::Berserker);
+	const bool has_monk_class = multiclass_manager.HasClass(this, Class::Monk);
+	const bool has_rogue_class = multiclass_manager.HasClass(this, Class::Rogue);
+
 	// make sure were actually able to use such an attack. (Bards can throw while casting. ~Kayen confirmed on live 1/22)
 	if (
-		(spellend_timer.Enabled() && GetClass() != Class::Bard) ||
+		(spellend_timer.Enabled() && !has_bard_class) ||
 		IsFeared() ||
 		IsStunned() ||
 		IsMezzed() ||
@@ -352,9 +357,9 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk)
 
 	if (ca_atk->m_skill == EQ::skills::SkillBash) { // SLAM - Bash without a shield equipped
 		switch (GetRace()) {
-			case OGRE:
-			case TROLL:
-			case BARBARIAN:
+			case Race::Ogre:
+			case Race::Troll:
+			case Race::Barbarian:
 				bypass_skill_check = true;
 			default:
 				break;
@@ -406,7 +411,9 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk)
 	}
 
 	if (!p_timers.Expired(&database, timer, false)) {
-		Message(Chat::Red, "Ability recovery time not yet met.");
+		if (!EntityVariableExists("auto_skill")) {
+			Message(Chat::Red, "Ability recovery time not yet met.");
+		}
 		return;
 	}
 
@@ -462,7 +469,7 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk)
 		CheckIncreaseSkill(EQ::skills::SkillFrenzy, GetTarget(), 10);
 		DoAnim(anim1HWeapon, 0, false);
 
-		if (GetClass() == Class::Berserker) {
+		if (has_berserker_class) {
 			int chance = GetLevel() * 2 + GetSkill(EQ::skills::SkillFrenzy);
 
 			if (zone->random.Roll0(450) < chance) {
@@ -497,46 +504,21 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk)
 		return;
 	}
 
-	const uint8 class_id = GetClass();
-
 	// Warrior, Ranger, Monk, Beastlord, and Berserker can kick always
 	const uint32 allowed_kick_classes = RuleI(Combat, ExtraAllowedKickClassesBitmask);
+	const uint32 class_mask = multiclass_manager.GetClassMask(this);
+	const uint32 innate_kick_classes =
+		GetPlayerClassBit(Class::Warrior) |
+		GetPlayerClassBit(Class::Ranger) |
+		GetPlayerClassBit(Class::Monk) |
+		GetPlayerClassBit(Class::Beastlord) |
+		GetPlayerClassBit(Class::Berserker);
 
-	const bool can_use_kick = (
-		class_id == Class::Warrior ||
-		class_id == Class::Ranger ||
-		class_id == Class::Monk ||
-		class_id == Class::Beastlord ||
-		class_id == Class::Berserker ||
-		allowed_kick_classes & GetPlayerClassBit(class_id)
-	);
+	const bool can_use_kick = ((innate_kick_classes | allowed_kick_classes) & class_mask) != 0;
 
 	bool found_skill = false;
 
-	if (
-		ca_atk->m_atk == 100 &&
-		ca_atk->m_skill == EQ::skills::SkillKick &&
-		can_use_kick
-	) {
-		if (GetTarget() != this) {
-			CheckIncreaseSkill(EQ::skills::SkillKick, GetTarget(), 10);
-			DoAnim(animKick, 0, false);
-
-			int hate_override = 0;
-			if (GetWeaponDamage(GetTarget(), GetInv().GetItem(EQ::invslot::slotFeet)) <= 0) {
-				damage = -5;
-			} else {
-				hate_override = damage = GetBaseSkillDamage(EQ::skills::SkillKick, GetTarget());
-			}
-
-			reuse_time = KickReuseTime - 1 - skill_reduction;
-			DoSpecialAttackDamage(GetTarget(), EQ::skills::SkillKick, damage, 0, hate_override, reuse_time);
-
-			found_skill = true;
-		}
-	}
-
-	if (class_id == Class::Monk) {
+	if (has_monk_class) {
 		reuse_time = MonkSpecialAttack(GetTarget(), ca_atk->m_skill) - 1 - skill_reduction;
 
 		// Live AA - Technique of Master Wu
@@ -597,11 +579,35 @@ void Client::OPCombatAbility(const CombatAbility_Struct *ca_atk)
 
 		found_skill = true;
 	}
+	else {
+		if (
+			ca_atk->m_atk == 100 &&
+			ca_atk->m_skill == EQ::skills::SkillKick &&
+			can_use_kick
+		) {
+			if (GetTarget() != this) {
+				CheckIncreaseSkill(EQ::skills::SkillKick, GetTarget(), 10);
+				DoAnim(animKick, 0, false);
+
+				int hate_override = 0;
+				if (GetWeaponDamage(GetTarget(), GetInv().GetItem(EQ::invslot::slotFeet)) <= 0) {
+					damage = -5;
+				} else {
+					hate_override = damage = GetBaseSkillDamage(EQ::skills::SkillKick, GetTarget());
+				}
+
+				reuse_time = KickReuseTime - 1 - skill_reduction;
+				DoSpecialAttackDamage(GetTarget(), EQ::skills::SkillKick, damage, 0, hate_override, reuse_time);
+
+				found_skill = true;
+			}
+		}
+	}
 
 	if (
 		ca_atk->m_atk == 100 &&
 		ca_atk->m_skill == EQ::skills::SkillBackstab &&
-		class_id == Class::Rogue
+		has_rogue_class
 	) {
 		reuse_time = BackstabReuseTime - 1 - skill_reduction;
 		TryBackstab(GetTarget(), reuse_time);
@@ -1594,7 +1600,7 @@ void Client::ThrowingAttack(Mob* other, bool CanDoubleAttack) { //old was 51
 	}
 
 	if(!IsAttackAllowed(other) ||
-		(IsCasting() && GetClass() != Class::Bard) ||
+		(IsCasting() && !(IsClient() && multiclass_manager.HasClass(CastToClient(), Class::Bard))) ||
 		IsSitting() ||
 		(DivineAura() && !GetGM()) ||
 		IsStunned() ||
@@ -1907,7 +1913,7 @@ void NPC::DoClassAttacks(Mob *target) {
 		target->GetBodyType() != BodyType::Undead &&
 		taunt_time &&
 		type_of_pet &&
-		type_of_pet != petTargetLock &&
+		type_of_pet != PetType::TargetLock &&
 		DistanceSquared(GetPosition(), target->GetPosition()) <= (RuleI(Pets, PetTauntRange) * RuleI(Pets, PetTauntRange))
 	) {
 		GetOwner()->MessageString(Chat::PetResponse, PET_TAUNTING);
@@ -2059,20 +2065,13 @@ void Client::DoClassAttacks(Mob *ca_target, uint16 skill, bool IsRiposte)
 	uint16 skill_to_use = -1;
 
 	if (skill == -1){
-		switch(GetClass()){
-		case Class::Warrior:
-		case Class::Ranger:
-		case Class::Beastlord:
-			skill_to_use = EQ::skills::SkillKick;
-			break;
-		case Class::Berserker:
+		if (multiclass_manager.HasClass(this, Class::Berserker) && MaxSkill(EQ::skills::SkillFrenzy)) {
 			skill_to_use = EQ::skills::SkillFrenzy;
-			break;
-		case Class::ShadowKnight:
-		case Class::Paladin:
-			skill_to_use = EQ::skills::SkillBash;
-			break;
-		case Class::Monk:
+		}
+		else if (multiclass_manager.HasClass(this, Class::Rogue) && MaxSkill(EQ::skills::SkillBackstab)) {
+			skill_to_use = EQ::skills::SkillBackstab;
+		}
+		else if (multiclass_manager.HasClass(this, Class::Monk)) {
 			if(GetLevel() >= 30)
 			{
 				skill_to_use = EQ::skills::SkillFlyingKick;
@@ -2097,10 +2096,19 @@ void Client::DoClassAttacks(Mob *ca_target, uint16 skill, bool IsRiposte)
 			{
 				skill_to_use = EQ::skills::SkillKick;
 			}
-			break;
-		case Class::Rogue:
-			skill_to_use = EQ::skills::SkillBackstab;
-			break;
+		}
+		else if (
+			multiclass_manager.HasClass(this, Class::ShadowKnight) ||
+			multiclass_manager.HasClass(this, Class::Paladin)
+		) {
+			skill_to_use = EQ::skills::SkillBash;
+		}
+		else if (
+			multiclass_manager.HasClass(this, Class::Warrior) ||
+			multiclass_manager.HasClass(this, Class::Ranger) ||
+			multiclass_manager.HasClass(this, Class::Beastlord)
+		) {
+			skill_to_use = EQ::skills::SkillKick;
 		}
 	}
 
@@ -2138,7 +2146,7 @@ void Client::DoClassAttacks(Mob *ca_target, uint16 skill, bool IsRiposte)
 		ReuseTime = (FrenzyReuseTime - 1) / HasteMod;
 
 		// bards can do riposte frenzy for some reason
-		if (!IsRiposte && GetClass() == Class::Berserker) {
+		if (!IsRiposte && multiclass_manager.HasClass(this, Class::Berserker)) {
 			int chance = GetLevel() * 2 + GetSkill(EQ::skills::SkillFrenzy);
 			if (zone->random.Roll0(450) < chance)
 				AtkRounds++;

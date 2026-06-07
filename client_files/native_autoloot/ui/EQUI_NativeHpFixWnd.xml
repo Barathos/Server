@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<XML ID="EQInterfaceDefinitionLanguage">
+	<Schema xmlns="EverQuestData" xmlns:dt="EverQuestDataTypes" />
+
+	<Label item="HPFIX_StatusLabel">
+		<ScreenID>HPFIX_StatusLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>18</X><Y>34</Y></Location>
+		<Size><CX>384</CX><CY>24</CY></Size>
+		<Text>Waiting for native HPFIX payload...</Text>
+		<TextColor><R>240</R><G>220</G><B>128</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="HPFIX_CurrentLabel">
+		<ScreenID>HPFIX_CurrentLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>18</X><Y>70</Y></Location>
+		<Size><CX>384</CX><CY>24</CY></Size>
+		<Text>Current: pending</Text>
+		<TextColor><R>220</R><G>235</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="HPFIX_MaxLabel">
+		<ScreenID>HPFIX_MaxLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>18</X><Y>98</Y></Location>
+		<Size><CX>384</CX><CY>24</CY></Size>
+		<Text>Maximum: pending</Text>
+		<TextColor><R>220</R><G>235</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="HPFIX_PercentLabel">
+		<ScreenID>HPFIX_PercentLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>18</X><Y>126</Y></Location>
+		<Size><CX>384</CX><CY>24</CY></Size>
+		<Text>Percent: pending</Text>
+		<TextColor><R>128</R><G>255</G><B>128</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="HPFIX_DetailLabel">
+		<ScreenID>HPFIX_DetailLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>18</X><Y>166</Y></Location>
+		<Size><CX>384</CX><CY>42</CY></Size>
+		<Text>The server will send authoritative self HP after the DLL handshake.</Text>
+		<TextColor><R>180</R><G>190</G><B>210</B></TextColor>
+		<NoWrap>false</NoWrap>
+	</Label>
+
+	<Screen item="NativeHpFixWnd">
+		<ScreenID>NativeHpFixWnd</ScreenID>
+		<RelativePosition>false</RelativePosition>
+		<Location><X>96</X><Y>82</Y></Location>
+		<Size><CX>420</CX><CY>240</CY></Size>
+		<Text>Native HP Fix</Text>
+		<DrawTemplate>WDT_Def</DrawTemplate>
+		<Style_Titlebar>true</Style_Titlebar>
+		<Style_Closebox>true</Style_Closebox>
+		<Style_Minimizebox>true</Style_Minimizebox>
+		<Style_Border>true</Style_Border>
+		<Style_Sizable>false</Style_Sizable>
+		<Style_Transparent>false</Style_Transparent>
+		<Pieces>HPFIX_StatusLabel</Pieces>
+		<Pieces>HPFIX_CurrentLabel</Pieces>
+		<Pieces>HPFIX_MaxLabel</Pieces>
+		<Pieces>HPFIX_PercentLabel</Pieces>
+		<Pieces>HPFIX_DetailLabel</Pieces>
+	</Screen>
+</XML>

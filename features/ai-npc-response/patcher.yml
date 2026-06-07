@@ -1,0 +1,10 @@
+# Client patch feed for ai-npc-response.
+# The current AI NPC bridge prototype has no client-facing files.
+# Add XML, DLLs, config, assets, or patch notes here only when they are part of
+# the feature source of truth.
+files: []
+
+generated:
+  eqhost: false
+  equiXml: false
+  equiIncludes: []

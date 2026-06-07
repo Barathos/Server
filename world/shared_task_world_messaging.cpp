@@ -1,18 +1,36 @@
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
 #include "shared_task_world_messaging.h"
-#include "cliententry.h"
-#include "worlddb.h"
-#include "../common/shared_tasks.h"
-#include "../common/eqemu_logsys.h"
-#include "../common/repositories/tasks_repository.h"
-#include "../common/tasks.h"
-#include "cliententry.h"
-#include "clientlist.h"
-#include "zonelist.h"
-#include "zoneserver.h"
-#include "shared_task_manager.h"
-#include "../common/repositories/shared_task_members_repository.h"
-#include "../common/repositories/task_activities_repository.h"
-#include "dynamic_zone.h"
+
+#include "common/eqemu_logsys.h"
+#include "common/repositories/shared_task_members_repository.h"
+#include "common/repositories/task_activities_repository.h"
+#include "common/repositories/tasks_repository.h"
+#include "common/shared_tasks.h"
+#include "common/tasks.h"
+#include "world/cliententry.h"
+#include "world/cliententry.h"
+#include "world/clientlist.h"
+#include "world/dynamic_zone.h"
+#include "world/shared_task_manager.h"
+#include "world/worlddb.h"
+#include "world/zonelist.h"
+#include "world/zoneserver.h"
 
 void SharedTaskWorldMessaging::HandleZoneMessage(ServerPacket *pack)
 {

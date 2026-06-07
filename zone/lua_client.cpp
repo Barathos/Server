@@ -1,22 +1,40 @@
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
 #ifdef LUA_EQEMU
 
-#include "lua.hpp"
-#include <luabind/luabind.hpp>
-
-#include "client.h"
-#include "dynamic_zone.h"
-#include "expedition_request.h"
 #include "lua_client.h"
-#include "lua_expedition.h"
-#include "lua_npc.h"
-#include "lua_item.h"
-#include "lua_iteminst.h"
-#include "lua_inventory.h"
-#include "lua_group.h"
-#include "lua_raid.h"
-#include "lua_packet.h"
-#include "dialogue_window.h"
-#include "titles.h"
+
+#include "zone/client.h"
+#include "zone/dialogue_window.h"
+#include "zone/dynamic_zone.h"
+#include "zone/expedition_request.h"
+#include "zone/lua_expedition.h"
+#include "zone/lua_group.h"
+#include "zone/lua_inventory.h"
+#include "zone/lua_item.h"
+#include "zone/lua_iteminst.h"
+#include "zone/lua_npc.h"
+#include "zone/lua_packet.h"
+#include "zone/lua_raid.h"
+#include "zone/titles.h"
+
+#include "lua.hpp"
+#include "luabind/luabind.hpp"
 
 struct InventoryWhere { };
 
@@ -1569,6 +1587,12 @@ bool Lua_Client::PushItemOnCursor(Lua_ItemInst inst) {
 	Lua_Safe_Call_Bool();
 	EQ::ItemInstance *rinst = inst;
 	return self->PushItemOnCursor(*rinst, true);
+}
+
+bool Lua_Client::RewardLiveItem(Lua_ItemInst inst) {
+	Lua_Safe_Call_Bool();
+	EQ::ItemInstance *rinst = inst;
+	return rinst && self->PushItemOnCursor(*rinst, true);
 }
 
 Lua_Inventory Lua_Client::GetInventory() {
@@ -3575,7 +3599,13 @@ bool Lua_Client::KeyRingClear()
 void Lua_Client::KeyRingList()
 {
 	Lua_Safe_Call_Void();
-	self->KeyRingList();
+	self->KeyRingList(self);
+}
+
+void Lua_Client::KeyRingList(Lua_Client c)
+{
+	Lua_Safe_Call_Void();
+	self->KeyRingList(self);
 }
 
 bool Lua_Client::KeyRingRemove(uint32 item_id)
@@ -3600,6 +3630,22 @@ bool Lua_Client::UncompleteTask(int task_id)
 void Lua_Client::EnableTitleSet(uint32 title_set) {
 	Lua_Safe_Call_Void();
 	self->EnableTitle(title_set);
+}
+
+luabind::object Lua_Client::GetKeyRing(lua_State* L)
+{
+	auto lua_table = luabind::newtable(L);
+
+	if (d_) {
+		auto self  = reinterpret_cast<NativeType *>(d_);
+		int  index = 1;
+		for (const uint32& item_id: self->GetKeyRing()) {
+			lua_table[index] = item_id;
+			index++;
+		}
+	}
+
+	return lua_table;
 }
 
 luabind::scope lua_register_client() {
@@ -3832,6 +3878,7 @@ luabind::scope lua_register_client() {
 	.def("GetInvulnerableEnvironmentDamage", (bool(Lua_Client::*)(void))&Lua_Client::GetInvulnerableEnvironmentDamage)
 	.def("GetItemIDAt", (int(Lua_Client::*)(int))&Lua_Client::GetItemIDAt)
 	.def("GetItemCooldown", (uint32(Lua_Client::*)(uint32))&Lua_Client::GetItemCooldown)
+	.def("GetKeyRing", (luabind::object(Lua_Client::*)(lua_State* L))&Lua_Client::GetKeyRing)
 	.def("GetLDoNLosses", (int(Lua_Client::*)(void))&Lua_Client::GetLDoNLosses)
 	.def("GetLDoNLossesTheme", (int(Lua_Client::*)(int))&Lua_Client::GetLDoNLossesTheme)
 	.def("GetLDoNPointsTheme", (int(Lua_Client::*)(int))&Lua_Client::GetLDoNPointsTheme)
@@ -3932,6 +3979,7 @@ luabind::scope lua_register_client() {
 	.def("KeyRingCheck", (bool(Lua_Client::*)(uint32))&Lua_Client::KeyRingCheck)
 	.def("KeyRingClear", (bool(Lua_Client::*)(void))&Lua_Client::KeyRingClear)
 	.def("KeyRingList", (void(Lua_Client::*)(void))&Lua_Client::KeyRingList)
+	.def("KeyRingList", (void(Lua_Client::*)(Lua_Client))&Lua_Client::KeyRingList)
 	.def("KeyRingRemove", (bool(Lua_Client::*)(uint32))&Lua_Client::KeyRingRemove)
 	.def("Kick", (void(Lua_Client::*)(void))&Lua_Client::Kick)
 	.def("LearnDisciplines", (uint16(Lua_Client::*)(uint8,uint8))&Lua_Client::LearnDisciplines)
@@ -3990,6 +4038,7 @@ luabind::scope lua_register_client() {
 	.def("Popup", (void(Lua_Client::*)(const char*,const char*,uint32,uint32,uint32,uint32,const char*,const char*,uint32))&Lua_Client::Popup)
 	.def("PushItemOnCursor", (bool(Lua_Client::*)(Lua_ItemInst))&Lua_Client::PushItemOnCursor)
 	.def("PutItemInInventory", (bool(Lua_Client::*)(int,Lua_ItemInst))&Lua_Client::PutItemInInventory)
+	.def("RewardLiveItem", (bool(Lua_Client::*)(Lua_ItemInst))&Lua_Client::RewardLiveItem)
 	.def("QuestReadBook", (void(Lua_Client::*)(const char *,int))&Lua_Client::QuestReadBook)
 	.def("QuestReward", (void(Lua_Client::*)(Lua_Mob))&Lua_Client::QuestReward)
 	.def("QuestReward", (void(Lua_Client::*)(Lua_Mob, luabind::adl::object))&Lua_Client::QuestReward)
@@ -4217,6 +4266,4 @@ luabind::scope lua_register_inventory_where() {
 		)];
 }
 
-
-
-#endif
+#endif // LUA_EQEMU

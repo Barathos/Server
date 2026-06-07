@@ -1,45 +1,45 @@
-/*	EQEMu: Everquest Server Emulator
-Copyright (C) 2001-2005 EQEMu Development Team (http://eqemulator.net)
+/*	EQEmu: EQEmulator
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; version 2 of the License.
+	Copyright (C) 2001-2026 EQEmu Development Team
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY except by those people which sell it, which
-are required to give you total support for your newly bought product;
-without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
-#include "../common/global_define.h"
 #include "zonelist.h"
-#include "zoneserver.h"
-#include "worlddb.h"
-#include "world_config.h"
-#include "../common/misc_functions.h"
-#include "../common/servertalk.h"
-#include "../common/strings.h"
-#include "../common/random.h"
-#include "../common/json/json.h"
-#include "../common/event_sub.h"
-#include "web_interface.h"
-#include "../common/zone_store.h"
-#include "../common/events/player_event_logs.h"
-#include "../common/patches/patches.h"
-#include "../common/skill_caps.h"
-#include "../common/content/world_content_service.h"
-#include "world_boot.h"
-#include "shared_task_manager.h"
-#include "dynamic_zone_manager.h"
-#include "ucs.h"
-#include "clientlist.h"
-#include "queryserv.h"
-#include "../common/repositories/trader_repository.h"
-#include "../common/repositories/buyer_repository.h"
+
+#include "common/content/world_content_service.h"
+#include "common/event_sub.h"
+#include "common/events/player_event_logs.h"
+#include "common/json/json.h"
+#include "common/misc_functions.h"
+#include "common/patches/patches.h"
+#include "common/random.h"
+#include "common/repositories/buyer_repository.h"
+#include "common/repositories/trader_repository.h"
+#include "common/servertalk.h"
+#include "common/skill_caps.h"
+#include "common/strings.h"
+#include "common/zone_store.h"
+#include "world/clientlist.h"
+#include "world/dynamic_zone_manager.h"
+#include "world/queryserv.h"
+#include "world/shared_task_manager.h"
+#include "world/ucs.h"
+#include "world/web_interface.h"
+#include "world/world_boot.h"
+#include "world/world_config.h"
+#include "world/worlddb.h"
+#include "world/zoneserver.h"
 
 extern uint32 numzones;
 volatile bool UCSServerAvailable_ = false;

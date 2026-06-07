@@ -1,0 +1,14 @@
+version: 1
+id: live-spells
+label: Live Spells
+client: rof
+files:
+  - source: client_files/native_autoloot/eq-core-dll/bin/dinput8.dll
+    destination: dinput8.dll
+  - source: client_files/native_autoloot/ui/EQUI_NativeSpellForgeWnd.xml
+    destination: uifiles/default/EQUI_NativeSpellForgeWnd.xml
+generated:
+  eqhost: true
+  equiXml: true
+  equiIncludes:
+    - EQUI_NativeSpellForgeWnd.xml

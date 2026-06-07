@@ -1,84 +1,68 @@
-/*	EQEMu: Everquest Server Emulator
-	Copyright (C) 2001-2003 EQEMu Development Team (http://eqemulator.net)
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; version 2 of the License.
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
 	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY except by those people which sell it, which
-	are required to give you total support for your newly bought product;
-	without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-	A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
-
-#include <float.h>
-#include <iostream>
-#include <stdlib.h>
-#include <string.h>
-
-#ifdef _WINDOWS
-#define	snprintf	_snprintf
-#define	vsnprintf	_vsnprintf
-#else
-#include <pthread.h>
-#include "../common/unix.h"
-#endif
-
-#include "../common/global_define.h"
-#include "../common/features.h"
-#include "../common/rulesys.h"
-#include "../common/seperator.h"
-#include "../common/strings.h"
-#include "../common/eqemu_logsys.h"
-
-#include "dynamic_zone.h"
-#include "guild_mgr.h"
-#include "map.h"
-#include "npc.h"
-#include "object.h"
-#include "pathfinder_null.h"
-#include "petitions.h"
-#include "quest_parser_collection.h"
-#include "spawn2.h"
-#include "spawngroup.h"
-#include "water_map.h"
-#include "worldserver.h"
 #include "zone.h"
-#include "zone_config.h"
-#include "mob_movement_manager.h"
-#include "npc_scale_manager.h"
-#include "../common/data_verification.h"
-#include "zone_reload.h"
-#include "../common/repositories/criteria/content_filter_criteria.h"
-#include "../common/repositories/character_exp_modifiers_repository.h"
-#include "../common/repositories/merchantlist_repository.h"
-#include "../common/repositories/object_repository.h"
-#include "../common/repositories/rule_sets_repository.h"
-#include "../common/repositories/level_exp_mods_repository.h"
-#include "../common/repositories/ldon_trap_entries_repository.h"
-#include "../common/repositories/ldon_trap_templates_repository.h"
-#include "../common/repositories/respawn_times_repository.h"
-#include "../common/repositories/npc_emotes_repository.h"
-#include "../common/repositories/zone_state_spawns_repository.h"
-#include "../common/serverinfo.h"
-#include "../common/repositories/merc_stance_entries_repository.h"
-#include "../common/repositories/alternate_currency_repository.h"
-#include "../common/repositories/graveyard_repository.h"
-#include "../common/repositories/trader_repository.h"
-#include "../common/repositories/buyer_repository.h"
 
-#include <time.h>
+#include "common/data_verification.h"
+#include "common/eqemu_logsys.h"
+#include "common/features.h"
+#include "common/repositories/alternate_currency_repository.h"
+#include "common/repositories/buyer_repository.h"
+#include "common/repositories/character_exp_modifiers_repository.h"
+#include "common/repositories/criteria/content_filter_criteria.h"
+#include "common/repositories/graveyard_repository.h"
+#include "common/repositories/ldon_trap_entries_repository.h"
+#include "common/repositories/ldon_trap_templates_repository.h"
+#include "common/repositories/level_exp_mods_repository.h"
+#include "common/repositories/merc_stance_entries_repository.h"
+#include "common/repositories/merchantlist_repository.h"
+#include "common/repositories/npc_emotes_repository.h"
+#include "common/repositories/object_repository.h"
+#include "common/repositories/respawn_times_repository.h"
+#include "common/repositories/rule_sets_repository.h"
+#include "common/repositories/trader_repository.h"
+#include "common/repositories/zone_state_spawns_repository.h"
+#include "common/rulesys.h"
+#include "common/seperator.h"
+#include "common/serverinfo.h"
+#include "common/strings.h"
+#include "zone/autoloot_manager.h"
+#include "zone/dynamic_zone.h"
+#include "zone/guild_mgr.h"
+#include "zone/map.h"
+#include "zone/mob_movement_manager.h"
+#include "zone/npc_scale_manager.h"
+#include "zone/npc.h"
+#include "zone/object.h"
+#include "zone/pathfinder_null.h"
+#include "zone/petitions.h"
+#include "zone/quest_parser_collection.h"
+#include "zone/spawn2.h"
+#include "zone/spawngroup.h"
+#include "zone/water_map.h"
+#include "zone/worldserver.h"
+#include "zone/zone_config.h"
+#include "zone/zone_reload.h"
 
-#ifdef _WINDOWS
-#define snprintf	_snprintf
-#define strncasecmp	_strnicmp
-#define strcasecmp	_stricmp
-#endif
+#include <cfloat>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
+#include <iostream>
 
 extern bool staticzone;
 extern QuestParserCollection* parse;
@@ -170,7 +154,7 @@ bool Zone::Bootup(uint32 iZoneID, uint32 iInstanceID, bool is_static) {
 	zone->RequestUCSServerStatus();
 	zone->StartShutdownTimer();
 
-	DataBucket::LoadZoneCache(iZoneID, iInstanceID);
+	DataBucket::LoadZoneCache(&database, iZoneID, iInstanceID);
 
 	/*
 	 * Set Logging
@@ -1537,6 +1521,7 @@ uint32 Zone::CountAuth() {
 
 bool Zone::Process() {
 	spawn_conditions.Process();
+	auto_loot_manager.Process();
 
 	if (spawn2_timer.Check()) {
 		LinkedListIterator<Spawn2 *> iterator(spawn2_list);
@@ -1690,6 +1675,25 @@ bool Zone::Process() {
 				iterator2.GetData()->stale = true;
 				iterator2.Advance();
 			}
+		}
+	}
+
+	const bool has_timer_event = parse->ZoneHasQuestSub(EVENT_TIMER);
+
+	for (auto e : zone_timers) {
+		if (e.timer_.Enabled() && e.timer_.Check()) {
+			if (has_timer_event) {
+				parse->EventZone(EVENT_TIMER, this, e.name);
+			}
+		}
+	}
+
+	if (!m_zone_signals.empty()) {
+		int signal_id = m_zone_signals.front();
+		m_zone_signals.pop_front();
+
+		if (parse->ZoneHasQuestSub(EVENT_SIGNAL)) {
+			parse->EventZone(EVENT_SIGNAL, this, std::to_string(signal_id), 0);
 		}
 	}
 
@@ -1934,6 +1938,8 @@ void Zone::Repop(bool is_forced)
 	entity_list.ClearTrapPointers();
 
 	quest_manager.ClearAllTimers();
+
+	StopAllTimers();
 
 	LogInfo("Loading spawn groups");
 	if (!content_db.LoadSpawnGroups(short_name, GetInstanceVersion(), &spawn_group_list)) {
@@ -3165,7 +3171,7 @@ std::string Zone::GetBucket(const std::string& bucket_name)
 	k.instance_id = instanceid;
 	k.key         = bucket_name;
 
-	return DataBucket::GetData(k).value;
+	return DataBucket::GetData(&database, k).value;
 }
 
 void Zone::SetBucket(const std::string& bucket_name, const std::string& bucket_value, const std::string& expiration)
@@ -3177,7 +3183,7 @@ void Zone::SetBucket(const std::string& bucket_name, const std::string& bucket_v
 	k.expires     = expiration;
 	k.value       = bucket_value;
 
-	DataBucket::SetData(k);
+	DataBucket::SetData(&database, k);
 }
 
 void Zone::DeleteBucket(const std::string& bucket_name)
@@ -3187,7 +3193,7 @@ void Zone::DeleteBucket(const std::string& bucket_name)
 	k.instance_id = instanceid;
 	k.key         = bucket_name;
 
-	DataBucket::DeleteData(k);
+	DataBucket::DeleteData(&database, k);
 }
 
 std::string Zone::GetBucketExpires(const std::string& bucket_name)
@@ -3197,7 +3203,7 @@ std::string Zone::GetBucketExpires(const std::string& bucket_name)
 	k.instance_id = instanceid;
 	k.key         = bucket_name;
 
-	return DataBucket::GetDataExpires(k);
+	return DataBucket::GetDataExpires(&database, k);
 }
 
 std::string Zone::GetBucketRemaining(const std::string& bucket_name)
@@ -3207,7 +3213,7 @@ std::string Zone::GetBucketRemaining(const std::string& bucket_name)
 	k.instance_id = instanceid;
 	k.key         = bucket_name;
 
-	return DataBucket::GetDataRemaining(k);
+	return DataBucket::GetDataRemaining(&database, k);
 }
 
 void Zone::DisableRespawnTimers()
@@ -3301,4 +3307,265 @@ void Zone::ReloadMaps()
 	pathing  = IPathfinder::Load(map_name);
 }
 
-#include "zone_loot.cpp"
+uint32 Zone::GetTimerDuration(std::string name)
+{
+	if (!IsLoaded() || zone_timers.empty()) {
+		return 0;
+	}
+
+	const auto& e = std::find_if(
+		zone_timers.begin(),
+		zone_timers.end(),
+		[&name](ZoneTimer e) {
+			return e.name == name;
+		}
+	);
+
+	return e != zone_timers.end() ? e->timer_.GetDuration() : 0;
+}
+
+uint32 Zone::GetTimerRemainingTime(std::string name)
+{
+	if (!IsLoaded() || zone_timers.empty()) {
+		return 0;
+	}
+
+	const auto& e = std::find_if(
+		zone_timers.begin(),
+		zone_timers.end(),
+		[&name](ZoneTimer e) {
+			return e.name == name;
+		}
+	);
+
+	return e != zone_timers.end() ? e->timer_.GetRemainingTime() : 0;
+}
+
+bool Zone::HasTimer(std::string name)
+{
+	if (!IsLoaded() || zone_timers.empty()) {
+		return false;
+	}
+
+	const auto& e = std::find_if(
+		zone_timers.begin(),
+		zone_timers.end(),
+		[&name](ZoneTimer e) {
+			return e.name == name;
+		}
+	);
+
+	return e != zone_timers.end();
+}
+
+bool Zone::IsPausedTimer(std::string name)
+{
+	if (!IsLoaded() || paused_zone_timers.empty()) {
+		return false;
+	}
+
+	const auto& e = std::find_if(
+		paused_zone_timers.begin(),
+		paused_zone_timers.end(),
+		[&name](PausedZoneTimer e) {
+			return e.name == name;
+		}
+	);
+
+	return e != paused_zone_timers.end();
+}
+
+void Zone::PauseTimer(std::string name)
+{
+	if (
+		!IsLoaded() ||
+		zone_timers.empty() ||
+		!HasTimer(name) ||
+		IsPausedTimer(name)
+	) {
+		return;
+	}
+
+	uint32 remaining_time = 0;
+
+	const bool has_pause_event = parse->ZoneHasQuestSub(EVENT_TIMER_PAUSE);
+
+	if (!zone_timers.empty()) {
+		for (auto e = zone_timers.begin(); e != zone_timers.end(); e++) {
+			if (e->name == name) {
+				remaining_time = e->timer_.GetRemainingTime();
+
+				zone_timers.erase(e);
+
+				const std::string& export_string = fmt::format(
+					"{} {}",
+					name,
+					remaining_time
+				);
+
+				LogQuests(
+					"Pausing timer [{}] with [{}] ms remaining",
+					name,
+					remaining_time
+				);
+
+				paused_zone_timers.emplace_back(
+					PausedZoneTimer{
+						.name = name,
+						.remaining_time = remaining_time
+					}
+				);
+
+				if (has_pause_event) {
+					parse->EventZone(EVENT_TIMER_PAUSE, this, export_string);
+				}
+
+				break;
+			}
+		}
+	}
+}
+
+void Zone::ResumeTimer(std::string name)
+{
+	if (
+		!IsLoaded() ||
+		paused_zone_timers.empty() ||
+		!IsPausedTimer(name)
+	) {
+		return;
+	}
+
+	uint32 remaining_time = 0;
+
+	if (!paused_zone_timers.empty()) {
+		for (auto e = paused_zone_timers.begin(); e != paused_zone_timers.end(); e++) {
+			if (e->name == name) {
+				remaining_time = e->remaining_time;
+
+				paused_zone_timers.erase(e);
+
+				if (!remaining_time) {
+					LogQuests("Paused timer [{}] not found or has expired.", name);
+					return;
+				}
+
+				const std::string& export_string = fmt::format(
+					"{} {}",
+					name,
+					remaining_time
+				);
+
+				LogQuests(
+					"Creating a new timer and resuming [{}] with [{}] ms remaining",
+					name,
+					remaining_time
+				);
+
+				zone_timers.emplace_back(ZoneTimer(name, remaining_time));
+
+				if (parse->ZoneHasQuestSub(EVENT_TIMER_RESUME)) {
+					parse->EventZone(EVENT_TIMER_RESUME, this, export_string);
+				}
+
+				break;
+			}
+		}
+	}
+}
+
+void Zone::SetTimer(std::string name, uint32 duration)
+{
+	if (!IsLoaded() || HasTimer(name)) {
+		return;
+	}
+
+	zone_timers.emplace_back(ZoneTimer(name, duration));
+
+	if (parse->ZoneHasQuestSub(EVENT_TIMER_START)) {
+		const std::string& export_string = fmt::format("{} {}", name, duration);
+		parse->EventZone(EVENT_TIMER_START, this, export_string);
+	}
+}
+
+void Zone::StopTimer(std::string name)
+{
+	if (
+		!IsLoaded() ||
+		zone_timers.empty() ||
+		!HasTimer(name) ||
+		IsPausedTimer(name)
+	) {
+		return;
+	}
+
+	const bool has_stop_event = parse->ZoneHasQuestSub(EVENT_TIMER_STOP);
+
+	for (auto e = zone_timers.begin(); e != zone_timers.end(); e++) {
+		if (e->name == name) {
+			if (has_stop_event) {
+				parse->EventZone(EVENT_TIMER_STOP, this, name);
+			}
+
+			zone_timers.erase(e);
+			break;
+		}
+	}
+}
+
+void Zone::StopAllTimers()
+{
+	if (!IsLoaded() || zone_timers.empty()) {
+		return;
+	}
+
+	const bool has_stop_event = parse->ZoneHasQuestSub(EVENT_TIMER_STOP);
+
+	for (auto e = zone_timers.begin(); e != zone_timers.end();) {
+		if (has_stop_event) {
+			parse->EventZone(EVENT_TIMER_STOP, this, e->name);
+		}
+
+		e = zone_timers.erase(e);
+	}
+}
+
+void Zone::Signal(int signal_id)
+{
+	m_zone_signals.push_back(signal_id);
+}
+
+void Zone::SendPayload(int payload_id, std::string payload_value)
+{
+	if (parse->ZoneHasQuestSub(EVENT_PAYLOAD)) {
+		const auto& export_string = fmt::format("{} {}", payload_id, payload_value);
+
+		parse->EventZone(EVENT_PAYLOAD, this, export_string, 0);
+	}
+}
+
+std::vector<std::string> Zone::GetPausedTimers()
+{
+	std::vector<std::string> v;
+
+	if (!paused_zone_timers.empty()) {
+		for (auto e = paused_zone_timers.begin(); e != paused_zone_timers.end(); e++) {
+			v.emplace_back(e->name);
+		}
+	}
+
+	return v;
+}
+
+std::vector<std::string> Zone::GetTimers()
+{
+	std::vector<std::string> v;
+
+	if (!zone_timers.empty()) {
+		for (auto e = zone_timers.begin(); e != zone_timers.end(); e++) {
+			v.emplace_back(e->name);
+		}
+	}
+
+	return v;
+}

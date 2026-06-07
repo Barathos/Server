@@ -1,78 +1,68 @@
-/**
- * EQEmulator: Everquest Server Emulator
- * Copyright (C) 2001-2020 EQEmulator Development Team (https://github.com/EQEmu/Server)
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY except by those people which sell it, which
- * are required to give you total support for your newly bought product;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- *
- */
+/*	EQEmu: EQEmulator
 
-#define DONT_SHARED_OPCODES
-#define PLATFORM_ZONE 1
+	Copyright (C) 2001-2026 EQEmu Development Team
 
-#include "../common/global_define.h"
-#include "../common/timer.h"
-#include "../common/eq_packet_structs.h"
-#include "../common/mutex.h"
-#include "../common/opcodemgr.h"
-#include "../common/guilds.h"
-#include "../common/eq_stream_ident.h"
-#include "../common/patches/patches.h"
-#include "../common/rulesys.h"
-#include "../common/profanity_manager.h"
-#include "../common/strings.h"
-#include "../common/crash.h"
-#include "../common/memory_mapped_file.h"
-#include "../common/spdat.h"
-#include "../common/eqemu_logsys.h"
-#include "../common/misc.h"
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
-#include "api_service.h"
-#include "zone_config.h"
-#include "masterentity.h"
-#include "worldserver.h"
-#include "zone.h"
-#include "queryserv.h"
-#include "command.h"
-#include "bot_command.h"
-#include "zonedb.h"
-#include "titles.h"
-#include "guild_mgr.h"
-#include "task_manager.h"
-#include "quest_parser_collection.h"
-#include "embparser.h"
-#include "../common/evolving_items.h"
-#include "lua_parser.h"
-#include "questmgr.h"
-#include "npc_scale_manager.h"
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
 
-#include "../common/net/eqstream.h"
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
+#include "common/crash.h"
+#include "common/database/database_update.h"
+#include "common/eq_packet_structs.h"
+#include "common/eq_stream_ident.h"
+#include "common/eqemu_logsys.h"
+#include "common/events/player_event_logs.h"
+#include "common/evolving_items.h"
+#include "common/file.h"
+#include "common/guilds.h"
+#include "common/memory_mapped_file.h"
+#include "common/misc.h"
+#include "common/net/eqstream.h"
+#include "common/opcodemgr.h"
+#include "common/patches/patches.h"
+#include "common/path_manager.h"
+#include "common/platform/posix/include_pthreads.h"
+#include "common/profanity_manager.h"
+#include "common/rulesys.h"
+#include "common/skill_caps.h"
+#include "common/spdat.h"
+#include "common/strings.h"
+#include "common/timer.h"
+#include "zone/api_service.h"
+#include "zone/bot_command.h"
+#include "zone/command.h"
+#include "zone/embparser.h"
+#include "zone/guild_mgr.h"
+#include "zone/lua_parser.h"
+#include "zone/masterentity.h"
+#include "zone/npc_scale_manager.h"
+#include "zone/queryserv.h"
+#include "zone/quest_parser_collection.h"
+#include "zone/questmgr.h"
+#include "zone/task_manager.h"
+#include "zone/titles.h"
+#include "zone/worldserver.h"
+#include "zone/zone_cli.h"
+#include "zone/zone_config.h"
+#include "zone/zone_event_scheduler.h"
+#include "zone/zone.h"
+#include "zone/zonedb.h"
 
-#include <signal.h>
 #include <chrono>
+#include <csignal>
 
 #ifdef _CRTDBG_MAP_ALLOC
 #undef new
 #define new new(_NORMAL_BLOCK, __FILE__, __LINE__)
-#endif
-
-#ifdef _WINDOWS
-#else
-
-#include <pthread.h>
-#include "../common/unix.h"
-
 #endif
 
 volatile bool RunLoops = true;
@@ -81,14 +71,6 @@ volatile bool RunLoops = true;
 #endif
 
 extern volatile bool is_zone_loaded;
-
-#include "zone_event_scheduler.h"
-#include "../common/file.h"
-#include "../common/events/player_event_logs.h"
-#include "../common/path_manager.h"
-#include "../common/database/database_update.h"
-#include "../common/skill_caps.h"
-#include "zone_cli.h"
 
 EntityList  entity_list;
 WorldServer worldserver;
@@ -233,8 +215,6 @@ int main(int argc, char **argv)
 		}
 	}
 
-	auto mutex = new Mutex;
-
 	LogInfo("Connecting to MySQL");
 	if (!database.Connect(
 		Config->DatabaseHost.c_str(),
@@ -262,11 +242,13 @@ int main(int argc, char **argv)
 		}
 	} else {
 		content_db.SetMySQL(database);
+
 		// when database and content_db share the same underlying mysql connection
 		// it needs to be protected by a shared mutex otherwise we produce concurrency issues
 		// when database actions are occurring in different threads
-		database.SetMutex(mutex);
-		content_db.SetMutex(mutex);
+		std::shared_ptr<DBcore::Mutex> sharedMutex = std::make_shared<DBcore::Mutex>();
+		database.SetMutex(sharedMutex);
+		content_db.SetMutex(sharedMutex);
 	}
 
 	//rules:
@@ -555,11 +537,11 @@ int main(int argc, char **argv)
 			LogInfo("Starting EQ Network server on port [{}]", Config->ZonePort);
 
 			EQStreamManagerInterfaceOptions opts(Config->ZonePort, false, RuleB(Network, CompressZoneStream));
-			opts.daybreak_options.resend_delay_ms     = RuleI(Network, ResendDelayBaseMS);
-			opts.daybreak_options.resend_delay_factor = RuleR(Network, ResendDelayFactor);
-			opts.daybreak_options.resend_delay_min    = RuleI(Network, ResendDelayMinMS);
-			opts.daybreak_options.resend_delay_max    = RuleI(Network, ResendDelayMaxMS);
-			opts.daybreak_options.outgoing_data_rate  = RuleR(Network, ClientDataRate);
+			opts.reliable_stream_options.resend_delay_ms     = RuleI(Network, ResendDelayBaseMS);
+			opts.reliable_stream_options.resend_delay_factor = RuleR(Network, ResendDelayFactor);
+			opts.reliable_stream_options.resend_delay_min    = RuleI(Network, ResendDelayMinMS);
+			opts.reliable_stream_options.resend_delay_max    = RuleI(Network, ResendDelayMaxMS);
+			opts.reliable_stream_options.outgoing_data_rate  = RuleR(Network, ClientDataRate);
 			eqsm      = std::make_unique<EQ::Net::EQStreamManager>(opts);
 			eqsf_open = true;
 
@@ -678,7 +660,6 @@ int main(int argc, char **argv)
 	LogInfo("Proper zone shutdown complete.");
 	EQEmuLogSys::Instance()->CloseFileLogs();
 
-	safe_delete(mutex);
 	safe_delete(QServ);
 
 	return 0;

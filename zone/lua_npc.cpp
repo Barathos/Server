@@ -1,15 +1,33 @@
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
 #ifdef LUA_EQEMU
 
-#include "lua.hpp"
-#include <luabind/luabind.hpp>
-#include <luabind/iterator_policy.hpp>
-
-#include "npc.h"
 #include "lua_npc.h"
-#include "lua_client.h"
-#include "lua_item.h"
-#include "lua_iteminst.h"
-#include "lua_spawn.h"
+
+#include "zone/lua_client.h"
+#include "zone/lua_item.h"
+#include "zone/lua_iteminst.h"
+#include "zone/lua_spawn.h"
+#include "zone/npc.h"
+
+#include "lua.hpp"
+#include "luabind/iterator_policy.hpp"
+#include "luabind/luabind.hpp"
 
 struct Lua_NPC_Loot_List {
 	std::vector<uint32> entries;
@@ -63,6 +81,18 @@ void Lua_NPC::AddItem(int item_id, int charges, bool equip, int aug1, int aug2, 
 void Lua_NPC::AddItem(int item_id, int charges, bool equip, int aug1, int aug2, int aug3, int aug4, int aug5, int aug6) {
 	Lua_Safe_Call_Void();
 	self->AddItem(item_id, charges, equip, aug1, aug2, aug3, aug4, aug5, aug6);
+}
+
+void Lua_NPC::AddLiveItem(Lua_ItemInst inst) {
+	Lua_Safe_Call_Void();
+	EQ::ItemInstance *rinst = inst;
+	self->AddItem(rinst, false);
+}
+
+void Lua_NPC::AddLiveItem(Lua_ItemInst inst, bool equip) {
+	Lua_Safe_Call_Void();
+	EQ::ItemInstance *rinst = inst;
+	self->AddItem(rinst, equip);
 }
 
 void Lua_NPC::AddLootTable() {
@@ -945,10 +975,16 @@ bool Lua_NPC::IsResumedFromZoneSuspend()
 	return self->IsResumedFromZoneSuspend();
 }
 
-void Lua_NPC::SetNPCTintIndex(uint32 id)
+void Lua_NPC::SetNPCTintIndex(uint32 index)
 {
 	Lua_Safe_Call_Void();
-	self->SendAppearancePacket(AppearanceType::NPCTintIndex, id);
+	self->SetNPCTintIndex(index);
+}
+
+uint32 Lua_NPC::GetNPCTintIndex()
+{
+	Lua_Safe_Call_Int();
+	return self->GetNPCTintIndex();
 }
 
 luabind::scope lua_register_npc() {
@@ -968,6 +1004,8 @@ luabind::scope lua_register_npc() {
 	.def("AddItem", (void(Lua_NPC::*)(int,int,bool,int,int,int,int))&Lua_NPC::AddItem)
 	.def("AddItem", (void(Lua_NPC::*)(int,int,bool,int,int,int,int,int))&Lua_NPC::AddItem)
 	.def("AddItem", (void(Lua_NPC::*)(int,int,bool,int,int,int,int,int,int))&Lua_NPC::AddItem)
+	.def("AddLiveItem", (void(Lua_NPC::*)(Lua_ItemInst))&Lua_NPC::AddLiveItem)
+	.def("AddLiveItem", (void(Lua_NPC::*)(Lua_ItemInst,bool))&Lua_NPC::AddLiveItem)
 	.def("AddLootTable", (void(Lua_NPC::*)(int))&Lua_NPC::AddLootTable)
 	.def("AddLootTable", (void(Lua_NPC::*)(void))&Lua_NPC::AddLootTable)
 	.def("AssignWaypoints", (void(Lua_NPC::*)(int))&Lua_NPC::AssignWaypoints)
@@ -1018,6 +1056,7 @@ luabind::scope lua_register_npc() {
 	.def("GetNPCSpellsEffectsID", (uint32(Lua_NPC::*)(void))&Lua_NPC::GetNPCSpellsEffectsID)
 	.def("GetNPCSpellsID", (uint32(Lua_NPC::*)(void))&Lua_NPC::GetNPCSpellsID)
 	.def("GetNPCStat", (float(Lua_NPC::*)(std::string))&Lua_NPC::GetNPCStat)
+	.def("GetNPCTintIndex", (uint32(Lua_NPC::*)(void))&Lua_NPC::GetNPCTintIndex)
 	.def("GetPetSpellID", (int(Lua_NPC::*)(void))&Lua_NPC::GetPetSpellID)
 	.def("GetPlatinum", (uint32(Lua_NPC::*)(void))&Lua_NPC::GetPlatinum)
 	.def("GetPrimSkill", (int(Lua_NPC::*)(void))&Lua_NPC::GetPrimSkill)
@@ -1043,6 +1082,7 @@ luabind::scope lua_register_npc() {
 	.def("GetWaypointMax", (int(Lua_NPC::*)(void))&Lua_NPC::GetWaypointMax)
 	.def("HasAISpellEffect", (bool(Lua_NPC::*)(int))&Lua_NPC::HasAISpellEffect)
 	.def("HasItem", (bool(Lua_NPC::*)(uint32))&Lua_NPC::HasItem)
+	.def("HasSpecialAbilities", &Lua_NPC::HasSpecialAbilities)
 	.def("IsAnimal", (bool(Lua_NPC::*)(void))&Lua_NPC::IsAnimal)
 	.def("IsGuarding", (bool(Lua_NPC::*)(void))&Lua_NPC::IsGuarding)
 	.def("IsLDoNLocked", (bool(Lua_NPC::*)(void))&Lua_NPC::IsLDoNLocked)
@@ -1124,4 +1164,4 @@ luabind::scope lua_register_npc_loot_list() {
 	.def_readwrite("entries", &Lua_NPC_Loot_List::entries, luabind::return_stl_iterator);
 }
 
-#endif
+#endif // LUA_EQEMU

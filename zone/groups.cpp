@@ -1,32 +1,33 @@
-/*	EQEMu: Everquest Server Emulator
-	Copyright (C) 2001-2016 EQEMu Development Team (http://eqemu.org)
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; version 2 of the License.
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
 	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY except by those people which sell it, which
-	are required to give you total support for your newly bought product;
-	without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-	A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
+#include "groups.h"
 
-#include "../common/global_define.h"
-#include "../common/eqemu_logsys.h"
-#include "dynamic_zone.h"
-#include "masterentity.h"
-#include "worldserver.h"
-#include "string_ids.h"
-#include "../common/events/player_event_logs.h"
-#include "../common/repositories/character_expedition_lockouts_repository.h"
-#include "../common/repositories/group_id_repository.h"
-#include "../common/repositories/group_leaders_repository.h"
-#include "queryserv.h"
+#include "common/eqemu_logsys.h"
+#include "common/events/player_event_logs.h"
+#include "common/repositories/character_expedition_lockouts_repository.h"
+#include "common/repositories/group_id_repository.h"
+#include "common/repositories/group_leaders_repository.h"
+#include "zone/dynamic_zone.h"
+#include "zone/masterentity.h"
+#include "zone/multiclass_manager.h"
+#include "zone/queryserv.h"
+#include "zone/string_ids.h"
+#include "zone/worldserver.h"
 
 
 extern EntityList  entity_list;
@@ -830,6 +831,11 @@ void Group::CastGroupSpell(Mob* caster, uint16 spell_id) {
 #ifdef GROUP_BUFF_PETS
 			if(spells[spell_id].target_type != ST_GroupNoPets && caster->GetPet() && caster->HasPetAffinity() && !caster->GetPet()->IsCharmed())
 				caster->SpellOnTarget(spell_id, caster->GetPet());
+			if (spells[spell_id].target_type != ST_GroupNoPets && caster->IsClient() && caster->HasPetAffinity()) {
+				for (auto *pet : multiclass_manager.GetSecondaryPetRoster(caster->CastToClient())) {
+					caster->SpellOnTarget(spell_id, pet);
+				}
+			}
 #endif
 		}
 		else if(members[z] != nullptr)
@@ -841,6 +847,11 @@ void Group::CastGroupSpell(Mob* caster, uint16 spell_id) {
 #ifdef GROUP_BUFF_PETS
 				if(spells[spell_id].target_type != ST_GroupNoPets && members[z]->GetPet() && members[z]->HasPetAffinity() && !members[z]->GetPet()->IsCharmed())
 					caster->SpellOnTarget(spell_id, members[z]->GetPet());
+				if (spells[spell_id].target_type != ST_GroupNoPets && members[z]->IsClient() && members[z]->HasPetAffinity()) {
+					for (auto *pet : multiclass_manager.GetSecondaryPetRoster(members[z]->CastToClient())) {
+						caster->SpellOnTarget(spell_id, pet);
+					}
+				}
 #endif
 			} else
 				LogSpells("Group spell: [{}] is out of range [{}] at distance [{}] from [{}]", members[z]->GetName(), range, distance, caster->GetName());
@@ -2277,6 +2288,13 @@ int8 Group::GetNumberNeedingHealedInGroup(int8 hpr, bool include_pets) {
 				if(members[i]->GetPet() && members[i]->GetPet()->GetHPRatio() <= hpr) {
 					need_healed++;
 				}
+				if (members[i]->IsClient()) {
+					for (auto *pet : multiclass_manager.GetSecondaryPetRoster(members[i]->CastToClient())) {
+						if (pet && pet->GetHPRatio() <= hpr) {
+							need_healed++;
+						}
+					}
+				}
 			}
 		}
 	}
@@ -2472,17 +2490,61 @@ bool Group::AmIPuller(const char *mob_name)
 	return !((bool)PullerName.compare(mob_name));
 }
 
-bool Group::HasRole(Mob *m, uint8 Role)
+bool Group::HasRole(Mob* m, uint8 Role)
 {
-	if(!m)
+	if (!m) {
 		return false;
-
-	for(uint32 i = 0; i < MAX_GROUP_MEMBERS; ++i)
-	{
-		if((m == members[i]) && (MemberRoles[i] & Role))
-			return true;
 	}
+
+	for (uint32 i = 0; i < MAX_GROUP_MEMBERS; ++i) {
+		if (m == members[i] && MemberRoles[i] & Role) {
+			return true;
+		}
+	}
+
 	return false;
+}
+
+uint8 Group::GetMemberRole(Mob* m)
+{
+	if (!m) {
+		return 0;
+	}
+
+	for (uint32 i = 0; i < MAX_GROUP_MEMBERS; ++i) {
+		if (m == members[i]) {
+			uint8 role = MemberRoles[i];
+
+			if (m == leader) {
+				role |= RoleLeader;
+			}
+
+			return role;
+		}
+	}
+
+	return 0;
+}
+
+uint8 Group::GetMemberRole(const char* name)
+{
+	if (!name) {
+		return 0;
+	}
+
+	for (uint32 i = 0; i < MAX_GROUP_MEMBERS; ++i) {
+		if (!strcasecmp(membername[i], name)) {
+			uint8 role = MemberRoles[i];
+
+			if (leader && !strcasecmp(leader->GetName(), name)) {
+				role |= RoleLeader;
+			}
+
+			return role;
+		}
+	}
+
+	return 0;
 }
 
 void Group::QueueClients(Mob *sender, const EQApplicationPacket *app, bool ack_required /*= true*/, bool ignore_sender /*= true*/, float distance /*= 0*/) {

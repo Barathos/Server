@@ -1,35 +1,53 @@
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
 #ifdef LUA_EQEMU
 
-#include "lua.hpp"
-#include <luabind/luabind.hpp>
+#include "lua_general.h"
 
-#include <sstream>
+#include "common/classes.h"
+#include "common/content/world_content_service.h"
+#include "common/data_bucket.h"
+#include "common/events/player_event_logs.h"
+#include "common/rulesys.h"
+#include "common/timer.h"
+#include "zone/dialogue_window.h"
+#include "zone/dynamic_zone.h"
+#include "zone/encounter.h"
+#include "zone/lua_client.h"
+#include "zone/lua_encounter.h"
+#include "zone/lua_entity_list.h"
+#include "zone/lua_expedition.h"
+#include "zone/lua_item.h"
+#include "zone/lua_iteminst.h"
+#include "zone/lua_npc.h"
+#include "zone/lua_spell.h"
+#include "zone/lua_zone.h"
+#include "zone/qglobals.h"
+#include "zone/quest_parser_collection.h"
+#include "zone/questmgr.h"
+#include "zone/worldserver.h"
+#include "zone/zone.h"
+
+#include "lua.hpp"
+#include "luabind/luabind.hpp"
 #include <list>
 #include <map>
-
-#include "../common/content/world_content_service.h"
-#include "../common/timer.h"
-#include "../common/classes.h"
-#include "../common/rulesys.h"
-#include "lua_item.h"
-#include "lua_iteminst.h"
-#include "lua_client.h"
-#include "lua_npc.h"
-#include "lua_entity_list.h"
-#include "lua_expedition.h"
-#include "lua_spell.h"
-#include "lua_zone.h"
-#include "quest_parser_collection.h"
-#include "questmgr.h"
-#include "qglobals.h"
-#include "encounter.h"
-#include "lua_encounter.h"
-#include "../common/data_bucket.h"
-#include "dialogue_window.h"
-#include "dynamic_zone.h"
-#include "../common/events/player_event_logs.h"
-#include "worldserver.h"
-#include "zone.h"
+#include <sstream>
 
 struct Events { };
 struct Factions { };
@@ -933,23 +951,23 @@ std::string lua_get_rule(std::string rule_name) {
 }
 
 std::string lua_get_data(std::string bucket_key) {
-	return DataBucket::GetData(bucket_key);
+	return DataBucket::GetData(&database, bucket_key);
 }
 
 std::string lua_get_data_expires(std::string bucket_key) {
-	return DataBucket::GetDataExpires(bucket_key);
+	return DataBucket::GetDataExpires(&database, bucket_key);
 }
 
 void lua_set_data(std::string bucket_key, std::string bucket_value) {
-	DataBucket::SetData(bucket_key, bucket_value);
+	DataBucket::SetData(&database, bucket_key, bucket_value);
 }
 
 void lua_set_data(std::string bucket_key, std::string bucket_value, std::string expires_at) {
-	DataBucket::SetData(bucket_key, bucket_value, expires_at);
+	DataBucket::SetData(&database, bucket_key, bucket_value, expires_at);
 }
 
 bool lua_delete_data(std::string bucket_key) {
-	return DataBucket::DeleteData(bucket_key);
+	return DataBucket::DeleteData(&database, bucket_key);
 }
 
 std::string lua_get_char_name_by_id(uint32 char_id) {
@@ -2030,7 +2048,7 @@ void lua_rename(std::string name) {
 }
 
 std::string lua_get_data_remaining(std::string bucket_name) {
-	return DataBucket::GetDataRemaining(bucket_name);
+	return DataBucket::GetDataRemaining(&database, bucket_name);
 }
 
 const int lua_get_item_stat(uint32 item_id, std::string identifier) {
@@ -4045,6 +4063,172 @@ std::string lua_item_link(uint32 item_id, int16 charges, uint32 aug1, uint32 aug
 	return quest_manager.varlink(item_id, charges, aug1, aug2, aug3, aug4, aug5, aug6, attuned);
 }
 
+bool lua_live_item_table_has(luabind::object table, const char *key)
+{
+	return luabind::type(table[key]) != LUA_TNIL;
+}
+
+std::string lua_live_item_key_to_string(luabind::object key)
+{
+	if (luabind::type(key) == LUA_TSTRING) {
+		return luabind::object_cast<std::string>(key);
+	}
+
+	if (luabind::type(key) == LUA_TNUMBER) {
+		return fmt::format("{}", luabind::object_cast<int>(key));
+	}
+
+	return {};
+}
+
+void lua_apply_live_item_set_data(EQ::ItemInstance *inst, luabind::object values)
+{
+	if (!inst || luabind::type(values) != LUA_TTABLE) {
+		return;
+	}
+
+	for (luabind::iterator iter(values), end; iter != end; ++iter) {
+		const auto key = lua_live_item_key_to_string(iter.key());
+		if (key.empty()) {
+			continue;
+		}
+
+		auto value = values[iter.key()];
+		if (luabind::type(value) == LUA_TSTRING) {
+			inst->SetDynamicItemData(key, luabind::object_cast<std::string>(value));
+		}
+		else if (luabind::type(value) == LUA_TNUMBER) {
+			inst->SetDynamicItemData(key, luabind::object_cast<int>(value));
+		}
+		else if (luabind::type(value) == LUA_TBOOLEAN) {
+			inst->SetDynamicItemData(key, luabind::object_cast<bool>(value) ? 1 : 0);
+		}
+	}
+}
+
+void lua_apply_live_item_modifiers(EQ::ItemInstance *inst, luabind::object values)
+{
+	if (!inst || luabind::type(values) != LUA_TTABLE) {
+		return;
+	}
+
+	for (luabind::iterator iter(values), end; iter != end; ++iter) {
+		const auto key = lua_live_item_key_to_string(iter.key());
+		if (key.empty()) {
+			continue;
+		}
+
+		auto value = values[iter.key()];
+		if (luabind::type(value) == LUA_TNUMBER) {
+			inst->SetDynamicItemModifier(key, luabind::object_cast<int>(value));
+		}
+		else if (luabind::type(value) == LUA_TBOOLEAN) {
+			inst->SetDynamicItemModifier(key, luabind::object_cast<bool>(value) ? 1 : 0);
+		}
+	}
+}
+
+void lua_apply_live_item_custom_data(EQ::ItemInstance *inst, luabind::object values)
+{
+	if (!inst || luabind::type(values) != LUA_TTABLE) {
+		return;
+	}
+
+	for (luabind::iterator iter(values), end; iter != end; ++iter) {
+		const auto key = lua_live_item_key_to_string(iter.key());
+		if (key.empty()) {
+			continue;
+		}
+
+		auto value = values[iter.key()];
+		if (luabind::type(value) == LUA_TSTRING) {
+			inst->SetCustomData(key, luabind::object_cast<std::string>(value));
+		}
+		else if (luabind::type(value) == LUA_TBOOLEAN) {
+			inst->SetCustomData(key, luabind::object_cast<bool>(value));
+		}
+		else if (luabind::type(value) == LUA_TNUMBER) {
+			inst->SetCustomData(key, luabind::object_cast<int>(value));
+		}
+	}
+}
+
+void lua_apply_live_item_spec(EQ::ItemInstance *inst, luabind::object spec)
+{
+	if (!inst || luabind::type(spec) != LUA_TTABLE) {
+		return;
+	}
+
+	if (lua_live_item_table_has(spec, "set")) {
+		lua_apply_live_item_set_data(inst, spec["set"]);
+	}
+
+	if (lua_live_item_table_has(spec, "data")) {
+		lua_apply_live_item_set_data(inst, spec["data"]);
+	}
+
+	if (lua_live_item_table_has(spec, "mods")) {
+		lua_apply_live_item_modifiers(inst, spec["mods"]);
+	}
+
+	if (lua_live_item_table_has(spec, "modifiers")) {
+		lua_apply_live_item_modifiers(inst, spec["modifiers"]);
+	}
+
+	if (lua_live_item_table_has(spec, "custom")) {
+		lua_apply_live_item_custom_data(inst, spec["custom"]);
+	}
+
+	if (lua_live_item_table_has(spec, "custom_data")) {
+		lua_apply_live_item_custom_data(inst, spec["custom_data"]);
+	}
+}
+
+Lua_ItemInst lua_create_live_item(luabind::object spec)
+{
+	if (luabind::type(spec) != LUA_TTABLE || !lua_live_item_table_has(spec, "item_id")) {
+		return Lua_ItemInst();
+	}
+
+	const uint32 item_id       = luabind::object_cast<uint32>(spec["item_id"]);
+	const int16 charges        = lua_live_item_table_has(spec, "charges") ? luabind::object_cast<int16>(spec["charges"]) : -1;
+	const uint32 augment_one   = lua_live_item_table_has(spec, "augment_one") ? luabind::object_cast<uint32>(spec["augment_one"]) : 0;
+	const uint32 augment_two   = lua_live_item_table_has(spec, "augment_two") ? luabind::object_cast<uint32>(spec["augment_two"]) : 0;
+	const uint32 augment_three = lua_live_item_table_has(spec, "augment_three") ? luabind::object_cast<uint32>(spec["augment_three"]) : 0;
+	const uint32 augment_four  = lua_live_item_table_has(spec, "augment_four") ? luabind::object_cast<uint32>(spec["augment_four"]) : 0;
+	const uint32 augment_five  = lua_live_item_table_has(spec, "augment_five") ? luabind::object_cast<uint32>(spec["augment_five"]) : 0;
+	const uint32 augment_six   = lua_live_item_table_has(spec, "augment_six") ? luabind::object_cast<uint32>(spec["augment_six"]) : 0;
+	const bool attuned         = lua_live_item_table_has(spec, "attuned") ? luabind::object_cast<bool>(spec["attuned"]) : false;
+	const bool rebuild         = lua_live_item_table_has(spec, "rebuild") ? luabind::object_cast<bool>(spec["rebuild"]) : true;
+
+	auto inst = Lua_ItemInst(
+		database.CreateItem(
+			item_id,
+			charges,
+			augment_one,
+			augment_two,
+			augment_three,
+			augment_four,
+			augment_five,
+			augment_six,
+			attuned
+		),
+		true
+	);
+
+	EQ::ItemInstance *raw_inst = inst;
+	if (!raw_inst) {
+		return Lua_ItemInst();
+	}
+
+	lua_apply_live_item_spec(raw_inst, spec);
+	if (rebuild) {
+		raw_inst->RebuildDynamicItemData();
+	}
+
+	return inst;
+}
+
 bool lua_do_augment_slots_match(uint32 item_one, uint32 item_two)
 {
 	return quest_manager.DoAugmentSlotsMatch(item_one, item_two);
@@ -5675,6 +5859,42 @@ bool lua_handin(luabind::adl::object handin_table)
 	return quest_manager.handin(handin_map);
 }
 
+luabind::object lua_get_paused_timers(lua_State* L, Mob* m) {
+	auto t = luabind::newtable(L);
+	auto v = quest_manager.GetPausedTimers(m);
+	int  i = 1;
+
+	for (const auto& e : v) {
+		t[i] = e;
+		i++;
+	}
+
+	return t;
+}
+
+luabind::object lua_get_timers(lua_State* L, Mob* m) {
+	auto t = luabind::newtable(L);
+	auto v = quest_manager.GetTimers(m);
+	int  i = 1;
+
+	for (const auto& e : v) {
+		t[i] = e;
+		i++;
+	}
+
+	return t;
+}
+
+std::string lua_get_pet_command_name(uint8 pet_command)
+{
+	return PetCommand::GetName(pet_command);
+}
+
+std::string lua_get_pet_type_name(uint8 pet_type)
+{
+	return PetType::GetName(pet_type);
+}
+
 #define LuaCreateNPCParse(name, c_type, default_value) do { \
 	cur = table[#name]; \
 	if(luabind::type(cur) != LUA_TNIL) { \
@@ -6028,6 +6248,7 @@ luabind::scope lua_register_general() {
 		luabind::def("item_link", (std::string(*)(uint32,int16,uint32,uint32,uint32,uint32,uint32))&lua_item_link),
 		luabind::def("item_link", (std::string(*)(uint32,int16,uint32,uint32,uint32,uint32,uint32,uint32))&lua_item_link),
 		luabind::def("item_link", (std::string(*)(uint32,int16,uint32,uint32,uint32,uint32,uint32,uint32,bool))&lua_item_link),
+		luabind::def("create_live_item", &lua_create_live_item),
 		luabind::def("get_item_comment", (std::string(*)(uint32))&lua_get_item_comment),
 		luabind::def("get_item_lore", (std::string(*)(uint32))&lua_get_item_lore),
 		luabind::def("get_item_name", (std::string(*)(uint32))&lua_get_item_name),
@@ -6486,6 +6707,10 @@ luabind::scope lua_register_general() {
 		luabind::def("spawn_grid", &lua_spawn_grid),
 		luabind::def("get_zone", &lua_get_zone),
 		luabind::def("handin", &lua_handin),
+		luabind::def("get_paused_timers", &lua_get_paused_timers),
+		luabind::def("get_timers", &lua_get_timers),
+		luabind::def("get_pet_command_name", &lua_get_pet_command_name),
+		luabind::def("get_pet_type_name", &lua_get_pet_type_name),
 		/*
 			Cross Zone
 		*/
@@ -6662,9 +6887,9 @@ luabind::scope lua_register_general() {
 		luabind::def("world_wide_add_ldon_points", (void(*)(uint32,int))&lua_world_wide_add_ldon_points),
 		luabind::def("world_wide_add_ldon_points", (void(*)(uint32,int,uint8))&lua_world_wide_add_ldon_points),
 		luabind::def("world_wide_add_ldon_points", (void(*)(uint32,int,uint8,uint8))&lua_world_wide_add_ldon_points),
-		luabind::def("world_wide_add_ldon_loss", (void(*)(uint32))&lua_world_wide_add_ldon_win),
-		luabind::def("world_wide_add_ldon_loss", (void(*)(uint32,uint8))&lua_world_wide_add_ldon_win),
-		luabind::def("world_wide_add_ldon_loss", (void(*)(uint32,uint8,uint8))&lua_world_wide_add_ldon_win),
+		luabind::def("world_wide_add_ldon_win", (void(*)(uint32))&lua_world_wide_add_ldon_win),
+		luabind::def("world_wide_add_ldon_win", (void(*)(uint32,uint8))&lua_world_wide_add_ldon_win),
+		luabind::def("world_wide_add_ldon_win", (void(*)(uint32,uint8,uint8))&lua_world_wide_add_ldon_win),
 		luabind::def("world_wide_assign_task", (void(*)(uint32))&lua_world_wide_assign_task),
 		luabind::def("world_wide_assign_task", (void(*)(uint32,bool))&lua_world_wide_assign_task),
 		luabind::def("world_wide_assign_task", (void(*)(uint32,bool,uint8))&lua_world_wide_assign_task),
@@ -6824,7 +7049,9 @@ luabind::scope lua_register_events() {
 			luabind::value("trade", static_cast<int>(EVENT_TRADE)),
 			luabind::value("death", static_cast<int>(EVENT_DEATH)),
 			luabind::value("spawn", static_cast<int>(EVENT_SPAWN)),
+			luabind::value("attack", static_cast<int>(EVENT_ATTACK)),
 			luabind::value("combat", static_cast<int>(EVENT_COMBAT)),
+			luabind::value("aggro", static_cast<int>(EVENT_AGGRO)),
 			luabind::value("slay", static_cast<int>(EVENT_SLAY)),
 			luabind::value("waypoint_arrive", static_cast<int>(EVENT_WAYPOINT_ARRIVE)),
 			luabind::value("waypoint_depart", static_cast<int>(EVENT_WAYPOINT_DEPART)),
@@ -6860,8 +7087,8 @@ luabind::scope lua_register_events() {
 			luabind::value("spell_buff_tic", static_cast<int>(EVENT_SPELL_EFFECT_BUFF_TIC_CLIENT)),
 			luabind::value("spell_fade", static_cast<int>(EVENT_SPELL_FADE)),
 			luabind::value("spell_effect_translocate_complete", static_cast<int>(EVENT_SPELL_EFFECT_TRANSLOCATE_COMPLETE)),
-			luabind::value("combine_success ", static_cast<int>(EVENT_COMBINE_SUCCESS )),
-			luabind::value("combine_failure ", static_cast<int>(EVENT_COMBINE_FAILURE )),
+			luabind::value("combine_success", static_cast<int>(EVENT_COMBINE_SUCCESS )),
+			luabind::value("combine_failure", static_cast<int>(EVENT_COMBINE_FAILURE )),
 			luabind::value("item_click", static_cast<int>(EVENT_ITEM_CLICK)),
 			luabind::value("item_click_cast", static_cast<int>(EVENT_ITEM_CLICK_CAST)),
 			luabind::value("group_change", static_cast<int>(EVENT_GROUP_CHANGE)),
@@ -6908,8 +7135,10 @@ luabind::scope lua_register_events() {
 			luabind::value("language_skill_up", static_cast<int>(EVENT_LANGUAGE_SKILL_UP)),
 			luabind::value("alt_currency_merchant_buy", static_cast<int>(EVENT_ALT_CURRENCY_MERCHANT_BUY)),
 			luabind::value("alt_currency_merchant_sell", static_cast<int>(EVENT_ALT_CURRENCY_MERCHANT_SELL)),
+			luabind::value("merchant_open", static_cast<int>(EVENT_MERCHANT_OPEN)),
 			luabind::value("merchant_buy", static_cast<int>(EVENT_MERCHANT_BUY)),
 			luabind::value("merchant_sell", static_cast<int>(EVENT_MERCHANT_SELL)),
+			luabind::value("merchant_presell", static_cast<int>(EVENT_MERCHANT_PRESELL)),
 			luabind::value("inspect", static_cast<int>(EVENT_INSPECT)),
 			luabind::value("task_before_update", static_cast<int>(EVENT_TASK_BEFORE_UPDATE)),
 			luabind::value("aa_buy", static_cast<int>(EVENT_AA_BUY)),
@@ -6951,7 +7180,10 @@ luabind::scope lua_register_events() {
 			luabind::value("entity_variable_set", static_cast<int>(EVENT_ENTITY_VARIABLE_SET)),
 			luabind::value("entity_variable_update", static_cast<int>(EVENT_ENTITY_VARIABLE_UPDATE)),
 			luabind::value("aa_loss", static_cast<int>(EVENT_AA_LOSS)),
-			luabind::value("read", static_cast<int>(EVENT_READ_ITEM))
+			luabind::value("read", static_cast<int>(EVENT_READ_ITEM)),
+			luabind::value("pet_command", static_cast<int>(EVENT_PET_COMMAND)),
+			luabind::value("charm_start", static_cast<int>(EVENT_CHARM_START)),
+			luabind::value("charm_end", static_cast<int>(EVENT_CHARM_END))
 		)];
 }
 
@@ -8039,4 +8271,4 @@ luabind::scope lua_register_exp_source() {
 		)];
 }
 
-#endif
+#endif // LUA_EQEMU

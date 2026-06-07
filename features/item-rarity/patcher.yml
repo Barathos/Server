@@ -1,0 +1,11 @@
+version: 1
+id: item-rarity
+label: Item Rarity
+client: rof
+files:
+  - source: client_files/item_rarity/eq-core-dll/bin/dinput8.dll
+    destination: dinput8.dll
+generated:
+  eqhost: true
+  equiXml: false
+  equiIncludes: []

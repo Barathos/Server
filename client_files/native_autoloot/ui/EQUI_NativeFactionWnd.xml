@@ -1,0 +1,201 @@
+<?xml version="1.0"?>
+<XML ID="EQInterfaceDefinitionLanguage">
+	<Schema xmlns="EverQuestData" xmlns:dt="EverQuestDataTypes" />
+
+	<Label item="NFW_TitleLabel">
+		<ScreenID>NFW_TitleLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>16</X><Y>12</Y></Location>
+		<Size><CX>220</CX><CY>22</CY></Size>
+		<Text>Faction Reputation</Text>
+		<Font>4</Font>
+		<TextColor><R>248</R><G>189</G><B>33</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="NFW_SummaryLabel">
+		<ScreenID>NFW_SummaryLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>16</X><Y>40</Y></Location>
+		<Size><CX>382</CX><CY>20</CY></Size>
+		<Text>Waiting for faction data.</Text>
+		<Font>2</Font>
+		<TextColor><R>220</R><G>230</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="NFW_RefreshButton">
+		<ScreenID>NFW_RefreshButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>406</X><Y>36</Y></Location>
+		<Size><CX>70</CX><CY>24</CY></Size>
+		<Text>Refresh</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_BigNormal</Template>
+	</Button>
+
+	<Button item="NFW_ListButton">
+		<ScreenID>NFW_ListButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>482</X><Y>36</Y></Location>
+		<Size><CX>52</CX><CY>24</CY></Size>
+		<Text>Chat</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_BigNormal</Template>
+	</Button>
+
+	<Button item="NFW_PinButton">
+		<ScreenID>NFW_PinButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>540</X><Y>36</Y></Location>
+		<Size><CX>44</CX><CY>24</CY></Size>
+		<Text>Pin</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_BigNormal</Template>
+	</Button>
+
+	<Button item="NFW_HideButton">
+		<ScreenID>NFW_HideButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>590</X><Y>36</Y></Location>
+		<Size><CX>48</CX><CY>24</CY></Size>
+		<Text>Hide</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_BigNormal</Template>
+	</Button>
+
+	<Button item="NFW_ShowButton">
+		<ScreenID>NFW_ShowButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>644</X><Y>36</Y></Location>
+		<Size><CX>52</CX><CY>24</CY></Size>
+		<Text>Show</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_BigNormal</Template>
+	</Button>
+
+	<Button item="NFW_HiddenButton">
+		<ScreenID>NFW_HiddenButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>702</X><Y>36</Y></Location>
+		<Size><CX>50</CX><CY>24</CY></Size>
+		<Text>Hidden</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_BigNormal</Template>
+	</Button>
+
+	<Label item="NFW_SearchLabel">
+		<ScreenID>NFW_SearchLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>16</X><Y>68</Y></Location>
+		<Size><CX>48</CX><CY>20</CY></Size>
+		<Text>Search</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Editbox item="NFW_SearchEdit">
+		<ScreenID>NFW_SearchEdit</ScreenID>
+		<DrawTemplate>WDT_Inner</DrawTemplate>
+		<RelativePosition>true</RelativePosition>
+		<Style_Border>true</Style_Border>
+		<Location><X>70</X><Y>64</Y></Location>
+		<Size><CX>258</CX><CY>24</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+	</Editbox>
+
+	<Button item="NFW_SearchButton">
+		<ScreenID>NFW_SearchButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>336</X><Y>64</Y></Location>
+		<Size><CX>62</CX><CY>24</CY></Size>
+		<Text>Search</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_BigNormal</Template>
+	</Button>
+
+	<Button item="NFW_ClearSearchButton">
+		<ScreenID>NFW_ClearSearchButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>404</X><Y>64</Y></Location>
+		<Size><CX>52</CX><CY>24</CY></Size>
+		<Text>Clear</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_BigNormal</Template>
+	</Button>
+
+	<Listbox item="NFW_FactionList">
+		<ScreenID>NFW_FactionList</ScreenID>
+		<DrawTemplate>WDT_Inner</DrawTemplate>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>96</Y></Location>
+		<Size><CX>738</CX><CY>294</CY></Size>
+		<Style_Border>true</Style_Border>
+		<Style_VScroll>true</Style_VScroll>
+		<Style_HScroll>false</Style_HScroll>
+		<Style_Transparent>false</Style_Transparent>
+		<Columns><Width>64</Width><Heading>State</Heading></Columns>
+		<Columns><Width>250</Width><Heading>Faction</Heading></Columns>
+		<Columns><Width>112</Width><Heading>Standing</Heading></Columns>
+		<Columns><Width>76</Width><Heading>Raw</Heading></Columns>
+		<Columns><Width>86</Width><Heading>Modified</Heading></Columns>
+		<Columns><Width>110</Width><Heading>Section</Heading></Columns>
+	</Listbox>
+
+	<Label item="NFW_StatusLabel">
+		<ScreenID>NFW_StatusLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>16</X><Y>398</Y></Location>
+		<Size><CX>736</CX><CY>34</CY></Size>
+		<Text>Select a faction row to pin, hide, or show it.</Text>
+		<Font>2</Font>
+		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
+		<NoWrap>false</NoWrap>
+	</Label>
+
+	<Screen item="NativeFactionWnd">
+		<ScreenID>NativeFactionWnd</ScreenID>
+		<RelativePosition>false</RelativePosition>
+		<Location><X>90</X><Y>80</Y></Location>
+		<Size><CX>766</CX><CY>444</CY></Size>
+		<Text>Faction Reputation</Text>
+		<DrawTemplate>WDT_Def</DrawTemplate>
+		<Style_Titlebar>true</Style_Titlebar>
+		<Style_Closebox>true</Style_Closebox>
+		<Style_Minimizebox>true</Style_Minimizebox>
+		<Style_Border>true</Style_Border>
+		<Style_Sizable>false</Style_Sizable>
+		<Style_Transparent>false</Style_Transparent>
+		<Pieces>NFW_TitleLabel</Pieces>
+		<Pieces>NFW_SummaryLabel</Pieces>
+		<Pieces>NFW_RefreshButton</Pieces>
+		<Pieces>NFW_ListButton</Pieces>
+		<Pieces>NFW_PinButton</Pieces>
+		<Pieces>NFW_HideButton</Pieces>
+		<Pieces>NFW_ShowButton</Pieces>
+		<Pieces>NFW_HiddenButton</Pieces>
+		<Pieces>NFW_SearchLabel</Pieces>
+		<Pieces>NFW_SearchEdit</Pieces>
+		<Pieces>NFW_SearchButton</Pieces>
+		<Pieces>NFW_ClearSearchButton</Pieces>
+		<Pieces>NFW_FactionList</Pieces>
+		<Pieces>NFW_StatusLabel</Pieces>
+	</Screen>
+</XML>

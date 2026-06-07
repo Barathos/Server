@@ -1,17 +1,38 @@
-#include "../common/features.h"
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
+#include "common/features.h"
 
 #ifdef EMBPERL_XS_CLASSES
 
-#include "../common/global_define.h"
-#include "embperl.h"
-#include "client.h"
-#include "dynamic_zone.h"
-#include "titles.h"
-#include "dialogue_window.h"
+#include "zone/client.h"
+#include "zone/dialogue_window.h"
+#include "zone/dynamic_zone.h"
+#include "zone/embperl.h"
+#include "zone/titles.h"
 
 void Perl_Client_SendSound(Client* self) // @categories Script Utility
 {
 	self->SendSound();
+}
+
+void Perl_Client_SendItemScale(Client* self, EQ::ItemInstance* inst) // @categories Inventory and Items
+{
+	self->SendItemScale(inst);
 }
 
 bool Perl_Client_Save(Client* self, uint8 commit_now) // @categories Script Utility
@@ -3328,7 +3349,12 @@ bool Perl_Client_KeyRingClear(Client* self)
 
 void Perl_Client_KeyRingList(Client* self)
 {
-	self->KeyRingList();
+	self->KeyRingList(self);
+}
+
+void Perl_Client_KeyRingList(Client* self, Client* c)
+{
+	self->KeyRingList(c);
 }
 
 bool Perl_Client_KeyRingRemove(Client* self, uint32 item_id)
@@ -3344,6 +3370,18 @@ bool Perl_Client_CompleteTask(Client* self, int task_id)
 bool Perl_Client_UncompleteTask(Client* self, int task_id)
 {
 	return self->UncompleteTask(task_id);
+}
+
+perl::array Perl_Client_GetKeyRing(Client* self)
+{
+	perl::array result;
+	const auto& v = self->GetKeyRing();
+
+	for (int i = 0; i < v.size(); ++i) {
+		result.push_back(v[i]);
+	}
+
+	return result;
 }
 
 void perl_register_client()
@@ -3577,6 +3615,7 @@ void perl_register_client()
 	package.add("GetItemCooldown", &Perl_Client_GetItemCooldown);
 	package.add("GetItemIDAt", &Perl_Client_GetItemIDAt);
 	package.add("GetItemInInventory", &Perl_Client_GetItemInInventory);
+	package.add("GetKeyRing", &Perl_Client_GetKeyRing);
 	package.add("GetLDoNLosses", &Perl_Client_GetLDoNLosses);
 	package.add("GetLDoNLossesTheme", &Perl_Client_GetLDoNLossesTheme);
 	package.add("GetLDoNPointsTheme", &Perl_Client_GetLDoNPointsTheme);
@@ -3675,7 +3714,8 @@ void perl_register_client()
 	package.add("KeyRingAdd", &Perl_Client_KeyRingAdd);
 	package.add("KeyRingCheck", &Perl_Client_KeyRingCheck);
 	package.add("KeyRingClear", &Perl_Client_KeyRingClear);
-	package.add("KeyRingList", &Perl_Client_KeyRingList);
+	package.add("KeyRingList", (void(*)(Client*))&Perl_Client_KeyRingList);
+	package.add("KeyRingList", (void(*)(Client*, Client*))&Perl_Client_KeyRingList);
 	package.add("KeyRingRemove", &Perl_Client_KeyRingRemove);
 	package.add("Kick", &Perl_Client_Kick);
 	package.add("LearnDisciplines", &Perl_Client_LearnDisciplines);
@@ -3778,6 +3818,7 @@ void perl_register_client()
 	package.add("SendMarqueeMessage", (void(*)(Client*, uint32, std::string))&Perl_Client_SendMarqueeMessage);
 	package.add("SendMarqueeMessage", (void(*)(Client*, uint32, std::string, uint32))&Perl_Client_SendMarqueeMessage);
 	package.add("SendMarqueeMessage", (void(*)(Client*, uint32, uint32, uint32, uint32, uint32, std::string))&Perl_Client_SendMarqueeMessage);
+	package.add("SendItemScale", &Perl_Client_SendItemScale);
 	package.add("SendOPTranslocateConfirm", &Perl_Client_SendOPTranslocateConfirm);
 	package.add("SendPayload", (void(*)(Client*, int))&Perl_Client_SendPayload);
 	package.add("SendPayload", (void(*)(Client*, int, std::string))&Perl_Client_SendPayload);

@@ -1,20 +1,32 @@
-#include "../common/global_define.h"
-#include "../common/data_verification.h"
+/*	EQEmu: EQEmulator
 
-#include "../common/loot.h"
-#include "client.h"
-#include "entity.h"
-#include "mob.h"
+	Copyright (C) 2001-2026 EQEmu Development Team
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
 #include "npc.h"
-#include "zonedb.h"
-#include "global_loot_manager.h"
-#include "../common/repositories/criteria/content_filter_criteria.h"
-#include "../common/repositories/global_loot_repository.h"
-#include "quest_parser_collection.h"
 
-#ifdef _WINDOWS
-#define snprintf	_snprintf
-#endif
+#include "common/data_verification.h"
+#include "common/loot.h"
+#include "common/repositories/criteria/content_filter_criteria.h"
+#include "common/repositories/global_loot_repository.h"
+#include "zone/client.h"
+#include "zone/entity.h"
+#include "zone/global_loot_manager.h"
+#include "zone/mob.h"
+#include "zone/quest_parser_collection.h"
+#include "zone/zonedb.h"
 
 void NPC::AddLootTable(uint32 loottable_id, bool is_global)
 {
@@ -278,7 +290,8 @@ void NPC::AddLootDrop(
 	uint32 augment_three,
 	uint32 augment_four,
 	uint32 augment_five,
-	uint32 augment_six
+	uint32 augment_six,
+	const std::string &custom_data
 )
 {
 	if (m_resumed_from_zone_suspend) {
@@ -291,25 +304,6 @@ void NPC::AddLootDrop(
 	}
 
 	auto item = new LootItem;
-
-	if (EQEmuLogSys::Instance()->log_settings[Logs::Loot].is_category_enabled == 1) {
-		EQ::SayLinkEngine linker;
-		linker.SetLinkType(EQ::saylink::SayLinkItemData);
-		linker.SetItemData(item2);
-
-		LogLoot(
-			"NPC [{}] Item ({}) [{}] charges [{}] chance [{}] trivial min/max [{}/{}] npc min/max [{}/{}]",
-			GetName(),
-			item2->ID,
-			linker.GenerateLink(),
-			loot_drop.item_charges,
-			loot_drop.chance,
-			loot_drop.trivial_min_level,
-			loot_drop.trivial_max_level,
-			loot_drop.npc_min_level,
-			loot_drop.npc_max_level
-		);
-	}
 
 	EQApplicationPacket *outapp               = nullptr;
 	WearChange_Struct   *p_wear_change_struct = nullptr;
@@ -329,6 +323,7 @@ void NPC::AddLootDrop(
 	item->aug_5             = augment_five;
 	item->aug_6             = augment_six;
 	item->attuned           = false;
+	item->custom_data       = custom_data;
 	item->trivial_min_level = loot_drop.trivial_min_level;
 	item->trivial_max_level = loot_drop.trivial_max_level;
 	item->equip_slot        = EQ::invslot::SLOT_INVALID;
@@ -354,11 +349,37 @@ void NPC::AddLootDrop(
 		augment_three,
 		augment_four,
 		augment_five,
-		augment_six
+		augment_six,
+		false,
+		custom_data
 	);
 
 	if (!inst) {
 		return;
+	}
+
+	if (EQEmuLogSys::Instance()->log_settings[Logs::Loot].is_category_enabled == 1) {
+		const auto *client_item = inst->GetClientItem();
+		if (!client_item) {
+			client_item = item2;
+		}
+
+		EQ::SayLinkEngine linker;
+		linker.SetLinkType(EQ::saylink::SayLinkItemData);
+		linker.SetItemData(client_item);
+
+		LogLoot(
+			"NPC [{}] Item ({}) [{}] charges [{}] chance [{}] trivial min/max [{}/{}] npc min/max [{}/{}]",
+			GetName(),
+			client_item->ID,
+			linker.GenerateLink(),
+			loot_drop.item_charges,
+			loot_drop.chance,
+			loot_drop.trivial_min_level,
+			loot_drop.trivial_max_level,
+			loot_drop.npc_min_level,
+			loot_drop.npc_max_level
+		);
 	}
 
 	if (loot_drop.equip_item > 0) {
@@ -552,6 +573,31 @@ void NPC::AddItem(const EQ::ItemData *item, uint16 charges, bool equip_item)
 	AddLootDrop(item, l, true);
 }
 
+void NPC::AddItem(const EQ::ItemInstance *inst, bool equip_item)
+{
+	if (!inst || !inst->GetItem()) {
+		return;
+	}
+
+	auto l = LootdropEntriesRepository::NewNpcEntity();
+
+	l.equip_item   = static_cast<uint8>(equip_item ? 1 : 0);
+	l.item_charges = inst->GetCharges();
+
+	AddLootDrop(
+		inst->GetItem(),
+		l,
+		true,
+		inst->GetAugmentItemID(0),
+		inst->GetAugmentItemID(1),
+		inst->GetAugmentItemID(2),
+		inst->GetAugmentItemID(3),
+		inst->GetAugmentItemID(4),
+		inst->GetAugmentItemID(5),
+		inst->GetCustomDataString()
+	);
+}
+
 void NPC::AddItem(
 	uint32 item_id,
 	uint16 charges,
@@ -705,9 +751,18 @@ void NPC::RemoveItem(uint32 item_id, uint16 quantity, uint16 slot)
 		LootItem *item = *cur;
 		if (item->item_id == item_id && slot <= 0 && quantity <= 0) {
 			m_loot_items.erase(cur);
-			safe_delete(item);
 			UpdateEquipmentLight();
 			if (UpdateActiveLight()) { SendAppearancePacket(AppearanceType::Light, GetActiveLightType()); }
+			if (EQ::ValueWithin(item->equip_slot, EQ::invslot::EQUIPMENT_BEGIN, EQ::invslot::EQUIPMENT_END)) {
+				equipment[item->equip_slot] = 0;
+				const auto material = EQ::InventoryProfile::CalcMaterialFromSlot(item->equip_slot);
+				if (material != EQ::textures::materialInvalid) {
+					SendWearChange(material);
+				}
+				GetInv().DeleteItem(item->equip_slot);
+			}
+			CalcBonuses();
+			safe_delete(item);
 			return;
 		}
 		else if (item->item_id == item_id && item->equip_slot == slot && quantity >= 1) {
@@ -717,6 +772,15 @@ void NPC::RemoveItem(uint32 item_id, uint16 quantity, uint16 slot)
 				if (UpdateActiveLight()) {
 					SendAppearancePacket(AppearanceType::Light, GetActiveLightType());
 				}
+				if (EQ::ValueWithin(item->equip_slot, EQ::invslot::EQUIPMENT_BEGIN, EQ::invslot::EQUIPMENT_END)) {
+					equipment[item->equip_slot] = 0;
+					const auto material = EQ::InventoryProfile::CalcMaterialFromSlot(item->equip_slot);
+					if (material != EQ::textures::materialInvalid) {
+						SendWearChange(material);
+					}
+					GetInv().DeleteItem(item->equip_slot);
+				}
+				CalcBonuses();
 				safe_delete(item);
 			}
 			else {

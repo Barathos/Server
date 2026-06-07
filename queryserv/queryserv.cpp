@@ -1,25 +1,40 @@
-#include "../common/global_define.h"
-#include "../common/eqemu_logsys.h"
-#include "../common/opcodemgr.h"
-#include "../common/rulesys.h"
-#include "../common/platform.h"
-#include "../common/crash.h"
-#include "../common/strings.h"
-#include "../common/event/event_loop.h"
-#include "../common/timer.h"
-#include "database.h"
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#include "common/crash.h"
+#include "common/eqemu_logsys.h"
+#include "common/event/event_loop.h"
+#include "common/events/player_event_logs.h"
+#include "common/net/console_server.h"
+#include "common/net/servertalk_server.h"
+#include "common/opcodemgr.h"
+#include "common/platform.h"
+#include "common/rulesys.h"
+#include "common/strings.h"
+#include "common/timer.h"
+#include "queryserv/database.h"
+#include "queryserv/lfguild.h"
+#include "queryserv/worldserver.h"
+#include "queryserv/zonelist.h"
+#include "queryserv/zoneserver.h"
 #include "queryservconfig.h"
-#include "lfguild.h"
-#include "worldserver.h"
-#include "../common/zone_store.h"
-#include "../common/events/player_event_logs.h"
-#include <list>
-#include <signal.h>
-#include <thread>
-#include "../common/net/servertalk_server.h"
-#include "../common/net/console_server.h"
-#include "../queryserv/zonelist.h"
-#include "../queryserv/zoneserver.h"
+
+#include <csignal>
 
 volatile bool RunLoops = true;
 

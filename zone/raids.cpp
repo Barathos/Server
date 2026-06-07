@@ -1,40 +1,37 @@
-/*	EQEMu: Everquest Server Emulator
-	Copyright (C) 2001-2005 EQEMu Development Team (http://eqemulator.net)
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; version 2 of the License.
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
 	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY except by those people which sell it, which
-	are required to give you total support for your newly bought product;
-	without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-	A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
-
-#include "../common/strings.h"
-#include "../common/events/player_event_logs.h"
-#include "../common/repositories/character_expedition_lockouts_repository.h"
-#include "../common/repositories/raid_details_repository.h"
-#include "../common/repositories/raid_members_repository.h"
-#include "../common/raid.h"
-
-
-#include "client.h"
-#include "dynamic_zone.h"
-#include "entity.h"
-#include "groups.h"
-#include "mob.h"
-#include "raids.h"
-#include "string_ids.h"
-#include "bot.h"
-
-#include "worldserver.h"
-#include "queryserv.h"
+#include "common/events/player_event_logs.h"
+#include "common/raid.h"
+#include "common/repositories/character_expedition_lockouts_repository.h"
+#include "common/repositories/raid_details_repository.h"
+#include "common/repositories/raid_members_repository.h"
+#include "common/strings.h"
+#include "zone/bot.h"
+#include "zone/client.h"
+#include "zone/dynamic_zone.h"
+#include "zone/entity.h"
+#include "zone/groups.h"
+#include "zone/mob.h"
+#include "zone/multiclass_manager.h"
+#include "zone/queryserv.h"
+#include "zone/raids.h"
+#include "zone/string_ids.h"
+#include "zone/worldserver.h"
 
 extern EntityList  entity_list;
 extern WorldServer worldserver;
@@ -678,6 +675,11 @@ void Raid::CastGroupSpell(Mob* caster, uint16 spellid, uint32 gid)
 			if (spells[spellid].target_type != ST_GroupNoPets && caster->GetPet() && caster->HasPetAffinity() && !caster->GetPet()->IsCharmed()) {
 				caster->SpellOnTarget(spellid, caster->GetPet());
 			}
+			if (spells[spellid].target_type != ST_GroupNoPets && caster->IsClient() && caster->HasPetAffinity()) {
+				for (auto *pet : multiclass_manager.GetSecondaryPetRoster(caster->CastToClient())) {
+					caster->SpellOnTarget(spellid, pet);
+				}
+			}
 #endif
 		}
 		else if (m.member != nullptr && m.group_number == gid) {
@@ -689,6 +691,11 @@ void Raid::CastGroupSpell(Mob* caster, uint16 spellid, uint32 gid)
 				if (spells[spellid].target_type != ST_GroupNoPets && m.member->GetPet() && m.member->HasPetAffinity() &&
 					!m.member->GetPet()->IsCharmed()) {
 					caster->SpellOnTarget(spellid, m.member->GetPet());
+				}
+				if (spells[spellid].target_type != ST_GroupNoPets && m.member->IsClient() && m.member->HasPetAffinity()) {
+					for (auto *pet : multiclass_manager.GetSecondaryPetRoster(m.member->CastToClient())) {
+						caster->SpellOnTarget(spellid, pet);
+					}
 				}
 #endif
 			}

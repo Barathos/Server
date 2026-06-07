@@ -1,22 +1,21 @@
-/* EQEMu: Everquest Server Emulator
-	Copyright (C) 2001-2003 EQEMu Development Team (http://eqemulator.org)
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; version 2 of the License.
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
 	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY except by those people which sell it, which
-	are required to give you total support for your newly bought product;
-	without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-	A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef CLIENT_H
-#define CLIENT_H
+#pragma once
 
 class Client;
 class EQApplicationPacket;
@@ -38,59 +37,48 @@ namespace EQ
 	struct ItemData;
 }
 
-#include "../common/timer.h"
-#include "../common/ptimer.h"
-#include "../common/emu_opcodes.h"
-#include "../common/eq_packet_structs.h"
-#include "../common/emu_constants.h"
-#include "../common/eq_stream_intf.h"
-#include "../common/eq_packet.h"
-#include "../common/linked_list.h"
-#include "../common/extprofile.h"
-#include "../common/races.h"
-#include "../common/seperator.h"
-#include "../common/inventory_profile.h"
-#include "../common/guilds.h"
-//#include "../common/item_data.h"
-#include "xtargetautohaters.h"
-#include "aggromanager.h"
+#include "zone/aggromanager.h"
+#include "zone/bot_structs.h"
+#include "zone/cheat_manager.h"
+#include "zone/common.h"
+#include "zone/merc.h"
+#include "zone/mob.h"
+#include "zone/qglobals.h"
+#include "zone/questmgr.h"
+#include "zone/task_client_state.h"
+#include "zone/task_manager.h"
+#include "zone/xtargetautohaters.h"
+#include "zone/zone.h"
+#include "zone/zonedb.h"
 
-#include "common.h"
-#include "merc.h"
-#include "mob.h"
-#include "qglobals.h"
-#include "questmgr.h"
-#include "zone.h"
-#include "zonedb.h"
-#include "../common/zone_store.h"
-#include "task_manager.h"
-#include "task_client_state.h"
-#include "cheat_manager.h"
-#include "../common/events/player_events.h"
-#include "../common/data_verification.h"
-#include "../common/repositories/character_parcels_repository.h"
-#include "../common/repositories/trader_repository.h"
-#include "../common/guild_base.h"
-#include "../common/repositories/buyer_buy_lines_repository.h"
-#include "../common/repositories/character_evolving_items_repository.h"
-#include "../common/repositories/player_titlesets_repository.h"
+#include "common/data_verification.h"
+#include "common/emu_constants.h"
+#include "common/emu_opcodes.h"
+#include "common/eq_packet_structs.h"
+#include "common/eq_packet.h"
+#include "common/eq_stream_intf.h"
+#include "common/events/player_events.h"
+#include "common/extprofile.h"
+#include "common/guild_base.h"
+#include "common/guilds.h"
+#include "common/inventory_profile.h"
+#include "common/linked_list.h"
+#include "common/ptimer.h"
+#include "common/races.h"
+#include "common/repositories/buyer_buy_lines_repository.h"
+#include "common/repositories/character_evolving_items_repository.h"
+#include "common/repositories/character_parcels_repository.h"
+#include "common/repositories/player_titlesets_repository.h"
+#include "common/repositories/trader_repository.h"
+#include "common/seperator.h"
+#include "common/timer.h"
+#include "common/zone_store.h"
 
-#include "bot_structs.h"
-
-#ifdef _WINDOWS
-	// since windows defines these within windef.h (which windows.h include)
-	// we are required to undefine these to use min and max from <algorithm>
-	#undef min
-	#undef max
-#endif
-
-#include <float.h>
+#include <cfloat>
 #include <set>
 #include <algorithm>
 #include <memory>
 #include <deque>
-#include <ctime>
-
 
 #define CLIENT_LD_TIMEOUT 30000 // length of time client stays in zone after LDing
 #define TARGETING_RANGE 200 // range for /assist and /target
@@ -118,7 +106,7 @@ enum { //scribing argument to MemorizeSpell
 };
 
 //Modes for the zoning state of the client.
-typedef enum {
+enum ZoneMode {
 	ZoneToSafeCoords,	// Always send ZonePlayerToBind_Struct to client: Succor/Evac
 	GMSummon,			// Always send ZonePlayerToBind_Struct to client: Only a GM Summon
 	GMHiddenSummon,		// Always send ZonePlayerToBind_Struct to client silently: Only a GM Summon
@@ -129,7 +117,7 @@ typedef enum {
 	SummonPC,			// In-zone GMMove() always: Call of the Hero spell or some other type of in zone only summons
 	Rewind,				// Summon to /rewind location.
 	EvacToSafeCoords
-} ZoneMode;
+};
 
 // translate above enum to a string
 std::string GetZoneModeString(ZoneMode mode);
@@ -142,13 +130,13 @@ enum {
 	HideCorpseNPC = 5
 };
 
-typedef enum
+enum ShowSpellType
 {
 	Disciplines,
 	Spells
-} ShowSpellType;
+};
 
-typedef enum
+enum XTargetType
 {
 	Empty = 0,
 	Auto = 1,
@@ -177,8 +165,7 @@ typedef enum
 	MyPetTarget = 24,
 	MyMercenary = 25,
 	MyMercenaryTarget = 26
-
-} XTargetType;
+};
 
 struct XTarget_Struct
 {
@@ -241,6 +228,7 @@ const uint32      POPUPID_DIAWIND_ONE            = 99999;
 const uint32      POPUPID_DIAWIND_TWO            = 100000;
 const uint32      POPUPID_UPDATE_SHOWSTATSWINDOW = 1000000;
 const uint32      POPUPID_REPLACE_SPELLWINDOW    = 1000001;
+const uint32      POPUPID_PET_STATS_WINDOW       = 0x42069;
 
 struct ClientReward
 {
@@ -326,12 +314,13 @@ public:
 	void TraderStartTrader(const EQApplicationPacket *app);
 //	void TraderPriceUpdate(const EQApplicationPacket *app);
 	uint8 WithCustomer(uint16 NewCustomer);
+	std::vector<uint32> GetKeyRing() { return keyring; }
 	void KeyRingLoad();
 	bool KeyRingAdd(uint32 item_id);
 	bool KeyRingCheck(uint32 item_id);
 	bool KeyRingClear();
 	bool KeyRingRemove(uint32 item_id);
-	void KeyRingList();
+	void KeyRingList(Client* c = nullptr);
 	bool IsNameChangeAllowed();
 	void InvokeChangeNameWindow(bool immediate = true);
 	bool ClearNameChange();
@@ -523,7 +512,7 @@ public:
 	inline const InspectMessage_Struct& GetInspectMessage() const { return m_inspect_message; }
 	void ReloadExpansionProfileSetting();
 
-	void SetPetCommandState(int button, int state);
+	void SetPetCommandState(uint8 button, uint8 state);
 
 	bool AutoAttackEnabled() const { return auto_attack; }
 	bool AutoFireEnabled() const { return auto_fire; }
@@ -1040,6 +1029,58 @@ public:
 	bool BindWound(Mob* bindmob, bool start, bool fail = false);
 	void SetTradeskillObject(Object* object) { m_tradeskill_object = object; }
 	Object* GetTradeskillObject() { return m_tradeskill_object; }
+	bool GetAutoSkillStatus(EQ::skills::SkillType skill_id);
+	void SetAutoSkillStatus(EQ::skills::SkillType skill_id, bool enabled);
+	std::vector<EQ::skills::SkillType> GetAutoSkillsList();
+	static const std::vector<EQ::skills::SkillType> &GetAvailableAutoSkills();
+	void SetLastRecipeAutoCombine(const RecipeAutoCombine_Struct *recipe)
+	{
+		if (!recipe) {
+			m_has_last_recipe_auto_combine = false;
+			m_has_last_recipe_auto_combine_context = false;
+			return;
+		}
+
+		m_last_recipe_auto_combine = *recipe;
+		m_has_last_recipe_auto_combine = true;
+		m_has_last_recipe_auto_combine_context = true;
+	}
+	void SetLastRecipeAutoCombineContainer(uint32 object_type, uint32 some_id)
+	{
+		const bool same_context = m_has_last_recipe_auto_combine_context &&
+			m_last_recipe_auto_combine.object_type == object_type &&
+			m_last_recipe_auto_combine.some_id == some_id;
+
+		if (!same_context) {
+			m_last_recipe_auto_combine.recipe_id = 0;
+			m_has_last_recipe_auto_combine = false;
+		}
+
+		m_last_recipe_auto_combine.object_type = object_type;
+		m_last_recipe_auto_combine.some_id = some_id;
+		m_last_recipe_auto_combine.unknown1 = 0;
+		m_last_recipe_auto_combine.reply_code = 0;
+		m_has_last_recipe_auto_combine_context = true;
+		m_has_last_recipe_auto_combine = m_last_recipe_auto_combine.recipe_id != 0;
+	}
+	void SetLastRecipeAutoCombineRecipe(uint32 recipe_id)
+	{
+		if (!recipe_id || !m_has_last_recipe_auto_combine_context) {
+			return;
+		}
+
+		m_last_recipe_auto_combine.recipe_id = recipe_id;
+		m_has_last_recipe_auto_combine = true;
+	}
+	bool GetLastRecipeAutoCombine(RecipeAutoCombine_Struct &recipe) const
+	{
+		if (!m_has_last_recipe_auto_combine) {
+			return false;
+		}
+
+		recipe = m_last_recipe_auto_combine;
+		return true;
+	}
 	void SendTributes();
 	void SendGuildTributes();
 	void DoTributeUpdate();
@@ -1060,6 +1101,8 @@ public:
 	void SendAlternateAdvancementRank(int aa_id, int level);
 	void SendAlternateAdvancementTable();
 	void SendAlternateAdvancementStats();
+	void SendBulkStatsUpdate();
+	int64 GetStatEntryValue(StatEntry stat);
 	void PurchaseAlternateAdvancementRank(int rank_id);
 	bool GrantAlternateAdvancementAbility(int aa_id, int points, bool ignore_cost = false);
 	void IncrementAlternateAdvancementRank(int rank_id);
@@ -1157,6 +1200,13 @@ public:
 	bool SummonItem(uint32 item_id, int16 charges = -1, uint32 aug1 = 0, uint32 aug2 = 0, uint32 aug3 = 0, uint32 aug4 = 0, uint32 aug5 = 0, uint32 aug6 = 0, bool attuned = false, uint16 to_slot = EQ::invslot::slotCursor, uint32 ornament_icon = 0, uint32 ornament_idfile = 0, uint32 ornament_hero_model = 0);
 	void SummonItemIntoInventory(uint32 item_id, int16 charges = -1, uint32 aug1 = 0, uint32 aug2 = 0, uint32 aug3 = 0, uint32 aug4 = 0, uint32 aug5 = 0, uint32 aug6 = 0, bool is_attuned = false);
 	void SummonBaggedItems(uint32 bag_item_id, const std::vector<LootItem>& bag_items);
+	bool IsPetBagActive();
+	bool IsValidPetBagForClass(int bag_id, int class_id);
+	bool IsValidPetBag(int item_id);
+	EQ::ItemInstance* GetActivePetBag(int class_id);
+	int16 GetActivePetBagSlot(int class_id);
+	void DoPetBagResync(int class_id);
+	void DoPetBagFlush(Mob* pet);
 	void SetStats(uint8 type,int16 set_val);
 	void IncStats(uint8 type,int16 increase_val);
 	void DropItem(int16 slot_id, bool recurse = true);
@@ -1168,7 +1218,12 @@ public:
 
 	void SendItemLink(const EQ::ItemInstance* inst, bool sendtoall=false);
 	void SendLootItemInPacket(const EQ::ItemInstance* inst, int16 slot_id);
+	void UseItemSlot(int32 slot_id, int32 target_id);
+	EQ::ItemInstance* CloneItemForMulticlassPresentation(const EQ::ItemInstance* inst);
 	void SendItemPacket(int16 slot_id, const EQ::ItemInstance* inst, ItemPacketType packet_type);
+	bool RefreshLiveItem(EQ::ItemInstance* inst);
+	bool RefreshLiveItemTree(EQ::ItemInstance* inst);
+	void SendItemPowerTransport(const EQ::ItemInstance* inst);
 	bool IsValidSlot(uint32 slot);
 	bool IsBankSlot(uint32 slot);
 
@@ -1785,6 +1840,7 @@ public:
 	MercInfo& GetMercInfo(uint8 slot) { return m_mercinfo[slot]; }
 	MercInfo& GetMercInfo() { return m_mercinfo[mercSlot]; }
 	uint8 GetNumberOfMercenaries();
+	int GetFirstFreeMercSlot();
 	void SetMerc(Merc* newmerc);
 	void SendMercResponsePackets(uint32 ResponseType);
 	void SendMercMerchantResponsePacket(int32 response_type);
@@ -1867,6 +1923,9 @@ public:
 	void ResetHPUpdateTimer() { hpupdate_timer.Start(); }
 
 	void SendHPUpdateMarquee();
+	bool IsNativeHpFixReady() const { return native_hpfix_ready_; }
+	void SetNativeHpFixReady(bool ready) { native_hpfix_ready_ = ready; }
+	void SendNativeHpFixUpdate(bool force = false);
 
 	void CheckRegionTypeChanges();
 
@@ -1955,6 +2014,7 @@ public:
 private:
 	ExternalHandinMoneyReturned m_external_handin_money_returned = {};
 	std::vector<uint32_t>       m_external_handin_items_returned = {};
+	bool                       native_hpfix_ready_ = false;
 public:
 	ExternalHandinMoneyReturned GetExternalHandinMoneyReturned() { return m_external_handin_money_returned; }
 	std::vector<uint32_t> GetExternalHandinItemsReturned() { return m_external_handin_items_returned; }
@@ -2147,6 +2207,10 @@ private:
 	ExtendedProfile_Struct m_epp;
 	EQ::InventoryProfile m_inv;
 	Object* m_tradeskill_object;
+	RecipeAutoCombine_Struct m_last_recipe_auto_combine = {};
+	bool m_has_last_recipe_auto_combine = false;
+	bool m_has_last_recipe_auto_combine_context = false;
+	std::map<EQ::skills::SkillType, bool> m_autoskill;
 	PetInfo m_petinfo; // current pet data, used while loading from and saving to DB
 	PetInfo m_suspendedminion; // pet data for our suspended minion.
 	MercInfo m_mercinfo[MAXMERCS]; // current mercenary
@@ -2433,5 +2497,3 @@ public:
 	void CheckAutoIdleAFK(PlayerPositionUpdateClient_Struct *p);
 	void SyncWorldPositionsToClient(bool ignore_idle = false);
 };
-
-#endif

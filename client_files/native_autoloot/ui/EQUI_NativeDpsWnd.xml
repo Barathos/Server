@@ -1,0 +1,115 @@
+<?xml version="1.0"?>
+<XML ID="EQInterfaceDefinitionLanguage">
+	<Schema xmlns="EverQuestData" xmlns:dt="EverQuestDataTypes" />
+
+	<Label item="NDPS_TitleLabel">
+		<ScreenID>NDPS_TitleLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>16</X><Y>12</Y></Location>
+		<Size><CX>220</CX><CY>22</CY></Size>
+		<Text>DPS Parser</Text>
+		<Font>4</Font>
+		<TextColor><R>248</R><G>189</G><B>33</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="NDPS_SummaryLabel">
+		<ScreenID>NDPS_SummaryLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>16</X><Y>40</Y></Location>
+		<Size><CX>510</CX><CY>20</CY></Size>
+		<Text>No encounter loaded.</Text>
+		<Font>2</Font>
+		<TextColor><R>220</R><G>230</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="NDPS_RefreshButton">
+		<ScreenID>NDPS_RefreshButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>536</X><Y>36</Y></Location>
+		<Size><CX>70</CX><CY>24</CY></Size>
+		<Text>Refresh</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_BigNormal</Template>
+	</Button>
+
+	<Button item="NDPS_ResetButton">
+		<ScreenID>NDPS_ResetButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>612</X><Y>36</Y></Location>
+		<Size><CX>58</CX><CY>24</CY></Size>
+		<Text>Reset</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_BigNormal</Template>
+	</Button>
+
+	<Button item="NDPS_LiveButton">
+		<ScreenID>NDPS_LiveButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>676</X><Y>36</Y></Location>
+		<Size><CX>76</CX><CY>24</CY></Size>
+		<Text>Live On</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_BigNormal</Template>
+	</Button>
+
+	<Listbox item="NDPS_DpsList">
+		<ScreenID>NDPS_DpsList</ScreenID>
+		<DrawTemplate>WDT_Inner</DrawTemplate>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>72</Y></Location>
+		<Size><CX>738</CX><CY>318</CY></Size>
+		<Style_Border>true</Style_Border>
+		<Style_VScroll>true</Style_VScroll>
+		<Style_HScroll>false</Style_HScroll>
+		<Style_Transparent>false</Style_Transparent>
+		<Columns><Width>150</Width><Heading>Actor</Heading></Columns>
+		<Columns><Width>145</Width><Heading>Source</Heading></Columns>
+		<Columns><Width>80</Width><Heading>Damage</Heading></Columns>
+		<Columns><Width>70</Width><Heading>DPS</Heading></Columns>
+		<Columns><Width>80</Width><Heading>Healing</Heading></Columns>
+		<Columns><Width>70</Width><Heading>HPS</Heading></Columns>
+		<Columns><Width>80</Width><Heading>Incoming</Heading></Columns>
+		<Columns><Width>45</Width><Heading>%</Heading></Columns>
+	</Listbox>
+
+	<Label item="NDPS_StatusLabel">
+		<ScreenID>NDPS_StatusLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>16</X><Y>398</Y></Location>
+		<Size><CX>736</CX><CY>34</CY></Size>
+		<Text>Waiting for DPS data.</Text>
+		<Font>2</Font>
+		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
+		<NoWrap>false</NoWrap>
+	</Label>
+
+	<Screen item="NativeDpsWnd">
+		<ScreenID>NativeDpsWnd</ScreenID>
+		<RelativePosition>false</RelativePosition>
+		<Location><X>120</X><Y>100</Y></Location>
+		<Size><CX>766</CX><CY>444</CY></Size>
+		<Text>DPS Parser</Text>
+		<DrawTemplate>WDT_Def</DrawTemplate>
+		<Style_Titlebar>true</Style_Titlebar>
+		<Style_Closebox>true</Style_Closebox>
+		<Style_Minimizebox>true</Style_Minimizebox>
+		<Style_Border>true</Style_Border>
+		<Style_Sizable>false</Style_Sizable>
+		<Style_Transparent>false</Style_Transparent>
+		<Pieces>NDPS_TitleLabel</Pieces>
+		<Pieces>NDPS_SummaryLabel</Pieces>
+		<Pieces>NDPS_RefreshButton</Pieces>
+		<Pieces>NDPS_ResetButton</Pieces>
+		<Pieces>NDPS_LiveButton</Pieces>
+		<Pieces>NDPS_DpsList</Pieces>
+		<Pieces>NDPS_StatusLabel</Pieces>
+	</Screen>
+</XML>

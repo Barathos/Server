@@ -1,69 +1,56 @@
-/*	EQEMu: Everquest Server Emulator
-	Copyright (C) 2001-2002 EQEMu Development Team (http://eqemu.org)
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; version 2 of the License.
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
 	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY except by those people which sell it, which
-	are required to give you total support for your newly bought product;
-	without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-	A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
-
-#include "../common/bodytypes.h"
-#include "../common/classes.h"
-#include "../common/global_define.h"
-#include "../common/misc_functions.h"
-#include "../common/rulesys.h"
-#include "../common/seperator.h"
-#include "../common/spdat.h"
-#include "../common/strings.h"
-#include "../common/emu_versions.h"
-#include "../common/features.h"
-#include "../common/item_instance.h"
-#include "../common/linked_list.h"
-#include "../common/servertalk.h"
-#include "../common/say_link.h"
-#include "../common/data_verification.h"
-
-#include "../common/repositories/npc_types_repository.h"
-#include "../common/repositories/spawngroup_repository.h"
-#include "../common/repositories/spawn2_repository.h"
-#include "../common/repositories/spawnentry_repository.h"
-
-#include "client.h"
-#include "entity.h"
 #include "npc.h"
-#include "string_ids.h"
-#include "spawn2.h"
-#include "zone.h"
-#include "quest_parser_collection.h"
-#include "water_map.h"
-#include "npc_scale_manager.h"
 
-#include "bot.h"
-#include "../common/skill_caps.h"
-#include "../common/events/player_event_logs.h"
+#include "common/bodytypes.h"
+#include "common/classes.h"
+#include "common/data_verification.h"
+#include "common/emu_versions.h"
+#include "common/events/player_event_logs.h"
+#include "common/features.h"
+#include "common/item_instance.h"
+#include "common/linked_list.h"
+#include "common/misc_functions.h"
+#include "common/repositories/npc_types_repository.h"
+#include "common/repositories/spawn2_repository.h"
+#include "common/repositories/spawnentry_repository.h"
+#include "common/repositories/spawngroup_repository.h"
+#include "common/rulesys.h"
+#include "common/say_link.h"
+#include "common/seperator.h"
+#include "common/servertalk.h"
+#include "common/skill_caps.h"
+#include "common/spdat.h"
+#include "common/strings.h"
+#include "zone/bot.h"
+#include "zone/client.h"
+#include "zone/dialogue_window.h"
+#include "zone/entity.h"
+#include "zone/npc_scale_manager.h"
+#include "zone/quest_parser_collection.h"
+#include "zone/spawn2.h"
+#include "zone/string_ids.h"
+#include "zone/water_map.h"
+#include "zone/zone.h"
 
-#include <stdio.h>
+#include <cstdio>
 #include <string>
 #include <utility>
-
-#ifdef _WINDOWS
-#define snprintf	_snprintf
-#define strncasecmp	_strnicmp
-#define strcasecmp	_stricmp
-#else
-#include <stdlib.h>
-#include <pthread.h>
-
-#endif
 
 extern Zone* zone;
 extern QueryServ* QServ;
@@ -862,6 +849,11 @@ void NPC::Depop(bool start_spawn_timer) {
 
 	if (parse->HasQuestSub(ZONE_CONTROLLER_NPC_ID, EVENT_DESPAWN_ZONE)) {
 		DispatchZoneControllerEvent(EVENT_DESPAWN_ZONE, this, "", 0, nullptr);
+	}
+
+	if (parse->ZoneHasQuestSub(EVENT_DESPAWN_ZONE)) {
+		std::vector<std::any> args = { this };
+		parse->EventZone(EVENT_DESPAWN_ZONE, zone, "", 0, &args);
 	}
 
 	p_depop = true;
@@ -2269,9 +2261,9 @@ void NPC::SetLevel(uint8 in_level, bool command)
 
 void NPC::ModifyNPCStat(const std::string& stat, const std::string& value)
 {
-	auto stat_lower = Strings::ToLower(stat);
+	const std::string& stat_lower = Strings::ToLower(stat);
 
-	auto variable_key = fmt::format(
+	const std::string& variable_key = fmt::format(
 		"modify_stat_{}",
 		stat_lower
 	);
@@ -2283,40 +2275,24 @@ void NPC::ModifyNPCStat(const std::string& stat, const std::string& value)
 	if (stat_lower == "ac") {
 		AC = Strings::ToInt(value);
 		CalcAC();
-		return;
-	}
-	else if (stat_lower == "str") {
+	} else if (stat_lower == "str") {
 		STR = Strings::ToInt(value);
-		return;
-	}
-	else if (stat_lower == "sta") {
+	} else if (stat_lower == "sta") {
 		STA = Strings::ToInt(value);
-		return;
-	}
-	else if (stat_lower == "agi") {
+	} else if (stat_lower == "agi") {
 		AGI = Strings::ToInt(value);
 		CalcAC();
-		return;
-	}
-	else if (stat_lower == "dex") {
+	} else if (stat_lower == "dex") {
 		DEX = Strings::ToInt(value);
-		return;
-	}
-	else if (stat_lower == "wis") {
+	} else if (stat_lower == "wis") {
 		WIS = Strings::ToInt(value);
 		CalcMaxMana();
-		return;
-	}
-	else if (stat_lower == "int" || stat_lower == "_int") {
+	} else if (stat_lower == "int" || stat_lower == "_int") {
 		INT = Strings::ToInt(value);
 		CalcMaxMana();
-		return;
-	}
-	else if (stat_lower == "cha") {
+	} else if (stat_lower == "cha") {
 		CHA = Strings::ToInt(value);
-		return;
-	}
-	else if (stat_lower == "max_hp") {
+	} else if (stat_lower == "max_hp") {
 		base_hp = Strings::ToBigInt(value);
 
 		CalcMaxHP();
@@ -2324,45 +2300,27 @@ void NPC::ModifyNPCStat(const std::string& stat, const std::string& value)
 			current_hp = max_hp;
 		}
 
-		return;
-	}
-	else if (stat_lower == "max_mana") {
+	} else if (stat_lower == "max_mana") {
 		npc_mana = Strings::ToUnsignedBigInt(value);
 		CalcMaxMana();
 		if (current_mana > max_mana) {
 			current_mana = max_mana;
 		}
-		return;
-	}
-	else if (stat_lower == "mr") {
+	} else if (stat_lower == "mr") {
 		MR = Strings::ToInt(value);
-		return;
-	}
-	else if (stat_lower == "fr") {
+	} else if (stat_lower == "fr") {
 		FR = Strings::ToInt(value);
-		return;
-	}
-	else if (stat_lower == "cr") {
+	} else if (stat_lower == "cr") {
 		CR = Strings::ToInt(value);
-		return;
-	}
-	else if (stat_lower == "cor") {
+	} else if (stat_lower == "cor") {
 		Corrup = Strings::ToInt(value);
-		return;
-	}
-	else if (stat_lower == "pr") {
+	} else if (stat_lower == "pr") {
 		PR = Strings::ToInt(value);
-		return;
-	}
-	else if (stat_lower == "dr") {
+	} else if (stat_lower == "dr") {
 		DR = Strings::ToInt(value);
-		return;
-	}
-	else if (stat_lower == "phr") {
+	} else if (stat_lower == "phr") {
 		PhR = Strings::ToInt(value);
-		return;
-	}
-	else if (stat_lower == "runspeed") {
+	} else if (stat_lower == "runspeed") {
 		runspeed       = Strings::ToFloat(value);
 		base_runspeed  = (int) (runspeed * 40.0f);
 		base_walkspeed = base_runspeed * 100 / 265;
@@ -2370,297 +2328,229 @@ void NPC::ModifyNPCStat(const std::string& stat, const std::string& value)
 		base_fearspeed = base_runspeed * 100 / 127;
 		fearspeed      = ((float) base_fearspeed) * 0.025f;
 		CalcBonuses();
-		return;
-	}
-	else if (stat_lower == "special_attacks") {
+	} else if (stat_lower == "special_attacks") {
 		NPCSpecialAttacks(value.c_str(), 0, true);
-		return;
-	}
-	else if (stat_lower == "special_abilities") {
+	} else if (stat_lower == "special_abilities") {
 		ProcessSpecialAbilities(value);
-		return;
-	}
-	else if (stat_lower == "attack_speed") {
+	} else if (stat_lower == "attack_speed") {
 		attack_speed = Strings::ToFloat(value);
 		CalcBonuses();
-		return;
-	}
-	else if (stat_lower == "attack_delay") {
+	} else if (stat_lower == "attack_delay") {
 		/* TODO: fix DB */
 		attack_delay = Strings::ToInt(value) * 100;
 		CalcBonuses();
-		return;
-	}
-	else if (stat_lower == "atk") {
+	} else if (stat_lower == "atk") {
 		ATK = Strings::ToInt(value);
-		return;
-	}
-	else if (stat_lower == "accuracy") {
+	} else if (stat_lower == "accuracy") {
 		accuracy_rating = Strings::ToInt(value);
-		return;
-	}
-	else if (stat_lower == "avoidance") {
+	} else if (stat_lower == "avoidance") {
 		avoidance_rating = Strings::ToInt(value);
-		return;
-	}
-	else if (stat_lower == "trackable") {
+	} else if (stat_lower == "trackable") {
 		trackable = Strings::ToInt(value);
-		return;
-	}
-	else if (stat_lower == "min_hit") {
-		min_dmg = Strings::ToInt(value);
+	} else if (stat_lower == "min_hit") {
+		min_dmg     = Strings::ToInt(value);
 		// Clamp max_dmg to be >= min_dmg
-		max_dmg = std::max(min_dmg, max_dmg);
+		max_dmg     = std::max(min_dmg, max_dmg);
 		base_damage = round((max_dmg - min_dmg) / 1.9);
 		min_damage  = min_dmg - round(base_damage / 10.0);
-		return;
-	}
-	else if (stat_lower == "max_hit") {
-		max_dmg = Strings::ToInt(value);
+	} else if (stat_lower == "max_hit") {
+		max_dmg     = Strings::ToInt(value);
 		// Clamp min_dmg to be <= max_dmg
-		min_dmg = std::min(min_dmg, max_dmg);
+		min_dmg     = std::min(min_dmg, max_dmg);
 		base_damage = round((max_dmg - min_dmg) / 1.9);
 		min_damage  = min_dmg - round(base_damage / 10.0);
-		return;
-	}
-	else if (stat_lower == "attack_count") {
+	} else if (stat_lower == "attack_count") {
 		attack_count = Strings::ToInt(value);
-		return;
-	}
-	else if (stat_lower == "see_invis") {
+	} else if (stat_lower == "see_invis") {
 		see_invis = Strings::ToInt(value);
-		return;
-	}
-	else if (stat_lower == "see_invis_undead") {
+	} else if (stat_lower == "see_invis_undead") {
 		see_invis_undead = Strings::ToInt(value);
-		return;
-	}
-	else if (stat_lower == "see_hide") {
+	} else if (stat_lower == "see_hide") {
 		see_hide = Strings::ToInt(value);
-		return;
-	}
-	else if (stat_lower == "see_improved_hide") {
+	} else if (stat_lower == "see_improved_hide") {
 		see_improved_hide = Strings::ToInt(value);
-		return;
-	}
-	else if (stat_lower == "hp_regen") {
+	} else if (stat_lower == "hp_regen") {
 		hp_regen = Strings::ToBigInt(value);
-		return;
-	}
-	else if (stat_lower == "hp_regen_per_second") {
+	} else if (stat_lower == "hp_regen_per_second") {
 		hp_regen_per_second = Strings::ToBigInt(value);
-		return;
-	}
-	else if (stat_lower == "mana_regen") {
+	} else if (stat_lower == "mana_regen") {
 		mana_regen = Strings::ToBigInt(value);
-		return;
-	}
-	else if (stat_lower == "level") {
+	} else if (stat_lower == "level") {
 		SetLevel(Strings::ToInt(value));
-		return;
-	}
-	else if (stat_lower == "aggro") {
+	} else if (stat_lower == "aggro") {
 		pAggroRange = Strings::ToFloat(value);
-		return;
-	}
-	else if (stat_lower == "assist") {
+	} else if (stat_lower == "assist") {
 		pAssistRange = Strings::ToFloat(value);
-		return;
-	}
-	else if (stat_lower == "slow_mitigation") {
+	} else if (stat_lower == "slow_mitigation") {
 		slow_mitigation = Strings::ToInt(value);
-		return;
-	}
-	else if (stat_lower == "loottable_id") {
+	} else if (stat_lower == "loottable_id") {
 		m_loottable_id = Strings::ToFloat(value);
-		return;
-	}
-	else if (stat_lower == "healscale") {
+	} else if (stat_lower == "healscale") {
 		healscale = Strings::ToFloat(value);
-		return;
-	}
-	else if (stat_lower == "spellscale") {
+	} else if (stat_lower == "spellscale") {
 		spellscale = Strings::ToFloat(value);
-		return;
-	}
-	else if (stat_lower == "npc_spells_id") {
+	} else if (stat_lower == "npc_spells_id") {
 		AI_AddNPCSpells(Strings::ToInt(value));
-		return;
-	}
-	else if (stat_lower == "npc_spells_effects_id") {
+	} else if (stat_lower == "npc_spells_effects_id") {
 		AI_AddNPCSpellsEffects(Strings::ToInt(value));
 		CalcBonuses();
-		return;
-	}
-	else if (stat_lower == "heroic_strikethrough") {
+	} else if (stat_lower == "heroic_strikethrough") {
 		heroic_strikethrough = Strings::ToInt(value);
-		return;
-	}
-	else if (stat_lower == "keeps_sold_items") {
+	} else if (stat_lower == "keeps_sold_items") {
 		SetKeepsSoldItems(Strings::ToBool(value));
-		return;
+	} else if (stat_lower == "charm_ac") {
+		charm_ac = Strings::ToInt(value);
+	} else if (stat_lower == "charm_min_dmg") {
+		charm_min_dmg = Strings::ToInt(value);
+	} else if (stat_lower == "charm_max_dmg") {
+		charm_max_dmg = Strings::ToInt(value);
+	} else if (stat_lower == "charm_attack_delay") {
+		charm_attack_delay = Strings::ToInt(value);
+	} else if (stat_lower == "charm_accuracy_rating") {
+		charm_accuracy_rating = Strings::ToInt(value);
+	} else if (stat_lower == "charm_avoidance_rating") {
+		charm_avoidance_rating = Strings::ToInt(value);
+	} else if (stat_lower == "charm_atk") {
+		charm_atk = Strings::ToInt(value);
+	} else if (stat_lower == "default_ac") {
+		default_ac = Strings::ToInt(value);
+	} else if (stat_lower == "default_min_dmg") {
+		default_min_dmg = Strings::ToInt(value);
+	} else if (stat_lower == "default_max_dmg") {
+		default_max_dmg = Strings::ToInt(value);
+	} else if (stat_lower == "default_attack_delay") {
+		default_attack_delay = Strings::ToInt(value);
+	} else if (stat_lower == "default_accuracy_rating") {
+		default_accuracy_rating = Strings::ToInt(value);
+	} else if (stat_lower == "default_avoidance_rating") {
+		default_avoidance_rating = Strings::ToInt(value);
+	} else if (stat_lower == "default_atk") {
+		default_atk = Strings::ToInt(value);
 	}
 }
 
 float NPC::GetNPCStat(const std::string& stat)
 {
+	const std::string& stat_lower = Strings::ToLower(stat);
 
-	if (auto stat_lower = Strings::ToLower(stat); stat_lower == "ac") {
+	if (stat_lower == "ac") {
 		return AC;
-	}
-	else if (stat_lower == "str") {
+	} else if (stat_lower == "str") {
 		return STR;
-	}
-	else if (stat_lower == "sta") {
+	} else if (stat_lower == "sta") {
 		return STA;
-	}
-	else if (stat_lower == "agi") {
+	} else if (stat_lower == "agi") {
 		return AGI;
-	}
-	else if (stat_lower == "dex") {
+	} else if (stat_lower == "dex") {
 		return DEX;
-	}
-	else if (stat_lower == "wis") {
+	} else if (stat_lower == "wis") {
 		return WIS;
-	}
-	else if (stat_lower == "int" || stat_lower == "_int") {
+	} else if (stat_lower == "int" || stat_lower == "_int") {
 		return INT;
-	}
-	else if (stat_lower == "cha") {
+	} else if (stat_lower == "cha") {
 		return CHA;
-	}
-	else if (stat_lower == "max_hp") {
+	} else if (stat_lower == "max_hp") {
 		return base_hp;
-	}
-	else if (stat_lower == "max_mana") {
+	} else if (stat_lower == "max_mana") {
 		return npc_mana;
-	}
-	else if (stat_lower == "mr") {
+	} else if (stat_lower == "mr") {
 		return MR;
-	}
-	else if (stat_lower == "fr") {
+	} else if (stat_lower == "fr") {
 		return FR;
-	}
-	else if (stat_lower == "cr") {
+	} else if (stat_lower == "cr") {
 		return CR;
-	}
-	else if (stat_lower == "cor") {
+	} else if (stat_lower == "cor") {
 		return Corrup;
-	}
-	else if (stat_lower == "phr") {
+	} else if (stat_lower == "phr") {
 		return PhR;
-	}
-	else if (stat_lower == "pr") {
+	} else if (stat_lower == "pr") {
 		return PR;
-	}
-	else if (stat_lower == "dr") {
+	} else if (stat_lower == "dr") {
 		return DR;
-	}
-	else if (stat_lower == "runspeed") {
+	} else if (stat_lower == "runspeed") {
 		return runspeed;
-	}
-	else if (stat_lower == "attack_speed") {
+	} else if (stat_lower == "attack_speed") {
 		return attack_speed;
-	}
-	else if (stat_lower == "attack_delay") {
+	} else if (stat_lower == "attack_delay") {
 		return attack_delay;
-	}
-	else if (stat_lower == "atk") {
+	} else if (stat_lower == "atk") {
 		return ATK;
-	}
-	else if (stat_lower == "accuracy") {
+	} else if (stat_lower == "accuracy") {
 		return accuracy_rating;
-	}
-	else if (stat_lower == "avoidance") {
+	} else if (stat_lower == "avoidance") {
 		return avoidance_rating;
-	}
-	else if (stat_lower == "trackable") {
+	} else if (stat_lower == "trackable") {
 		return trackable;
-	}
-	else if (stat_lower == "min_hit") {
+	} else if (stat_lower == "min_hit") {
 		return min_dmg;
-	}
-	else if (stat_lower == "max_hit") {
+	} else if (stat_lower == "max_hit") {
 		return max_dmg;
-	}
-	else if (stat_lower == "attack_count") {
+	} else if (stat_lower == "attack_count") {
 		return attack_count;
-	}
-	else if (stat_lower == "see_invis") {
+	} else if (stat_lower == "see_invis") {
 		return see_invis;
-	}
-	else if (stat_lower == "see_invis_undead") {
+	} else if (stat_lower == "see_invis_undead") {
 		return see_invis_undead;
-	}
-	else if (stat_lower == "see_hide") {
+	} else if (stat_lower == "see_hide") {
 		return see_hide;
-	}
-	else if (stat_lower == "see_improved_hide") {
+	} else if (stat_lower == "see_improved_hide") {
 		return see_improved_hide;
-	}
-	else if (stat_lower == "hp_regen") {
+	} else if (stat_lower == "hp_regen") {
 		return hp_regen;
-	}
-	else if (stat_lower == "hp_regen_per_second") {
+	} else if (stat_lower == "hp_regen_per_second") {
 		return hp_regen_per_second;
-	}
-	else if (stat_lower == "mana_regen") {
+	} else if (stat_lower == "mana_regen") {
 		return mana_regen;
-	}
-	else if (stat_lower == "level") {
+	} else if (stat_lower == "level") {
 		return GetOrigLevel();
-	}
-	else if (stat_lower == "aggro") {
+	} else if (stat_lower == "aggro") {
 		return pAggroRange;
-	}
-	else if (stat_lower == "assist") {
+	} else if (stat_lower == "assist") {
 		return pAssistRange;
-	}
-	else if (stat_lower == "slow_mitigation") {
+	} else if (stat_lower == "slow_mitigation") {
 		return slow_mitigation;
-	}
-	else if (stat_lower == "loottable_id") {
+	} else if (stat_lower == "loottable_id") {
 		return m_loottable_id;
-	}
-	else if (stat_lower == "healscale") {
+	} else if (stat_lower == "healscale") {
 		return healscale;
-	}
-	else if (stat_lower == "spellscale") {
+	} else if (stat_lower == "spellscale") {
 		return spellscale;
-	}
-	else if (stat_lower == "npc_spells_id") {
+	} else if (stat_lower == "npc_spells_id") {
 		return npc_spells_id;
-	}
-	else if (stat_lower == "npc_spells_effects_id") {
+	} else if (stat_lower == "npc_spells_effects_id") {
 		return npc_spells_effects_id;
-	}
-	else if (stat_lower == "heroic_strikethrough") {
+	} else if (stat_lower == "heroic_strikethrough") {
 		return heroic_strikethrough;
-	}
-	else if (stat_lower == "keeps_sold_items") {
+	} else if (stat_lower == "keeps_sold_items") {
 		return keeps_sold_items;
-	}
-	//default values
-	else if (stat_lower == "default_ac") {
+	} else if (stat_lower == "default_ac") {
 		return default_ac;
-	}
-	else if (stat_lower == "default_min_hit") {
+	} else if (stat_lower == "default_min_hit") {
 		return default_min_dmg;
-	}
-	else if (stat_lower == "default_max_hit") {
+	} else if (stat_lower == "default_max_hit") {
 		return default_max_dmg;
-	}
-	else if (stat_lower == "default_attack_delay") {
+	} else if (stat_lower == "default_attack_delay") {
 		return default_attack_delay;
-	}
-	else if (stat_lower == "default_accuracy") {
+	} else if (stat_lower == "default_accuracy") {
 		return default_accuracy_rating;
-	}
-	else if (stat_lower == "default_avoidance") {
+	} else if (stat_lower == "default_avoidance") {
 		return default_avoidance_rating;
-	}
-	else if (stat_lower == "default_atk") {
+	} else if (stat_lower == "default_atk") {
 		return default_atk;
+	} else if (stat_lower == "charm_ac") {
+		return charm_ac;
+	} else if (stat_lower == "charm_min_hit") {
+		return charm_min_dmg;
+	} else if (stat_lower == "charm_max_hit") {
+		return charm_max_dmg;
+	} else if (stat_lower == "charm_attack_delay") {
+		return charm_attack_delay;
+	} else if (stat_lower == "charm_accuracy") {
+		return charm_accuracy_rating;
+	} else if (stat_lower == "charm_avoidance") {
+		return charm_avoidance_rating;
+	} else if (stat_lower == "charm_atk") {
+		return charm_atk;
 	}
 
 	return 0.0f;
@@ -2896,7 +2786,7 @@ void NPC::DoNPCEmote(uint8 event_, uint32 emote_id, Mob* t)
 	// Mob Variables
 	Strings::FindReplace(processed, "$mname", GetCleanName());
 	Strings::FindReplace(processed, "$mracep", GetRacePlural());
-	Strings::FindReplace(processed, "$mrace", GetPlayerRaceName(GetRace()));
+	Strings::FindReplace(processed, "$mrace", GetRaceIDName(GetRace()));
 	Strings::FindReplace(processed, "$mclass", GetClassIDName(GetClass()));
 	Strings::FindReplace(processed, "$mclassp", GetClassPlural());
 
@@ -2904,7 +2794,7 @@ void NPC::DoNPCEmote(uint8 event_, uint32 emote_id, Mob* t)
 	Strings::FindReplace(processed, "$name", t ? t->GetCleanName() : "foe");
 	Strings::FindReplace(processed, "$class", t ? GetClassIDName(t->GetClass()) : "class");
 	Strings::FindReplace(processed, "$classp", t ? t->GetClassPlural() : "classes");
-	Strings::FindReplace(processed, "$race", t ? GetPlayerRaceName(t->GetRace()) : "race");
+	Strings::FindReplace(processed, "$race", t ? GetRaceIDName(t->GetRace()) : "race");
 	Strings::FindReplace(processed, "$racep", t ? t->GetRacePlural() : "races");
 
 	if (emoteid == e->emoteid) {
@@ -3382,62 +3272,55 @@ void NPC::DepopSwarmPets()
 	}
 }
 
-void NPC::ModifyStatsOnCharm(bool is_charm_removed)
+void NPC::ModifyStatsOnCharm(bool remove_charm, Mob* charmer)
 {
-	if (is_charm_removed) {
-		if (charm_ac) {
-			AC = default_ac;
-		}
-		if (charm_attack_delay) {
-			attack_delay = default_attack_delay;
-		}
-		if (charm_accuracy_rating) {
-			accuracy_rating = default_accuracy_rating;
-		}
-		if (charm_avoidance_rating) {
-			avoidance_rating = default_avoidance_rating;
-		}
-		if (charm_atk) {
-			ATK = default_atk;
-		}
-		if (charm_min_dmg || charm_max_dmg) {
-			base_damage = round((default_max_dmg - default_min_dmg) / 1.9);
-			min_damage  = default_min_dmg - round(base_damage / 10.0);
-		}
-		if (RuleB(Spells, CharmDisablesSpecialAbilities)) {
-			ProcessSpecialAbilities(default_special_abilities);
-		}
-
-		SetAttackTimer();
-		CalcAC();
-
-		return;
+	if (!remove_charm && parse->HasQuestSub(GetNPCTypeID(), EVENT_CHARM_START)) {
+		parse->EventNPC(EVENT_CHARM_START, this, charmer, "", 0);
+	} else if (remove_charm && parse->HasQuestSub(GetNPCTypeID(), EVENT_CHARM_END)) {
+		parse->EventNPC(EVENT_CHARM_END, this, charmer, "", 0);
 	}
 
-	if (charm_ac) {
-		AC = charm_ac;
+	const int new_ac               = remove_charm ? default_ac : charm_ac;
+	const int new_attack_delay     = remove_charm ? default_attack_delay : charm_attack_delay;
+	const int new_accuracy_rating  = remove_charm ? default_accuracy_rating : charm_accuracy_rating;
+	const int new_avoidance_rating = remove_charm ? default_avoidance_rating : charm_avoidance_rating;
+	const int new_atk              = remove_charm ? default_atk : charm_atk;
+	const int new_min_dmg          = remove_charm ? default_min_dmg : charm_min_dmg;
+	const int new_max_dmg          = remove_charm ? default_max_dmg : charm_max_dmg;
+
+	if (new_ac) {
+		AC = new_ac;
 	}
-	if (charm_attack_delay) {
-		attack_delay = charm_attack_delay;
+
+	if (new_attack_delay) {
+		attack_delay = new_attack_delay;
 	}
-	if (charm_accuracy_rating) {
-		accuracy_rating = charm_accuracy_rating;
+
+	if (new_accuracy_rating) {
+		accuracy_rating = new_accuracy_rating;
 	}
-	if (charm_avoidance_rating) {
-		avoidance_rating = charm_avoidance_rating;
+
+	if (new_avoidance_rating) {
+		avoidance_rating = new_avoidance_rating;
 	}
-	if (charm_atk) {
-		ATK = charm_atk;
+
+	if (new_atk) {
+		ATK = new_atk;
 	}
-	if (charm_min_dmg || charm_max_dmg) {
-		base_damage = round((charm_max_dmg - charm_min_dmg) / 1.9);
-		min_damage  = charm_min_dmg - round(base_damage / 10.0);
+
+	if (new_min_dmg || new_max_dmg) {
+		base_damage = std::round((new_max_dmg - new_min_dmg) / 1.9);
+		min_damage  = new_min_dmg - std::round(base_damage / 10.0);
 	}
+
 	if (RuleB(Spells, CharmDisablesSpecialAbilities)) {
-		ClearSpecialAbilities();
+		if (remove_charm) {
+			ProcessSpecialAbilities(default_special_abilities);
+		} else {
+			ClearSpecialAbilities();
+		}
 	}
 
-	// the rest of the stats aren't cached, so lets just do these two instead of full CalcBonuses()
 	SetAttackTimer();
 	CalcAC();
 }
@@ -3787,7 +3670,7 @@ bool NPC::IsGuard()
 	case Race::HalasCitizen:
 	case Race::NeriakCitizen:
 	case Race::GrobbCitizen:
-	case OGGOK_CITIZEN:
+	case Race::OggokCitizen:
 	case Race::KaladimCitizen:
 		return true;
 	default:
@@ -4009,7 +3892,7 @@ void NPC::SetTaunting(bool is_taunting) {
 	taunting = is_taunting;
 
 	if (IsPet() && IsPetOwnerClient()) {
-		GetOwner()->CastToClient()->SetPetCommandState(PET_BUTTON_TAUNT, is_taunting);
+		GetOwner()->CastToClient()->SetPetCommandState(PetButton::Taunt, is_taunting);
 	}
 }
 
@@ -4283,6 +4166,254 @@ bool NPC::FacesTarget()
 	const auto& v = Strings::Split(excluded_races_rule, ",");
 
 	return std::find(v.begin(), v.end(), std::to_string(GetBaseRace())) == v.end();
+}
+
+int NPC::GetPetOriginClass()
+{
+	if (!GetPetSpellID()) {
+		return Class::None;
+	}
+
+	for (int class_id = Class::Warrior; class_id <= Class::Berserker; class_id++) {
+		if (GetSpellLevel(GetPetSpellID(), class_id) < UINT8_MAX) {
+			return class_id;
+		}
+	}
+
+	return Class::None;
+}
+
+void NPC::SendPetStatsWindow(Client *c)
+{
+	if (!c || !GetOwner() || !GetOwner()->IsClient() || c->GetID() != GetOwnerID()) {
+		return;
+	}
+
+	const std::string standard_text = "white";
+	const std::string header_color  = "royal_blue";
+
+	const auto cell = [&](const std::string &message) {
+		return DialogueWindow::TableCell(DialogueWindow::ColorMessage(standard_text, message));
+	};
+
+	const auto row = [&](const std::string &name, const std::string &value) {
+		return DialogueWindow::TableRow(cell(name) + cell(value));
+	};
+
+	const auto paired_row = [&](const std::string &left_name, const std::string &left_value, const std::string &right_name, const std::string &right_value) {
+		return DialogueWindow::TableRow(cell(left_name) + cell(left_value) + cell(right_name) + cell(right_value));
+	};
+
+	std::string final_string;
+
+	final_string += DialogueWindow::Table(
+		DialogueWindow::TableRow(
+			DialogueWindow::TableCell(
+				DialogueWindow::ColorMessage(
+					standard_text,
+					fmt::format("Level: {} (Pet Power: {})", Strings::Commify(GetLevel()), Strings::Commify(GetPetPower()))
+				)
+			)
+		)
+	);
+
+	const auto current_hp = GetHP();
+	const auto max_hp     = GetMaxHP();
+	const auto hp_percent = max_hp > 0 ? (static_cast<float>(current_hp) / static_cast<float>(max_hp)) * 100.0f : 0.0f;
+	const auto hp_color   = hp_percent >= 75.0f ? "green" : hp_percent >= 25.0f ? "green_yellow" : "red";
+
+	final_string += DialogueWindow::Table(
+		DialogueWindow::TableRow(
+			cell("Health") +
+			DialogueWindow::TableCell(
+				fmt::format(
+					"{} / {}",
+					DialogueWindow::ColorMessage(hp_color, Strings::Commify(current_hp)),
+					DialogueWindow::ColorMessage(standard_text, Strings::Commify(max_hp))
+				)
+			)
+		)
+	);
+
+	const auto *primary_weapon   = GetInv().GetItem(EQ::invslot::slotPrimary);
+	const auto *secondary_weapon = GetInv().GetItem(EQ::invslot::slotSecondary);
+
+	const auto has_primary_weapon = primary_weapon && primary_weapon->GetItem();
+	const auto has_two_hander = has_primary_weapon && (
+		primary_weapon->GetItem()->ItemType == EQ::item::ItemType2HSlash ||
+		primary_weapon->GetItem()->ItemType == EQ::item::ItemType2HBlunt ||
+		primary_weapon->GetItem()->ItemType == EQ::item::ItemType2HPiercing
+	);
+
+	const auto adjusted_delay = [&](int delay) {
+		if (delay <= 0) {
+			delay = 35;
+		}
+
+		const auto scaled_delay = delay * 100;
+		const auto haste        = GetHaste();
+
+		if (haste <= 0) {
+			return scaled_delay;
+		}
+
+		if (haste < 100) {
+			return static_cast<int>(scaled_delay * (2.0f - (static_cast<float>(haste) / 100.0f)));
+		}
+
+		return static_cast<int>(scaled_delay / (static_cast<float>(haste) / 100.0f));
+	};
+
+	const auto primary_weapon_damage = has_primary_weapon ? primary_weapon->GetItemWeaponDamage(true) : 0;
+	const auto primary_delay = has_primary_weapon && primary_weapon->GetItem()->Delay > 0 ?
+		primary_weapon->GetItem()->Delay :
+		GetAttackDelay();
+
+	std::string combat_rows;
+	combat_rows += row(
+		"Main Hand:",
+		fmt::format(
+			"DMG {}-{}, Delay {}",
+			Strings::Commify(GetMinDamage()),
+			Strings::Commify(GetBaseDamage() + primary_weapon_damage),
+			Strings::Commify(adjusted_delay(primary_delay) / 100)
+		)
+	);
+
+	if (!has_two_hander && secondary_weapon && secondary_weapon->GetItem()) {
+		const auto secondary_weapon_damage = secondary_weapon->GetItemWeaponDamage(true);
+		const auto secondary_delay = secondary_weapon->GetItem()->Delay > 0 ?
+			secondary_weapon->GetItem()->Delay :
+			GetAttackDelay();
+
+		combat_rows += row(
+			"Off Hand:",
+			fmt::format(
+				"DMG {}-{}, Delay {}",
+				Strings::Commify(static_cast<int>(GetMinDamage() * 0.62f)),
+				Strings::Commify(static_cast<int>((GetMinDamage() + secondary_weapon_damage) * 0.62f)),
+				Strings::Commify(adjusted_delay(secondary_delay) / 100)
+			)
+		);
+	}
+
+	combat_rows += row("ATK", Strings::Commify(GetATK()));
+	combat_rows += row("MIT", Strings::Commify(GetMitigationAC()));
+	combat_rows += row("EVA", Strings::Commify(GetTotalDefense()));
+
+	final_string += DialogueWindow::Table(combat_rows);
+
+	if (auto *owner = GetOwner()) {
+		const auto owner_spell = owner->GetSpellBonuses();
+		const auto owner_aa    = owner->GetAABonuses();
+		const auto owner_item  = owner->GetItemBonuses();
+		const auto flurry = owner_spell.PetFlurry + owner_aa.PetFlurry + owner_item.PetFlurry + spellbonuses.FlurryChance;
+		const auto critical = owner_spell.PetCriticalHit + owner_aa.PetCriticalHit + owner_item.PetCriticalHit;
+		const auto mitigation = owner_spell.PetMeleeMitigation + owner_aa.PetMeleeMitigation + owner_item.PetMeleeMitigation;
+		const auto avoidance = owner_spell.PetAvoidance + owner_aa.PetAvoidance + owner_item.PetAvoidance;
+
+		final_string += DialogueWindow::ColorMessage(header_color, "Owner Abilities");
+		final_string += DialogueWindow::Table(
+			paired_row("Flurry Rate", Strings::Commify(flurry), "Crit Rate", Strings::Commify(critical)) +
+			paired_row("Extra Mitigation", Strings::Commify(mitigation), "Extra Avoidance", Strings::Commify(avoidance))
+		);
+	}
+
+	std::string ability_rows;
+	ability_rows += paired_row(
+		"Haste",
+		fmt::format("{}%", Strings::Commify(GetHaste() - 100)),
+		"HP Regen",
+		fmt::format("{}/tick", Strings::Commify(GetHPRegen()))
+	);
+	ability_rows += paired_row(
+		"Spell Shield",
+		fmt::format("{}%", Strings::Commify(spellbonuses.SpellShield + itembonuses.SpellShield)),
+		"DoT Shield",
+		fmt::format("{}%", Strings::Commify(spellbonuses.DoTShielding + itembonuses.DoTShielding))
+	);
+	ability_rows += paired_row(
+		"Shielding",
+		fmt::format("{}%", Strings::Commify(spellbonuses.MeleeMitigation + itembonuses.MeleeMitigation)),
+		"DS Mitigation",
+		fmt::format("{}%", Strings::Commify(spellbonuses.DSMitigation + itembonuses.DSMitigation))
+	);
+	ability_rows += paired_row(
+		"Spell Damage",
+		Strings::Commify(spellbonuses.SpellDmg + itembonuses.SpellDmg),
+		"Heal Amount",
+		Strings::Commify(spellbonuses.HealAmt + itembonuses.HealAmt)
+	);
+	ability_rows += paired_row(
+		"Critical Spell Chance",
+		fmt::format("{}%", Strings::Commify(spellbonuses.CriticalSpellChance + itembonuses.CriticalSpellChance + aabonuses.CriticalSpellChance)),
+		"Critical Spell Damage",
+		fmt::format(
+			"{}%",
+			Strings::Commify(
+				spellbonuses.SpellCritDmgIncrease + itembonuses.SpellCritDmgIncrease + aabonuses.SpellCritDmgIncrease +
+				spellbonuses.SpellCritDmgIncNoStack + itembonuses.SpellCritDmgIncNoStack + aabonuses.SpellCritDmgIncNoStack
+			)
+		)
+	);
+	ability_rows += paired_row(
+		"Critical DoT Chance",
+		fmt::format("{}%", Strings::Commify(spellbonuses.CriticalDoTChance + itembonuses.CriticalDoTChance + aabonuses.CriticalDoTChance)),
+		"Critical DoT Damage",
+		fmt::format("{}%", Strings::Commify(spellbonuses.DotCritDmgIncrease + itembonuses.DotCritDmgIncrease + aabonuses.DotCritDmgIncrease))
+	);
+	ability_rows += paired_row(
+		"Critical Heal Chance",
+		fmt::format("{}%", Strings::Commify(spellbonuses.CriticalHealChance + itembonuses.CriticalHealChance + aabonuses.CriticalHealChance)),
+		"Critical HoT Chance",
+		fmt::format("{}%", Strings::Commify(spellbonuses.CriticalHealOverTime + itembonuses.CriticalHealOverTime + aabonuses.CriticalHealOverTime))
+	);
+
+	final_string += DialogueWindow::ColorMessage(header_color, "Special Abilities");
+	final_string += DialogueWindow::Table(ability_rows);
+
+	final_string += DialogueWindow::ColorMessage(header_color, "Statistics and Resistances");
+	final_string += DialogueWindow::Table(
+		paired_row("Agility", Strings::Commify(GetAGI()), "Cold", Strings::Commify(GetCR())) +
+		paired_row("Dexterity", Strings::Commify(GetDEX()), "Disease", Strings::Commify(GetDR())) +
+		paired_row("Intelligence", Strings::Commify(GetINT()), "Fire", Strings::Commify(GetFR())) +
+		paired_row("Stamina", Strings::Commify(GetSTA()), "Magic", Strings::Commify(GetMR())) +
+		paired_row("Strength", Strings::Commify(GetSTR()), "Poison", Strings::Commify(GetPR())) +
+		paired_row("Wisdom", Strings::Commify(GetWIS()), "Charisma", Strings::Commify(GetCHA()))
+	);
+
+	std::string equipment_rows;
+	for (int slot_id = EQ::invslot::EQUIPMENT_BEGIN; slot_id <= EQ::invslot::EQUIPMENT_END; ++slot_id) {
+		if (slot_id == EQ::invslot::slotCharm || slot_id == EQ::invslot::slotPowerSource || slot_id == EQ::invslot::slotAmmo) {
+			continue;
+		}
+
+		const auto *item = GetInv().GetItem(slot_id);
+		if (!item || !item->GetItem()) {
+			continue;
+		}
+
+		equipment_rows += row(EQ::invslot::GetInvPossessionsSlotName(slot_id), item->GetItem()->Name);
+	}
+
+	if (!equipment_rows.empty()) {
+		final_string += DialogueWindow::ColorMessage(header_color, "Equipment");
+		final_string += DialogueWindow::Table(equipment_rows);
+	}
+
+	c->SendWindow(
+		0,
+		POPUPID_PET_STATS_WINDOW,
+		0,
+		"",
+		"",
+		0,
+		1,
+		this,
+		fmt::format("Pet Stats: {}", GetCleanName()).c_str(),
+		"%s",
+		final_string.c_str()
+	);
 }
 
 bool NPC::CanPetTakeItem(const EQ::ItemInstance *inst)
@@ -4934,4 +5065,17 @@ void NPC::ResetMultiQuest() {
 	}
 
 	m_hand_in = {};
+}
+
+void NPC::SetNPCTintIndex(uint32 index)
+{
+	auto outapp = new EQApplicationPacket(OP_SpawnAppearance, sizeof(SpawnAppearance_Struct));
+	auto* s = (SpawnAppearance_Struct*) outapp->pBuffer;
+
+	s->spawn_id  = GetID();
+	s->type      = AppearanceType::NPCTintIndex;
+	s->parameter = index;
+
+	entity_list.QueueClients(this, outapp);
+	safe_delete(outapp);
 }

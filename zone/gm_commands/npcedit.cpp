@@ -1,7 +1,24 @@
-#include "../client.h"
-#include "../groups.h"
-#include "../raids.h"
-#include "../../common/repositories/npc_types_repository.h"
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
+#include "common/repositories/npc_types_repository.h"
+#include "zone/client.h"
+#include "zone/groups.h"
+#include "zone/raids.h"
 
 void SendNPCEditSubCommands(Client *c)
 {
@@ -110,6 +127,7 @@ void SendNPCEditSubCommands(Client *c)
 	c->Message(Chat::White, "Usage: #npcedit setanimation [Animation ID] - Sets an NPC's Animation on Spawn (Stored in spawn2 table)");
 	c->Message(Chat::White, "Usage: #npcedit respawntime [Respawn Time] - Sets an NPC's Respawn Timer in Seconds (Stored in spawn2 table)");
 	c->Message(Chat::White, "Usage: #npcedit set_grid [Grid ID] - Sets an NPC's Grid ID");
+	c->Message(Chat::White, "Usage: #npcedit npc_tint_id [NPC Tint ID] - Sets an NPC's Tint ID (0 to 78 for RoF2)");
 }
 
 void command_npcedit(Client *c, const Seperator *sep)

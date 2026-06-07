@@ -1,18 +1,36 @@
-#include "../common/global_define.h"
-#include "../common/misc_functions.h"
-#include "../common/strings.h"
-#include "../common/servertalk.h"
-#include "../common/rulesys.h"
-#include "../common/random.h"
-#include "adventure.h"
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
 #include "adventure_manager.h"
-#include "worlddb.h"
-#include "zonelist.h"
-#include "clientlist.h"
-#include "cliententry.h"
-#include "../common/zone_store.h"
+
+#include "common/misc_functions.h"
+#include "common/random.h"
+#include "common/rulesys.h"
+#include "common/servertalk.h"
+#include "common/strings.h"
+#include "common/zone_store.h"
+#include "world/adventure.h"
+#include "world/cliententry.h"
+#include "world/clientlist.h"
+#include "world/worlddb.h"
+#include "world/zonelist.h"
+
+#include <cstdio>
 #include <sstream>
-#include <stdio.h>
 
 AdventureManager::AdventureManager()
 {

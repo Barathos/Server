@@ -1,43 +1,40 @@
+/*	EQEmu: EQEmulator
 
-/*	EQEMu: Everquest Server Emulator
-	Copyright (C) 2001-2016 EQEMu Development Team (http://eqemu.org)
+	Copyright (C) 2001-2026 EQEmu Development Team
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; version 2 of the License.
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
 	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY except by those people which sell it, which
-	are required to give you total support for your newly bought product;
-	without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-	A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef MOB_H
-#define MOB_H
+#pragma once
 
-#include "common.h"
-#include "../common/data_bucket.h"
-#include "entity.h"
-#include "hate_list.h"
-#include "pathfinder_interface.h"
-#include "position.h"
-#include "aa_ability.h"
-#include "aa.h"
-#include "../common/light_source.h"
-#include "../common/emu_constants.h"
-#include "combat_record.h"
-#include "event_codes.h"
+#include "common/data_bucket.h"
+#include "common/emu_constants.h"
+#include "common/light_source.h"
+#include "zone/aa_ability.h"
+#include "zone/aa.h"
+#include "zone/combat_record.h"
+#include "zone/common.h"
+#include "zone/entity.h"
+#include "zone/event_codes.h"
+#include "zone/hate_list.h"
+#include "zone/heal_rotation.h"
+#include "zone/pathfinder_interface.h"
+#include "zone/position.h"
 
 #include <any>
+#include <memory>
 #include <set>
 #include <vector>
-#include <memory>
-
-#include "heal_rotation.h"
 
 char* strn0cpy(char* dest, const char* source, uint32 size);
 
@@ -98,7 +95,6 @@ class Mob : public Entity {
 public:
 	enum CLIENT_CONN_STATUS { CLIENT_CONNECTING, CLIENT_CONNECTED, CLIENT_LINKDEAD,
 						CLIENT_KICKED, DISCONNECTED, CLIENT_ERROR, CLIENT_CONNECTINGALL };
-	enum eStandingPetOrder { SPO_Follow, SPO_Sit, SPO_Guard, SPO_FeignDeath };
 
 	struct MobSpecialAbility {
 		MobSpecialAbility() {
@@ -601,7 +597,7 @@ public:
 	inline const char* GetName() const { return name; }
 	inline const char* GetOrigName() const { return orig_name; }
 	inline const char* GetLastName() const { return lastname; }
-	inline const eStandingPetOrder GetPreviousPetOrder() const { return m_previous_pet_order; }
+	inline const uint8 GetPreviousPetOrder() const { return m_previous_pet_order; }
 	const char *GetCleanName();
 	virtual void SetName(const char *new_name = nullptr) { new_name ? strn0cpy(name, new_name, 64) :
 		strn0cpy(name, GetName(), 64); return; };
@@ -1083,14 +1079,14 @@ public:
 	Mob* GetUltimateOwner();
 	void SetPetID(uint16 NewPetID);
 	inline uint16 GetPetID() const { return petid; }
-	inline PetType GetPetType() const { return type_of_pet; }
-	void SetPetType(PetType p) { type_of_pet = p; }
+	inline uint8 GetPetType() const { return type_of_pet; }
+	void SetPetType(uint8 pet_type) { type_of_pet = pet_type; }
 	inline int16 GetPetPower() const { return (petpower < 0) ? 0 : petpower; }
 	void SetPetPower(int16 p) { if (p < 0) petpower = 0; else petpower = p; }
-	bool IsFamiliar() const { return type_of_pet == petFamiliar; }
-	bool IsAnimation() const { return type_of_pet == petAnimation; }
-	bool IsCharmed() const { return type_of_pet == petCharmed; }
-	bool IsTargetLockPet() const { return type_of_pet == petTargetLock; }
+	bool IsFamiliar() const { return type_of_pet == PetType::Familiar; }
+	bool IsAnimation() const { return type_of_pet == PetType::Animation; }
+	bool IsCharmed() const { return type_of_pet == PetType::Charmed; }
+	bool IsTargetLockPet() const { return type_of_pet == PetType::TargetLock; }
 	inline uint32 GetPetTargetLockID() { return pet_targetlock_id; };
 	inline void SetPetTargetLockID(uint32 value) { pet_targetlock_id = value; };
 	void SetOwnerID(uint16 new_owner_id);
@@ -1212,8 +1208,8 @@ public:
 	inline const float GetAssistRange() const { return (spellbonuses.AssistRange == -1) ? pAssistRange : spellbonuses.AssistRange; }
 
 
-	void SetPetOrder(eStandingPetOrder i);
-	inline const eStandingPetOrder GetPetOrder() const { return pStandingPetOrder; }
+	void SetPetOrder(uint8 pet_order);
+	inline const uint8 GetPetOrder() const { return m_pet_order; }
 	inline void SetHeld(bool nState) { held = nState; }
 	inline const bool IsHeld() const { return held; }
 	inline void SetGHeld(bool nState) { gheld = nState; }
@@ -1300,7 +1296,7 @@ public:
 	bool IsPetAggroExempt(Mob *pet_owner);
 
 	void InstillDoubt(Mob *who);
-	bool Charmed() const { return type_of_pet == petCharmed; }
+	bool Charmed() const { return type_of_pet == PetType::Charmed; }
 	static uint32 GetLevelHP(uint8 tlevel);
 	uint32 GetZoneID() const; //for perl
 	uint16 GetInstanceVersion() const; //for perl
@@ -1596,7 +1592,7 @@ protected:
 	StatBonuses aabonuses;
 	uint16 petid;
 	uint16 ownerid;
-	PetType type_of_pet;
+	uint8 type_of_pet;
 	int16 petpower;
 	uint32 follow_id;
 	uint32 follow_dist;
@@ -1699,6 +1695,7 @@ protected:
 	Timer attack_timer;
 	Timer attack_dw_timer;
 	Timer ranged_timer;
+	Timer attack_autoskill_timer;
 	float attack_speed; //% increase/decrease in attack speed (not haste)
 	int attack_delay; //delay between attacks in 10ths of seconds
 	bool always_aggro;
@@ -1825,8 +1822,8 @@ protected:
 	Timer viral_timer;
 
 	// MobAI stuff
-	eStandingPetOrder pStandingPetOrder;
-	eStandingPetOrder m_previous_pet_order;
+	uint8 m_pet_order;
+	uint8 m_previous_pet_order;
 	uint32 minLastFightingDelayMoving;
 	uint32 maxLastFightingDelayMoving;
 	float pAggroRange = 0;
@@ -1954,6 +1951,3 @@ private:
 	void DoSpellInterrupt(uint16 spell_id, int32 mana_cost, int my_curmana);
 	void HandleDoorOpen();
 };
-
-#endif
-

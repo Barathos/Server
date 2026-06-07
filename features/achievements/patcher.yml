@@ -1,0 +1,12 @@
+version: 1
+id: achievements
+label: Achievements
+client: rof
+files:
+  - source: client_files/native_autoloot/ui/EQUI_NativeAchievementWnd.xml
+    destination: uifiles/default/EQUI_NativeAchievementWnd.xml
+generated:
+  eqhost: true
+  equiXml: true
+  equiIncludes:
+    - EQUI_NativeAchievementWnd.xml

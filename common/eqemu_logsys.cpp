@@ -1,56 +1,47 @@
-/**
- * EQEmulator: Everquest Server Emulator
- * Copyright (C) 2001-2018 EQEmulator Development Team (https://github.com/EQEmu/Server)
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY except by those people which sell it, which
- * are required to give you total support for your newly bought product;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- *
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
-
 #include "eqemu_logsys.h"
-#include "rulesys.h"
-#include "platform.h"
-#include "strings.h"
-#include "repositories/discord_webhooks_repository.h"
-#include "repositories/logsys_categories_repository.h"
-#include "termcolor/rang.hpp"
-#include "path_manager.h"
-#include "file.h"
 
+#include "common/file.h"
+#include "common/path_manager.h"
+#include "common/platform.h"
+#include "common/repositories/discord_webhooks_repository.h"
+#include "common/repositories/logsys_categories_repository.h"
+#include "common/rulesys.h"
+#include "common/strings.h"
+#include "common/termcolor/rang.hpp"
+
+#include <ctime>
+#include <filesystem>
 #include <iostream>
 #include <string>
-#include <time.h>
 #include <sys/stat.h>
-
-std::ofstream process_log;
-
-#include <filesystem>
 
 #ifdef _WINDOWS
+#include "common/platform/platform.h"
 #include <direct.h>
-#include <conio.h>
-#include <iostream>
-#include <dos.h>
-#include <windows.h>
-#include <process.h>
 #else
-
-#include <unistd.h>
 #include <sys/stat.h>
 #include <thread>
-
+#include <unistd.h>
 #endif
+
+std::ofstream process_log;
 
 /**
  * EQEmuLogSys Constructor

@@ -1,0 +1,11 @@
+version: 1
+id: mq-interface
+label: Native Interface
+client: rof
+files:
+  - source: client_files/native_autoloot/eq-core-dll/bin/dinput8.dll
+    destination: dinput8.dll
+  - source: client_files/native_autoloot/config/native_interface.ini
+    destination: native_interface.ini
+generated:
+  eqhost: true

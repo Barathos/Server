@@ -1,39 +1,38 @@
-/**
- * EQEmulator: Everquest Server Emulator
- * Copyright (C) 2001-2020 EQEmulator Development Team (https://github.com/EQEmu/Server)
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY except by those people which sell it, which
- * are required to give you total support for your newly bought product;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- *
- */
+/*	EQEmu: EQEmulator
 
-#ifndef SHAREDDB_H_
-#define SHAREDDB_H_
+	Copyright (C) 2001-2026 EQEmu Development Team
 
-#include "database.h"
-#include "skills.h"
-#include "spdat.h"
-#include "fixed_memory_hash_set.h"
-#include "fixed_memory_variable_hash_set.h"
-#include "say_link.h"
-#include "repositories/command_subsettings_repository.h"
-#include "repositories/items_evolving_details_repository.h"
-#include "../common/repositories/character_evolving_items_repository.h"
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
+#pragma once
+
+#include "common/database.h"
+#include "common/fixed_memory_hash_set.h"
+#include "common/fixed_memory_variable_hash_set.h"
+#include "common/item_data.h"
+#include "common/repositories/character_evolving_items_repository.h"
+#include "common/repositories/command_subsettings_repository.h"
+#include "common/repositories/items_evolving_details_repository.h"
+#include "common/say_link.h"
+#include "common/skills.h"
+#include "common/spdat.h"
+
+#include <ctime>
 #include <list>
 #include <map>
 #include <memory>
+#include <mutex>
 
 class EvolveInfo;
 struct InspectMessage_Struct;
@@ -65,6 +64,13 @@ struct Book_Struct
 
 class SharedDatabase : public Database {
 public:
+	struct LiveItemCacheEntry {
+		EQ::ItemData item {};
+		time_t       updated {};
+		time_t       last_checked {};
+		bool         exists {};
+	};
+
 	SharedDatabase();
 	SharedDatabase(const char *host, const char *user, const char *passwd, const char *database, uint32 port);
 	virtual ~SharedDatabase();
@@ -76,21 +82,20 @@ public:
 	uint8 GetGMSpeed(uint32 account_id);
 	bool SetHideMe(uint32 account_id, uint8 hideme);
 	int DeleteStalePlayerCorpses();
-	void LoadCharacterInspectMessage(uint32 character_id, InspectMessage_Struct *message);
-	void SaveCharacterInspectMessage(uint32 character_id, const InspectMessage_Struct *message);
+	void LoadCharacterInspectMessage(uint32 character_id, InspectMessage_Struct* s);
+	void SaveCharacterInspectMessage(uint32 character_id, const InspectMessage_Struct* s);
 	bool GetCommandSettings(std::map<std::string, std::pair<uint8, std::vector<std::string>>> &command_settings);
 	bool UpdateInjectedCommandSettings(const std::vector<std::pair<std::string, uint8>> &injected);
 	bool UpdateOrphanedCommandSettings(const std::vector<std::string> &orphaned);
 	bool GetCommandSubSettings(std::vector<CommandSubsettingsRepository::CommandSubsettings> &command_subsettings);
-	uint32 GetTotalTimeEntitledOnAccount(uint32 AccountID);
 	bool SetGMInvul(uint32 account_id, bool gminvul);
 	bool SetGMFlymode(uint32 account_id, uint8 flymode);
-	void SetMailKey(int CharID, int IPAddress, int MailKey);
+	void SetMailKey(uint32 character_id, uint32 ip_address, uint32 mail_key);
 	struct MailKeys {
 		std::string mail_key;
 		std::string mail_key_full;
 	};
-	MailKeys GetMailKey(int character_id);
+	MailKeys GetMailKey(uint32 character_id);
 	bool SaveCursor(
 		uint32 char_id,
 		std::list<EQ::ItemInstance *>::const_iterator &start,
@@ -104,7 +109,7 @@ public:
 	bool VerifyInventory(uint32 account_id, int16 slot_id, const EQ::ItemInstance *inst);
 	bool GetSharedBank(uint32 id, EQ::InventoryProfile *inv, bool is_charid);
 	int32 GetSharedPlatinum(uint32 account_id);
-	bool SetSharedPlatinum(uint32 account_id, int32 amount_to_add);
+	bool AddSharedPlatinum(uint32 account_id, int amount);
 	bool GetInventory(Client* c);
 	bool GetInventory(uint32 account_id, char *name, EQ::InventoryProfile *inv); // deprecated
 	std::map<uint32, uint32> GetItemRecastTimestamps(uint32 char_id);
@@ -158,11 +163,16 @@ public:
 	);
 	EQ::ItemInstance *CreateBaseItem(const EQ::ItemData *item, int16 charges = 0);
 
-	void GetItemsCount(int32 &item_count, uint32 &max_id);
+	void GetItemsCount(int32& item_count, uint32& max_id);
 	void LoadItems(void *data, uint32 size, int32 items, uint32 max_item_id);
 	bool LoadItems(const std::string &prefix);
 	const EQ::ItemData *IterateItems(uint32 *id) const;
 	const EQ::ItemData *GetItem(uint32 id) const;
+	const EQ::ItemData *GetLiveItem(uint32 id, bool has_shared_item) const;
+	bool IsLiveItemID(uint32 id) const;
+	bool GetLiveItemCacheEntry(uint32 id, LiveItemCacheEntry &entry) const;
+	void ClearLiveItemCache();
+	bool ClearLiveItemCache(uint32 id);
 	const EvolveInfo *GetEvolveInfo(uint32 loregroup);
 	uint32 GetSharedItemsCount() { return m_shared_items_count; }
 	uint32 GetItemsCount();
@@ -173,7 +183,7 @@ public:
 	int GetMaxSpellID();
 	bool LoadSpells(const std::string &prefix, int32 *records, const SPDat_Spell_Struct **sp);
 	void LoadSpells(void *data, int max_spells);
-	void LoadDamageShieldTypes(SPDat_Spell_Struct *sp, int32 iMaxSpellID);
+	void LoadDamageShieldTypes(SPDat_Spell_Struct* s);
 	uint32 GetSharedSpellsCount() { return m_shared_spells_count; }
 	uint32 GetSpellsCount();
 
@@ -191,6 +201,8 @@ protected:
 	std::unique_ptr<EQ::MemoryMappedFile>                        skill_caps_mmf;
 	std::unique_ptr<EQ::MemoryMappedFile>                        items_mmf;
 	std::unique_ptr<EQ::FixedMemoryHashSet<EQ::ItemData>>        items_hash;
+	mutable std::mutex                                           live_items_cache_mutex;
+	mutable std::map<uint32, LiveItemCacheEntry>                live_items_cache;
 	std::unique_ptr<EQ::MemoryMappedFile>                        faction_mmf;
 	std::unique_ptr<EQ::FixedMemoryHashSet<NPCFactionList>>      faction_hash;
 	std::unique_ptr<EQ::MemoryMappedFile>                        faction_associations_mmf;
@@ -203,6 +215,5 @@ public:
 protected:
 	uint32 m_shared_items_count = 0;
 	uint32 m_shared_spells_count = 0;
+	time_t m_shared_items_load_time = 0;
 };
-
-#endif /*SHAREDDB_H_*/

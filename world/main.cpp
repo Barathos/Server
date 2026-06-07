@@ -1,95 +1,68 @@
-/**
- * EQEmulator: Everquest Server Emulator
- * Copyright (C) 2001-2019 EQEmulator Development Team (https://github.com/EQEmu/Server)
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY except by those people which sell it, which
- * are required to give you total support for your newly bought product;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- *
- */
+/*	EQEmu: EQEmulator
 
-#include "../common/global_define.h"
+	Copyright (C) 2001-2026 EQEmu Development Team
 
-#include <iostream>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <signal.h>
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
-#include "../common/strings.h"
-#include "../common/eqemu_logsys.h"
-#include "../common/queue.h"
-#include "../common/timer.h"
-#include "../common/eq_packet.h"
-#include "../common/seperator.h"
-#include "../common/version.h"
-#include "../common/eqtime.h"
-#include "../common/event/event_loop.h"
-#include "../common/net/eqstream.h"
-#include "../common/opcodemgr.h"
-#include "../common/guilds.h"
-#include "../common/eq_stream_ident.h"
-#include "../common/rulesys.h"
-#include "../common/platform.h"
-#include "../common/crash.h"
-#include "../common/misc.h"
-#include "client.h"
-#include "worlddb.h"
-#include "wguild_mgr.h"
-#include "../common/evolving_items.h"
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
 
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
+#include "common/content/world_content_service.h"
+#include "common/crash.h"
+#include "common/eq_packet.h"
+#include "common/eq_stream_ident.h"
+#include "common/eqemu_logsys.h"
+#include "common/eqtime.h"
+#include "common/event/event_loop.h"
+#include "common/events/player_event_logs.h"
+#include "common/guilds.h"
+#include "common/ip_util.h"
+#include "common/misc.h"
+#include "common/net/eqstream.h"
+#include "common/patches/patches.h"
+#include "common/path_manager.h"
+#include "common/platform.h"
+#include "common/repositories/character_expedition_lockouts_repository.h"
+#include "common/repositories/character_task_timers_repository.h"
+#include "common/rulesys.h"
+#include "common/skill_caps.h"
+#include "common/timer.h"
+#include "common/version.h"
+#include "world/adventure_manager.h"
+#include "world/client.h"
+#include "world/clientlist.h"
+#include "world/console.h"
+#include "world/dynamic_zone_manager.h"
+#include "world/launcher_list.h"
+#include "world/lfplist.h"
+#include "world/login_server.h"
+#include "world/queryserv.h"
+#include "world/shared_task_manager.h"
+#include "world/ucs.h"
+#include "world/web_interface.h"
+#include "world/wguild_mgr.h"
+#include "world/world_boot.h"
+#include "world/world_config.h"
+#include "world/world_event_scheduler.h"
+#include "world/world_server_cli.h"
+#include "world/worlddb.h"
+#include "world/zonelist.h"
+#include "world/zoneserver.h"
+
+#include "fmt/format.h"
+#include <csignal>
+#include <cstdlib>
 #ifdef _WINDOWS
-#include <process.h>
-#define snprintf	_snprintf
-#define strncasecmp	_strnicmp
-#define strcasecmp	_stricmp
 #include <conio.h>
-#else
-
-#include <sys/sem.h>
-#include <thread>
-
 #endif
-
-#include "../common/patches/patches.h"
-#include "zoneserver.h"
-#include "login_server.h"
-#include "login_server_list.h"
-#include "world_config.h"
-#include "zonelist.h"
-#include "clientlist.h"
-#include "launcher_list.h"
-#include "lfplist.h"
-#include "adventure_manager.h"
-#include "ucs.h"
-#include "queryserv.h"
-#include "web_interface.h"
-#include "console.h"
-#include "dynamic_zone_manager.h"
-
-#include "world_server_cli.h"
-#include "../common/content/world_content_service.h"
-#include "../common/repositories/character_expedition_lockouts_repository.h"
-#include "../common/repositories/character_task_timers_repository.h"
-#include "../common/zone_store.h"
-#include "world_event_scheduler.h"
-#include "shared_task_manager.h"
-#include "world_boot.h"
-#include "../common/path_manager.h"
-#include "../common/events/player_event_logs.h"
-#include "../common/skill_caps.h"
-#include "../common/repositories/character_parcels_repository.h"
-#include "../common/ip_util.h"
 
 GroupLFPList        LFPGroupList;
 LauncherList        launcher_list;
@@ -333,11 +306,11 @@ int main(int argc, char **argv)
 	WorldBoot::CheckForPossibleConfigurationIssues();
 
 	EQStreamManagerInterfaceOptions opts(9000, false, false);
-	opts.daybreak_options.resend_delay_ms     = RuleI(Network, ResendDelayBaseMS);
-	opts.daybreak_options.resend_delay_factor = RuleR(Network, ResendDelayFactor);
-	opts.daybreak_options.resend_delay_min    = RuleI(Network, ResendDelayMinMS);
-	opts.daybreak_options.resend_delay_max    = RuleI(Network, ResendDelayMaxMS);
-	opts.daybreak_options.outgoing_data_rate  = RuleR(Network, ClientDataRate);
+	opts.reliable_stream_options.resend_delay_ms     = RuleI(Network, ResendDelayBaseMS);
+	opts.reliable_stream_options.resend_delay_factor = RuleR(Network, ResendDelayFactor);
+	opts.reliable_stream_options.resend_delay_min    = RuleI(Network, ResendDelayMinMS);
+	opts.reliable_stream_options.resend_delay_max    = RuleI(Network, ResendDelayMaxMS);
+	opts.reliable_stream_options.outgoing_data_rate  = RuleR(Network, ClientDataRate);
 
 	EQ::Net::EQStreamManager eqsm(opts);
 

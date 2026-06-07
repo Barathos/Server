@@ -1,84 +1,74 @@
-/*	EQEMu: Everquest Server Emulator
-	Copyright (C) 2001-2016 EQEMu Development Team (http://eqemulator.org)
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; version 2 of the License.
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
 	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY except by those people which sell it, which
-	are required to give you total support for your newly bought product;
-	without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-	A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
-#include "../common/global_define.h"
-#include <iostream>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include "client.h"
 
-// for windows compile
-#ifndef _WINDOWS
-	#include <stdarg.h>
-	#include <sys/socket.h>
-	#include <netinet/in.h>
-	#include "../common/unix.h"
-#endif
+#include "common/data_bucket.h"
+#include "common/data_verification.h"
+#include "common/eqemu_logsys.h"
+#include "common/events/player_event_logs.h"
+#include "common/events/player_events.h"
+#include "common/features.h"
+#include "common/guilds.h"
+#include "common/profanity_manager.h"
+#include "common/repositories/account_flags_repository.h"
+#include "common/repositories/bug_reports_repository.h"
+#include "common/repositories/char_recipe_list_repository.h"
+#include "common/repositories/character_alternate_abilities_repository.h"
+#include "common/repositories/character_data_repository.h"
+#include "common/repositories/character_disciplines_repository.h"
+#include "common/repositories/character_expedition_lockouts_repository.h"
+#include "common/repositories/character_pet_name_repository.h"
+#include "common/repositories/character_spells_repository.h"
+#include "common/repositories/completed_tasks_repository.h"
+#include "common/repositories/discovered_items_repository.h"
+#include "common/repositories/inventory_repository.h"
+#include "common/repositories/keyring_repository.h"
+#include "common/repositories/tradeskill_recipe_repository.h"
+#include "common/rulesys.h"
+#include "common/skill_caps.h"
+#include "common/spdat.h"
+#include "common/strings.h"
+#include "common/zone_store.h"
+#include "zone/bot_command.h"
+#include "zone/cheat_manager.h"
+#include "zone/command.h"
+#include "zone/dialogue_window.h"
+#include "zone/dynamic_zone.h"
+#include "zone/expedition_request.h"
+#include "zone/guild_mgr.h"
+#include "zone/lua_parser.h"
+#include "zone/mob_movement_manager.h"
+#include "zone/multiclass_manager.h"
+#include "zone/petitions.h"
+#include "zone/position.h"
+#include "zone/queryserv.h"
+#include "zone/quest_parser_collection.h"
+#include "zone/string_ids.h"
+#include "zone/water_map.h"
+#include "zone/worldserver.h"
+#include "zone/zonedb.h"
+#include "zone/achievement_manager.h"
 
-extern volatile bool RunLoops;
-
-#include "../common/eqemu_logsys.h"
-#include "../common/features.h"
-#include "../common/spdat.h"
-#include "../common/guilds.h"
-#include "../common/rulesys.h"
-#include "../common/strings.h"
-#include "../common/data_verification.h"
-#include "../common/profanity_manager.h"
-#include "../common/data_bucket.h"
-#include "dynamic_zone.h"
-#include "expedition_request.h"
-#include "position.h"
-#include "worldserver.h"
-#include "zonedb.h"
-#include "petitions.h"
-#include "command.h"
-#include "water_map.h"
-#include "bot_command.h"
-#include "string_ids.h"
-#include "dialogue_window.h"
-
-#include "guild_mgr.h"
-#include "quest_parser_collection.h"
-#include "queryserv.h"
-#include "mob_movement_manager.h"
-#include "cheat_manager.h"
-#include "lua_parser.h"
-
-#include "../common/repositories/character_alternate_abilities_repository.h"
-#include "../common/repositories/character_expedition_lockouts_repository.h"
-#include "../common/repositories/account_flags_repository.h"
-#include "../common/repositories/bug_reports_repository.h"
-#include "../common/repositories/char_recipe_list_repository.h"
-#include "../common/repositories/character_spells_repository.h"
-#include "../common/repositories/character_disciplines_repository.h"
-#include "../common/repositories/character_data_repository.h"
-#include "../common/repositories/character_pet_name_repository.h"
-#include "../common/repositories/completed_tasks_repository.h"
-#include "../common/repositories/discovered_items_repository.h"
-#include "../common/repositories/inventory_repository.h"
-#include "../common/repositories/keyring_repository.h"
-#include "../common/repositories/tradeskill_recipe_repository.h"
-#include "../common/events/player_events.h"
-#include "../common/events/player_event_logs.h"
-#include "dialogue_window.h"
-#include "../common/zone_store.h"
-#include "../common/skill_caps.h"
-
+#include <cstdlib>
+#include <cstdio>
+#include <cstdarg>
+#include <algorithm>
+#include <unordered_map>
 
 extern QueryServ* QServ;
 extern EntityList entity_list;
@@ -86,6 +76,7 @@ extern Zone* zone;
 extern volatile bool is_zone_loaded;
 extern WorldServer worldserver;
 extern uint32 numclients;
+extern volatile bool RunLoops;
 
 void UpdateWindowTitle(char* iNewTitle);
 
@@ -849,7 +840,7 @@ void Client::SendZoneInPackets()
 		SendAppearancePacket(AppearanceType::PVP, GetPVP(false), true, false);
 
 	//Send AA Exp packet:
-	if (GetLevel() >= 51)
+	if (GetLevel() >= 51 || RuleB(AA, AllowAAExpBelowLevel51))
 		SendAlternateAdvancementStats();
 
 	// Send exp packets
@@ -1050,7 +1041,7 @@ bool Client::Save(uint8 iCommitNow) {
 	}
 
 	if (dead || (!GetMerc() && !GetMercInfo().IsSuspended)) {
-		memset(&m_mercinfo, 0, sizeof(struct MercInfo));
+		memset(&m_mercinfo, 0, sizeof(m_mercinfo));
 	}
 
 	m_pp.lastlogin = time(nullptr);
@@ -1391,7 +1382,7 @@ void Client::ChannelMessageReceived(uint8 chan_num, uint8 language, uint8 lang_s
 	}
 	case ChatChannel_Shout: { /* Shout */
 		Mob *sender = this;
-		if (GetPet() && GetTarget() == GetPet() && GetPet()->FindType(SE_VoiceGraft))
+		if (GetPet() && GetTarget() == GetPet() && GetPet()->FindType(SpellEffect::VoiceGraft))
 			sender = GetPet();
 
 		entity_list.ChannelMessage(sender, chan_num, language, lang_skill, message);
@@ -1429,7 +1420,7 @@ void Client::ChannelMessageReceived(uint8 chan_num, uint8 language, uint8 lang_s
 		else if(!RuleB(Chat, ServerWideAuction)) {
 			Mob *sender = this;
 
-			if (GetPet() && GetTarget() == GetPet() && GetPet()->FindType(SE_VoiceGraft))
+			if (GetPet() && GetTarget() == GetPet() && GetPet()->FindType(SpellEffect::VoiceGraft))
 			sender = GetPet();
 
 			entity_list.ChannelMessage(sender, chan_num, language, lang_skill, message);
@@ -1476,7 +1467,7 @@ void Client::ChannelMessageReceived(uint8 chan_num, uint8 language, uint8 lang_s
 		{
 			Mob *sender = this;
 
-			if (GetPet() && GetTarget() == GetPet() && GetPet()->FindType(SE_VoiceGraft))
+			if (GetPet() && GetTarget() == GetPet() && GetPet()->FindType(SpellEffect::VoiceGraft))
 				sender = GetPet();
 
 			entity_list.ChannelMessage(sender, chan_num, language, lang_skill, message);
@@ -1606,7 +1597,7 @@ void Client::ChannelMessageReceived(uint8 chan_num, uint8 language, uint8 lang_s
 		}
 
 		Mob* sender = this;
-		if (GetPet() && GetTarget() == GetPet() && GetPet()->FindType(SE_VoiceGraft)) {
+		if (GetPet() && GetTarget() == GetPet() && GetPet()->FindType(SpellEffect::VoiceGraft)) {
 			sender = GetPet();
 		}
 
@@ -1797,7 +1788,7 @@ void Client::Message(uint32 type, const char* message, ...) {
 	buf.WriteInt32(0);
 	buf.WriteString(buffer);
 
-	auto app = new EQApplicationPacket(OP_SpecialMesg, buf);
+	auto app = new EQApplicationPacket(OP_SpecialMesg, std::move(buf));
 
 	FastQueuePacket(&app);
 
@@ -1826,7 +1817,7 @@ void Client::FilteredMessage(Mob *sender, uint32 type, eqFilterType filter, cons
 	buf.WriteInt32(0);
 	buf.WriteString(buffer);
 
-	auto app = new EQApplicationPacket(OP_SpecialMesg, buf);
+	auto app = new EQApplicationPacket(OP_SpecialMesg, std::move(buf));
 
 	FastQueuePacket(&app);
 
@@ -2065,6 +2056,8 @@ void Client::SetSkill(EQ::skills::SkillType skillid, uint16 value) {
 	skill->value=value;
 	QueuePacket(outapp);
 	safe_delete(outapp);
+
+	achievement_manager.ProcessSkill(this, skillid, value);
 }
 
 void Client::IncreaseLanguageSkill(uint8 language_id, uint8 increase)
@@ -3188,6 +3181,10 @@ bool Client::HasSkill(EQ::skills::SkillType skill_id) const
 
 bool Client::CanHaveSkill(EQ::skills::SkillType skill_id) const
 {
+	if (multiclass_manager.CanHaveSkill(this, skill_id)) {
+		return true;
+	}
+
 	if (
 		ClientVersion() < EQ::versions::ClientVersion::RoF2 &&
 		class_ == Class::Berserker &&
@@ -3201,6 +3198,13 @@ bool Client::CanHaveSkill(EQ::skills::SkillType skill_id) const
 
 uint16 Client::MaxSkill(EQ::skills::SkillType skill_id, uint8 class_id, uint8 level) const
 {
+	if (class_id == GetClass()) {
+		const auto multiclass_cap = multiclass_manager.GetBestSkillCap(this, skill_id, level);
+		if (multiclass_cap) {
+			return multiclass_cap;
+		}
+	}
+
 	if (
 		ClientVersion() < EQ::versions::ClientVersion::RoF2 &&
 		class_id == Class::Berserker &&
@@ -3214,6 +3218,13 @@ uint16 Client::MaxSkill(EQ::skills::SkillType skill_id, uint8 class_id, uint8 le
 
 uint8 Client::GetSkillTrainLevel(EQ::skills::SkillType skill_id, uint8 class_id)
 {
+	if (class_id == GetClass()) {
+		const auto multiclass_train_level = multiclass_manager.GetBestSkillTrainLevel(this, skill_id);
+		if (multiclass_train_level) {
+			return multiclass_train_level;
+		}
+	}
+
 	if (
 		ClientVersion() < EQ::versions::ClientVersion::RoF2 &&
 		class_id == Class::Berserker &&
@@ -3882,7 +3893,7 @@ void Client::MessageString(uint32 type, uint32 string_id, const char* message1,
 
 	buf.WriteInt8(0); // prevent oob in packet translation, maybe clean that up sometime
 
-	auto outapp = std::make_unique<EQApplicationPacket>(OP_FormattedMessage, buf);
+	auto outapp = std::make_unique<EQApplicationPacket>(OP_FormattedMessage, std::move(buf));
 
 	if (distance > 0)
 		entity_list.QueueCloseClients(this, outapp.get(), false, distance);
@@ -4000,7 +4011,7 @@ void Client::FilteredMessageString(Mob *sender, uint32 type, eqFilterType filter
 
 	buf.WriteInt8(0); // prevent oob in packet translation, maybe clean that up sometime
 
-	auto outapp = std::make_unique<EQApplicationPacket>(OP_FormattedMessage, buf);
+	auto outapp = std::make_unique<EQApplicationPacket>(OP_FormattedMessage, std::move(buf));
 
 	QueuePacket(outapp.get());
 }
@@ -4780,9 +4791,21 @@ bool Client::KeyRingClear()
 	);
 }
 
-void Client::KeyRingList()
+void Client::KeyRingList(Client* c)
 {
-	Message(Chat::LightBlue, "Keys on Keyring:");
+	if (!c) {
+		return;
+	}
+
+	std::string message = "Keys on Keyring:";
+	if (c != this) {
+		message = fmt::format(
+			"Keys on Keyring for {}:",
+			GetCleanName()
+		);
+	}
+
+	c->Message(Chat::LightBlue, message.c_str());
 
 	const EQ::ItemData *item = nullptr;
 
@@ -4795,7 +4818,7 @@ void Client::KeyRingList()
 				item->Name
 			);
 
-			Message(Chat::LightBlue, item_string.c_str());
+			c->Message(Chat::LightBlue, item_string.c_str());
 		}
 	}
 }
@@ -4828,7 +4851,7 @@ bool Client::IsNameChangeAllowed() {
 	auto k = GetScopedBucketKeys();
 	k.key = "name_change_allowed";
 
-	auto b = DataBucket::GetData(k);
+	auto b = DataBucket::GetData(&database, k);
 	if (!b.value.empty()) {
 		return true;
 	}
@@ -4844,7 +4867,7 @@ bool Client::ClearNameChange() {
 	auto k = GetScopedBucketKeys();
 	k.key = "name_change_allowed";
 
-	DataBucket::DeleteData(k);
+	DataBucket::DeleteData(&database, k);
 
 	return true;
 }
@@ -4866,7 +4889,7 @@ void Client::GrantNameChange() {
 	auto k = GetScopedBucketKeys();
 	k.key = "name_change_allowed";
 	k.value = "allowed"; // potentially put a timestamp here
-	DataBucket::SetData(k);
+	DataBucket::SetData(&database, k);
 
 	InvokeChangeNameWindow(true);
 }
@@ -4879,7 +4902,7 @@ bool Client::IsPetNameChangeAllowed() {
 	DataBucketKey k = GetScopedBucketKeys();
 	k.key = "PetNameChangesAllowed";
 
-	auto b = DataBucket::GetData(k);
+	auto b = DataBucket::GetData(&database, k);
 	if (!b.value.empty()) {
 		return true;
 	}
@@ -4903,7 +4926,7 @@ void Client::GrantPetNameChange() {
 	DataBucketKey k = GetScopedBucketKeys();
 	k.key = "PetNameChangesAllowed";
 	k.value = "true";
-	DataBucket::SetData(k);
+	DataBucket::SetData(&database, k);
 
 	InvokeChangePetName(true);
 }
@@ -4912,7 +4935,7 @@ void Client::ClearPetNameChange() {
 	DataBucketKey k = GetScopedBucketKeys();
 	k.key = "PetNameChangesAllowed";
 
-	DataBucket::DeleteData(k);
+	DataBucket::DeleteData(&database, k);
 }
 
 bool Client::ChangePetName(std::string new_name)
@@ -6403,17 +6426,17 @@ void Client::SuspendMinion(int value)
 			// TODO: These pet command states need to be synced ...
 			// Will just fix them for now
 			if (m_ClientVersionBit & EQ::versions::maskUFAndLater) {
-				SetPetCommandState(PET_BUTTON_SIT, 0);
-				SetPetCommandState(PET_BUTTON_STOP, 0);
-				SetPetCommandState(PET_BUTTON_REGROUP, 0);
-				SetPetCommandState(PET_BUTTON_FOLLOW, 1);
-				SetPetCommandState(PET_BUTTON_GUARD, 0);
+				SetPetCommandState(PetButton::Sit, PetButtonState::Off);
+				SetPetCommandState(PetButton::Stop, PetButtonState::Off);
+				SetPetCommandState(PetButton::Regroup, PetButtonState::Off);
+				SetPetCommandState(PetButton::Follow, PetButtonState::On);
+				SetPetCommandState(PetButton::Guard, PetButtonState::Off);
 				// Taunt saved on client side for logging on with pet
 				// In our db for when we zone.
-				SetPetCommandState(PET_BUTTON_HOLD, 0);
-				SetPetCommandState(PET_BUTTON_GHOLD, 0);
-				SetPetCommandState(PET_BUTTON_FOCUS, 0);
-				SetPetCommandState(PET_BUTTON_SPELLHOLD, 0);
+				SetPetCommandState(PetButton::Hold, PetButtonState::Off);
+				SetPetCommandState(PetButton::GreaterHold, PetButtonState::Off);
+				SetPetCommandState(PetButton::Focus, PetButtonState::Off);
+				SetPetCommandState(PetButton::SpellHold, PetButtonState::Off);
 			}
 		}
 		else
@@ -6598,6 +6621,7 @@ void Client::ProcessInspectRequest(Client *requestee, Client *requester)
 			inst = requestee->GetInv().GetItem(L);
 
 			if (inst) {
+				requestee->RefreshLiveItemTree(const_cast<EQ::ItemInstance *>(inst));
 				item = inst->GetItem();
 				if (item) {
 					strcpy(insr->itemnames[L], item->Name);
@@ -6894,9 +6918,9 @@ void Client::CheckLDoNHail(NPC* n)
 
 	auto pet = GetPet();
 	if (pet) {
-		if (pet->GetPetType() == petCharmed) {
-			pet->BuffFadeByEffect(SE_Charm);
-		} else if (pet->GetPetType() == petNPCFollow) {
+		if (pet->GetPetType() == PetType::Charmed) {
+			pet->BuffFadeByEffect(SpellEffect::Charm);
+		} else if (pet->GetPetType() == PetType::Follow) {
 			pet->SetOwnerID(0);
 		} else {
 			pet->Depop();
@@ -7941,75 +7965,125 @@ void Client::SendWebLink(const char *website)
 
 void Client::SendMercPersonalInfo()
 {
-	uint32 mercTypeCount = 1;
-	uint32 mercCount = 1; //TODO: Un-hardcode this and support multiple mercs like in later clients than SoD.
-	uint32 i = 0;
 	uint32 altCurrentType = 19; //TODO: Implement alternate currency purchases involving mercs!
 
-	MercTemplate *mercData = &zone->merc_templates[GetMercInfo().MercTemplateID];
-
-	int stancecount = 0;
-	stancecount += zone->merc_stance_list[GetMercInfo().MercTemplateID].size();
-	if(stancecount > MAX_MERC_STANCES || mercCount > MAX_MERC || mercTypeCount > MAX_MERC_GRADES)
-	{
-		Log(Logs::General, Logs::Mercenaries, "SendMercPersonalInfo canceled: (%i) (%i) (%i) for %s", stancecount, mercCount, mercTypeCount, GetName());
-		SendMercMerchantResponsePacket(0);
-		return;
-	}
-
 	if (ClientVersion() >= EQ::versions::ClientVersion::RoF) {
-		auto outapp = new EQApplicationPacket(OP_MercenaryDataUpdate, sizeof(MercenaryDataUpdate_Struct));
-		auto mdus   = (MercenaryDataUpdate_Struct *) outapp->pBuffer;
-
-		mdus->MercStatus                    = 0;
-		mdus->MercCount                     = mercCount;
-		mdus->MercData[i].MercID            = mercData->MercTemplateID;
-		mdus->MercData[i].MercType          = mercData->MercType;
-		mdus->MercData[i].MercSubType       = mercData->MercSubType;
-		mdus->MercData[i].PurchaseCost      = Merc::CalcPurchaseCost(mercData->MercTemplateID, GetLevel(), 0);
-		mdus->MercData[i].UpkeepCost        = Merc::CalcUpkeepCost(mercData->MercTemplateID, GetLevel(), 0);
-		mdus->MercData[i].Status            = 0;
-		mdus->MercData[i].AltCurrencyCost   = Merc::CalcPurchaseCost(
-			mercData->MercTemplateID,
-			GetLevel(),
-			altCurrentType
-		);
-		mdus->MercData[i].AltCurrencyUpkeep = Merc::CalcPurchaseCost(
-			mercData->MercTemplateID,
-			GetLevel(),
-			altCurrentType
-		);
-		mdus->MercData[i].AltCurrencyType   = altCurrentType;
-		mdus->MercData[i].MercUnk01         = 0;
-		mdus->MercData[i].TimeLeft          = GetMercInfo().MercTimerRemaining;    //GetMercTimer().GetRemainingTime();
-		mdus->MercData[i].MerchantSlot      = i + 1;
-		mdus->MercData[i].MercUnk02         = 1;
-		mdus->MercData[i].StanceCount       = zone->merc_stance_list[mercData->MercTemplateID].size();
-		mdus->MercData[i].MercUnk03         = 0;
-		mdus->MercData[i].MercUnk04         = 1;
-
-		strn0cpy(mdus->MercData[i].MercName, GetMercInfo().merc_name, sizeof(mdus->MercData[i].MercName));
-
-		uint32 stanceindex = 0;
-		if (mdus->MercData[i].StanceCount != 0) {
-			auto iter = zone->merc_stance_list[mercData->MercTemplateID].begin();
-			while (iter != zone->merc_stance_list[mercData->MercTemplateID].end()) {
-				mdus->MercData[i].Stances[stanceindex].StanceIndex = stanceindex;
-				mdus->MercData[i].Stances[stanceindex].Stance      = (iter->StanceID);
-				stanceindex++;
-				++iter;
-			}
+		// Count owned mercs across all slots
+		uint32 mercCount = GetNumberOfMercenaries();
+		if (mercCount == 0) {
+			SendClearMercInfo();
+			return;
 		}
 
-		mdus->MercData[i].MercUnk05 = 1;
+		uint32 packetSize = sizeof(MercenaryDataUpdate_Struct);
+		auto outapp = new EQApplicationPacket(OP_MercenaryDataUpdate, packetSize);
+		memset(outapp->pBuffer, 0, packetSize);
+		auto mdus   = (MercenaryDataUpdate_Struct *) outapp->pBuffer;
+
+		mdus->MercStatus = 0;
+		mdus->MercCount  = mercCount;
+
+		// Lambda to populate a single merc entry in the packet
+		int max_slots = std::min(RuleI(Mercs, MaxMercSlots), MAXMERCS);
+		uint32 merc_index = 0;
+
+		auto fillMercEntry = [&](int slot) {
+			auto& info = GetMercInfo(slot);
+			if (info.mercid == 0 || merc_index >= MAX_MERC) {
+				return;
+			}
+
+			auto tmpl_it = zone->merc_templates.find(info.MercTemplateID);
+			if (tmpl_it == zone->merc_templates.end()) {
+				return;
+			}
+
+			MercTemplate *mercData = &tmpl_it->second;
+			uint32 stancecount = 0;
+			auto stance_it = zone->merc_stance_list.find(mercData->MercTemplateID);
+			if (stance_it != zone->merc_stance_list.end()) {
+				stancecount = stance_it->second.size();
+			}
+
+			if (stancecount > MAX_MERC_STANCES) {
+				Log(Logs::General, Logs::Mercenaries, "SendMercPersonalInfo: stance count %u exceeds max for slot %i, skipping", stancecount, slot);
+				return;
+			}
+
+			mdus->MercData[merc_index].MercID            = mercData->MercTemplateID;
+			mdus->MercData[merc_index].MercType          = mercData->MercType;
+			mdus->MercData[merc_index].MercSubType       = mercData->MercSubType;
+			mdus->MercData[merc_index].PurchaseCost      = Merc::CalcPurchaseCost(mercData->MercTemplateID, GetLevel(), 0);
+			mdus->MercData[merc_index].UpkeepCost        = Merc::CalcUpkeepCost(mercData->MercTemplateID, GetLevel(), 0);
+			mdus->MercData[merc_index].Status            = info.IsSuspended ? 0 : 1;
+			mdus->MercData[merc_index].AltCurrencyCost   = Merc::CalcPurchaseCost(mercData->MercTemplateID, GetLevel(), altCurrentType);
+			mdus->MercData[merc_index].AltCurrencyUpkeep = Merc::CalcPurchaseCost(mercData->MercTemplateID, GetLevel(), altCurrentType);
+			mdus->MercData[merc_index].AltCurrencyType   = altCurrentType;
+			mdus->MercData[merc_index].MercUnk01         = 0;
+			mdus->MercData[merc_index].TimeLeft          = info.MercTimerRemaining;
+			mdus->MercData[merc_index].MerchantSlot      = merc_index + 1;
+			mdus->MercData[merc_index].MercUnk02         = (slot == GetMercSlot()) ? 1 : 0;
+			mdus->MercData[merc_index].StanceCount       = stancecount;
+			mdus->MercData[merc_index].MercUnk03         = 0;
+			mdus->MercData[merc_index].MercUnk04         = 1;
+
+			strn0cpy(mdus->MercData[merc_index].MercName, info.merc_name, sizeof(mdus->MercData[merc_index].MercName));
+
+			uint32 stanceindex = 0;
+			if (stance_it != zone->merc_stance_list.end()) {
+				for (const auto& stance : stance_it->second) {
+					mdus->MercData[merc_index].Stances[stanceindex].StanceIndex = stanceindex;
+					mdus->MercData[merc_index].Stances[stanceindex].Stance      = stance.StanceID;
+					stanceindex++;
+				}
+			}
+
+			mdus->MercData[merc_index].MercUnk05 = std::min(RuleI(Mercs, MaxMercSlots), MAXMERCS);
+			merc_index++;
+		};
+
+		// Emit the active merc slot first — the client marks the first entry
+		// in the list with the X (active marker), so order matters.
+		if (GetMercSlot() < max_slots && GetMercInfo().mercid != 0) {
+			fillMercEntry(GetMercSlot());
+		}
+
+		// Then emit remaining owned mercs in slot order
+		for (int slot = 0; slot < max_slots; slot++) {
+			if (slot == GetMercSlot()) {
+				continue; // already emitted
+			}
+			fillMercEntry(slot);
+		}
+
+		// Update count in case we skipped any invalid entries
+		mdus->MercCount = merc_index;
+
 		FastQueuePacket(&outapp);
 		safe_delete(outapp);
 		return;
 	} else {
+		// Pre-RoF path (SoD and earlier) — single merc only
+		if (GetMercInfo().MercTemplateID == 0) {
+			SendClearMercInfo();
+			return;
+		}
+
+		auto tmpl_it = zone->merc_templates.find(GetMercInfo().MercTemplateID);
+		if (tmpl_it == zone->merc_templates.end()) {
+			SendClearMercInfo();
+			return;
+		}
+
+		MercTemplate *mercData = &tmpl_it->second;
+		uint32 mercTypeCount = 1;
+		uint32 mercCount = 1;
+		uint32 i = 0;
+
 		auto outapp = new EQApplicationPacket(OP_MercenaryDataResponse, sizeof(MercenaryMerchantList_Struct));
 		auto mml    = (MercenaryMerchantList_Struct *) outapp->pBuffer;
 
-		mml->MercTypeCount = mercTypeCount; //We should only have one merc entry.
+		mml->MercTypeCount = mercTypeCount;
 		mml->MercGrades[i] = 1;
 
 		mml->MercCount                  = mercCount;
@@ -8433,7 +8507,7 @@ void Client::MerchantRejectMessage(Mob *merchant, int primaryfaction)
 		merchant->SayString(zone->random.Int(WONT_SELL_DEEDS1, WONT_SELL_DEEDS6));
 	} else if (lowestvalue == fmod.race_mod) { // race biggest
 		// Non-standard race (ex. illusioned to wolf)
-		if (GetRace() > PLAYER_RACE_COUNT) {
+		if (!IsPlayerRace(GetRace())) {
 			messageid = zone->random.Int(1, 3); // these aren't sequential StringIDs :(
 			switch (messageid) {
 			case 1:
@@ -8608,6 +8682,19 @@ void Client::TryItemTimer(int slot)
 		return;
 	}
 
+	const bool live_item_refreshed = RefreshLiveItemTree(inst);
+	if (live_item_refreshed) {
+		SendItemPacket(
+			slot,
+			inst,
+			slot == EQ::invslot::slotCursor ? ItemPacketCharInventory : ItemPacketTrade
+		);
+
+		if (slot <= EQ::invslot::EQUIPMENT_END) {
+			CalcBonuses();
+		}
+	}
+
 	auto item_timers = inst->GetTimers();
 	auto it_iter = item_timers.begin();
 	while(it_iter != item_timers.end()) {
@@ -8646,8 +8733,25 @@ void Client::TryItemTimer(int slot)
 void Client::SendItemScale(EQ::ItemInstance *inst) {
 	int slot = m_inv.GetSlotByItemInst(inst);
 	if(slot != -1) {
-		inst->ScaleItem();
-		SendItemPacket(slot, inst, ItemPacketCharmUpdate);
+		bool dynamic_item_refreshed = false;
+
+		if (inst->IsScaling()) {
+			inst->ScaleItem();
+		} else if (inst->HasDynamicItemData()) {
+			inst->RebuildDynamicItemData();
+			inst->AssignNewSerialNumber();
+			dynamic_item_refreshed = true;
+		} else {
+			inst->ScaleItem();
+		}
+
+		SendItemPacket(
+			slot,
+			inst,
+			dynamic_item_refreshed ?
+				(slot == EQ::invslot::slotCursor ? ItemPacketCharInventory : ItemPacketTrade) :
+				ItemPacketCharmUpdate
+		);
 		CalcBonuses();
 	}
 }
@@ -9159,6 +9263,37 @@ void Client::SendHPUpdateMarquee(){
 	SendMarqueeMessage(Chat::Yellow, 510, 0, 3000, 3000, health_update_notification);
 }
 
+void Client::SendNativeHpFixUpdate(bool force)
+{
+	if (!RuleB(CustomFeatures, HpFixEnabled)) {
+		native_hpfix_ready_ = false;
+		return;
+	}
+
+	if (!native_hpfix_ready_) {
+		return;
+	}
+
+	const int64 current = GetHP();
+	const int64 maximum = GetMaxHP();
+	if (maximum <= 0) {
+		return;
+	}
+
+	const double percent = (static_cast<double>(current) * 100.0) / static_cast<double>(maximum);
+	const auto payload = fmt::format(
+		"HPFIX|self|current={}|max={}|percent={:.2f}",
+		current,
+		maximum,
+		percent
+	);
+
+	Message(Chat::Yellow, payload.c_str());
+	if (force) {
+		LogHPUpdate("Native HPFIX forced update for [{}]: {}", GetCleanName(), payload);
+	}
+}
+
 uint32 Client::GetMoney(uint8 type, uint8 subtype) {
 	uint32 value = 0;
 
@@ -9438,12 +9573,15 @@ void Client::ProcessAggroMeter()
 	}
 }
 
-void Client::SetPetCommandState(int button, int state)
+void Client::SetPetCommandState(uint8 button, uint8 state)
 {
 	auto app = new EQApplicationPacket(OP_PetCommandState, sizeof(PetCommandState_Struct));
-	auto pcs = (PetCommandState_Struct *)app->pBuffer;
-	pcs->button_id = button;
-	pcs->state = state;
+
+	auto s = (PetCommandState_Struct*) app->pBuffer;
+
+	s->button_id = button;
+	s->state     = state;
+
 	FastQueuePacket(&app);
 }
 
@@ -9520,8 +9658,7 @@ void Client::InitInnates()
 	// The client calls this in a few places. When you remove a vision buff and in SetHeights, which is called in
 	// illusions, mounts, and a bunch of other cases. All of the calls to InitInnates are wrapped in restoring regen
 	// besides the call initializing the first time
-	auto race   = GetRace();
-	auto class_ = GetClass();
+	auto race = GetRace();
 
 	for (int i = 0; i < InnateSkillMax; ++i) {
 		m_pp.InnateSkills[i] = InnateDisabled;
@@ -9614,25 +9751,26 @@ void Client::InitInnates()
 			break;
 	}
 
-	switch (class_) {
-		case Class::Druid:
-			m_pp.InnateSkills[InnateHarmony] = InnateEnabled;
-			break;
-		case Class::Bard:
-			m_pp.InnateSkills[InnateReveal] = InnateEnabled;
-			break;
-		case Class::Rogue:
-			m_pp.InnateSkills[InnateSurprise] = InnateEnabled;
-			m_pp.InnateSkills[InnateReveal]   = InnateEnabled;
-			break;
-		case Class::Ranger:
-			m_pp.InnateSkills[InnateAwareness] = InnateEnabled;
-			break;
-		case Class::Monk:
-			m_pp.InnateSkills[InnateSurprise]  = InnateEnabled;
-			m_pp.InnateSkills[InnateAwareness] = InnateEnabled;
-		default:
-			break;
+	if (multiclass_manager.HasClass(this, Class::Druid)) {
+		m_pp.InnateSkills[InnateHarmony] = InnateEnabled;
+	}
+
+	if (multiclass_manager.HasClass(this, Class::Bard)) {
+		m_pp.InnateSkills[InnateReveal] = InnateEnabled;
+	}
+
+	if (multiclass_manager.HasClass(this, Class::Rogue)) {
+		m_pp.InnateSkills[InnateSurprise] = InnateEnabled;
+		m_pp.InnateSkills[InnateReveal]   = InnateEnabled;
+	}
+
+	if (multiclass_manager.HasClass(this, Class::Ranger)) {
+		m_pp.InnateSkills[InnateAwareness] = InnateEnabled;
+	}
+
+	if (multiclass_manager.HasClass(this, Class::Monk)) {
+		m_pp.InnateSkills[InnateSurprise]  = InnateEnabled;
+		m_pp.InnateSkills[InnateAwareness] = InnateEnabled;
 	}
 }
 
@@ -9656,9 +9794,9 @@ void Client::SetDevToolsEnabled(bool in_dev_tools_enabled)
 	const auto dev_tools_key = fmt::format("{}-dev-tools-disabled", AccountID());
 
 	if (in_dev_tools_enabled) {
-		DataBucket::DeleteData(dev_tools_key);
+		DataBucket::DeleteData(&database, dev_tools_key);
 	} else {
-		DataBucket::SetData(dev_tools_key, "true");
+		DataBucket::SetData(&database, dev_tools_key, "true");
 	}
 
 	Client::dev_tools_enabled = in_dev_tools_enabled;
@@ -9831,7 +9969,7 @@ void Client::SendToGuildHall()
 	uint32      expiration_time         = (RuleI(Instances, GuildHallExpirationDays) * 86400);
 	uint16      instance_id             = 0;
 	std::string guild_hall_instance_key = fmt::format("guild-hall-instance-{}", GuildID());
-	std::string instance_data           = DataBucket::GetData(guild_hall_instance_key);
+	std::string instance_data           = DataBucket::GetData(&database, guild_hall_instance_key);
 	if (!instance_data.empty() && Strings::ToInt(instance_data) > 0) {
 		instance_id = Strings::ToInt(instance_data);
 	}
@@ -9848,6 +9986,7 @@ void Client::SendToGuildHall()
 		}
 
 		DataBucket::SetData(
+			&database,
 			guild_hall_instance_key,
 			std::to_string(instance_id),
 			std::to_string(expiration_time)
@@ -10643,7 +10782,7 @@ void Client::MovePCDynamicZone(const std::string& zone_name, int zone_version, b
 }
 
 void Client::Fling(float value, float target_x, float target_y, float target_z, bool ignore_los, bool clip_through_walls, bool calculate_speed) {
-	BuffFadeByEffect(SE_Levitate);
+	BuffFadeByEffect(SpellEffect::Levitate);
 	if (CheckLosFN(target_x, target_y, target_z, 6.0f) || ignore_los) {
 		auto p = new EQApplicationPacket(OP_Fling, sizeof(fling_struct));
 		auto* f = (fling_struct*) p->pBuffer;
@@ -10696,11 +10835,16 @@ std::vector<int> Client::GetLearnableDisciplines(uint8 min_level, uint8 max_leve
 			continue;
 		}
 
-		if (max_level && spells[spell_id].classes[m_pp.class_ - 1] > max_level) {
+		const auto multiclass_level = multiclass_manager.GetBestSpellLevel(this, spell_id);
+		if (multiclass_level == 255) {
 			continue;
 		}
 
-		if (min_level > 1 && spells[spell_id].classes[m_pp.class_ - 1] < min_level) {
+		if (max_level && multiclass_level > max_level) {
+			continue;
+		}
+
+		if (min_level > 1 && multiclass_level < min_level) {
 			continue;
 		}
 
@@ -10708,7 +10852,7 @@ std::vector<int> Client::GetLearnableDisciplines(uint8 min_level, uint8 max_leve
 			continue;
 		}
 
-		if (RuleB(Spells, UseCHAScribeHack) && spells[spell_id].effect_id[EFFECT_COUNT - 1] == SE_CHA) {
+		if (RuleB(Spells, UseCHAScribeHack) && spells[spell_id].effect_id[EFFECT_COUNT - 1] == SpellEffect::CHA) {
 			continue;
 		}
 
@@ -10767,11 +10911,16 @@ std::vector<int> Client::GetScribeableSpells(uint8 min_level, uint8 max_level) {
 			continue;
 		}
 
-		if (max_level && spells[spell_id].classes[m_pp.class_ - 1] > max_level) {
+		const auto multiclass_level = multiclass_manager.GetBestSpellLevel(this, spell_id);
+		if (multiclass_level == 255) {
 			continue;
 		}
 
-		if (min_level > 1 && spells[spell_id].classes[m_pp.class_ - 1] < min_level) {
+		if (max_level && multiclass_level > max_level) {
+			continue;
+		}
+
+		if (min_level > 1 && multiclass_level < min_level) {
 			continue;
 		}
 
@@ -10779,7 +10928,7 @@ std::vector<int> Client::GetScribeableSpells(uint8 min_level, uint8 max_level) {
 			continue;
 		}
 
-		if (RuleB(Spells, UseCHAScribeHack) && spells[spell_id].effect_id[EFFECT_COUNT - 1] == SE_CHA) {
+		if (RuleB(Spells, UseCHAScribeHack) && spells[spell_id].effect_id[EFFECT_COUNT - 1] == SpellEffect::CHA) {
 			continue;
 		}
 
@@ -10804,7 +10953,7 @@ std::vector<int> Client::GetScribeableSpells(uint8 min_level, uint8 max_level) {
 			if (g != spell_group_cache.end()) {
 				for (const auto& s : g->second) {
 					if (
-						EQ::ValueWithin(spells[s].classes[m_pp.class_ - 1], min_level, max_level) &&
+						EQ::ValueWithin(multiclass_manager.GetBestSpellLevel(this, s), min_level, max_level) &&
 						s == spell_id &&
 						scribeable
 					) {
@@ -10900,7 +11049,7 @@ void Client::SendToInstance(std::string instance_type, std::string zone_short_na
 		instance_identifier,
 		zone_short_name
 	);
-	std::string current_bucket_value = DataBucket::GetData(full_bucket_name);
+	std::string current_bucket_value = DataBucket::GetData(&database, full_bucket_name);
 	uint16 instance_id = 0;
 
 	if (current_bucket_value.length() > 0) {
@@ -10916,7 +11065,7 @@ void Client::SendToInstance(std::string instance_type, std::string zone_short_na
 			return;
 		}
 
-		DataBucket::SetData(full_bucket_name, itoa(instance_id), itoa(duration));
+		DataBucket::SetData(&database, full_bucket_name, itoa(instance_id), itoa(duration));
 	}
 
 	AssignToInstance(instance_id);
@@ -11421,7 +11570,7 @@ void Client::SummonBaggedItems(uint32 bag_item_id, const std::vector<LootItem>& 
 		return;
 	}
 
-	// todo: maybe some common functions for SE_SummonItem and SE_SummonItemIntoBag
+	// todo: maybe some common functions for SpellEffect::SummonItem and SpellEffect::SummonItemIntoBag
 
 	const EQ::ItemData* bag_item = database.GetItem(bag_item_id);
 	if (!bag_item)
@@ -11551,6 +11700,7 @@ uint16 Client::ScribeSpells(uint8 min_level, uint8 max_level)
 {
 	auto             available_book_slot = GetNextAvailableSpellBookSlot();
 	std::vector<int> spell_ids           = GetScribeableSpells(min_level, max_level);
+	std::vector<std::pair<int, int>> client_updates;
 	uint16           scribed_spells      = 0;
 
 	if (!spell_ids.empty()) {
@@ -11571,8 +11721,10 @@ uint16 Client::ScribeSpells(uint8 min_level, uint8 max_level)
 				continue;
 			}
 
-			// defer saving per spell and bulk save at the end
-			ScribeSpell(spell_id, available_book_slot, true, true);
+			// Defer both DB writes and client book packets so Multiclass can
+			// patch off-class display levels before the client caches menus.
+			ScribeSpell(spell_id, available_book_slot, false, true);
+			client_updates.emplace_back(available_book_slot, spell_id);
 			available_book_slot = GetNextAvailableSpellBookSlot(available_book_slot);
 			scribed_spells++;
 		}
@@ -11585,6 +11737,11 @@ uint16 Client::ScribeSpells(uint8 min_level, uint8 max_level)
 			fmt::format("{} new spells", scribed_spells)
 		);
 		Message(Chat::White, fmt::format("You have learned {}!", spell_message).c_str());
+
+		multiclass_manager.SendNativeSpellLevelSnapshot(this);
+		for (const auto& [slot, spell_id] : client_updates) {
+			MemorizeSpell(slot, spell_id, memSpellScribing);
+		}
 
 		// bulk insert spells
 		SaveSpells();
@@ -11677,7 +11834,13 @@ uint16 Client::GetClassTrackingDistanceMultiplier(uint16 class_) {
 }
 
 bool Client::CanThisClassTrack() {
-	return (GetClassTrackingDistanceMultiplier(GetClass()) > 0) ? true : false;
+	for (const auto class_id : multiclass_manager.GetClassSlots(this)) {
+		if (GetClassTrackingDistanceMultiplier(class_id) > 0) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void Client::ReconnectUCS()
@@ -11997,6 +12160,11 @@ std::vector<Mob*> Client::GetApplySpellList(
 						if (allow_pets && m.member->HasPet()) {
 							l.push_back(m.member->GetPet());
 						}
+						if (allow_pets) {
+							for (auto *pet : multiclass_manager.GetSecondaryPetRoster(m.member)) {
+								l.push_back(pet);
+							}
+						}
 
 						if (allow_bots) {
 							const auto& sbl = entity_list.GetBotListByCharacterID(m.member->CharacterID());
@@ -12019,6 +12187,11 @@ std::vector<Mob*> Client::GetApplySpellList(
 					if (allow_pets && m->HasPet()) {
 						l.push_back(m->GetPet());
 					}
+					if (allow_pets && m->IsClient()) {
+						for (auto *pet : multiclass_manager.GetSecondaryPetRoster(m->CastToClient())) {
+							l.push_back(pet);
+						}
+					}
 
 					if (allow_bots) {
 						const auto& sbl = entity_list.GetBotListByCharacterID(m->CastToClient()->CharacterID());
@@ -12034,6 +12207,11 @@ std::vector<Mob*> Client::GetApplySpellList(
 
 		if (allow_pets && HasPet()) {
 			l.push_back(GetPet());
+		}
+		if (allow_pets) {
+			for (auto *pet : multiclass_manager.GetSecondaryPetRoster(this)) {
+				l.push_back(pet);
+			}
 		}
 
 		if (allow_bots) {
@@ -12099,7 +12277,7 @@ void Client::MaxSkills()
 		auto current_skill_value = (
 			EQ::skills::IsSpecializedSkill(s.first) ?
 			MAX_SPECIALIZED_SKILL :
-			SkillCaps::Instance()->GetSkillCap(GetClass(), s.first, GetLevel()).cap
+			MaxSkill(s.first)
 		);
 
 		if (GetSkill(s.first) < current_skill_value) {
@@ -12232,6 +12410,224 @@ void Client::SendPath(Mob* target)
 	}
 
 	SendPathPacket(points);
+}
+
+namespace {
+constexpr const char *PetBagCharmInventoryKey = "is_charmed";
+constexpr const char *PetBagCharmOriginClassKey = "pet_bag_origin_class";
+
+std::vector<Mob*> GetPetBagRoster(Client *client)
+{
+	std::vector<Mob*> pets;
+	if (!client) {
+		return pets;
+	}
+
+	auto add_pet = [&pets](Mob *pet) {
+		if (!pet || std::find(pets.begin(), pets.end(), pet) != pets.end()) {
+			return;
+		}
+
+		pets.push_back(pet);
+	};
+
+	add_pet(client->GetPet());
+	for (auto *pet : multiclass_manager.GetPetRoster(client)) {
+		add_pet(pet);
+	}
+
+	return pets;
+}
+
+bool PetBagPetMatchesClass(NPC *pet, int class_id)
+{
+	if (!pet) {
+		return false;
+	}
+
+	if (pet->GetPetSpellID() && GetSpellLevel(pet->GetPetSpellID(), class_id) < UINT8_MAX) {
+		return true;
+	}
+
+	if (pet->EntityVariableExists(PetBagCharmOriginClassKey)) {
+		return Strings::ToInt(pet->GetEntityVariable(PetBagCharmOriginClassKey)) == class_id;
+	}
+
+	return false;
+}
+} // namespace
+
+bool Client::IsPetBagActive()
+{
+	for (int class_id = Class::Warrior; class_id <= Class::Berserker; class_id++) {
+		if (multiclass_manager.HasClass(this, class_id) && GetActivePetBagSlot(class_id) >= 0) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+EQ::ItemInstance* Client::GetActivePetBag(int class_id)
+{
+	const int16 slot_id = GetActivePetBagSlot(class_id);
+	if (slot_id < 0) {
+		return nullptr;
+	}
+
+	return GetInv().GetItem(slot_id);
+}
+
+int16 Client::GetActivePetBagSlot(int class_id)
+{
+	if (!RuleB(CustomFeatures, PetBagsEnabled)) {
+		return -1;
+	}
+
+	EQ::ItemInstance *active_bag = nullptr;
+	int16 active_bag_slot = -1;
+
+	auto evaluate_bags_in_range = [&](int16 start_slot, int16 end_slot) {
+		for (int16 slot_id = start_slot; slot_id <= end_slot; slot_id++) {
+			auto *potential_bag = GetInv().GetItem(slot_id);
+			if (!potential_bag || !IsValidPetBagForClass(potential_bag->GetID(), class_id)) {
+				continue;
+			}
+
+			if (!active_bag || active_bag->GetItem()->BagSlots < potential_bag->GetItem()->BagSlots) {
+				active_bag = potential_bag;
+				active_bag_slot = slot_id;
+			}
+		}
+	};
+
+	evaluate_bags_in_range(EQ::invslot::GENERAL_BEGIN, EQ::invslot::GENERAL_END);
+	if (!active_bag) {
+		evaluate_bags_in_range(EQ::invslot::BANK_BEGIN, EQ::invslot::BANK_END);
+	}
+
+	return active_bag_slot;
+}
+
+bool Client::IsValidPetBagForClass(int bag_id, int class_id)
+{
+	static const std::unordered_map<int, std::vector<int>> class_to_bag_map = {
+		{Class::ShadowKnight, {899980}},
+		{Class::Druid, {899981}},
+		{Class::Bard, {899983}},
+		{Class::Shaman, {899984}},
+		{Class::Necromancer, {899985, 17727}},
+		{Class::Magician, {899986, 900000}},
+		{Class::Enchanter, {899987, 17726}},
+		{Class::Beastlord, {899988, 17725}},
+	};
+
+	auto it = class_to_bag_map.find(class_id);
+	if (it == class_to_bag_map.end()) {
+		return false;
+	}
+
+	const auto &valid_bags = it->second;
+	return std::find(valid_bags.begin(), valid_bags.end(), bag_id) != valid_bags.end();
+}
+
+bool Client::IsValidPetBag(int item_id)
+{
+	for (int class_id = Class::Warrior; class_id <= Class::Berserker; class_id++) {
+		if (IsValidPetBagForClass(item_id, class_id)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void Client::DoPetBagResync(int class_id)
+{
+	if (!RuleB(CustomFeatures, PetBagsEnabled)) {
+		return;
+	}
+
+	auto *pet_bag = GetActivePetBag(class_id);
+	if (!pet_bag) {
+		return;
+	}
+
+	const int16 pet_bag_slot = GetActivePetBagSlot(class_id);
+	if (pet_bag_slot < 0) {
+		return;
+	}
+
+	for (auto *pet : GetPetBagRoster(this)) {
+		if (!pet || !pet->IsNPC()) {
+			continue;
+		}
+
+		auto *pet_npc = pet->CastToNPC();
+		if (!PetBagPetMatchesClass(pet_npc, class_id)) {
+			continue;
+		}
+
+		if (pet_npc->IsCharmed() && !pet_npc->EntityVariableExists(PetBagCharmInventoryKey)) {
+			auto inventory = pet_npc->GetLootList();
+			std::vector<std::string> inventory_strings;
+			inventory_strings.reserve(inventory.size());
+
+			for (int item_id : inventory) {
+				inventory_strings.push_back(std::to_string(item_id));
+			}
+
+			const auto serialized_inventory = Strings::Join(inventory_strings, ",");
+			pet_npc->SetEntityVariable(PetBagCharmInventoryKey, serialized_inventory);
+			LogDebug("Pet bag charm inventory serialized for [{}]: [{}]", pet_npc->GetCleanName(), serialized_inventory);
+		}
+
+		DoPetBagFlush(pet);
+
+		const int bag_top = EQ::InventoryProfile::CalcSlotId(pet_bag_slot, EQ::invbag::SLOT_BEGIN);
+		const int bag_bot = EQ::InventoryProfile::CalcSlotId(pet_bag_slot, pet_bag->GetItem()->BagSlots);
+
+		for (int slot_id = bag_top; slot_id < bag_bot; slot_id++) {
+			auto *item_inst = GetInv().GetItem(slot_id);
+			if (!item_inst) {
+				continue;
+			}
+
+			pet_npc->AddItem(
+				item_inst->GetID(),
+				1,
+				true,
+				item_inst->GetAugmentItemID(0),
+				item_inst->GetAugmentItemID(1),
+				item_inst->GetAugmentItemID(2),
+				item_inst->GetAugmentItemID(3),
+				item_inst->GetAugmentItemID(4),
+				item_inst->GetAugmentItemID(5)
+			);
+		}
+
+		if (IsPlayerRace(pet->GetRace())) {
+			for (int texture = EQ::textures::textureBegin; texture < EQ::textures::weaponPrimary; texture++) {
+				pet->SendWearChange(texture);
+			}
+		}
+
+		pet->SendWearChange(EQ::textures::weaponPrimary);
+		pet->SendWearChange(EQ::textures::weaponSecondary);
+		pet_npc->SetAttackTimer();
+	}
+}
+
+void Client::DoPetBagFlush(Mob *pet)
+{
+	if (!RuleB(CustomFeatures, PetBagsEnabled) || !pet || !pet->IsNPC()) {
+		return;
+	}
+
+	auto *pet_npc = pet->CastToNPC();
+	while (!pet_npc->GetLootList().empty()) {
+		pet_npc->RemoveItem(pet_npc->GetLootList().front());
+	}
 }
 
 void Client::UseAugmentContainer(int container_slot)
@@ -13099,6 +13495,59 @@ void Client::SetAAEXPPercentage(uint8 percentage)
 	SendAlternateAdvancementTable();
 }
 
+const std::vector<EQ::skills::SkillType> &Client::GetAvailableAutoSkills()
+{
+	static const std::vector<EQ::skills::SkillType> available_auto_skills = {
+		EQ::skills::SkillBackstab,
+		EQ::skills::SkillBash,
+		EQ::skills::SkillDragonPunch,
+		EQ::skills::SkillEagleStrike,
+		EQ::skills::SkillFlyingKick,
+		EQ::skills::SkillKick,
+		EQ::skills::SkillRoundKick,
+		EQ::skills::SkillTigerClaw,
+		EQ::skills::SkillTaunt,
+		EQ::skills::SkillFrenzy
+	};
+
+	return available_auto_skills;
+}
+
+bool Client::GetAutoSkillStatus(EQ::skills::SkillType skill_id)
+{
+	const auto cached_status = m_autoskill.find(skill_id);
+	if (cached_status != m_autoskill.end()) {
+		return cached_status->second;
+	}
+
+	const auto bucket_name = fmt::format("autoskill.{}", static_cast<int>(skill_id));
+	const bool enabled = Strings::ToBool(GetBucket(bucket_name));
+	m_autoskill[skill_id] = enabled;
+
+	return enabled;
+}
+
+void Client::SetAutoSkillStatus(EQ::skills::SkillType skill_id, bool enabled)
+{
+	m_autoskill[skill_id] = enabled;
+
+	const auto bucket_name = fmt::format("autoskill.{}", static_cast<int>(skill_id));
+	SetBucket(bucket_name, enabled ? "1" : "0");
+}
+
+std::vector<EQ::skills::SkillType> Client::GetAutoSkillsList()
+{
+	std::vector<EQ::skills::SkillType> skills;
+
+	for (const auto skill_id : GetAvailableAutoSkills()) {
+		if (HasSkill(skill_id)) {
+			skills.push_back(skill_id);
+		}
+	}
+
+	return skills;
+}
+
 void Client::BroadcastPositionUpdate()
 {
 	EQApplicationPacket               outapp(OP_ClientUpdate, sizeof(PlayerPositionUpdateServer_Struct));
@@ -13134,7 +13583,7 @@ std::string Client::GetAccountBucket(std::string bucket_name)
 	k.account_id   = AccountID();
 	k.key          = bucket_name;
 
-	return DataBucket::GetData(k).value;
+	return DataBucket::GetData(&database, k).value;
 }
 
 void Client::SetAccountBucket(std::string bucket_name, std::string bucket_value, std::string expiration)
@@ -13145,7 +13594,7 @@ void Client::SetAccountBucket(std::string bucket_name, std::string bucket_value,
 	k.expires      = expiration;
 	k.value        = bucket_value;
 
-	DataBucket::SetData(k);
+	DataBucket::SetData(&database, k);
 }
 
 void Client::DeleteAccountBucket(std::string bucket_name)
@@ -13154,7 +13603,7 @@ void Client::DeleteAccountBucket(std::string bucket_name)
 	k.account_id   = AccountID();
 	k.key          = bucket_name;
 
-	DataBucket::DeleteData(k);
+	DataBucket::DeleteData(&database, k);
 }
 
 std::string Client::GetAccountBucketExpires(std::string bucket_name)
@@ -13163,7 +13612,7 @@ std::string Client::GetAccountBucketExpires(std::string bucket_name)
 	k.account_id   = AccountID();
 	k.key          = bucket_name;
 
-	return DataBucket::GetDataExpires(k);
+	return DataBucket::GetDataExpires(&database, k);
 }
 
 std::string Client::GetAccountBucketRemaining(std::string bucket_name)
@@ -13172,7 +13621,7 @@ std::string Client::GetAccountBucketRemaining(std::string bucket_name)
 	k.account_id   = AccountID();
 	k.key          = bucket_name;
 
-	return DataBucket::GetDataRemaining(k);
+	return DataBucket::GetDataRemaining(&database, k);
 }
 
 std::string Client::GetBandolierName(uint8 bandolier_slot)

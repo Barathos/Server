@@ -1,41 +1,38 @@
-/*	EQEMu: Everquest Server Emulator
-	Copyright (C) 2001-2003 EQEMu Development Team (http://eqemulator.net)
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; version 2 of the License.
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
 	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY except by those people which sell it, which
-	are required to give you total support for your newly bought product;
-	without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-	A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
-
-#include "../common/global_define.h"
-#include "../common/features.h"
-#include "../common/rulesys.h"
-#include "../common/strings.h"
-
-#include "client.h"
-#include "../common/data_bucket.h"
-#include "groups.h"
-#include "mob.h"
-#include "raids.h"
-
-#include "queryserv.h"
-#include "quest_parser_collection.h"
-#include "lua_parser.h"
-#include "string_ids.h"
-#include "../common/data_verification.h"
-
-#include "bot.h"
-#include "../common/events/player_event_logs.h"
-#include "worldserver.h"
+#include "common/data_bucket.h"
+#include "common/data_verification.h"
+#include "common/events/player_event_logs.h"
+#include "common/features.h"
+#include "common/rulesys.h"
+#include "common/strings.h"
+#include "zone/bot.h"
+#include "zone/client.h"
+#include "zone/groups.h"
+#include "zone/lua_parser.h"
+#include "zone/mob.h"
+#include "zone/multiclass_manager.h"
+#include "zone/queryserv.h"
+#include "zone/quest_parser_collection.h"
+#include "zone/achievement_manager.h"
+#include "zone/raids.h"
+#include "zone/string_ids.h"
+#include "zone/worldserver.h"
 
 extern WorldServer worldserver;
 
@@ -130,7 +127,7 @@ uint64 Client::CalcEXP(uint8 consider_level, bool ignore_modifiers) {
 			if (
 				GetClass() == Class::Warrior ||
 				GetClass() == Class::Rogue ||
-				GetBaseRace() == HALFLING
+				GetBaseRace() == Race::Halfling
 			) {
 				total_modifier *= 1.05;
 			}
@@ -291,7 +288,7 @@ void Client::CalculateStandardAAExp(uint64 &add_aaxp, uint8 conlevel, bool resex
 	// Shouldn't race not affect AA XP?
 	if (RuleB(Character, UseRaceClassExpBonuses))
 	{
-		if (GetBaseRace() == HALFLING) {
+		if (GetBaseRace() == Race::Halfling) {
 			aatotalmod *= 1.05;
 		}
 
@@ -439,7 +436,7 @@ void Client::CalculateExp(uint64 in_add_exp, uint64 &add_exp, uint64 &add_aaxp, 
 
 		if (RuleB(Character, UseRaceClassExpBonuses))
 		{
-			if (GetBaseRace() == HALFLING) {
+			if (GetBaseRace() == Race::Halfling) {
 				totalmod *= 1.05;
 			}
 
@@ -564,7 +561,7 @@ void Client::AddEXP(ExpSource exp_source, uint64 in_add_exp, uint8 conlevel, boo
 	}
 
 	// AA Sanity Checking for players who set aa exp and deleveled below allowed aa level.
-	if (GetLevel() <= 50 && m_epp.perAA > 0) {
+	if (!RuleB(AA, AllowAAExpBelowLevel51) && GetLevel() <= 50 && m_epp.perAA > 0) {
 		Message(Chat::Yellow, "You are below the level allowed to gain AA Experience. AA Experience set to 0%");
 		aaexp = 0;
 		m_epp.perAA = 0;
@@ -853,7 +850,7 @@ void Client::SetEXP(ExpSource exp_source, uint64 set_exp, uint64 set_aaxp, bool 
 	m_pp.exp = set_exp;
 	m_pp.expAA = set_aaxp;
 
-	if (GetLevel() < 51) {
+	if (GetLevel() < 51 && !RuleB(AA, AllowAAExpBelowLevel51)) {
 		m_epp.perAA = 0;	// turn off aa exp if they drop below 51
 	} else {
 		SendAlternateAdvancementStats();    //otherwise, send them an AA update
@@ -972,6 +969,7 @@ void Client::SetLevel(uint8 set_level, bool command)
 	LogInfo("Setting Level for [{}] to [{}]", GetName(), set_level);
 
 	CalcBonuses();
+	multiclass_manager.SeedEligibleSkills(this, true);
 
 	if (!RuleB(Character, HealOnLevel)) {
 		const auto max_hp = CalcMaxHP();
@@ -999,6 +997,8 @@ void Client::SetLevel(uint8 set_level, bool command)
 	UpdateMercLevel();
 
 	Save();
+
+	achievement_manager.ProcessLevel(this);
 }
 
 // Note: The client calculates exp separately, we cant change this function
@@ -1057,13 +1057,13 @@ uint32 Client::GetEXPForLevel(uint16 check_level)
 	if(RuleB(Character,UseOldRaceExpPenalties))
 	{
 		float racemod = 1.0;
-		if(GetBaseRace() == TROLL || GetBaseRace() == IKSAR) {
+		if(GetBaseRace() == Race::Troll || GetBaseRace() == Race::Iksar) {
 			racemod = 1.2;
-		} else if(GetBaseRace() == OGRE) {
+		} else if(GetBaseRace() == Race::Ogre) {
 			racemod = 1.15;
-		} else if(GetBaseRace() == BARBARIAN) {
+		} else if(GetBaseRace() == Race::Barbarian) {
 			racemod = 1.05;
-		} else if(GetBaseRace() == HALFLING) {
+		} else if(GetBaseRace() == Race::Halfling) {
 			racemod = 0.95;
 		}
 
@@ -1299,7 +1299,7 @@ uint8 Client::GetCharMaxLevelFromBucket()
 	DataBucketKey k = GetScopedBucketKeys();
 	k.key = "CharMaxLevel";
 
-	auto b = DataBucket::GetData(k);
+	auto b = DataBucket::GetData(&database, k);
 	if (!b.value.empty()) {
 		if (Strings::IsNumber(b.value)) {
 			return static_cast<uint8>(Strings::ToUnsignedInt(b.value));

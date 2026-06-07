@@ -1,11 +1,29 @@
-#ifndef EQEMU_LUA_CORPSE_H
-#define EQEMU_LUA_CORPSE_H
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
+#pragma once
+
 #ifdef LUA_EQEMU
 
-#include "lua_mob.h"
+#include "zone/lua_mob.h"
 
 class Corpse;
 class Lua_Client;
+class Lua_ItemInst;
 struct Lua_Corpse_Loot_List;
 
 namespace luabind {
@@ -44,6 +62,8 @@ public:
 	void AddItem(uint32 itemnum, uint16 charges);
 	void AddItem(uint32 itemnum, uint16 charges, int16 slot);
 	void AddItem(uint32 itemnum, uint16 charges, int16 slot, uint32 aug1, uint32 aug2, uint32 aug3, uint32 aug4, uint32 aug5);
+	void AddLiveItem(Lua_ItemInst inst);
+	void AddLiveItem(Lua_ItemInst inst, int16 slot);
 	uint32 GetWornItem(int16 equipSlot);
 	void RemoveItem(uint16 lootslot);
 	void RemoveItemByID(uint32 item_id);
@@ -68,5 +88,4 @@ public:
 	Lua_Corpse_Loot_List GetLootList(lua_State* L);
 };
 
-#endif
-#endif
+#endif // LUA_EQEMU

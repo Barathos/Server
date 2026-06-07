@@ -1,56 +1,55 @@
+/*	EQEmu: EQEmulator
 
-/*	EQEMu: Everquest Server Emulator
-Copyright (C) 2001-2005 EQEMu Development Team (http://eqemulator.net)
+	Copyright (C) 2001-2026 EQEmu Development Team
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; version 2 of the License.
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY except by those people which sell it, which
-are required to give you total support for your newly bought product;
-without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
-#include "../common/global_define.h"
 #include "zoneserver.h"
-#include "clientlist.h"
-#include "login_server.h"
-#include "login_server_list.h"
-#include "zonelist.h"
-#include "worlddb.h"
-#include "client.h"
-#include "../common/md5.h"
-#include "world_config.h"
-#include "../common/guilds.h"
-#include "../common/packet_dump.h"
-#include "../common/misc.h"
-#include "../common/strings.h"
-#include "cliententry.h"
-#include "wguild_mgr.h"
-#include "lfplist.h"
-#include "adventure_manager.h"
-#include "ucs.h"
-#include "queryserv.h"
-#include "../common/zone_store.h"
-#include "dynamic_zone.h"
-#include "dynamic_zone_manager.h"
-#include "shared_task_world_messaging.h"
-#include "../common/shared_tasks.h"
-#include "shared_task_manager.h"
-#include "../common/content/world_content_service.h"
-#include "../common/repositories/player_event_logs_repository.h"
-#include "../common/events/player_event_logs.h"
-#include "../common/patches/patches.h"
-#include "../common/repositories/guild_tributes_repository.h"
-#include "../common/skill_caps.h"
-#include "../common/server_reload_types.h"
-#include "../common/repositories/trader_repository.h"
-#include "../common/repositories/buyer_repository.h"
+
+#include "common/content/world_content_service.h"
+#include "common/events/player_event_logs.h"
+#include "common/guilds.h"
+#include "common/md5.h"
+#include "common/misc.h"
+#include "common/packet_dump.h"
+#include "common/patches/patches.h"
+#include "common/repositories/buyer_repository.h"
+#include "common/repositories/guild_tributes_repository.h"
+#include "common/repositories/player_event_logs_repository.h"
+#include "common/repositories/trader_repository.h"
+#include "common/server_reload_types.h"
+#include "common/shared_tasks.h"
+#include "common/skill_caps.h"
+#include "common/strings.h"
+#include "common/zone_store.h"
+#include "world/adventure_manager.h"
+#include "world/client.h"
+#include "world/cliententry.h"
+#include "world/clientlist.h"
+#include "world/dynamic_zone_manager.h"
+#include "world/dynamic_zone.h"
+#include "world/lfplist.h"
+#include "world/login_server_list.h"
+#include "world/login_server.h"
+#include "world/queryserv.h"
+#include "world/shared_task_manager.h"
+#include "world/shared_task_world_messaging.h"
+#include "world/ucs.h"
+#include "world/wguild_mgr.h"
+#include "world/world_config.h"
+#include "world/worlddb.h"
+#include "world/zonelist.h"
 
 extern GroupLFPList LFPGroupList;
 extern volatile bool RunLoops;

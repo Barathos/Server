@@ -1,21 +1,20 @@
-/*	EQEMu: Everquest Server Emulator
-	Copyright (C) 2001-2016 EQEMu Development Team (http://eqemulator.org)
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; version 2 of the License.
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
 	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY except by those people which sell it, which
-	are required to give you total support for your newly bought product;
-	without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-	A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
-
 #ifndef RULE_CATEGORY
 #define RULE_CATEGORY(name)
 #endif
@@ -37,6 +36,34 @@
 
 
 
+
+RULE_CATEGORY(CustomFeatures)
+RULE_BOOL(CustomFeatures, MulticlassEnabled, true, "Enables the custom Multiclass trio feature, including trio profiles, secondary class permissions, native UI sync, resonance bonuses, and multi-pet behavior.")
+RULE_BOOL(CustomFeatures, AchievementsEnabled, true, "Enables the custom Achievements feature, including achievement progress processing, commands, and native achievement window sync.")
+RULE_BOOL(CustomFeatures, AutoLootEnabled, true, "Enables the custom source-backed AutoLoot, LootFilter, AutoSell, Need/Greed, and native AutoLoot window behavior.")
+RULE_BOOL(CustomFeatures, GearScoreEnabled, true, "Enables the custom item power/gearscore transport and #itemscore tools.")
+RULE_BOOL(CustomFeatures, LiveItemsEnabled, true, "Enables the custom Live Items and Item Forge testing commands and native Item Forge behavior.")
+RULE_BOOL(CustomFeatures, LiveSpellsEnabled, true, "Enables the custom Live Spells and Spell Forge commands, server spell patching, and native Spell Forge sync.")
+RULE_BOOL(CustomFeatures, ItemRarityEnabled, true, "Enables the custom item rarity tools and native rarity transport.")
+RULE_BOOL(CustomFeatures, HpFixEnabled, true, "Enables the native high-HP client display helper and #hpfix tools.")
+RULE_BOOL(CustomFeatures, AiDialogueEnabled, true, "Enables the custom AI dialogue feature payload and related scripted NPC behavior.")
+RULE_BOOL(CustomFeatures, TradeskillsEnabled, true, "Enables custom native tradeskill feature behavior when wired by the server and client payload.")
+RULE_INT(CustomFeatures, TradeskillMakeAllLimit, 100, "Caps how many auto-combines a single Tradeskill Make-All request can perform.")
+RULE_BOOL(CustomFeatures, AugsInAugsEnabled, true, "Enables custom Augs-in-Augs feature behavior when wired by the server and client payload.")
+RULE_BOOL(CustomFeatures, DynamicQuestsEnabled, true, "Enables custom Dynamic Quests feature behavior when wired by the server and client payload.")
+RULE_BOOL(CustomFeatures, MqInterfaceEnabled, true, "Enables bundled MQ-derived native client interface helpers such as map and item display when shipped in the all-features DLL.")
+RULE_BOOL(CustomFeatures, PetBagsEnabled, true, "Enables Syncrosatchel pet bags that mirror class-specific bag contents onto summoned and charmed pets.")
+RULE_BOOL(CustomFeatures, FactionWindowEnabled, true, "Enables the custom faction reputation window and player-facing reputation command.")
+RULE_BOOL(CustomFeatures, FactionWindowShowAllByDefault, true, "Shows all known database factions in the custom faction reputation window by default instead of only touched, curated, or targeted factions.")
+RULE_INT(CustomFeatures, FactionWindowMaxRowsPerSnapshot, 0, "Caps how many faction rows a single native faction window refresh sends to the client. Set to 0 to send all matching rows.")
+RULE_BOOL(CustomFeatures, DpsParserEnabled, true, "Enables the custom native DPS parser and server-side combat contribution aggregation.")
+RULE_INT(CustomFeatures, DpsParserSnapshotIntervalMS, 1000, "Minimum interval in milliseconds between automatic native DPS parser snapshot updates.")
+RULE_INT(CustomFeatures, DpsParserEncounterTimeoutMS, 12000, "Milliseconds of inactivity before a DPS parser encounter is considered ended.")
+RULE_BOOL(CustomFeatures, ImprovedAutoFollowEnabled, true, "Enables bundled native improved autofollow helpers when shipped in the all-features DLL.")
+RULE_BOOL(CustomFeatures, UseItemCommandEnabled, true, "Enables the player-facing #useitem command and native /useitem rewrite.")
+RULE_BOOL(CustomFeatures, AutoskillsEnabled, true, "Enables the custom player #autoskill command and automatic combat skill processing.")
+RULE_BOOL(CustomFeatures, ServerAuthStatsEnabled, true, "Enables custom server-authoritative stat packets consumed by the native client payload.")
+RULE_CATEGORY_END()
 
 RULE_CATEGORY(Character)
 RULE_INT(Character, MaxLevel, 65, "Sets the highest level for players that can be reached through experience")
@@ -256,6 +283,7 @@ RULE_BOOL(Mercs, AllowMercSuspendInCombat, true, "Allow merc suspend in combat")
 RULE_BOOL(Mercs, MercsIgnoreLevelBasedHasteCaps, false, "Ignores hard coded level based haste caps.")
 RULE_INT(Mercs, MercsHasteCap, 100, "Haste cap for non-v3(over haste) haste")
 RULE_INT(Mercs, MercsHastev3Cap, 25, "Haste cap for v3(over haste) haste")
+RULE_INT(Mercs, MaxMercSlots, 6, "Maximum number of mercenary slots per character (max = MAXMERCS)")
 RULE_CATEGORY_END()
 
 RULE_CATEGORY(Guild)
@@ -619,7 +647,7 @@ RULE_INT(Combat, SneakPullAssistRange, 400, "Modified range of assist for sneak 
 RULE_BOOL(Combat, Classic2HBAnimation, false, "2HB will use the 2 hand piercing animation instead of the overhead slashing animation")
 RULE_BOOL(Combat, ArcheryConsumesAmmo, true, "Set to false to disable Archery Ammo Consumption")
 RULE_BOOL(Combat, ThrowingConsumesAmmo, true, "Set to false to disable Throwing Ammo Consumption")
-RULE_BOOL(Combat, UseLiveRiposteMechanics, false, "Set to true to disable SPA 173 SE_RiposteChance from making those with the effect on them immune to enrage, can longer riposte from a riposte.")
+RULE_BOOL(Combat, UseLiveRiposteMechanics, false, "Set to true to disable SPA 173 SpellEffect::RiposteChance from making those with the effect on them immune to enrage, can longer riposte from a riposte.")
 RULE_INT(Combat, FrontalStunImmunityClasses, 0, "Bitmask for Classes than have frontal stun immunity, No Races (0) by default.")
 RULE_BOOL(Combat, NPCsUseFrontalStunImmunityClasses, false, "Enable or disable NPCs using frontal stun immunity Classes from Combat:FrontalStunImmunityClasses, false by default.")
 RULE_INT(Combat, FrontalStunImmunityRaces, 512, "Bitmask for Races than have frontal stun immunity, Ogre (512) only by default.")
@@ -1002,6 +1030,7 @@ RULE_INT(AA, ModernAAScalingAALimit, 4000, "The number of earned AA when AA expe
 RULE_BOOL(AA, SoundForAAEarned, false, "Play sound when AA point earned")
 RULE_INT(AA, UnusedAAPointCap, -1, "Cap for Unused AA Points.  Default: -1.  NOTE: DO NOT LOWER THIS WITHOUT KNOWING WHAT YOU ARE DOING. MAY RESULT IN PLAYERS LOSING AAs.")
 RULE_INT(AA, MaxAAEXPPerKill, -1, "Maximum AA EXP per Kill (3425214 is about 7%) - Default: -1 will disable the check")
+RULE_BOOL(AA, AllowAAExpBelowLevel51, true, "Allow players below level 51 to allocate and earn AA experience.")
 RULE_CATEGORY_END()
 
 RULE_CATEGORY(Console)
@@ -1158,6 +1187,10 @@ RULE_BOOL(Items, SummonItemAllowInvisibleAugments, false, "Enable this to allow 
 RULE_BOOL(Items, AugmentItemAllowInvisibleAugments, false, "Enable this to allow augments to be put in invisible augment slots by players")
 RULE_BOOL(Items, AlwaysReturnHandins, true, "Enable this to always return handins to the player")
 RULE_BOOL(Items, NPCUseRecommendedLevels, false, "Enable to have NPCs scale item stats by recommended levels")
+RULE_BOOL(Items, LiveItemLoading, true, "Enable live database item loading for item IDs in the configured live item range.")
+RULE_INT(Items, LiveItemMinID, 900000, "Minimum item ID eligible for live database item loading. Set both min and max to 0 to allow all item IDs.")
+RULE_INT(Items, LiveItemMaxID, 999999, "Maximum item ID eligible for live database item loading. Set to 0 to allow every item ID above LiveItemMinID.")
+RULE_INT(Items, LiveItemPollIntervalSeconds, 1, "Seconds to cache live database item lookups before polling the database again.")
 RULE_CATEGORY_END()
 
 RULE_CATEGORY(Parcel)

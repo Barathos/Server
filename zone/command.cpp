@@ -1,36 +1,48 @@
-#include <string.h>
-#include <algorithm>
-#include <thread>
-#include <fmt/format.h>
-#include "../common/repositories/command_subsettings_repository.h"
+/*	EQEmu: EQEmulator
 
-#ifdef _WINDOWS
-#define strcasecmp _stricmp
-#endif
+	Copyright (C) 2001-2026 EQEmu Development Team
 
-#include "../common/global_define.h"
-#include "../common/eq_packet.h"
-#include "../common/features.h"
-#include "../common/ptimer.h"
-#include "../common/rulesys.h"
-#include "../common/strings.h"
-#include "../common/say_link.h"
-#include "../common/net/eqstream.h"
-#include "../common/file.h"
-#include "../common/repositories/dynamic_zones_repository.h"
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
-#include "../common/data_bucket.h"
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
 #include "command.h"
-#include "dynamic_zone.h"
-#include "queryserv.h"
-#include "quest_parser_collection.h"
-#include "titles.h"
-#include "water_map.h"
-#include "worldserver.h"
-#include "fastmath.h"
-#include "mob_movement_manager.h"
-#include "npc_scale_manager.h"
-#include "../common/events/player_event_logs.h"
+
+#include "common/data_bucket.h"
+#include "common/eq_packet.h"
+#include "common/events/player_event_logs.h"
+#include "common/features.h"
+#include "common/file.h"
+#include "common/net/eqstream.h"
+#include "common/ptimer.h"
+#include "common/repositories/command_subsettings_repository.h"
+#include "common/repositories/dynamic_zones_repository.h"
+#include "common/rulesys.h"
+#include "common/say_link.h"
+#include "common/strings.h"
+#include "zone/dynamic_zone.h"
+#include "zone/fastmath.h"
+#include "zone/mob_movement_manager.h"
+#include "zone/npc_scale_manager.h"
+#include "zone/queryserv.h"
+#include "zone/quest_parser_collection.h"
+#include "zone/titles.h"
+#include "zone/water_map.h"
+#include "zone/worldserver.h"
+
+#include "fmt/format.h"
+#include <algorithm>
+#include <cstring>
+#include <thread>
 
 extern QueryServ* QServ;
 extern WorldServer worldserver;
@@ -84,6 +96,13 @@ int command_init(void)
 
 	if (
 		command_add("acceptrules", "[acceptrules] - Accept the EQEmu Agreement", AccountStatus::Player, command_acceptrules) ||
+		command_add("aaexp", "[0-100|off|status] - Set your AA experience allocation percentage", AccountStatus::Player, command_aaexp) ||
+		command_add("aaxp", "[0-100|off|status] - Set your AA experience allocation percentage", AccountStatus::Player, command_aaexp) ||
+		command_add("ach", "[window|status|categories|category|detail|check] - View and update custom achievements", AccountStatus::Player, command_ach) ||
+		command_add("achievement", "[window|status|categories|category|detail|check] - View and update custom achievements", AccountStatus::Player, command_ach) ||
+		command_add("achievements", "[window|status|categories|category|detail|check] - View and update custom achievements", AccountStatus::Player, command_ach) ||
+		command_add("achivement", "[window|status|categories|category|detail|check] - View and update custom achievements", AccountStatus::Player, command_ach) ||
+		command_add("achivements", "[window|status|categories|category|detail|check] - View and update custom achievements", AccountStatus::Player, command_ach) ||
 		command_add("advnpcspawn", "[maketype|makegroup|addgroupentry|addgroupspawn][removegroupspawn|movespawn|editgroupbox|cleargroupbox]", AccountStatus::GMLeadAdmin, command_advnpcspawn) ||
 		command_add("aggrozone", "[aggro] - Aggro every mob in the zone with X aggro. Default is 0. Not recommend if you're not invulnerable.", AccountStatus::GMAdmin, command_aggrozone) ||
 		command_add("ai", "[factionid/spellslist/con/guard/roambox/stop/start] - Modify AI on NPC target", AccountStatus::GMAdmin, command_ai) ||
@@ -91,6 +110,9 @@ int command_init(void)
 		command_add("appearanceeffects", "[Help|Remove|Set|View] - Modify appearance effects on yourself or your target.", AccountStatus::GMAdmin, command_appearanceeffects) ||
 		command_add("apply_shared_memory", "[shared_memory_name] - Tells every zone and world to apply a specific shared memory segment by name.", AccountStatus::GMImpossible, command_apply_shared_memory) ||
 		command_add("attack", "[Entity Name] - Make your NPC target attack an entity by name", AccountStatus::GMLeadAdmin, command_attack) ||
+		command_add("autoloot", "[window|on|off|mode|nearby|group|stackables] - Source-backed AutoLoot settings and actions", AccountStatus::Player, command_autoloot) ||
+		command_add("autosell", "[preview|confirm|cancel|exclude] - Preview and sell items from AutoSell bags", AccountStatus::Player, command_autosell) ||
+		command_add("autoskill", "[list|skill on|skill off|skill status] - Configure automatic combat skill usage", AccountStatus::Player, command_autoskill) ||
 		command_add("augmentitem", "Force augments an item. Must have the augment item window open.", AccountStatus::GMImpossible, command_augmentitem) ||
 		command_add("ban", "[Character Name] [Reason] - Ban by character name", AccountStatus::GMLeadAdmin, command_ban) ||
 		command_add("bugs", "[Close|Delete|Review|Search|View] - Handles player bug reports", AccountStatus::QuestTroupe, command_bugs) ||
@@ -114,6 +136,7 @@ int command_init(void)
 		command_add("disablerecipe", "[Recipe ID] - Disables a Recipe", AccountStatus::QuestTroupe, command_disablerecipe) ||
 		command_add("disarmtrap", "Analog for ldon disarm trap for the newer clients since we still don't have it working.", AccountStatus::QuestTroupe, command_disarmtrap) ||
 		command_add("door", "Door editing command", AccountStatus::QuestTroupe, command_door) ||
+		command_add("dps", "[status|reset|summary|live on|live off] - Open and manage the native DPS parser", AccountStatus::Player, command_dps) ||
 		command_add("doanim", "[Animation ID|Animation Name] [Speed] - Send an animation by ID or name at the specified speed to you or your target (Speed is optional)", AccountStatus::Guide, command_doanim) ||
 		command_add("dye", "[slot|'help'] [red] [green] [blue] [use_tint] - Dyes the specified armor slot to Red, Green, and Blue provided, allows you to bypass darkness limits.", AccountStatus::ApprenticeGuide, command_dye) ||
 		command_add("dz", "Manage expeditions and dynamic zone instances", AccountStatus::QuestTroupe, command_dz) ||
@@ -127,6 +150,7 @@ int command_init(void)
 		command_add("evolve", "Evolving Item manipulation commands. Use argument help for more info.", AccountStatus::Steward, command_evolvingitems) ||
 		command_add("faction", "[Find (criteria | all ) | Review (criteria | all) | Reset (id)] - Resets Player's Faction", AccountStatus::QuestTroupe, command_faction) ||
 		command_add("factionassociation", "[factionid] [amount] - triggers a faction hits via association", AccountStatus::GMLeadAdmin, command_faction_association) ||
+		command_add("customfeatures", "- Show enabled/disabled custom all-features rule gates", AccountStatus::GMAdmin, command_customfeatures) ||
 		command_add("feature", "Change your or your target's feature's temporarily", AccountStatus::QuestTroupe, command_feature) ||
 		command_add("size", "Change your targets size (alias of #feature size)", AccountStatus::QuestTroupe, command_feature) ||
 		command_add("find", "Search command used to find various things", AccountStatus::Guide, command_find) ||
@@ -146,16 +170,24 @@ int command_init(void)
 		command_add("help", "[Search Criteria] - List available commands and their description, specify partial command as argument to search", AccountStatus::Player, command_help) ||
 		command_add("hotfix", "[hotfix_name] - Reloads shared memory into a hotfix, equiv to load_shared_memory followed by apply_shared_memory", AccountStatus::GMImpossible, command_hotfix) ||
 		command_add("hp", "Refresh your HP bar from the server.", AccountStatus::Player, command_hp) ||
+		command_add("hpfix", "[native|refresh|status|items|off] - Native high-HP display test tools.", AccountStatus::Player, command_hpfix) ||
 		command_add("illusionblock", "Controls whether or not illusion effects will land on you when cast by other players or bots", AccountStatus::Guide, command_illusion_block) ||
 		command_add("instance", "Modify Instances", AccountStatus::GMMgmt, command_instance) ||
 		command_add("interrogateinv", "use [help] argument for available options", AccountStatus::Player, command_interrogateinv) ||
 		command_add("interrupt", "[Message ID] [Color] - Interrupt your casting. Arguments are optional.", AccountStatus::Guide, command_interrupt) ||
 		command_add("invsnapshot", "Manipulates inventory snapshots for your current target", AccountStatus::QuestTroupe, command_invsnapshot) ||
 		command_add("ipban", "[IP] - Ban IP", AccountStatus::GMMgmt, command_ipban) ||
+		command_add("itemedit", "[set|add|clear|proc] - Edit the item currently held on your cursor", AccountStatus::GMMgmt, command_itemedit) ||
+		command_add("itemforge", "[dialog|craft] - Open or use the player item forge", AccountStatus::Player, command_itemforge) ||
+		command_add("itemrarity", "Set, link, view, and add colored-rarity test loot for items.", AccountStatus::GMMgmt, command_itemrarity) ||
+		command_add("itemscore", "Score, audit, and explain item power levels", AccountStatus::GMMgmt, command_itemscore) ||
 		command_add("kick", "[Character Name] - Disconnect a player by name", AccountStatus::GMLeadAdmin, command_kick) ||
 		command_add("kill", "Kill your target", AccountStatus::GMAdmin, command_kill) ||
 		command_add("killallnpcs", "[npc_name] - Kills all npcs by search name, leave blank for all attackable NPC's", AccountStatus::GMMgmt, command_killallnpcs) ||
 		command_add("list", "[npcs|players|corpses|doors|objects] [search] - Search entities", AccountStatus::ApprenticeGuide, command_list) ||
+		command_add("lootfilter", "[include|exclude|remove|list|mode] - Manage AutoLoot item filters", AccountStatus::Player, command_lootfilter) ||
+		command_add("liveitem", "[status|clear|clone|summon|bump] - Manage live database item testing and cache state", AccountStatus::GMMgmt, command_liveitem) ||
+		command_add("livespell", "[dialog|craft|test|patch|scribe|ack|ready] - Prototype live generated spell sync", AccountStatus::Player, command_livespell) ||
 		command_add("lootsim", "[npc_type_id] [loottable_id] [iterations] - Runs benchmark simulations using real loot logic to report numbers and data", AccountStatus::GMImpossible, command_lootsim) ||
 		command_add("load_shared_memory", "[shared_memory_name] - Reloads shared memory and uses the input as output", AccountStatus::GMImpossible, command_load_shared_memory) ||
 		command_add("loc", "Print out your or your target's current location and heading", AccountStatus::Player, command_loc) ||
@@ -166,12 +198,16 @@ int command_init(void)
 		command_add("modifynpcstat", "[Stat] [Value] - Modifies an NPC's stats temporarily.", AccountStatus::GMLeadAdmin, command_modifynpcstat) ||
 		command_add("movechar", "[Character ID|Character Name] [Zone ID|Zone Short Name] - Move an offline character to the specified zone", AccountStatus::Guide, command_movechar) ||
 		command_add("movement", "Various movement commands", AccountStatus::GMMgmt, command_movement) ||
+		command_add("multiclass", "[status|set|diag|native|help] - Admin/native bridge for Multiclass trio profiles", AccountStatus::GMAdmin, command_multiclass) ||
+		command_add("multiclassui", "[status|choose|pets|disc] - Native Multiclass UI bridge", AccountStatus::Player, command_multiclass_ui) ||
+		command_add("mc", "[open|status|refresh|choose|pets|pet|disc] - Short native Multiclass UI bridge", AccountStatus::Player, command_multiclass_ui) ||
 		command_add("myskills", "Show details about your current skill levels", AccountStatus::Player, command_myskills) ||
 		command_add("mysql", "[Help|Query] [SQL Query] - Mysql CLI, see 'Help' for options.", AccountStatus::GMImpossible, command_mysql) ||
 		command_add("mystats", "Show details about you or your pet", AccountStatus::Guide, command_mystats) ||
 		command_add("npccast", "[targetname/entityid] [spellid] - Causes NPC target to cast spellid on targetname/entityid", AccountStatus::QuestTroupe, command_npccast) ||
 		command_add("npcedit", "[column] [value] - Mega NPC editing command", AccountStatus::GMAdmin, command_npcedit) ||
 		command_add("npceditmass", "[name-search] [column] [value] - Mass (Zone wide) NPC data editing command", AccountStatus::GMAdmin, command_npceditmass) ||
+		command_add("needgreed", "[vote] [Vote ID] [need|greed|pass] - Respond to AutoLoot Need/Greed rolls", AccountStatus::Player, command_needgreed) ||
 		command_add("npcemote", "[Message] - Make your NPC target emote a message.", AccountStatus::GMLeadAdmin, command_npcemote) ||
 		command_add("npcloot", "Manipulate the loot an NPC is carrying. Use #npcloot help for more information.", AccountStatus::QuestTroupe, command_npcloot) ||
 		command_add("npcsay", "[Message] - Make your NPC target say a message.", AccountStatus::GMLeadAdmin, command_npcsay) ||
@@ -193,6 +229,10 @@ int command_init(void)
 		command_add("raidloot", "[All|GroupLeader|RaidLeader|Selected] - Sets your Raid Loot Type if you have permission to do so.", AccountStatus::Player, command_raidloot) ||
 		command_add("randomfeatures", "Temporarily randomizes the Facial Features of your target", AccountStatus::QuestTroupe, command_randomfeatures) ||
 		command_add("refreshgroup", "Refreshes Group for you or your player target.", AccountStatus::Player, command_refreshgroup) ||
+		command_add("rep", "[refresh|list|pin|unpin|hide|show|hidden|resetprefs|search] - View and customize faction reputation standings", AccountStatus::Player, command_reputation) ||
+		command_add("reputation", "[refresh|list|pin|unpin|hide|show|hidden|resetprefs|search] - View and customize faction reputation standings", AccountStatus::Player, command_reputation) ||
+		command_add("tradeskill", "[makeall] - Custom tradeskill helper commands", AccountStatus::Player, command_tradeskill) ||
+		command_add("ts", "[makeall] - Short custom tradeskill helper commands", AccountStatus::Player, command_tradeskill) ||
 		command_add("reload", "Reloads different types of server data globally, use no argument for help menu.", AccountStatus::GMMgmt, command_reload) ||
 		command_add("rq", "Reloads quests (alias of #reload quests).", AccountStatus::GMMgmt, command_reload) ||
 		command_add("rl", "Reloads logs (alias of #reload logs).", AccountStatus::GMMgmt, command_reload) ||
@@ -235,6 +275,7 @@ int command_init(void)
 		command_add("unscribespells", "Clear out your or your player target's spell book.", AccountStatus::GMCoder, command_unscribespells) ||
 		command_add("untraindisc", "[Spell ID] - Untrain your or your target's discipline by Spell ID", AccountStatus::GMCoder, command_untraindisc) ||
 		command_add("untraindiscs", "Untrains all disciplines from your target.", AccountStatus::GMCoder, command_untraindiscs) ||
+		command_add("useitem", "[item name] - Use a clickable carried item by name", AccountStatus::Player, command_useitem) ||
 		command_add("wc", "[Slot ID] [Material] [Hero Forge Model] [Elite Material] - Sets the specified slot for you or your target to a material, Hero Forge Model and Elite Material are optional", AccountStatus::GMMgmt, command_wc) ||
 		command_add("worldshutdown", "Shut down world and all zones", AccountStatus::GMMgmt, command_worldshutdown) ||
 		command_add("wp", "[add|delete] [grid_id] [pause] [waypoint_id] [-h] - Add or delete a waypoint by grid ID. (-h to use current heading)", AccountStatus::GMAreas, command_wp) ||

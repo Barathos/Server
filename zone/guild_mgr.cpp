@@ -1,31 +1,33 @@
-/*	EQEMu: Everquest Server Emulator
-	Copyright (C) 2001-2006 EQEMu Development Team (http://eqemulator.net)
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; version 2 of the License.
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
 	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY except by those people which sell it, which
-	are required to give you total support for your newly bought product;
-	without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-	A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
-
 #include "guild_mgr.h"
-#include "../common/emu_versions.h"
-#include "../common/repositories/guild_bank_repository.h"
-#include "../common/repositories/guild_ranks_repository.h"
-#include "../common/servertalk.h"
-#include "../common/strings.h"
-#include "client.h"
-#include "string_ids.h"
-#include "worldserver.h"
-#include "zonedb.h"
+
+#include "common/emu_versions.h"
+#include "common/races.h"
+#include "common/repositories/guild_bank_repository.h"
+#include "common/repositories/guild_ranks_repository.h"
+#include "common/servertalk.h"
+#include "common/strings.h"
+#include "zone/client.h"
+#include "zone/multiclass_manager.h"
+#include "zone/string_ids.h"
+#include "zone/worldserver.h"
+#include "zone/zonedb.h"
 
 
 ZoneGuildManager guild_mgr;
@@ -759,7 +761,8 @@ void GuildBankManager::SendGuildBank(Client *c)
 					outapp->WriteUInt32(1);
 					outapp->WriteUInt8(0);
 				}
-				outapp->WriteUInt8(item->IsEquipable(c->GetBaseRace(), c->GetBaseClass()) ? 1 : 0);
+				const bool useable = (item->Races & GetPlayerRaceBit(c->GetBaseRace())) && (item->Classes & multiclass_manager.GetClassMask(c));
+				outapp->WriteUInt8(useable ? 1 : 0);
 				outapp->WriteString(item->Name);
 			}
 			else {
@@ -784,7 +787,8 @@ void GuildBankManager::SendGuildBank(Client *c)
 					outapp->WriteUInt32(1);
 					outapp->WriteUInt8(0);
 				}
-				outapp->WriteUInt8(Item->IsEquipable(c->GetBaseRace(), c->GetBaseClass()) ? 1 : 0);
+				const bool useable = (Item->Races & GetPlayerRaceBit(c->GetBaseRace())) && (Item->Classes & multiclass_manager.GetClassMask(c));
+				outapp->WriteUInt8(useable ? 1 : 0);
 				outapp->WriteString(Item->Name);
 			}
 			else {
@@ -871,7 +875,7 @@ void GuildBankManager::SendGuildBank(Client *c)
 				continue;
 			}
 
-			bool useable = item->IsEquipable(c->GetBaseRace(), c->GetBaseClass());
+			bool useable = (item->Races & GetPlayerRaceBit(c->GetBaseRace())) && (item->Classes & multiclass_manager.GetClassMask(c));
 			auto outapp  = new EQApplicationPacket(OP_GuildBank, sizeof(GuildBankItemUpdate_Struct));
 			auto gbius   = (GuildBankItemUpdate_Struct *) outapp->pBuffer;
 
@@ -1716,7 +1720,7 @@ void GuildBankManager::SendGuildBankItemUpdate(uint32 guild_id, int32 slot_id, u
 	gbius.icon_id     = item_data ? item_data->Icon : 0;
 	gbius.display     = display;
 	gbius.allow_merge = item_data ? item_data->Stackable : false;
-	gbius.is_useable  = item_data ? item_data->IsEquipable(c->GetRace(), c->GetClass()) : false;
+	gbius.is_useable  = item_data ? ((item_data->Races & GetPlayerRaceBit(c->GetRace())) && (item_data->Classes & multiclass_manager.GetClassMask(c))) : false;
 	gbius.quantity    = item.quantity;
 
 	strn0cpy(gbius.item_name, item_data ? item_data->Name : "", sizeof(gbius.item_name));

@@ -1,36 +1,109 @@
-/*	EQEMu: Everquest Server Emulator
-	Copyright (C) 2001-2016 EQEMu Development Team (http://eqemulator.net)
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; version 2 of the License.
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
 	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY except by those people which sell it, which
-	are required to give you total support for your newly bought product;
-	without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-	A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
+#include "client.h"
 
-#include "../common/global_define.h"
-#include "../common/eqemu_logsys.h"
+#include "common/eqemu_logsys.h"
+#include "common/events/player_event_logs.h"
+#include "common/evolving_items.h"
+#include "common/item_power.h"
+#include "common/rulesys.h"
+#include "common/repositories/character_corpse_items_repository.h"
+#include "common/strings.h"
+#include "zone/bot.h"
+#include "zone/multiclass_manager.h"
+#include "zone/queryserv.h"
+#include "zone/quest_parser_collection.h"
+#include "zone/worldserver.h"
+#include "zone/zonedb.h"
 
-#include "../common/strings.h"
-#include "quest_parser_collection.h"
-#include "worldserver.h"
-#include "zonedb.h"
-#include "../common/events/player_event_logs.h"
-#include "bot.h"
-#include "../common/evolving_items.h"
-#include "../common/repositories/character_corpse_items_repository.h"
-#include "queryserv.h"
+#include <algorithm>
 
 extern WorldServer worldserver;
 extern QueryServ  *QServ;
+
+namespace {
+bool CheckMulticlassEquipPermission(
+	Client *client,
+	const EQ::ItemInstance *inst,
+	int16 equipment_slot,
+	EQ::InventoryProfile::SwapItemFailState &fail_state,
+	std::string *fail_detail = nullptr
+)
+{
+	if (!inst || !EQ::ValueWithin(equipment_slot, EQ::invslot::EQUIPMENT_BEGIN, EQ::invslot::EQUIPMENT_END)) {
+		return true;
+	}
+
+	if (!inst->IsSlotAllowed(equipment_slot)) {
+		fail_state = EQ::InventoryProfile::swapNotAllowed;
+		if (fail_detail) {
+			*fail_detail = multiclass_manager.BuildItemUseReport(client, inst, equipment_slot);
+		}
+		return false;
+	}
+
+	if (!multiclass_manager.CanUseItem(client, inst)) {
+		fail_state = EQ::InventoryProfile::swapRaceClass;
+		if (fail_detail) {
+			*fail_detail = multiclass_manager.BuildItemUseReport(client, inst, equipment_slot);
+		}
+		return false;
+	}
+
+	return true;
+}
+
+bool ApplyMulticlassItemPresentation(Client *client, EQ::ItemInstance *inst, uint32 class_mask)
+{
+	if (!client || !inst || !class_mask) {
+		return false;
+	}
+
+	bool changed = false;
+	auto *item = const_cast<EQ::ItemData *>(inst->GetItem());
+	if (
+		item &&
+		(item->Classes & class_mask) &&
+		multiclass_manager.CanUseItem(client, inst)
+	) {
+		const auto expanded_classes = item->Classes | class_mask;
+		if (expanded_classes != item->Classes) {
+			item->Classes = expanded_classes;
+			changed = true;
+		}
+	}
+
+	for (int augment_index = EQ::invaug::SOCKET_BEGIN; augment_index <= EQ::invaug::SOCKET_END; ++augment_index) {
+		auto *augment = inst->GetAugment(augment_index);
+		if (augment) {
+			changed = ApplyMulticlassItemPresentation(client, augment, class_mask) || changed;
+		}
+	}
+
+	for (auto &[slot_id, child] : *inst->GetContents()) {
+		if (child) {
+			changed = ApplyMulticlassItemPresentation(client, child, class_mask) || changed;
+		}
+	}
+
+	return changed;
+}
+}
 
 // @merth: this needs to be touched up
 uint32 Client::NukeItem(uint32 itemnum, uint8 where_to_check) {
@@ -258,6 +331,7 @@ bool Client::SummonItem(uint32 item_id, int16 charges, uint32 aug1, uint32 aug2,
 
 	uint32 augments[EQ::invaug::SOCKET_COUNT] = { aug1, aug2, aug3, aug4, aug5, aug6 };
 	uint32 classes = item->Classes;
+	const uint32 multiclass_class_mask = multiclass_manager.GetClassMask(this);
 	uint32 races = item->Races;
 	uint32 slots = item->Slots;
 	bool enforce_wearable = RuleB(Inventory, EnforceAugmentWear);
@@ -451,7 +525,8 @@ bool Client::SummonItem(uint32 item_id, int16 charges, uint32 aug1, uint32 aug2,
 
 			if(enforce_usable) {
 				// check for class usability
-				if(item->Classes && !(classes &= augtest->Classes)) {
+				classes &= augtest->Classes;
+				if(item->Classes && !(classes & multiclass_class_mask)) {
 					Message(
 						Chat::Red,
 						fmt::format(
@@ -1198,7 +1273,7 @@ bool Client::TryStacking(EQ::ItemInstance* item, uint8 type, bool try_worn, bool
 bool Client::AutoPutLootInInventory(EQ::ItemInstance& inst, bool try_worn, bool try_cursor, LootItem** bag_item_data)
 {
 	// #1: Try to auto equip
-	if (try_worn && inst.IsEquipable(GetBaseRace(), GetClass()) && inst.GetItem()->ReqLevel <= level && (!inst.GetItem()->Attuneable || inst.IsAttuned()) && inst.GetItem()->ItemType != EQ::item::ItemTypeAugmentation) {
+	if (try_worn && multiclass_manager.CanUseItem(this, &inst) && inst.GetItem()->ReqLevel <= level && (!inst.GetItem()->Attuneable || inst.IsAttuned()) && inst.GetItem()->ItemType != EQ::item::ItemTypeAugmentation) {
 		for (int16 i = EQ::invslot::EQUIPMENT_BEGIN; i <= EQ::invslot::EQUIPMENT_END; i++) {
 			if ((((uint64)1 << i) & GetInv().GetLookup()->PossessionsBitmask) == 0)
 				continue;
@@ -1518,6 +1593,8 @@ packet with the item number in it, but I cant seem to find it right now
 	if (!inst)
 		return;
 
+	RefreshLiveItemTree(const_cast<EQ::ItemInstance *>(inst));
+
 	const EQ::ItemData* item = inst->GetItem();
 	const char* name2 = &item->Name[0];
 	auto outapp = new EQApplicationPacket(OP_ItemLinkText, strlen(name2) + 68);
@@ -1550,6 +1627,62 @@ packet with the item number in it, but I cant seem to find it right now
 void Client::SendLootItemInPacket(const EQ::ItemInstance* inst, int16 slot_id)
 {
 	SendItemPacket(slot_id,inst, ItemPacketTrade);
+}
+
+bool Client::RefreshLiveItem(EQ::ItemInstance* inst)
+{
+	if (!inst || !database.IsLiveItemID(inst->GetID())) {
+		return false;
+	}
+
+	const auto *item = database.GetItem(inst->GetID());
+	if (!item) {
+		return false;
+	}
+
+	return inst->RefreshItemData(item);
+}
+
+bool Client::RefreshLiveItemTree(EQ::ItemInstance* inst)
+{
+	if (!inst) {
+		return false;
+	}
+
+	bool refreshed = RefreshLiveItem(inst);
+	auto *contents = inst->GetContents();
+	if (!contents) {
+		return refreshed;
+	}
+
+	for (auto &entry : *contents) {
+		refreshed = RefreshLiveItemTree(entry.second) || refreshed;
+	}
+
+	return refreshed;
+}
+
+void Client::SendItemPowerTransport(const EQ::ItemInstance* inst)
+{
+	if (!RuleB(CustomFeatures, GearScoreEnabled)) {
+		return;
+	}
+
+	if (!inst || !inst->GetItem()) {
+		return;
+	}
+
+	std::string item_power_transport;
+	if (EQ::ItemPower::TryBuildTransportMessage(database, *inst->GetItem(), item_power_transport, true)) {
+		Message(Chat::White, "%s", item_power_transport.c_str());
+	}
+
+	for (uint16 bag_slot = EQ::invbag::SLOT_BEGIN; bag_slot < EQ::invbag::SLOT_COUNT; ++bag_slot) {
+		const auto *bag_inst = inst->GetItem(static_cast<uint8>(bag_slot));
+		if (bag_inst) {
+			SendItemPowerTransport(bag_inst);
+		}
+	}
 }
 
 bool Client::IsValidSlot(uint32 slot) {
@@ -1713,8 +1846,51 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 				}
 			}
 
+			const int item_id = inst && inst->GetItem() ? inst->GetItem()->ID : 0;
+			int pet_bag_class_id = Class::None;
+			for (int class_id = Class::Warrior; class_id <= Class::Berserker; class_id++) {
+				if (IsValidPetBagForClass(item_id, class_id)) {
+					pet_bag_class_id = class_id;
+					break;
+				}
+			}
+
 			DeleteItemInInventory(move_in->from_slot);
 			SendCursorBuffer();
+
+			if (pet_bag_class_id != Class::None) {
+				std::vector<Mob*> pets;
+				auto add_pet = [&pets](Mob *pet) {
+					if (!pet || std::find(pets.begin(), pets.end(), pet) != pets.end()) {
+						return;
+					}
+
+					pets.push_back(pet);
+				};
+
+				add_pet(GetPet());
+				for (auto *pet : multiclass_manager.GetPetRoster(this)) {
+					add_pet(pet);
+				}
+
+				for (auto *pet : pets) {
+					if (!pet || !pet->IsNPC()) {
+						continue;
+					}
+
+					auto *pet_npc = pet->CastToNPC();
+					const bool matches_class =
+						pet_npc->GetPetOriginClass() == pet_bag_class_id ||
+						(
+							pet_npc->EntityVariableExists("pet_bag_origin_class") &&
+							Strings::ToInt(pet_npc->GetEntityVariable("pet_bag_origin_class")) == pet_bag_class_id
+						);
+
+					if (matches_class) {
+						DoPetBagFlush(pet);
+					}
+				}
+			}
 
 			return true; // Item destroyed by client
 		}
@@ -2077,6 +2253,27 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 	}
 	else {
 		// Not dealing with charges - just do direct swap
+		EQ::InventoryProfile::SwapItemFailState fail_state = EQ::InventoryProfile::swapInvalid;
+		std::string multiclass_equip_detail;
+		if (
+			!CheckMulticlassEquipPermission(this, src_inst, dst_slot_id, fail_state, &multiclass_equip_detail) ||
+			!CheckMulticlassEquipPermission(this, dst_inst, src_slot_id, fail_state, &multiclass_equip_detail)
+		) {
+			const char* fail_message = "The selected slot was invalid.";
+			if (fail_state == EQ::InventoryProfile::swapRaceClass || fail_state == EQ::InventoryProfile::swapDeity) {
+				fail_message = "Your class, deity and/or race may not equip that item.";
+			} else if (fail_state == EQ::InventoryProfile::swapLevel) {
+				fail_message = "You are not sufficient level to use this item.";
+			}
+
+			Message(Chat::Red, "%s", fail_message);
+			if (!multiclass_equip_detail.empty()) {
+				Message(Chat::Yellow, "%s", multiclass_equip_detail.c_str());
+				LogInventory("Multiclass equip blocked for [{}]: {}", GetCleanName(), multiclass_equip_detail);
+			}
+			return false;
+		}
+
 		if (src_inst && (dst_slot_id <= EQ::invslot::EQUIPMENT_END) && dst_slot_id >= EQ::invslot::EQUIPMENT_BEGIN) {
 			if (src_inst->GetItem()->Attuneable) {
 				src_inst->SetAttuned(true);
@@ -2093,8 +2290,8 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 			SetMaterial(dst_slot_id,src_inst->GetItem()->ID);
 		}
 
-		EQ::InventoryProfile::SwapItemFailState fail_state = EQ::InventoryProfile::swapInvalid;
-		if (!m_inv.SwapItem(src_slot_id, dst_slot_id, fail_state, GetBaseRace(), GetBaseClass(), GetDeity(), GetLevel())) {
+		fail_state = EQ::InventoryProfile::swapInvalid;
+		if (!m_inv.SwapItem(src_slot_id, dst_slot_id, fail_state, GetBaseRace(), Class::None, GetDeity(), GetLevel())) {
 			const char* fail_message = "The selected slot was invalid.";
 			if (fail_state == EQ::InventoryProfile::swapRaceClass || fail_state == EQ::InventoryProfile::swapDeity)
 				fail_message = "Your class, deity and/or race may not equip that item.";
@@ -2103,6 +2300,22 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 
 			if (fail_message)
 				Message(Chat::Red, "%s", fail_message);
+
+			const EQ::ItemInstance *report_inst = nullptr;
+			int16 report_slot = -1;
+			if (EQ::ValueWithin(dst_slot_id, EQ::invslot::EQUIPMENT_BEGIN, EQ::invslot::EQUIPMENT_END)) {
+				report_inst = src_inst;
+				report_slot = dst_slot_id;
+			} else if (EQ::ValueWithin(src_slot_id, EQ::invslot::EQUIPMENT_BEGIN, EQ::invslot::EQUIPMENT_END)) {
+				report_inst = dst_inst;
+				report_slot = src_slot_id;
+			}
+
+			if (report_inst) {
+				const auto report = multiclass_manager.BuildItemUseReport(this, report_inst, report_slot);
+				Message(Chat::Yellow, "%s", report.c_str());
+				LogInventory("Inventory equip blocked for [{}]: {}", GetCleanName(), report);
+			}
 
 			return false;
 		}
@@ -2233,6 +2446,22 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 	// Step 8: Re-calc stats
 	CalcBonuses();
 	ApplyWeaponsStance();
+
+	if (RuleB(CustomFeatures, PetBagsEnabled)) {
+		for (int class_id = Class::Warrior; class_id <= Class::Berserker; class_id++) {
+			const auto pet_bag_slot = GetActivePetBagSlot(class_id);
+			if (
+				pet_bag_slot >= 0 &&
+				(
+					pet_bag_slot == EQ::InventoryProfile::CalcSlotId(dst_slot_id) ||
+					pet_bag_slot == EQ::InventoryProfile::CalcSlotId(src_slot_id)
+				)
+			) {
+				DoPetBagResync(class_id);
+			}
+		}
+	}
+
 	return true;
 }
 
@@ -2967,6 +3196,26 @@ uint32 Client::GetEquipmentColor(uint8 material_slot) const
 	return 0;
 }
 
+EQ::ItemInstance* Client::CloneItemForMulticlassPresentation(const EQ::ItemInstance* inst)
+{
+	if (!inst) {
+		return nullptr;
+	}
+
+	const auto multiclass_class_mask = multiclass_manager.GetClassMask(this);
+	const auto base_class_mask = GetPlayerClassBit(GetBaseClass());
+	if (!multiclass_class_mask || !(multiclass_class_mask & ~base_class_mask)) {
+		return nullptr;
+	}
+
+	auto *presentation_inst = inst->Clone();
+	if (presentation_inst && !ApplyMulticlassItemPresentation(this, presentation_inst, multiclass_class_mask)) {
+		safe_delete(presentation_inst);
+	}
+
+	return presentation_inst;
+}
+
 // Send an item packet (including all subitems of the item)
 void Client::SendItemPacket(int16 slot_id, const EQ::ItemInstance* inst, ItemPacketType packet_type)
 {
@@ -3007,8 +3256,12 @@ void Client::SendItemPacket(int16 slot_id, const EQ::ItemInstance* inst, ItemPac
 		}
 	}
 
+	RefreshLiveItemTree(const_cast<EQ::ItemInstance *>(inst));
+	SendItemPowerTransport(inst);
+
 	// Serialize item into |-delimited string (Titanium- uses '|' delimiter .. newer clients use pure data serialization)
-	std::string packet = inst->Serialize(slot_id);
+	auto *presentation_inst = CloneItemForMulticlassPresentation(inst);
+	std::string packet = (presentation_inst ? presentation_inst : inst)->Serialize(slot_id);
 
 	EmuOpcode opcode = OP_Unknown;
 	EQApplicationPacket* outapp = nullptr;
@@ -3025,6 +3278,7 @@ void Client::SendItemPacket(int16 slot_id, const EQ::ItemInstance* inst, ItemPac
 		DumpPacket(outapp);
 #endif
 	FastQueuePacket(&outapp);
+	safe_delete(presentation_inst);
 }
 
 static int16 BandolierSlotToWeaponSlot(int BandolierSlot)
@@ -4607,26 +4861,32 @@ void Client::SummonItemIntoInventory(
 		return;
 	}
 
-	const bool  is_arrow = inst->GetItem()->ItemType == EQ::item::ItemTypeArrow;
-	const int16 slot_id  = m_inv.FindFreeSlot(
-		inst->IsClassBag(),
-		true,
-		inst->GetItem()->Size,
-		is_arrow
-	);
+	// Try stacking first if the item is stackable, then fall back to finding a free slot
+	if (!PutItemInInventoryWithStacking(inst)) {
+		// PutItemInInventoryWithStacking failed, fall back to original behavior
+		const bool  is_arrow = inst->GetItem()->ItemType == EQ::item::ItemTypeArrow;
+		const int16 slot_id  = m_inv.FindFreeSlot(
+			inst->IsClassBag(),
+			true,
+			inst->GetItem()->Size,
+			is_arrow
+		);
 
-	SummonItem(
-		item_id,
-		charges,
-		aug1,
-		aug2,
-		aug3,
-		aug4,
-		aug5,
-		aug6,
-		is_attuned,
-		slot_id
-	);
+		SummonItem(
+			item_id,
+			charges,
+			aug1,
+			aug2,
+			aug3,
+			aug4,
+			aug5,
+			aug6,
+			is_attuned,
+			slot_id
+		);
+	}
+
+	safe_delete(inst);
 }
 
 bool Client::HasItemOnCorpse(uint32 item_id)
@@ -4673,7 +4933,8 @@ bool Client::PutItemInInventoryWithStacking(EQ::ItemInstance *inst)
 			return true;
 		}
 	}
-	if (free_id != INVALID_INDEX) {
+	// Protect equipment slots (0-22) from being overwritten
+	if (free_id != INVALID_INDEX && !EQ::ValueWithin(free_id, EQ::invslot::EQUIPMENT_BEGIN, EQ::invslot::EQUIPMENT_END)) {
 		if (PutItemInInventory(free_id, *inst, true)) {
 			return true;
 		}
@@ -4724,3 +4985,30 @@ bool Client::FindNumberOfFreeInventorySlotsWithSizeCheck(std::vector<BuyerLineTr
 	}
 	return false;
 };
+
+int64 Client::GetStatEntryValue(StatEntry stat)
+{
+	switch (stat) {
+		case statClassesBitmask:
+			return multiclass_manager.GetClassMask(this);
+		default:
+			return 0;
+	}
+}
+
+void Client::SendBulkStatsUpdate()
+{
+	if (!Connected() || !RuleB(CustomFeatures, ServerAuthStatsEnabled)) {
+		return;
+	}
+
+	constexpr uint32 entry_count = 1;
+	auto outapp = new EQApplicationPacket(OP_ServerAuthStats, sizeof(uint32) + (sizeof(StatEntry_Struct) * entry_count));
+	auto stats = reinterpret_cast<Stat_Struct *>(outapp->pBuffer);
+	stats->count = entry_count;
+	stats->entries[0].stat_key = statClassesBitmask;
+	stats->entries[0].stat_value = static_cast<uint64>(GetStatEntryValue(statClassesBitmask));
+
+	QueuePacket(outapp);
+	safe_delete(outapp);
+}

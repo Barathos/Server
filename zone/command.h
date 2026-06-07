@@ -1,21 +1,38 @@
-#ifndef COMMAND_H
-#define COMMAND_H
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
+#pragma once
+
+#include "common/types.h"
+
+#include <string>
 
 class Client;
 class Seperator;
-
-#include "../common/types.h"
-#include <string>
 
 #define    COMMAND_CHAR '#'
 
 typedef void (*CmdFuncPtr)(Client *, const Seperator *);
 
-typedef struct {
+struct CommandRecord {
 	uint8 admin;
 	std::string description;
 	CmdFuncPtr function; // null means perl function
-} CommandRecord;
+};
 
 extern int (*command_dispatch)(Client *, std::string, bool);
 extern int command_count; // Commands Loaded Count
@@ -42,6 +59,8 @@ void SendEvolvingItemsSubCommands(Client *c);
 
 // Commands
 void command_acceptrules(Client *c, const Seperator *sep);
+void command_aaexp(Client *c, const Seperator *sep);
+void command_ach(Client *c, const Seperator *sep);
 void command_advnpcspawn(Client *c, const Seperator *sep);
 void command_aggrozone(Client *c, const Seperator *sep);
 void command_ai(Client *c, const Seperator *sep);
@@ -49,6 +68,9 @@ void command_appearance(Client *c, const Seperator *sep);
 void command_appearanceeffects(Client *c, const Seperator *sep);
 void command_apply_shared_memory(Client *c, const Seperator *sep);
 void command_attack(Client *c, const Seperator *sep);
+void command_autoloot(Client *c, const Seperator *sep);
+void command_autosell(Client *c, const Seperator *sep);
+void command_autoskill(Client *c, const Seperator *sep);
 void command_augmentitem(Client *c, const Seperator *sep);
 void command_ban(Client *c, const Seperator *sep);
 void command_bugs(Client *c, const Seperator *sep);
@@ -60,6 +82,7 @@ void command_copycharacter(Client *c, const Seperator *sep);
 void command_corpse(Client *c, const Seperator *sep);
 void command_corpsefix(Client *c, const Seperator *sep);
 void command_countitem(Client *c, const Seperator *sep);
+void command_customfeatures(Client *c, const Seperator *sep);
 void command_damage(Client *c, const Seperator *sep);
 void command_databuckets(Client *c, const Seperator *sep);
 void command_dbspawn2(Client *c, const Seperator *sep);
@@ -71,6 +94,7 @@ void command_devtools(Client *c, const Seperator *sep);
 void command_disablerecipe(Client *c, const Seperator *sep);
 void command_disarmtrap(Client *c, const Seperator *sep);
 void command_door(Client *c, const Seperator *sep);
+void command_dps(Client *c, const Seperator *sep);
 void command_doanim(Client *c, const Seperator *sep);
 void command_dye(Client *c, const Seperator *sep);
 void command_dz(Client *c, const Seperator *sep);
@@ -102,16 +126,24 @@ void command_guild(Client *c, const Seperator *sep);
 void command_help(Client *c, const Seperator *sep);
 void command_hotfix(Client *c, const Seperator *sep);
 void command_hp(Client *c, const Seperator *sep);
+void command_hpfix(Client *c, const Seperator *sep);
 void command_illusion_block(Client* c, const Seperator* sep);
 void command_instance(Client *c, const Seperator *sep);
 void command_interrogateinv(Client *c, const Seperator *sep);
 void command_interrupt(Client *c, const Seperator *sep);
 void command_invsnapshot(Client *c, const Seperator *sep);
 void command_ipban(Client *c, const Seperator *sep);
+void command_itemedit(Client *c, const Seperator *sep);
+void command_itemforge(Client *c, const Seperator *sep);
+void command_itemrarity(Client *c, const Seperator *sep);
+void command_itemscore(Client *c, const Seperator *sep);
 void command_kick(Client *c, const Seperator *sep);
 void command_killallnpcs(Client *c, const Seperator *sep);
 void command_kill(Client *c, const Seperator *sep);
 void command_list(Client *c, const Seperator *sep);
+void command_lootfilter(Client *c, const Seperator *sep);
+void command_liveitem(Client *c, const Seperator *sep);
+void command_livespell(Client *c, const Seperator *sep);
 void command_lootsim(Client *c, const Seperator *sep);
 void command_load_shared_memory(Client *c, const Seperator *sep);
 void command_loc(Client *c, const Seperator *sep);
@@ -122,6 +154,8 @@ void command_merchantshop(Client *c, const Seperator *sep);
 void command_modifynpcstat(Client *c, const Seperator *sep);
 void command_movechar(Client *c, const Seperator *sep);
 void command_movement(Client *c, const Seperator *sep);
+void command_multiclass(Client *c, const Seperator *sep);
+void command_multiclass_ui(Client *c, const Seperator *sep);
 void command_myskills(Client *c, const Seperator *sep);
 void command_mysql(Client *c, const Seperator *sep);
 void command_mystats(Client *c, const Seperator *sep);
@@ -134,6 +168,7 @@ void command_npcsay(Client *c, const Seperator *sep);
 void command_npcshout(Client *c, const Seperator *sep);
 void command_npcspawn(Client *c, const Seperator *sep);
 void command_npctypespawn(Client *c, const Seperator *sep);
+void command_needgreed(Client *c, const Seperator *sep);
 void command_nudge(Client *c, const Seperator *sep);
 void command_nukebuffs(Client *c, const Seperator *sep);
 void command_nukeitem(Client *c, const Seperator *sep);
@@ -150,12 +185,14 @@ void command_randomfeatures(Client *c, const Seperator *sep);
 void command_refreshgroup(Client *c, const Seperator *sep);
 void command_reload(Client *c, const Seperator *sep);
 void command_removeitem(Client *c, const Seperator *sep);
+void command_reputation(Client *c, const Seperator *sep);
 void command_repop(Client *c, const Seperator *sep);
 void command_resetaa(Client *c, const Seperator *sep);
 void command_resetaa_timer(Client *c, const Seperator *sep);
 void command_resetdisc_timer(Client *c, const Seperator *sep);
 void command_revoke(Client *c, const Seperator *sep);
 void command_roambox(Client *c, const Seperator *sep);
+void command_tradeskill(Client *c, const Seperator *sep);
 void command_rules(Client *c, const Seperator *sep);
 void command_save(Client *c, const Seperator *sep);
 void command_scale(Client *c, const Seperator *sep);
@@ -188,6 +225,7 @@ void command_unscribespell(Client *c, const Seperator *sep);
 void command_unscribespells(Client *c, const Seperator *sep);
 void command_untraindisc(Client *c, const Seperator *sep);
 void command_untraindiscs(Client *c, const Seperator *sep);
+void command_useitem(Client *c, const Seperator *sep);
 void command_wc(Client *c, const Seperator *sep);
 void command_worldshutdown(Client *c, const Seperator *sep);
 void command_wp(Client *c, const Seperator *sep);
@@ -200,8 +238,4 @@ void command_zonebootup(Client *c, const Seperator *sep);
 void command_zoneshutdown(Client *c, const Seperator *sep);
 void command_zonevariable(Client *c, const Seperator *sep);
 void command_zsave(Client *c, const Seperator *sep);
-
-#include "bot.h"
 void command_bot(Client*c, const Seperator *sep);
-
-#endif

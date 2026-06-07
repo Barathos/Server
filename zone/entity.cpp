@@ -1,62 +1,46 @@
-/*	EQEMu: Everquest Server Emulator
-	Copyright (C) 2001-2003 EQEMu Development Team (http://eqemulator.net)
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; version 2 of the License.
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
 	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY except by those people which sell it, which
-	are required to give you total support for your newly bought product;
-	without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-	A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
-#include "../common/data_verification.h"
-#include "../common/global_define.h"
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <iostream>
-
-#ifdef _WINDOWS
-#else
-#include <pthread.h>
-#include "../common/unix.h"
-#endif
-
-#include "../common/features.h"
-#include "../common/guilds.h"
-
 #include "entity.h"
-#include "dynamic_zone.h"
-#include "guild_mgr.h"
-#include "petitions.h"
-#include "quest_parser_collection.h"
-#include "raids.h"
-#include "string_ids.h"
-#include "worldserver.h"
-#include "water_map.h"
-#include "npc_scale_manager.h"
-#include "dialogue_window.h"
 
-#ifdef _WINDOWS
-	#define snprintf	_snprintf
-	#define strncasecmp	_strnicmp
-	#define strcasecmp	_stricmp
-#endif
+#include "common/data_verification.h"
+#include "common/features.h"
+#include "common/guilds.h"
+#include "zone/bot.h"
+#include "zone/dialogue_window.h"
+#include "zone/dynamic_zone.h"
+#include "zone/guild_mgr.h"
+#include "zone/npc_scale_manager.h"
+#include "zone/petitions.h"
+#include "zone/quest_parser_collection.h"
+#include "zone/raids.h"
+#include "zone/string_ids.h"
+#include "zone/water_map.h"
+#include "zone/worldserver.h"
 
-#include "bot.h"
+#include <cstdarg>
+#include <cstdio>
+#include <cstring>
+#include <iostream>
 
 extern Zone *zone;
 extern volatile bool is_zone_loaded;
 extern WorldServer worldserver;
 extern uint32 numclients;
-
-extern char errorname[32];
 
 Entity::Entity()
 {
@@ -743,6 +727,11 @@ void EntityList::AddNPC(NPC *npc, bool send_spawn_packet, bool dont_queue)
 		npc->DispatchZoneControllerEvent(EVENT_SPAWN_ZONE, npc, "", 0, nullptr);
 	}
 
+	if (parse->ZoneHasQuestSub(EVENT_SPAWN_ZONE)) {
+		std::vector<std::any> args = { npc };
+		parse->EventZone(EVENT_SPAWN_ZONE, zone, "", 0, &args);
+	}
+
 	if (zone->HasMap() && zone->HasWaterMap()) {
 		npc->SetSpawnedInWater(false);
 		if (zone->watermap->InLiquid(npc->GetPosition())) {
@@ -1386,7 +1375,7 @@ void EntityList::SendZoneSpawnsBulk(Client *client)
 
 			bool is_delayed_packet = (
 				DistanceSquared(client_position, spawn_position) > distance_max ||
-				(spawn->IsClient() && (spawn->GetRace() == MINOR_ILL_OBJ || spawn->GetRace() == TREE))
+				(spawn->IsClient() && (spawn->GetRace() == Race::MinorIllusion || spawn->GetRace() == Race::Tree))
 			);
 
 			if (is_delayed_packet) {
@@ -1410,7 +1399,7 @@ void EntityList::SendZoneSpawnsBulk(Client *client)
 			 *
 			 * Illusion races on PCs don't work as a mass spawn
 			 * But they will work as an add_spawn AFTER CLIENT_CONNECTED.
-			 * if (spawn->IsClient() && (race == MINOR_ILL_OBJ || race == TREE)) {
+			 * if (spawn->IsClient() && (race == Race::MinorIllusion || race == Race::Tree)) {
 			 * 	app = new EQApplicationPacket;
 			 * 	spawn->CreateSpawnPacket(app);
 			 * 	client->QueuePacket(app, true, Client::CLIENT_CONNECTED);
@@ -4448,7 +4437,7 @@ void EntityList::QuestJournalledSayClose(
 		buf.WriteString(message);
 	}
 
-	auto outapp = new EQApplicationPacket(OP_SpecialMesg, buf);
+	auto outapp = new EQApplicationPacket(OP_SpecialMesg, std::move(buf));
 
 	// client only bothers logging if target spawn ID matches, safe to send to everyone
 	QueueCloseClients(sender, outapp, false, dist);

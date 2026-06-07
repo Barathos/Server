@@ -1,46 +1,42 @@
-/*	EQEMu: Everquest Server Emulator
-	Copyright (C) 2001-2008 EQEMu Development Team (http://eqemulator.net)
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; version 2 of the License.
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
 	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY except by those people which sell it, which
-	are required to give you total support for your newly bought product;
-	without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-	A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
+#include "common/crash.h"
+#include "common/discord/discord_manager.h"
+#include "common/eqemu_logsys.h"
+#include "common/event/event_loop.h"
+#include "common/events/player_event_logs.h"
+#include "common/net/servertalk_client_connection.h"
+#include "common/net/tcp_server.h"
+#include "common/opcodemgr.h"
+#include "common/path_manager.h"
+#include "common/platform.h"
+#include "common/rulesys.h"
+#include "common/servertalk.h"
+#include "common/zone_store.h"
+#include "ucs/chatchannel.h"
+#include "ucs/clientlist.h"
+#include "ucs/database.h"
+#include "ucs/ucsconfig.h"
+#include "ucs/worldserver.h"
 
-#include "../common/eqemu_logsys.h"
-#include "../common/global_define.h"
-#include "clientlist.h"
-#include "../common/opcodemgr.h"
-#include "../common/rulesys.h"
-#include "../common/servertalk.h"
-#include "../common/platform.h"
-#include "../common/crash.h"
-#include "../common/event/event_loop.h"
-#include "database.h"
-#include "ucsconfig.h"
-#include "chatchannel.h"
-#include "worldserver.h"
-#include <list>
-#include <signal.h>
 #include <csignal>
+#include <list>
 #include <thread>
-
-#include "../common/net/tcp_server.h"
-#include "../common/net/servertalk_client_connection.h"
-#include "../common/discord/discord_manager.h"
-#include "../common/path_manager.h"
-#include "../common/zone_store.h"
-#include "../common/events/player_event_logs.h"
 
 ChatChannelList *ChannelList;
 Clientlist *g_Clientlist;

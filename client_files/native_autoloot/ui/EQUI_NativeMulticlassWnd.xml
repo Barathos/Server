@@ -1,0 +1,777 @@
+<?xml version="1.0"?>
+<XML ID="EQInterfaceDefinitionLanguage">
+	<Schema xmlns="EverQuestData" xmlns:dt="EverQuestDataTypes" />
+
+	<Label item="MCW_StatusLabel">
+		<ScreenID>MCW_StatusLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>18</Y></Location>
+		<Size><CX>470</CX><CY>22</CY></Size>
+		<Text>Waiting for Multiclass profile...</Text>
+		<TextColor><R>220</R><G>230</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="MCW_RefreshButton">
+		<ScreenID>MCW_RefreshButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>488</X><Y>14</Y></Location>
+		<Size><CX>72</CX><CY>22</CY></Size>
+		<Text>Refresh</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="MCW_TrioLabel">
+		<ScreenID>MCW_TrioLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>48</Y></Location>
+		<Size><CX>548</CX><CY>22</CY></Size>
+		<Text>Base / Slot 2 / Slot 3</Text>
+		<TextColor><R>255</R><G>235</G><B>170</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="MCW_PresentationLabel">
+		<ScreenID>MCW_PresentationLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>74</Y></Location>
+		<Size><CX>548</CX><CY>34</CY></Size>
+		<Text>Client presentation pending.</Text>
+		<TextColor><R>190</R><G>218</G><B>184</B></TextColor>
+		<NoWrap>false</NoWrap>
+	</Label>
+
+	<Label item="MCW_Slot2Label">
+		<ScreenID>MCW_Slot2Label</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>116</Y></Location>
+		<Size><CX>250</CX><CY>18</CY></Size>
+		<Text>Second Class</Text>
+		<TextColor><R>210</R><G>220</G><B>235</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="MCW_Slot2PrevButton">
+		<ScreenID>MCW_Slot2PrevButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>140</Y></Location>
+		<Size><CX>28</CX><CY>24</CY></Size>
+		<Text>&lt;</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="MCW_Slot2ValueLabel">
+		<ScreenID>MCW_Slot2ValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>48</X><Y>143</Y></Location>
+		<Size><CX>174</CX><CY>20</CY></Size>
+		<Text>Unchosen</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="MCW_Slot2NextButton">
+		<ScreenID>MCW_Slot2NextButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>228</X><Y>140</Y></Location>
+		<Size><CX>28</CX><CY>24</CY></Size>
+		<Text>&gt;</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="MCW_Slot3Label">
+		<ScreenID>MCW_Slot3Label</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>304</X><Y>116</Y></Location>
+		<Size><CX>250</CX><CY>18</CY></Size>
+		<Text>Third Class</Text>
+		<TextColor><R>210</R><G>220</G><B>235</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="MCW_Slot3PrevButton">
+		<ScreenID>MCW_Slot3PrevButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>304</X><Y>140</Y></Location>
+		<Size><CX>28</CX><CY>24</CY></Size>
+		<Text>&lt;</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="MCW_Slot3ValueLabel">
+		<ScreenID>MCW_Slot3ValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>340</X><Y>143</Y></Location>
+		<Size><CX>174</CX><CY>20</CY></Size>
+		<Text>Unchosen</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="MCW_Slot3NextButton">
+		<ScreenID>MCW_Slot3NextButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>520</X><Y>140</Y></Location>
+		<Size><CX>28</CX><CY>24</CY></Size>
+		<Text>&gt;</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="MCW_PetsButton">
+		<ScreenID>MCW_PetsButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>284</X><Y>178</Y></Location>
+		<Size><CX>112</CX><CY>26</CY></Size>
+		<Text>Pets</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="MCW_MelodyButton">
+		<ScreenID>MCW_MelodyButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>32</X><Y>178</Y></Location>
+		<Size><CX>112</CX><CY>26</CY></Size>
+		<Text>Melody</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="MCW_DiscsButton">
+		<ScreenID>MCW_DiscsButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>158</X><Y>178</Y></Location>
+		<Size><CX>112</CX><CY>26</CY></Size>
+		<Text>Discs</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="MCW_LockButton">
+		<ScreenID>MCW_LockButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>410</X><Y>178</Y></Location>
+		<Size><CX>150</CX><CY>26</CY></Size>
+		<Text>Lock Trio</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="MCW_InfoHeaderLabel">
+		<ScreenID>MCW_InfoHeaderLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>214</Y></Location>
+		<Size><CX>548</CX><CY>20</CY></Size>
+		<Text>Trio Notes</Text>
+		<TextColor><R>235</R><G>220</G><B>172</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="MCW_InfoLabel">
+		<ScreenID>MCW_InfoLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>240</Y></Location>
+		<Size><CX>548</CX><CY>66</CY></Size>
+		<Text>Trio identity and resonance details will appear here.</Text>
+		<TextColor><R>198</R><G>206</G><B>214</B></TextColor>
+		<NoWrap>false</NoWrap>
+	</Label>
+
+	<Label item="MCPW_StatusLabel">
+		<ScreenID>MCPW_StatusLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>12</Y></Location>
+		<Size><CX>330</CX><CY>20</CY></Size>
+		<Text>Waiting for pet roster...</Text>
+		<TextColor><R>220</R><G>230</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="MCPW_RefreshButton">
+		<ScreenID>MCPW_RefreshButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>366</X><Y>8</Y></Location>
+		<Size><CX>74</CX><CY>22</CY></Size>
+		<Text>Refresh</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Listbox item="MCPW_PetList">
+		<ScreenID>MCPW_PetList</ScreenID>
+		<DrawTemplate>WDT_Inner</DrawTemplate>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>34</Y></Location>
+		<Size><CX>428</CX><CY>64</CY></Size>
+		<Style_Border>true</Style_Border>
+		<Style_VScroll>false</Style_VScroll>
+		<Style_HScroll>false</Style_HScroll>
+		<Style_Transparent>false</Style_Transparent>
+		<Columns><Width>174</Width><Heading>Pet</Heading></Columns>
+		<Columns><Width>76</Width><Heading>Mode</Heading></Columns>
+		<Columns><Width>72</Width><Heading>HP/MP</Heading></Columns>
+		<Columns><Width>76</Width><Heading>T/H/NC</Heading></Columns>
+	</Listbox>
+
+	<Button item="MCPW_PetAttackButton">
+		<ScreenID>MCPW_PetAttackButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>102</Y></Location>
+		<Size><CX>52</CX><CY>20</CY></Size>
+		<Text>Attack</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="MCPW_PetBackButton">
+		<ScreenID>MCPW_PetBackButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>68</X><Y>102</Y></Location>
+		<Size><CX>48</CX><CY>20</CY></Size>
+		<Text>Back</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="MCPW_PetFollowButton">
+		<ScreenID>MCPW_PetFollowButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>120</X><Y>102</Y></Location>
+		<Size><CX>56</CX><CY>20</CY></Size>
+		<Text>Follow</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="MCPW_PetGuardButton">
+		<ScreenID>MCPW_PetGuardButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>180</X><Y>102</Y></Location>
+		<Size><CX>56</CX><CY>20</CY></Size>
+		<Text>Guard</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="MCPW_PetHealthButton">
+		<ScreenID>MCPW_PetHealthButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>240</X><Y>102</Y></Location>
+		<Size><CX>58</CX><CY>20</CY></Size>
+		<Text>Health</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="MCPW_PetTauntButton">
+		<ScreenID>MCPW_PetTauntButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>126</Y></Location>
+		<Size><CX>52</CX><CY>20</CY></Size>
+		<Text>Taunt</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="MCPW_PetHoldButton">
+		<ScreenID>MCPW_PetHoldButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>120</X><Y>126</Y></Location>
+		<Size><CX>48</CX><CY>20</CY></Size>
+		<Text>Hold</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="MCPW_PetSpellHoldButton">
+		<ScreenID>MCPW_PetSpellHoldButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>172</X><Y>126</Y></Location>
+		<Size><CX>60</CX><CY>20</CY></Size>
+		<Text>NoCast</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="MCPW_PetDismissButton">
+		<ScreenID>MCPW_PetDismissButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>236</X><Y>126</Y></Location>
+		<Size><CX>58</CX><CY>20</CY></Size>
+		<Text>Leave</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="MCPW_PetSitButton">
+		<ScreenID>MCPW_PetSitButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>68</X><Y>126</Y></Location>
+		<Size><CX>48</CX><CY>20</CY></Size>
+		<Text>Sit</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="MCDW_StatusLabel">
+		<ScreenID>MCDW_StatusLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>14</Y></Location>
+		<Size><CX>330</CX><CY>22</CY></Size>
+		<AutoStretch>true</AutoStretch>
+		<LeftAnchorOffset>12</LeftAnchorOffset>
+		<TopAnchorOffset>14</TopAnchorOffset>
+		<RightAnchorOffset>108</RightAnchorOffset>
+		<BottomAnchorOffset>36</BottomAnchorOffset>
+		<TopAnchorToTop>true</TopAnchorToTop>
+		<BottomAnchorToTop>true</BottomAnchorToTop>
+		<LeftAnchorToLeft>true</LeftAnchorToLeft>
+		<RightAnchorToLeft>false</RightAnchorToLeft>
+		<Text>Disciplines: waiting for profile.</Text>
+		<TextColor><R>220</R><G>230</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="MCDW_RefreshButton">
+		<ScreenID>MCDW_RefreshButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>366</X><Y>10</Y></Location>
+		<Size><CX>72</CX><CY>22</CY></Size>
+		<AutoStretch>true</AutoStretch>
+		<LeftAnchorOffset>84</LeftAnchorOffset>
+		<TopAnchorOffset>10</TopAnchorOffset>
+		<RightAnchorOffset>12</RightAnchorOffset>
+		<BottomAnchorOffset>32</BottomAnchorOffset>
+		<TopAnchorToTop>true</TopAnchorToTop>
+		<BottomAnchorToTop>true</BottomAnchorToTop>
+		<LeftAnchorToLeft>false</LeftAnchorToLeft>
+		<RightAnchorToLeft>false</RightAnchorToLeft>
+		<Text>Refresh</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Listbox item="MCDW_DisciplineList">
+		<ScreenID>MCDW_DisciplineList</ScreenID>
+		<DrawTemplate>WDT_Inner</DrawTemplate>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>62</Y></Location>
+		<Size><CX>426</CX><CY>112</CY></Size>
+		<AutoStretch>true</AutoStretch>
+		<LeftAnchorOffset>12</LeftAnchorOffset>
+		<TopAnchorOffset>62</TopAnchorOffset>
+		<RightAnchorOffset>12</RightAnchorOffset>
+		<BottomAnchorOffset>74</BottomAnchorOffset>
+		<TopAnchorToTop>true</TopAnchorToTop>
+		<BottomAnchorToTop>false</BottomAnchorToTop>
+		<LeftAnchorToLeft>true</LeftAnchorToLeft>
+		<RightAnchorToLeft>false</RightAnchorToLeft>
+		<Style_Border>true</Style_Border>
+		<Style_VScroll>true</Style_VScroll>
+		<Style_HScroll>false</Style_HScroll>
+		<Style_Transparent>false</Style_Transparent>
+		<Columns><Width>214</Width><Heading>Discipline</Heading></Columns>
+		<Columns><Width>46</Width><Heading>Lvl</Heading></Columns>
+		<Columns><Width>96</Width><Heading>Reuse</Heading></Columns>
+		<Columns><Width>70</Width><Heading>State</Heading></Columns>
+	</Listbox>
+
+	<Button item="MCDW_UseButton">
+		<ScreenID>MCDW_UseButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>276</X><Y>184</Y></Location>
+		<Size><CX>72</CX><CY>22</CY></Size>
+		<AutoStretch>true</AutoStretch>
+		<LeftAnchorOffset>174</LeftAnchorOffset>
+		<TopAnchorOffset>64</TopAnchorOffset>
+		<RightAnchorOffset>102</RightAnchorOffset>
+		<BottomAnchorOffset>42</BottomAnchorOffset>
+		<TopAnchorToTop>false</TopAnchorToTop>
+		<BottomAnchorToTop>false</BottomAnchorToTop>
+		<LeftAnchorToLeft>false</LeftAnchorToLeft>
+		<RightAnchorToLeft>false</RightAnchorToLeft>
+		<Text>Use</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="MCDW_HotkeyButton">
+		<ScreenID>MCDW_HotkeyButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>356</X><Y>184</Y></Location>
+		<Size><CX>82</CX><CY>22</CY></Size>
+		<AutoStretch>true</AutoStretch>
+		<LeftAnchorOffset>94</LeftAnchorOffset>
+		<TopAnchorOffset>64</TopAnchorOffset>
+		<RightAnchorOffset>12</RightAnchorOffset>
+		<BottomAnchorOffset>42</BottomAnchorOffset>
+		<TopAnchorToTop>false</TopAnchorToTop>
+		<BottomAnchorToTop>false</BottomAnchorToTop>
+		<LeftAnchorToLeft>false</LeftAnchorToLeft>
+		<RightAnchorToLeft>false</RightAnchorToLeft>
+		<Text>Hotkey</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="MCDW_FooterLabel">
+		<ScreenID>MCDW_FooterLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>182</Y></Location>
+		<Size><CX>252</CX><CY>54</CY></Size>
+		<AutoStretch>true</AutoStretch>
+		<LeftAnchorOffset>12</LeftAnchorOffset>
+		<TopAnchorOffset>66</TopAnchorOffset>
+		<RightAnchorOffset>186</RightAnchorOffset>
+		<BottomAnchorOffset>12</BottomAnchorOffset>
+		<TopAnchorToTop>false</TopAnchorToTop>
+		<BottomAnchorToTop>false</BottomAnchorToTop>
+		<LeftAnchorToLeft>true</LeftAnchorToLeft>
+		<RightAnchorToLeft>false</RightAnchorToLeft>
+		<Text>/disc opens this Multiclass discipline bridge.</Text>
+		<TextColor><R>198</R><G>206</G><B>214</B></TextColor>
+		<NoWrap>false</NoWrap>
+	</Label>
+
+	<Label item="MCDW_ActiveEffectLabel">
+		<ScreenID>MCDW_ActiveEffectLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>38</Y></Location>
+		<Size><CX>86</CX><CY>18</CY></Size>
+		<AutoStretch>true</AutoStretch>
+		<LeftAnchorOffset>12</LeftAnchorOffset>
+		<TopAnchorOffset>38</TopAnchorOffset>
+		<RightAnchorOffset>352</RightAnchorOffset>
+		<BottomAnchorOffset>56</BottomAnchorOffset>
+		<TopAnchorToTop>true</TopAnchorToTop>
+		<BottomAnchorToTop>true</BottomAnchorToTop>
+		<LeftAnchorToLeft>true</LeftAnchorToLeft>
+		<RightAnchorToLeft>false</RightAnchorToLeft>
+		<Text>Active:</Text>
+		<TextColor><R>198</R><G>206</G><B>214</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Gauge item="MCDW_ActiveEffectGauge">
+		<ScreenID>MCDW_ActiveEffectGauge</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>70</X><Y>41</Y></Location>
+		<Size><CX>156</CX><CY>10</CY></Size>
+		<AutoStretch>true</AutoStretch>
+		<LeftAnchorOffset>70</LeftAnchorOffset>
+		<TopAnchorOffset>41</TopAnchorOffset>
+		<RightAnchorOffset>226</RightAnchorOffset>
+		<BottomAnchorOffset>51</BottomAnchorOffset>
+		<TopAnchorToTop>true</TopAnchorToTop>
+		<BottomAnchorToTop>true</BottomAnchorToTop>
+		<LeftAnchorToLeft>true</LeftAnchorToLeft>
+		<RightAnchorToLeft>true</RightAnchorToLeft>
+		<GaugeOffsetY>0</GaugeOffsetY>
+		<Style_VScroll>false</Style_VScroll>
+		<Style_HScroll>false</Style_HScroll>
+		<Style_Transparent>false</Style_Transparent>
+		<FillTint><R>128</R><G>128</G><B>128</B></FillTint>
+		<LinesFillTint><R>0</R><G>0</G><B>0</B></LinesFillTint>
+		<DrawLinesFill>false</DrawLinesFill>
+		<EQType>26</EQType>
+		<GaugeDrawTemplate>
+			<Background>A_GaugeBackground</Background>
+			<Fill>A_GaugeFill</Fill>
+			<Lines>A_GaugeLines</Lines>
+			<LinesFill>A_GaugeLinesFill</LinesFill>
+			<EndCapLeft>A_GaugeEndCapLeft</EndCapLeft>
+			<EndCapRight>A_GaugeEndCapRight</EndCapRight>
+		</GaugeDrawTemplate>
+	</Gauge>
+
+	<Label item="MCDW_ReuseLabel">
+		<ScreenID>MCDW_ReuseLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>238</X><Y>36</Y></Location>
+		<Size><CX>200</CX><CY>20</CY></Size>
+		<AutoStretch>true</AutoStretch>
+		<LeftAnchorOffset>238</LeftAnchorOffset>
+		<TopAnchorOffset>36</TopAnchorOffset>
+		<RightAnchorOffset>12</RightAnchorOffset>
+		<BottomAnchorOffset>56</BottomAnchorOffset>
+		<TopAnchorToTop>true</TopAnchorToTop>
+		<BottomAnchorToTop>true</BottomAnchorToTop>
+		<LeftAnchorToLeft>true</LeftAnchorToLeft>
+		<RightAnchorToLeft>false</RightAnchorToLeft>
+		<Text>Reuse: -</Text>
+		<TextColor><R>220</R><G>230</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="MCMW_StatusLabel">
+		<ScreenID>MCMW_StatusLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>14</Y></Location>
+		<Size><CX>350</CX><CY>22</CY></Size>
+		<Text>Bard Melody: waiting for profile.</Text>
+		<TextColor><R>220</R><G>230</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="MCMW_RefreshButton">
+		<ScreenID>MCMW_RefreshButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>370</X><Y>10</Y></Location>
+		<Size><CX>72</CX><CY>22</CY></Size>
+		<Text>Refresh</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Listbox item="MCMW_SlotList">
+		<ScreenID>MCMW_SlotList</ScreenID>
+		<DrawTemplate>WDT_Inner</DrawTemplate>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>40</Y></Location>
+		<Size><CX>430</CX><CY>82</CY></Size>
+		<Style_Border>true</Style_Border>
+		<Style_VScroll>false</Style_VScroll>
+		<Style_HScroll>false</Style_HScroll>
+		<Style_Transparent>false</Style_Transparent>
+		<Columns><Width>60</Width><Heading>Slot</Heading></Columns>
+		<Columns><Width>230</Width><Heading>Song</Heading></Columns>
+		<Columns><Width>48</Width><Heading>Lvl</Heading></Columns>
+		<Columns><Width>92</Width><Heading>State</Heading></Columns>
+	</Listbox>
+
+	<Listbox item="MCMW_SongList">
+		<ScreenID>MCMW_SongList</ScreenID>
+		<DrawTemplate>WDT_Inner</DrawTemplate>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>130</Y></Location>
+		<Size><CX>430</CX><CY>112</CY></Size>
+		<Style_Border>true</Style_Border>
+		<Style_VScroll>true</Style_VScroll>
+		<Style_HScroll>false</Style_HScroll>
+		<Style_Transparent>false</Style_Transparent>
+		<Columns><Width>178</Width><Heading>Scribed Song</Heading></Columns>
+		<Columns><Width>46</Width><Heading>Lvl</Heading></Columns>
+		<Columns><Width>64</Width><Heading>State</Heading></Columns>
+		<Columns><Width>142</Width><Heading>Note</Heading></Columns>
+	</Listbox>
+
+	<Button item="MCMW_PrevButton">
+		<ScreenID>MCMW_PrevButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>250</Y></Location>
+		<Size><CX>44</CX><CY>22</CY></Size>
+		<Text>&lt;</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="MCMW_NextButton">
+		<ScreenID>MCMW_NextButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>62</X><Y>250</Y></Location>
+		<Size><CX>44</CX><CY>22</CY></Size>
+		<Text>&gt;</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="MCMW_ClearSlotButton">
+		<ScreenID>MCMW_ClearSlotButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>272</X><Y>250</Y></Location>
+		<Size><CX>76</CX><CY>22</CY></Size>
+		<Text>Clear Slot</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="MCMW_ClearAllButton">
+		<ScreenID>MCMW_ClearAllButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>354</X><Y>250</Y></Location>
+		<Size><CX>88</CX><CY>22</CY></Size>
+		<Text>Clear All</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="MCMW_FooterLabel">
+		<ScreenID>MCMW_FooterLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>278</Y></Location>
+		<Size><CX>430</CX><CY>32</CY></Size>
+		<Text>Select a slot, then choose a scribed Bard song. Spell gems stay free.</Text>
+		<TextColor><R>198</R><G>206</G><B>214</B></TextColor>
+		<NoWrap>false</NoWrap>
+	</Label>
+
+	<Screen item="NativeMulticlassWnd">
+		<ScreenID>NativeMulticlassWnd</ScreenID>
+		<RelativePosition>false</RelativePosition>
+		<Location><X>120</X><Y>80</Y></Location>
+		<Size><CX>572</CX><CY>328</CY></Size>
+		<Text>Multiclass</Text>
+		<DrawTemplate>WDT_Def</DrawTemplate>
+		<Style_Titlebar>true</Style_Titlebar>
+		<Style_Closebox>true</Style_Closebox>
+		<Style_Minimizebox>true</Style_Minimizebox>
+		<Style_Border>true</Style_Border>
+		<Style_Sizable>false</Style_Sizable>
+		<Style_Transparent>false</Style_Transparent>
+		<Pieces>MCW_StatusLabel</Pieces>
+		<Pieces>MCW_RefreshButton</Pieces>
+		<Pieces>MCW_TrioLabel</Pieces>
+		<Pieces>MCW_PresentationLabel</Pieces>
+		<Pieces>MCW_Slot2Label</Pieces>
+		<Pieces>MCW_Slot2PrevButton</Pieces>
+		<Pieces>MCW_Slot2ValueLabel</Pieces>
+		<Pieces>MCW_Slot2NextButton</Pieces>
+		<Pieces>MCW_Slot3Label</Pieces>
+		<Pieces>MCW_Slot3PrevButton</Pieces>
+		<Pieces>MCW_Slot3ValueLabel</Pieces>
+		<Pieces>MCW_Slot3NextButton</Pieces>
+		<Pieces>MCW_MelodyButton</Pieces>
+		<Pieces>MCW_DiscsButton</Pieces>
+		<Pieces>MCW_PetsButton</Pieces>
+		<Pieces>MCW_LockButton</Pieces>
+		<Pieces>MCW_InfoHeaderLabel</Pieces>
+		<Pieces>MCW_InfoLabel</Pieces>
+	</Screen>
+
+	<Screen item="NativeMulticlassPetWnd">
+		<ScreenID>NativeMulticlassPetWnd</ScreenID>
+		<RelativePosition>false</RelativePosition>
+		<Location><X>160</X><Y>390</Y></Location>
+		<Size><CX>452</CX><CY>176</CY></Size>
+		<Text>Multiclass Pets</Text>
+		<DrawTemplate>WDT_Def</DrawTemplate>
+		<Style_Titlebar>true</Style_Titlebar>
+		<Style_Closebox>true</Style_Closebox>
+		<Style_Minimizebox>true</Style_Minimizebox>
+		<Style_Border>true</Style_Border>
+		<Style_Sizable>true</Style_Sizable>
+		<Style_Transparent>false</Style_Transparent>
+		<Pieces>MCPW_StatusLabel</Pieces>
+		<Pieces>MCPW_RefreshButton</Pieces>
+		<Pieces>MCPW_PetList</Pieces>
+		<Pieces>MCPW_PetAttackButton</Pieces>
+		<Pieces>MCPW_PetBackButton</Pieces>
+		<Pieces>MCPW_PetFollowButton</Pieces>
+		<Pieces>MCPW_PetGuardButton</Pieces>
+		<Pieces>MCPW_PetHealthButton</Pieces>
+		<Pieces>MCPW_PetTauntButton</Pieces>
+		<Pieces>MCPW_PetSitButton</Pieces>
+		<Pieces>MCPW_PetHoldButton</Pieces>
+		<Pieces>MCPW_PetSpellHoldButton</Pieces>
+		<Pieces>MCPW_PetDismissButton</Pieces>
+	</Screen>
+
+	<Screen item="NativeMulticlassDisciplineWnd">
+		<ScreenID>NativeMulticlassDisciplineWnd</ScreenID>
+		<RelativePosition>false</RelativePosition>
+		<Location><X>620</X><Y>390</Y></Location>
+		<Size><CX>450</CX><CY>248</CY></Size>
+		<Text>Multiclass Discs</Text>
+		<DrawTemplate>WDT_Def</DrawTemplate>
+		<Style_Titlebar>true</Style_Titlebar>
+		<Style_Closebox>true</Style_Closebox>
+		<Style_Minimizebox>true</Style_Minimizebox>
+		<Style_Border>true</Style_Border>
+		<Style_Sizable>true</Style_Sizable>
+		<Style_Transparent>false</Style_Transparent>
+		<Pieces>MCDW_StatusLabel</Pieces>
+		<Pieces>MCDW_RefreshButton</Pieces>
+		<Pieces>MCDW_ActiveEffectLabel</Pieces>
+		<Pieces>MCDW_ActiveEffectGauge</Pieces>
+		<Pieces>MCDW_ReuseLabel</Pieces>
+		<Pieces>MCDW_DisciplineList</Pieces>
+		<Pieces>MCDW_UseButton</Pieces>
+		<Pieces>MCDW_HotkeyButton</Pieces>
+		<Pieces>MCDW_FooterLabel</Pieces>
+	</Screen>
+
+	<Screen item="NativeMulticlassMelodyWnd">
+		<ScreenID>NativeMulticlassMelodyWnd</ScreenID>
+		<RelativePosition>false</RelativePosition>
+		<Location><X>748</X><Y>120</Y></Location>
+		<Size><CX>454</CX><CY>322</CY></Size>
+		<Text>Multiclass Melody</Text>
+		<DrawTemplate>WDT_Def</DrawTemplate>
+		<Style_Titlebar>true</Style_Titlebar>
+		<Style_Closebox>true</Style_Closebox>
+		<Style_Minimizebox>true</Style_Minimizebox>
+		<Style_Border>true</Style_Border>
+		<Style_Sizable>false</Style_Sizable>
+		<Style_Transparent>false</Style_Transparent>
+		<Pieces>MCMW_StatusLabel</Pieces>
+		<Pieces>MCMW_RefreshButton</Pieces>
+		<Pieces>MCMW_SlotList</Pieces>
+		<Pieces>MCMW_SongList</Pieces>
+		<Pieces>MCMW_PrevButton</Pieces>
+		<Pieces>MCMW_NextButton</Pieces>
+		<Pieces>MCMW_ClearSlotButton</Pieces>
+		<Pieces>MCMW_ClearAllButton</Pieces>
+		<Pieces>MCMW_FooterLabel</Pieces>
+	</Screen>
+</XML>

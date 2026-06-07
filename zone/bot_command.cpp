@@ -1,21 +1,20 @@
-/*	EQEMu: Everquest Server Emulator
-	Copyright (C) 2001-2016 EQEMu Development Team (http://eqemulator.org)
+/*	EQEmu: EQEmulator
+
+	Copyright (C) 2001-2026 EQEmu Development Team
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; version 2 of the License.
+	the Free Software Foundation; either version 3 of the License, or
+	(at your option) any later version.
 
 	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY except by those people which sell it, which
-	are required to give you total support for your newly bought product;
-	without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-	A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
-
 /*
 
 	To add a new bot command 3 things must be done:
@@ -32,34 +31,28 @@
 
 */
 
-#include <string.h>
-
-#ifdef _WINDOWS
-#define strcasecmp _stricmp
-#endif
-
-#include "../common/data_verification.h"
-#include "../common/global_define.h"
-#include "../common/eq_packet.h"
-#include "../common/features.h"
-#include "../common/ptimer.h"
-#include "../common/rulesys.h"
-#include "../common/serverinfo.h"
-#include "../common/strings.h"
-#include "../common/say_link.h"
-
 #include "bot_command.h"
-#include "zonedb.h"
-#include "qglobals.h"
-#include "queryserv.h"
-#include "quest_parser_collection.h"
-#include "titles.h"
-#include "water_map.h"
-#include "worldserver.h"
-#include "mob.h"
-#include "bot_database.h"
 
-#include <fmt/format.h>
+#include "common/data_verification.h"
+#include "common/eq_packet.h"
+#include "common/features.h"
+#include "common/ptimer.h"
+#include "common/rulesys.h"
+#include "common/say_link.h"
+#include "common/serverinfo.h"
+#include "common/strings.h"
+#include "zone/bot_database.h"
+#include "zone/mob.h"
+#include "zone/qglobals.h"
+#include "zone/queryserv.h"
+#include "zone/quest_parser_collection.h"
+#include "zone/titles.h"
+#include "zone/water_map.h"
+#include "zone/worldserver.h"
+#include "zone/zonedb.h"
+
+#include "fmt/format.h"
+#include <cstring>
 
 extern QueryServ* QServ;
 extern WorldServer worldserver;
@@ -465,9 +458,7 @@ uint32 helper_bot_create(Client *bot_owner, std::string bot_name, uint8 bot_clas
 		return bot_id;
 	}
 
-	bool available_flag = false;
-
-	!database.botdb.QueryNameAvailability(bot_name, available_flag);
+	bool available_flag = database.botdb.QueryNameAvailability(bot_name);
 
 	if (!available_flag) {
 		bot_owner->Message(
@@ -784,7 +775,7 @@ void helper_send_usage_required_bots(Client *bot_owner, uint16 spell_type)
 	bot_owner->Message(Chat::Green, "%s", description.c_str());
 }
 
-void SendSpellTypeWindow(Client* c, const Seperator* sep) {
+void SendSpellTypeWindow(Client* c, const Seperator* sep, bool short_names) {
 	std::string arg0 = sep->arg[0];
 	std::string arg1 = sep->arg[1];
 
@@ -837,7 +828,7 @@ void SendSpellTypeWindow(Client* c, const Seperator* sep) {
 	std::string popup_text = DialogueWindow::TableRow(
 		DialogueWindow::TableCell(DialogueWindow::ColorMessage(goldenrod, spell_type_field))
 		+
-		DialogueWindow::TableCell((!arg0.compare("^spelltypeids") ? DialogueWindow::ColorMessage(goldenrod, id_field) : DialogueWindow::ColorMessage(goldenrod, shortname_field)))
+		DialogueWindow::TableCell((!short_names ? DialogueWindow::ColorMessage(goldenrod, id_field) : DialogueWindow::ColorMessage(goldenrod, shortname_field)))
 	);
 
 	popup_text += DialogueWindow::TableRow(
@@ -854,7 +845,7 @@ void SendSpellTypeWindow(Client* c, const Seperator* sep) {
 		popup_text += DialogueWindow::TableRow(
 			DialogueWindow::TableCell(DialogueWindow::ColorMessage(forest_green, Bot::GetSpellTypeNameByID(i)))
 			+
-			DialogueWindow::TableCell((!arg0.compare("^spelltypeids") ? DialogueWindow::ColorMessage(slate_blue, std::to_string(i)) : DialogueWindow::ColorMessage(slate_blue, Bot::GetSpellTypeShortNameByID(i))))
+			DialogueWindow::TableCell((!short_names ? DialogueWindow::ColorMessage(slate_blue, std::to_string(i)) : DialogueWindow::ColorMessage(slate_blue, Bot::GetSpellTypeShortNameByID(i))))
 		);
 	}
 
@@ -863,65 +854,3 @@ void SendSpellTypeWindow(Client* c, const Seperator* sep) {
 	c->SendPopupToClient("Spell Types", popup_text.c_str());
 }
 
-#include "bot_commands/actionable.cpp"
-#include "bot_commands/appearance.cpp"
-#include "bot_commands/apply_poison.cpp"
-#include "bot_commands/apply_potion.cpp"
-#include "bot_commands/attack.cpp"
-#include "bot_commands/behind_mob.cpp"
-#include "bot_commands/blocked_buffs.cpp"
-#include "bot_commands/bot.cpp"
-#include "bot_commands/bot_settings.cpp"
-#include "bot_commands/cast.cpp"
-#include "bot_commands/class_race_list.cpp"
-#include "bot_commands/click_item.cpp"
-#include "bot_commands/copy_settings.cpp"
-#include "bot_commands/default_settings.cpp"
-#include "bot_commands/depart.cpp"
-#include "bot_commands/discipline.cpp"
-#include "bot_commands/distance_ranged.cpp"
-#include "bot_commands/find_aliases.cpp"
-#include "bot_commands/follow.cpp"
-#include "bot_commands/guard.cpp"
-#include "bot_commands/heal_rotation.cpp"
-#include "bot_commands/help.cpp"
-#include "bot_commands/hold.cpp"
-#include "bot_commands/illusion_block.cpp"
-#include "bot_commands/inventory.cpp"
-#include "bot_commands/item_use.cpp"
-#include "bot_commands/max_melee_range.cpp"
-#include "bot_commands/name.cpp"
-#include "bot_commands/owner_option.cpp"
-#include "bot_commands/pet.cpp"
-#include "bot_commands/pick_lock.cpp"
-#include "bot_commands/pickpocket.cpp"
-#include "bot_commands/precombat.cpp"
-#include "bot_commands/pull.cpp"
-#include "bot_commands/release.cpp"
-#include "bot_commands/set_assistee.cpp"
-#include "bot_commands/sit_hp_percent.cpp"
-#include "bot_commands/sit_in_combat.cpp"
-#include "bot_commands/sit_mana_percent.cpp"
-#include "bot_commands/spell.cpp"
-#include "bot_commands/spell_aggro_checks.cpp"
-#include "bot_commands/spell_announce_cast.cpp"
-#include "bot_commands/spell_delays.cpp"
-#include "bot_commands/spell_engaged_priority.cpp"
-#include "bot_commands/spell_holds.cpp"
-#include "bot_commands/spell_idle_priority.cpp"
-#include "bot_commands/spell_max_hp_pct.cpp"
-#include "bot_commands/spell_max_mana_pct.cpp"
-#include "bot_commands/spell_max_thresholds.cpp"
-#include "bot_commands/spell_min_hp_pct.cpp"
-#include "bot_commands/spell_min_mana_pct.cpp"
-#include "bot_commands/spell_min_thresholds.cpp"
-#include "bot_commands/spell_pursue_priority.cpp"
-#include "bot_commands/spell_resist_limits.cpp"
-#include "bot_commands/spell_target_count.cpp"
-#include "bot_commands/spelltypes.cpp"
-#include "bot_commands/summon.cpp"
-#include "bot_commands/suspend.cpp"
-#include "bot_commands/taunt.cpp"
-#include "bot_commands/timer.cpp"
-#include "bot_commands/track.cpp"
-#include "bot_commands/view_combos.cpp"

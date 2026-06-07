@@ -1,0 +1,12 @@
+# Client patch feed for gearscore.
+# Gearscore uses a native client hook to render ItemDisplay data.
+version: 1
+id: gearscore
+label: Gearscore
+client: rof
+files:
+  - source: client_files/native_autoloot/eq-core-dll/bin/dinput8.dll
+    destination: dinput8.dll
+
+generated:
+  eqhost: true

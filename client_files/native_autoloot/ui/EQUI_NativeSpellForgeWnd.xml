@@ -1,0 +1,576 @@
+<?xml version="1.0"?>
+<XML ID="EQInterfaceDefinitionLanguage">
+	<Schema xmlns="EverQuestData" xmlns:dt="EverQuestDataTypes" />
+
+	<Button item="ASFW_FormTab">
+		<ScreenID>ASFW_FormTab</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>26</Y></Location>
+		<Size><CX>104</CX><CY>24</CY></Size>
+		<Text>Form</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="ASFW_DeliveryTab">
+		<ScreenID>ASFW_DeliveryTab</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>120</X><Y>26</Y></Location>
+		<Size><CX>112</CX><CY>24</CY></Size>
+		<Text>Delivery</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="ASFW_PowerTab">
+		<ScreenID>ASFW_PowerTab</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>236</X><Y>26</Y></Location>
+		<Size><CX>104</CX><CY>24</CY></Size>
+		<Text>Power</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="ASFW_CastingTab">
+		<ScreenID>ASFW_CastingTab</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>344</X><Y>26</Y></Location>
+		<Size><CX>112</CX><CY>24</CY></Size>
+		<Text>Casting</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="ASFW_ReviewTab">
+		<ScreenID>ASFW_ReviewTab</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>460</X><Y>26</Y></Location>
+		<Size><CX>104</CX><CY>24</CY></Size>
+		<Text>Review</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="ASFW_NameLabel">
+		<ScreenID>ASFW_NameLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>18</Y></Location>
+		<Size><CX>80</CX><CY>20</CY></Size>
+		<Text>Name</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Editbox item="ASFW_NameEdit">
+		<ScreenID>ASFW_NameEdit</ScreenID>
+		<DrawTemplate>WDT_Inner</DrawTemplate>
+		<RelativePosition>true</RelativePosition>
+		<Style_Border>true</Style_Border>
+		<Location><X>96</X><Y>14</Y></Location>
+		<Size><CX>330</CX><CY>24</CY></Size>
+		<Text>Frost Lash</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+	</Editbox>
+
+	<Label item="ASFW_ElementLabel">
+		<ScreenID>ASFW_ElementLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>58</Y></Location>
+		<Size><CX>150</CX><CY>20</CY></Size>
+		<Text>Element</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="ASFW_FireButton">
+		<ScreenID>ASFW_FireButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>84</Y></Location>
+		<Size><CX>98</CX><CY>26</CY></Size>
+		<Text>Fire</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="ASFW_ColdButton">
+		<ScreenID>ASFW_ColdButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>118</X><Y>84</Y></Location>
+		<Size><CX>98</CX><CY>26</CY></Size>
+		<Text>Cold</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="ASFW_MagicButton">
+		<ScreenID>ASFW_MagicButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>222</X><Y>84</Y></Location>
+		<Size><CX>98</CX><CY>26</CY></Size>
+		<Text>Magic</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="ASFW_PoisonButton">
+		<ScreenID>ASFW_PoisonButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>326</X><Y>84</Y></Location>
+		<Size><CX>98</CX><CY>26</CY></Size>
+		<Text>Poison</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="ASFW_DiseaseButton">
+		<ScreenID>ASFW_DiseaseButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>430</X><Y>84</Y></Location>
+		<Size><CX>98</CX><CY>26</CY></Size>
+		<Text>Disease</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="ASFW_ElementHintLabel">
+		<ScreenID>ASFW_ElementHintLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>130</Y></Location>
+		<Size><CX>570</CX><CY>54</CY></Size>
+		<Text>Cold uses a chill resist profile and a blue spell icon.</Text>
+		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
+		<NoWrap>false</NoWrap>
+	</Label>
+
+	<Button item="ASFW_TargetButton">
+		<ScreenID>ASFW_TargetButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>24</Y></Location>
+		<Size><CX>150</CX><CY>28</CY></Size>
+		<Text>Single Target</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="ASFW_AEButton">
+		<ScreenID>ASFW_AEButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>174</X><Y>24</Y></Location>
+		<Size><CX>150</CX><CY>28</CY></Size>
+		<Text>Targeted AE</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Button item="ASFW_PBAEButton">
+		<ScreenID>ASFW_PBAEButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>334</X><Y>24</Y></Location>
+		<Size><CX>170</CX><CY>28</CY></Size>
+		<Text>Point Blank AE</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="ASFW_RangeLabel">
+		<ScreenID>ASFW_RangeLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>86</Y></Location>
+		<Size><CX>90</CX><CY>20</CY></Size>
+		<Text>Range</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="ASFW_RangeMinusButton">
+		<ScreenID>ASFW_RangeMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>112</X><Y>82</Y></Location>
+		<Size><CX>34</CX><CY>26</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="ASFW_RangeValueLabel">
+		<ScreenID>ASFW_RangeValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>154</X><Y>86</Y></Location>
+		<Size><CX>70</CX><CY>20</CY></Size>
+		<Text>200</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="ASFW_RangePlusButton">
+		<ScreenID>ASFW_RangePlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>232</X><Y>82</Y></Location>
+		<Size><CX>34</CX><CY>26</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="ASFW_RadiusLabel">
+		<ScreenID>ASFW_RadiusLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>306</X><Y>86</Y></Location>
+		<Size><CX>90</CX><CY>20</CY></Size>
+		<Text>Radius</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="ASFW_RadiusValueLabel">
+		<ScreenID>ASFW_RadiusValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>404</X><Y>86</Y></Location>
+		<Size><CX>70</CX><CY>20</CY></Size>
+		<Text>0</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="ASFW_TargetHintLabel">
+		<ScreenID>ASFW_TargetHintLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>132</Y></Location>
+		<Size><CX>570</CX><CY>52</CY></Size>
+		<Text>Single Target spells use range 200 and radius 0.</Text>
+		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
+		<NoWrap>false</NoWrap>
+	</Label>
+
+	<Label item="ASFW_DamageLabel">
+		<ScreenID>ASFW_DamageLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>28</Y></Location>
+		<Size><CX>110</CX><CY>20</CY></Size>
+		<Text>Damage</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="ASFW_DamageMinusButton">
+		<ScreenID>ASFW_DamageMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>136</X><Y>24</Y></Location>
+		<Size><CX>34</CX><CY>26</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="ASFW_DamageValueLabel">
+		<ScreenID>ASFW_DamageValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>180</X><Y>28</Y></Location>
+		<Size><CX>80</CX><CY>20</CY></Size>
+		<Text>100</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="ASFW_DamagePlusButton">
+		<ScreenID>ASFW_DamagePlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>270</X><Y>24</Y></Location>
+		<Size><CX>34</CX><CY>26</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="ASFW_ManaLabel">
+		<ScreenID>ASFW_ManaLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>76</Y></Location>
+		<Size><CX>110</CX><CY>20</CY></Size>
+		<Text>Mana</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="ASFW_ManaValueLabel">
+		<ScreenID>ASFW_ManaValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>136</X><Y>76</Y></Location>
+		<Size><CX>120</CX><CY>20</CY></Size>
+		<Text>25</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="ASFW_PowerHintLabel">
+		<ScreenID>ASFW_PowerHintLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>126</Y></Location>
+		<Size><CX>570</CX><CY>58</CY></Size>
+		<Text>Higher damage raises mana and cast time. Current damage range is 25 to 500.</Text>
+		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
+		<NoWrap>false</NoWrap>
+	</Label>
+
+	<Label item="ASFW_RecastLabel">
+		<ScreenID>ASFW_RecastLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>28</Y></Location>
+		<Size><CX>110</CX><CY>20</CY></Size>
+		<Text>Recast</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="ASFW_RecastMinusButton">
+		<ScreenID>ASFW_RecastMinusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>136</X><Y>24</Y></Location>
+		<Size><CX>34</CX><CY>26</CY></Size>
+		<Text>-</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="ASFW_RecastValueLabel">
+		<ScreenID>ASFW_RecastValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>180</X><Y>28</Y></Location>
+		<Size><CX>96</CX><CY>20</CY></Size>
+		<Text>3.0 sec</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="ASFW_RecastPlusButton">
+		<ScreenID>ASFW_RecastPlusButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>286</X><Y>24</Y></Location>
+		<Size><CX>34</CX><CY>26</CY></Size>
+		<Text>+</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Label item="ASFW_CastLabel">
+		<ScreenID>ASFW_CastLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>76</Y></Location>
+		<Size><CX>110</CX><CY>20</CY></Size>
+		<Text>Cast Time</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="ASFW_CastValueLabel">
+		<ScreenID>ASFW_CastValueLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>136</X><Y>76</Y></Location>
+		<Size><CX>120</CX><CY>20</CY></Size>
+		<Text>1.5 sec</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="ASFW_CastingHintLabel">
+		<ScreenID>ASFW_CastingHintLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>126</Y></Location>
+		<Size><CX>570</CX><CY>58</CY></Size>
+		<Text>Short recasts feel snappy; long recasts are safer for stronger spells.</Text>
+		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
+		<NoWrap>false</NoWrap>
+	</Label>
+
+	<Label item="ASFW_ReviewTitleLabel">
+		<ScreenID>ASFW_ReviewTitleLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>18</Y></Location>
+		<Size><CX>180</CX><CY>20</CY></Size>
+		<Text>Scroll Preview</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="ASFW_ReviewNameLabel">
+		<ScreenID>ASFW_ReviewNameLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>48</Y></Location>
+		<Size><CX>570</CX><CY>22</CY></Size>
+		<Text>Frost Lash</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="ASFW_ReviewFormLabel">
+		<ScreenID>ASFW_ReviewFormLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>80</Y></Location>
+		<Size><CX>570</CX><CY>20</CY></Size>
+		<Text>Cold damage using Cold resist.</Text>
+		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="ASFW_ReviewDeliveryLabel">
+		<ScreenID>ASFW_ReviewDeliveryLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>108</Y></Location>
+		<Size><CX>570</CX><CY>20</CY></Size>
+		<Text>Single Target, range 200, radius 0.</Text>
+		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="ASFW_ReviewPowerLabel">
+		<ScreenID>ASFW_ReviewPowerLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>136</Y></Location>
+		<Size><CX>570</CX><CY>20</CY></Size>
+		<Text>100 damage for 25 mana.</Text>
+		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Label item="ASFW_ReviewCastingLabel">
+		<ScreenID>ASFW_ReviewCastingLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>164</Y></Location>
+		<Size><CX>570</CX><CY>20</CY></Size>
+		<Text>1.5 sec cast, 3.0 sec recast.</Text>
+		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Button item="ASFW_CreateButton">
+		<ScreenID>ASFW_CreateButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>392</X><Y>226</Y></Location>
+		<Size><CX>150</CX><CY>30</CY></Size>
+		<Text>Create Scroll</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Template>BDT_Normal</Template>
+	</Button>
+
+	<Screen item="ASFW_FormPage">
+		<ScreenID>ASFW_FormPage</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>58</Y></Location>
+		<Size><CX>596</CX><CY>280</CY></Size>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Titlebar>false</Style_Titlebar>
+		<Pieces>ASFW_NameLabel</Pieces>
+		<Pieces>ASFW_NameEdit</Pieces>
+		<Pieces>ASFW_ElementLabel</Pieces>
+		<Pieces>ASFW_FireButton</Pieces>
+		<Pieces>ASFW_ColdButton</Pieces>
+		<Pieces>ASFW_MagicButton</Pieces>
+		<Pieces>ASFW_PoisonButton</Pieces>
+		<Pieces>ASFW_DiseaseButton</Pieces>
+		<Pieces>ASFW_ElementHintLabel</Pieces>
+	</Screen>
+
+	<Screen item="ASFW_DeliveryPage">
+		<ScreenID>ASFW_DeliveryPage</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>58</Y></Location>
+		<Size><CX>596</CX><CY>280</CY></Size>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Titlebar>false</Style_Titlebar>
+		<Pieces>ASFW_TargetButton</Pieces>
+		<Pieces>ASFW_AEButton</Pieces>
+		<Pieces>ASFW_PBAEButton</Pieces>
+		<Pieces>ASFW_RangeLabel</Pieces>
+		<Pieces>ASFW_RangeMinusButton</Pieces>
+		<Pieces>ASFW_RangeValueLabel</Pieces>
+		<Pieces>ASFW_RangePlusButton</Pieces>
+		<Pieces>ASFW_RadiusLabel</Pieces>
+		<Pieces>ASFW_RadiusValueLabel</Pieces>
+		<Pieces>ASFW_TargetHintLabel</Pieces>
+	</Screen>
+
+	<Screen item="ASFW_PowerPage">
+		<ScreenID>ASFW_PowerPage</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>58</Y></Location>
+		<Size><CX>596</CX><CY>280</CY></Size>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Titlebar>false</Style_Titlebar>
+		<Pieces>ASFW_DamageLabel</Pieces>
+		<Pieces>ASFW_DamageMinusButton</Pieces>
+		<Pieces>ASFW_DamageValueLabel</Pieces>
+		<Pieces>ASFW_DamagePlusButton</Pieces>
+		<Pieces>ASFW_ManaLabel</Pieces>
+		<Pieces>ASFW_ManaValueLabel</Pieces>
+		<Pieces>ASFW_PowerHintLabel</Pieces>
+	</Screen>
+
+	<Screen item="ASFW_CastingPage">
+		<ScreenID>ASFW_CastingPage</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>58</Y></Location>
+		<Size><CX>596</CX><CY>280</CY></Size>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Titlebar>false</Style_Titlebar>
+		<Pieces>ASFW_RecastLabel</Pieces>
+		<Pieces>ASFW_RecastMinusButton</Pieces>
+		<Pieces>ASFW_RecastValueLabel</Pieces>
+		<Pieces>ASFW_RecastPlusButton</Pieces>
+		<Pieces>ASFW_CastLabel</Pieces>
+		<Pieces>ASFW_CastValueLabel</Pieces>
+		<Pieces>ASFW_CastingHintLabel</Pieces>
+	</Screen>
+
+	<Screen item="ASFW_ReviewPage">
+		<ScreenID>ASFW_ReviewPage</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>58</Y></Location>
+		<Size><CX>596</CX><CY>280</CY></Size>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Titlebar>false</Style_Titlebar>
+		<Pieces>ASFW_ReviewTitleLabel</Pieces>
+		<Pieces>ASFW_ReviewNameLabel</Pieces>
+		<Pieces>ASFW_ReviewFormLabel</Pieces>
+		<Pieces>ASFW_ReviewDeliveryLabel</Pieces>
+		<Pieces>ASFW_ReviewPowerLabel</Pieces>
+		<Pieces>ASFW_ReviewCastingLabel</Pieces>
+		<Pieces>ASFW_CreateButton</Pieces>
+	</Screen>
+
+	<Label item="ASFW_StatusLabel">
+		<ScreenID>ASFW_StatusLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>14</X><Y>358</Y></Location>
+		<Size><CX>590</CX><CY>36</CY></Size>
+		<Text>Choose a spell form, then tune delivery and power.</Text>
+		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
+		<NoWrap>false</NoWrap>
+	</Label>
+
+	<Screen item="NativeSpellForgeWnd">
+		<ScreenID>NativeSpellForgeWnd</ScreenID>
+		<RelativePosition>false</RelativePosition>
+		<Location><X>120</X><Y>90</Y></Location>
+		<Size><CX>620</CX><CY>410</CY></Size>
+		<Text>Spell Forge</Text>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Titlebar>true</Style_Titlebar>
+		<Style_Closebox>true</Style_Closebox>
+		<Style_Minimizebox>false</Style_Minimizebox>
+		<Style_Border>true</Style_Border>
+		<Style_Sizable>false</Style_Sizable>
+		<DrawTemplate>WDT_Rounded</DrawTemplate>
+		<Pieces>ASFW_FormTab</Pieces>
+		<Pieces>ASFW_DeliveryTab</Pieces>
+		<Pieces>ASFW_PowerTab</Pieces>
+		<Pieces>ASFW_CastingTab</Pieces>
+		<Pieces>ASFW_ReviewTab</Pieces>
+		<Pieces>ASFW_FormPage</Pieces>
+		<Pieces>ASFW_DeliveryPage</Pieces>
+		<Pieces>ASFW_PowerPage</Pieces>
+		<Pieces>ASFW_CastingPage</Pieces>
+		<Pieces>ASFW_ReviewPage</Pieces>
+		<Pieces>ASFW_StatusLabel</Pieces>
+	</Screen>
+</XML>
