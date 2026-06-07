@@ -47,6 +47,8 @@ constexpr const char *kCampfireTable = "custom_fellowship_campfires";
 constexpr uint32 kLeaderRank = 1;
 constexpr uint32 kMemberRank = 0;
 constexpr uint32 kInviteExpirationSeconds = 300;
+constexpr uint32 kClientActionCreate = 1;
+constexpr uint32 kCreatePacketWireSize = 1078;
 
 struct Membership {
 	uint32 fellowship_id = 0;
@@ -1002,12 +1004,7 @@ void FellowshipManager::HandleCommand(Client *client, const Seperator *sep)
 
 void FellowshipManager::HandleClientPacket(Client *client, const EQApplicationPacket *app) const
 {
-	if (
-		!RuleB(CustomFeatures, FellowshipsEnabled) ||
-		!RuleB(CustomFeatures, FellowshipOpcodeDiscoveryEnabled) ||
-		!client ||
-		!app
-	) {
+	if (!RuleB(CustomFeatures, FellowshipsEnabled) || !client || !app) {
 		return;
 	}
 
@@ -1015,24 +1012,30 @@ void FellowshipManager::HandleClientPacket(Client *client, const EQApplicationPa
 	const auto field_04 = ReadUInt32OrZero(app, 4);
 	const auto field_08 = ReadUInt32OrZero(app, 8);
 	const auto field_12 = ReadUInt32OrZero(app, 12);
-	const auto possible_create = action == 1 && app->Size() == 1078;
+	const auto possible_create = action == kClientActionCreate && app->Size() == kCreatePacketWireSize;
 
-	LogInfo(
-		"Fellowship client packet character [{}] emu [{}] protocol [{:#06x}] payload_size [{}] wire_size [{}] action [{}] field_04 [{}] field_08 [{}] field_12 [{}] non_zero_bytes [{}] non_zero_offsets [{}]{} {}",
-		client->GetCleanName(),
-		OpcodeManager::EmuToName(app->GetOpcode()),
-		app->GetProtocolOpcode(),
-		app->size,
-		app->Size(),
-		action,
-		field_04,
-		field_08,
-		field_12,
-		CountNonZeroBytes(app),
-		DescribeNonZeroOffsets(app),
-		possible_create ? " possible_create" : "",
-		DumpPacketToString(app)
-	);
+	if (RuleB(CustomFeatures, FellowshipOpcodeDiscoveryEnabled)) {
+		LogInfo(
+			"Fellowship client packet character [{}] emu [{}] protocol [{:#06x}] payload_size [{}] wire_size [{}] action [{}] field_04 [{}] field_08 [{}] field_12 [{}] non_zero_bytes [{}] non_zero_offsets [{}]{} {}",
+			client->GetCleanName(),
+			OpcodeManager::EmuToName(app->GetOpcode()),
+			app->GetProtocolOpcode(),
+			app->size,
+			app->Size(),
+			action,
+			field_04,
+			field_08,
+			field_12,
+			CountNonZeroBytes(app),
+			DescribeNonZeroOffsets(app),
+			possible_create ? " possible_create" : "",
+			DumpPacketToString(app)
+		);
+	}
+
+	if (possible_create) {
+		CreateFellowship(client, "");
+	}
 }
 
 void FellowshipManager::LogDiscoveryPacket(Client *client, const EQApplicationPacket *app, const char *context) const
