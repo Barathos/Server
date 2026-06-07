@@ -1,0 +1,13 @@
+EQEmu Patcher Test Bed
+
+This patcher is wired for the patcher feature test environment.
+
+- Patch data is expected to be generated from the RoF payload folder.
+- The patcher will compare local file MD5 hashes before downloading.
+- Player-facing notes can be published by replacing this file before generating a release or copying assets to the patch VM.
+
+Next publish:
+
+- Add the real patch summary here.
+- Include any required client-side file changes.
+- Mention whether players need to restart the patcher or client.
