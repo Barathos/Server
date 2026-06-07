@@ -55,7 +55,7 @@ RULE_BOOL(CustomFeatures, MqInterfaceEnabled, true, "Enables bundled MQ-derived 
 RULE_BOOL(CustomFeatures, PetBagsEnabled, true, "Enables Syncrosatchel pet bags that mirror class-specific bag contents onto summoned and charmed pets.")
 RULE_BOOL(CustomFeatures, FactionWindowEnabled, true, "Enables the custom faction reputation window and player-facing reputation command.")
 RULE_BOOL(CustomFeatures, FactionWindowShowAllByDefault, true, "Shows all known database factions in the custom faction reputation window by default instead of only touched, curated, or targeted factions.")
-RULE_INT(CustomFeatures, FactionWindowMaxRowsPerSnapshot, 600, "Caps how many faction rows a single native faction window refresh sends to the client.")
+RULE_INT(CustomFeatures, FactionWindowMaxRowsPerSnapshot, 0, "Caps how many faction rows a single native faction window refresh sends to the client. Set to 0 to send all matching rows.")
 RULE_BOOL(CustomFeatures, DpsParserEnabled, true, "Enables the custom native DPS parser and server-side combat contribution aggregation.")
 RULE_INT(CustomFeatures, DpsParserSnapshotIntervalMS, 1000, "Minimum interval in milliseconds between automatic native DPS parser snapshot updates.")
 RULE_INT(CustomFeatures, DpsParserEncounterTimeoutMS, 12000, "Milliseconds of inactivity before a DPS parser encounter is considered ended.")

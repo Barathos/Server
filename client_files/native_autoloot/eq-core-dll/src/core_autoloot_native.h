@@ -3177,8 +3177,13 @@ public:
 			}
 		}
 
-		if (pWnd == (CXWnd*)SearchEdit && (Message == XWM_NEWVALUE || Message == XWM_HITENTER)) {
-			ApplySearchFromEdit(Message == XWM_HITENTER);
+		if (pWnd == (CXWnd*)SearchEdit && Message == XWM_NEWVALUE) {
+			ApplySearchFromEdit(false);
+			return CSidlScreenWnd::WndNotification(pWnd, Message, unknown);
+		}
+
+		if (pWnd == (CXWnd*)SearchEdit && Message == XWM_HITENTER) {
+			ApplySearchFromEdit(true);
 			return 1;
 		}
 
@@ -5869,8 +5874,18 @@ static void NativeAchievementEnsureWindow(bool show)
 std::string NativeFactionWnd::ReadSearch() const
 {
 	char text[96] = { 0 };
-	if (SearchEdit && SearchEdit->InputText) {
-		GetCXStr(SearchEdit->InputText, text, sizeof(text));
+	if (SearchEdit) {
+		__try {
+			CXStr window_text = ((CXWnd*)SearchEdit)->GetWindowTextA();
+			GetCXStr(window_text.Ptr, text, sizeof(text));
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			text[0] = 0;
+		}
+
+		if (!text[0] && SearchEdit->InputText) {
+			GetCXStr(SearchEdit->InputText, text, sizeof(text));
+		}
 	}
 
 	std::string search(text);
@@ -5936,10 +5951,6 @@ void NativeFactionWnd::ClearSearch()
 
 void NativeFactionWnd::RefreshRows()
 {
-	if (SearchEdit && ReadSearch() != gNativeFactionSearch) {
-		SetSearchText(gNativeFactionSearch.c_str());
-	}
-
 	const std::string search_lower = NativeLower(gNativeFactionSearch);
 	unsigned visible_rows = 0;
 	for (const NativeFactionRow& faction : gNativeFactionRows) {
