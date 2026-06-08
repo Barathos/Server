@@ -53,15 +53,21 @@ constexpr uint32 kInviteExpirationSeconds = 300;
 constexpr uint32 kClientActionCreate = 1;
 constexpr uint32 kCreatePacketWireSize = 1078;
 constexpr uint32 kFellowshipStatePacketSize = 0x9e4;
-constexpr uint32 kFellowshipStateLeaderOffset = 0x008;
+constexpr uint32 kFellowshipStateNameOffset = 0x008;
 constexpr uint32 kFellowshipStateMotdOffset = 0x048;
 constexpr uint32 kFellowshipStateMembersOffset = 0x448;
 constexpr uint32 kFellowshipStateMemberListOffset = 0x44c;
 constexpr uint32 kFellowshipStateMemberSize = 0x54;
+constexpr uint32 kFellowshipStateSyncOffset = 0x83c;
+constexpr uint32 kFellowshipStatePlayerHandlesOffset = 0x840;
+constexpr uint32 kFellowshipStatePlayerHandleSize = 0x20;
+constexpr uint32 kFellowshipStateExpSharingOffset = 0x9c0;
+constexpr uint32 kFellowshipStateExpCappedOffset = 0x9cc;
+constexpr uint32 kFellowshipStateOfflineOffset = 0x9d8;
 constexpr uint32 kFellowshipMaxClientMembers = 12;
 constexpr uint32 kFellowshipStateWithCampfirePacketSize = 0xa04;
 constexpr uint32 kFellowshipActionPacketSize = 1076;
-constexpr uint16 kRoFSelectCampfireOpcode = 0x7abb;
+constexpr uint16 kRoFSelectCampfireOpcode = 0x7802;
 constexpr uint32 kFellowshipProbeDefaultIntervalMs = 2500;
 constexpr uint32 kFellowshipProbeMinIntervalMs = 1000;
 constexpr uint32 kFellowshipProbeMaxIntervalMs = 10000;
@@ -226,6 +232,11 @@ std::string DescribeNonZeroOffsets(const EQApplicationPacket *app, uint32 max_of
 }
 
 void WriteUInt16(uint8 *buffer, uint32 offset, uint16 value)
+{
+	std::memcpy(buffer + offset, &value, sizeof(value));
+}
+
+void WriteUInt8(uint8 *buffer, uint32 offset, uint8 value)
 {
 	std::memcpy(buffer + offset, &value, sizeof(value));
 }
@@ -433,23 +444,31 @@ std::unique_ptr<EQApplicationPacket> BuildFellowshipMemoryStatePacket(
 	std::memset(outapp->pBuffer, 0, outapp->size);
 	WriteUInt32(outapp->pBuffer, 0x000, unknown0);
 	WriteUInt32(outapp->pBuffer, 0x004, context.membership.fellowship_id);
-	WriteFixedString(outapp->pBuffer, kFellowshipStateLeaderOffset, 0x40, context.leader_name);
+	WriteFixedString(outapp->pBuffer, kFellowshipStateNameOffset, 0x40, context.membership.fellowship_name);
 	WriteFixedString(outapp->pBuffer, kFellowshipStateMotdOffset, 0x400, context.membership.motd);
 	WriteUInt32(outapp->pBuffer, kFellowshipStateMembersOffset, static_cast<uint32>(context.members.size()));
 	if (write_timestamp) {
-		WriteUInt32(outapp->pBuffer, 0x83c, Timer::GetTimeSeconds());
+		WriteUInt32(outapp->pBuffer, kFellowshipStateSyncOffset, Timer::GetTimeSeconds());
 	}
 
 	for (uint32 index = 0; index < context.members.size(); ++index) {
 		const auto &member = context.members[index];
 		const auto member_offset = kFellowshipStateMemberListOffset + (index * kFellowshipStateMemberSize);
-		WriteUInt32(outapp->pBuffer, member_offset + 0x00, member.sharing_enabled ? 1 : 0);
+		WriteUInt32(outapp->pBuffer, member_offset + 0x00, member.character_id);
 		WriteFixedString(outapp->pBuffer, member_offset + 0x04, 0x40, member.character_name);
-		WriteUInt16(outapp->pBuffer, member_offset + 0x44, static_cast<uint16>(std::min<uint32>(member.zone_id, UINT16_MAX)));
-		WriteUInt16(outapp->pBuffer, member_offset + 0x46, static_cast<uint16>(std::min<uint32>(member.instance_id, UINT16_MAX)));
+		WriteUInt32(outapp->pBuffer, member_offset + 0x44, member.zone_id);
 		WriteUInt32(outapp->pBuffer, member_offset + 0x48, member.level);
 		WriteUInt32(outapp->pBuffer, member_offset + 0x4c, member.class_id);
-		WriteUInt32(outapp->pBuffer, member_offset + 0x50, member.last_online);
+		WriteUInt32(outapp->pBuffer, member_offset + 0x50, 0);
+		WriteFixedString(
+			outapp->pBuffer,
+			kFellowshipStatePlayerHandlesOffset + (index * kFellowshipStatePlayerHandleSize),
+			kFellowshipStatePlayerHandleSize,
+			member.character_name
+		);
+		WriteUInt8(outapp->pBuffer, kFellowshipStateExpSharingOffset + index, member.sharing_enabled ? 1 : 0);
+		WriteUInt8(outapp->pBuffer, kFellowshipStateExpCappedOffset + index, 0);
+		WriteUInt8(outapp->pBuffer, kFellowshipStateOfflineOffset + index, 0);
 	}
 
 	if (include_campfire_tail) {
@@ -634,7 +653,7 @@ void SendFellowshipState(Client *client)
 		return;
 	}
 
-	auto outapp = BuildFellowshipMemoryStatePacket(*context, OP_Fellowship, 0, 1, false);
+	auto outapp = BuildFellowshipMemoryStatePacket(*context, OP_Fellowship, 0, 1, true, true);
 
 	if (RuleB(CustomFeatures, FellowshipOpcodeDiscoveryEnabled)) {
 		LogInfo(
