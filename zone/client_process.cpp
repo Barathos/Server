@@ -32,6 +32,7 @@
 #include "common/strings.h"
 #include "zone/dynamic_zone.h"
 #include "zone/event_codes.h"
+#include "zone/fellowship_manager.h"
 #include "zone/guild_mgr.h"
 #include "zone/live_spell_manager.h"
 #include "zone/map.h"
@@ -62,6 +63,8 @@ bool Client::Process() {
 		if (!IsLD() && zoneinpacket_timer.Check()) {
 			SendAllPackets();
 		}
+
+		fellowship_manager.ProcessClient(this);
 
 		if (adventure_request_timer) {
 			if (adventure_request_timer->Check()) {

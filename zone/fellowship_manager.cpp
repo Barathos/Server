@@ -33,6 +33,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 extern EntityList entity_list;
@@ -58,6 +59,9 @@ constexpr uint32 kFellowshipStateMembersOffset = 0x448;
 constexpr uint32 kFellowshipStateMemberListOffset = 0x44c;
 constexpr uint32 kFellowshipStateMemberSize = 0x54;
 constexpr uint32 kFellowshipMaxClientMembers = 12;
+constexpr uint32 kFellowshipProbeDefaultIntervalMs = 2500;
+constexpr uint32 kFellowshipProbeMinIntervalMs = 1000;
+constexpr uint32 kFellowshipProbeMaxIntervalMs = 10000;
 
 struct Membership {
 	uint32 fellowship_id = 0;
@@ -101,7 +105,51 @@ struct FellowshipMemberState {
 	uint32 last_online = 0;
 };
 
+struct FellowshipStateContext {
+	Membership membership;
+	std::string leader_name;
+	std::vector<FellowshipMemberState> members;
+};
+
+enum class FellowshipProbeLayout {
+	MemoryUnknownOne,
+	MemoryUnknownZero,
+	MemoryWithTimestamp,
+};
+
+struct FellowshipProbeDefinition {
+	const char *label = "";
+	EmuOpcode opcode = OP_Unknown;
+	uint16 opcode_bypass = 0;
+	FellowshipProbeLayout layout = FellowshipProbeLayout::MemoryUnknownOne;
+};
+
+struct FellowshipProbeSession {
+	uint32 next_probe = 0;
+	uint32 interval_ms = kFellowshipProbeDefaultIntervalMs;
+	bool active = false;
+	Timer timer;
+};
+
 std::map<uint32, PendingInvite> pending_invites;
+std::map<uint32, FellowshipProbeSession> fellowship_probe_sessions;
+
+const std::vector<FellowshipProbeDefinition> &GetFellowshipProbes()
+{
+	static const std::vector<FellowshipProbeDefinition> probes = {
+		{ "rof2-showeq-20130417-memory-one", OP_Fellowship, 0, FellowshipProbeLayout::MemoryUnknownOne },
+		{ "rof2-showeq-20130417-memory-zero", OP_Fellowship, 0, FellowshipProbeLayout::MemoryUnknownZero },
+		{ "rof2-showeq-20130417-memory-timestamp", OP_Fellowship, 0, FellowshipProbeLayout::MemoryWithTimestamp },
+		{ "create-action-opcode-memory-one", OP_FellowshipUpdate, 0, FellowshipProbeLayout::MemoryUnknownOne },
+		{ "rof-showeq-20121128-memory-one", OP_Unknown, 0x23ad, FellowshipProbeLayout::MemoryUnknownOne },
+		{ "rof-showeq-20121212-memory-one", OP_Unknown, 0x40fd, FellowshipProbeLayout::MemoryUnknownOne },
+		{ "rof-showeq-20130313-memory-one", OP_Unknown, 0x7eb8, FellowshipProbeLayout::MemoryUnknownOne },
+		{ "rof-showeq-20120817-memory-one", OP_Unknown, 0x584f, FellowshipProbeLayout::MemoryUnknownOne },
+		{ "rof-showeq-20121023-memory-one", OP_Unknown, 0x5545, FellowshipProbeLayout::MemoryUnknownOne },
+	};
+
+	return probes;
+}
 
 uint32 ReadUInt32OrZero(const EQApplicationPacket *app, uint32 offset)
 {
@@ -312,20 +360,20 @@ std::vector<FellowshipMemberState> LoadMemberStates(uint32 fellowship_id)
 	return members;
 }
 
-void SendFellowshipState(Client *client)
+std::optional<FellowshipStateContext> LoadFellowshipStateContext(Client *client)
 {
 	if (!client || !client->CharacterID()) {
-		return;
+		return std::nullopt;
 	}
 
 	auto membership = LoadMembership(client->CharacterID());
 	if (!membership) {
-		return;
+		return std::nullopt;
 	}
 
 	auto members = LoadMemberStates(membership->fellowship_id);
 	if (members.empty()) {
-		return;
+		return std::nullopt;
 	}
 
 	std::string leader_name = client->GetCleanName();
@@ -336,16 +384,38 @@ void SendFellowshipState(Client *client)
 		}
 	}
 
-	auto outapp = std::make_unique<EQApplicationPacket>(OP_Fellowship, kFellowshipStatePacketSize);
-	std::memset(outapp->pBuffer, 0, outapp->size);
-	WriteUInt32(outapp->pBuffer, 0x000, 1);
-	WriteUInt32(outapp->pBuffer, 0x004, membership->fellowship_id);
-	WriteFixedString(outapp->pBuffer, kFellowshipStateLeaderOffset, 0x40, leader_name);
-	WriteFixedString(outapp->pBuffer, kFellowshipStateMotdOffset, 0x400, membership->motd);
-	WriteUInt32(outapp->pBuffer, kFellowshipStateMembersOffset, static_cast<uint32>(members.size()));
+	FellowshipStateContext context;
+	context.membership = *membership;
+	context.leader_name = leader_name;
+	context.members = std::move(members);
+	return context;
+}
 
-	for (uint32 index = 0; index < members.size(); ++index) {
-		const auto &member = members[index];
+std::unique_ptr<EQApplicationPacket> BuildFellowshipMemoryStatePacket(
+	const FellowshipStateContext &context,
+	EmuOpcode opcode,
+	uint16 opcode_bypass,
+	uint32 unknown0,
+	bool write_timestamp
+)
+{
+	auto outapp = std::make_unique<EQApplicationPacket>(opcode, kFellowshipStatePacketSize);
+	if (opcode_bypass) {
+		outapp->SetOpcodeBypass(opcode_bypass);
+	}
+
+	std::memset(outapp->pBuffer, 0, outapp->size);
+	WriteUInt32(outapp->pBuffer, 0x000, unknown0);
+	WriteUInt32(outapp->pBuffer, 0x004, context.membership.fellowship_id);
+	WriteFixedString(outapp->pBuffer, kFellowshipStateLeaderOffset, 0x40, context.leader_name);
+	WriteFixedString(outapp->pBuffer, kFellowshipStateMotdOffset, 0x400, context.membership.motd);
+	WriteUInt32(outapp->pBuffer, kFellowshipStateMembersOffset, static_cast<uint32>(context.members.size()));
+	if (write_timestamp) {
+		WriteUInt32(outapp->pBuffer, 0x83c, Timer::GetTimeSeconds());
+	}
+
+	for (uint32 index = 0; index < context.members.size(); ++index) {
+		const auto &member = context.members[index];
 		const auto member_offset = kFellowshipStateMemberListOffset + (index * kFellowshipStateMemberSize);
 		WriteUInt32(outapp->pBuffer, member_offset + 0x00, member.sharing_enabled ? 1 : 0);
 		WriteFixedString(outapp->pBuffer, member_offset + 0x04, 0x40, member.character_name);
@@ -356,13 +426,104 @@ void SendFellowshipState(Client *client)
 		WriteUInt32(outapp->pBuffer, member_offset + 0x50, member.last_online);
 	}
 
+	return outapp;
+}
+
+std::unique_ptr<EQApplicationPacket> BuildFellowshipProbePacket(
+	const FellowshipStateContext &context,
+	const FellowshipProbeDefinition &probe
+)
+{
+	switch (probe.layout) {
+	case FellowshipProbeLayout::MemoryUnknownZero:
+		return BuildFellowshipMemoryStatePacket(context, probe.opcode, probe.opcode_bypass, 0, false);
+	case FellowshipProbeLayout::MemoryWithTimestamp:
+		return BuildFellowshipMemoryStatePacket(context, probe.opcode, probe.opcode_bypass, 1, true);
+	case FellowshipProbeLayout::MemoryUnknownOne:
+	default:
+		return BuildFellowshipMemoryStatePacket(context, probe.opcode, probe.opcode_bypass, 1, false);
+	}
+}
+
+bool SendFellowshipProbe(Client *client, FellowshipProbeSession &session, bool manual)
+{
+	if (!client || !client->CharacterID()) {
+		return false;
+	}
+
+	if (!RuleB(CustomFeatures, FellowshipOpcodeDiscoveryEnabled)) {
+		client->Message(Chat::White, "Fellowship opcode discovery is disabled.");
+		session.active = false;
+		return false;
+	}
+
+	const auto context = LoadFellowshipStateContext(client);
+	if (!context) {
+		client->Message(Chat::White, "No fellowship state is available to probe.");
+		session.active = false;
+		return false;
+	}
+
+	const auto &probes = GetFellowshipProbes();
+	if (session.next_probe >= probes.size()) {
+		client->Message(Chat::White, "Fellowship probe set is complete. Use #fellowshipdebug probe reset to run it again.");
+		session.active = false;
+		return false;
+	}
+
+	const auto probe_index = session.next_probe++;
+	const auto &probe = probes[probe_index];
+	auto outapp = BuildFellowshipProbePacket(*context, probe);
+	const auto protocol_opcode = probe.opcode_bypass;
+	const auto layout_name =
+		probe.layout == FellowshipProbeLayout::MemoryUnknownZero ? "memory_unknown0_zero" :
+		probe.layout == FellowshipProbeLayout::MemoryWithTimestamp ? "memory_with_timestamp" :
+		"memory_unknown0_one";
+
+	LogInfo(
+		"Fellowship probe character [{}] index [{}]/[{}] label [{}] emu [{}] bypass [{:#06x}] payload_size [{}] wire_size [{}] layout [{}] manual [{}] {}",
+		client->GetCleanName(),
+		probe_index + 1,
+		probes.size(),
+		probe.label,
+		OpcodeManager::EmuToName(outapp->GetOpcode()),
+		protocol_opcode,
+		outapp->size,
+		outapp->Size(),
+		layout_name,
+		manual ? 1 : 0,
+		DumpPacketToString(outapp.get())
+	);
+
+	client->Message(
+		Chat::White,
+		"Fellowship probe %u/%u: %s",
+		probe_index + 1,
+		static_cast<uint32>(probes.size()),
+		probe.label
+	);
+
+	client->QueuePacket(outapp.get());
+	session.timer.Start(session.interval_ms);
+	return true;
+}
+
+void SendFellowshipState(Client *client)
+{
+	const auto context = LoadFellowshipStateContext(client);
+	if (!context) {
+		return;
+	}
+
+	auto outapp = BuildFellowshipMemoryStatePacket(*context, OP_Fellowship, 0, 1, false);
+
 	if (RuleB(CustomFeatures, FellowshipOpcodeDiscoveryEnabled)) {
 		LogInfo(
 			"Sending fellowship state packet character [{}] fellowship_id [{}] members [{}] leader [{}] size [{}] {}",
 			client->GetCleanName(),
-			membership->fellowship_id,
-			members.size(),
-			leader_name,
+			context->membership.fellowship_id,
+			context->members.size(),
+			context->leader_name,
 			outapp->size,
 			DumpPacketToString(outapp.get())
 		);
@@ -445,6 +606,7 @@ void SendHelp(Client *client)
 	client->Message(Chat::White, "#fellowshipdebug motd <message> - Set the fellowship message.");
 	client->Message(Chat::White, "#fellowshipdebug share - Toggle your fellowship vitality sharing flag.");
 	client->Message(Chat::White, "#fellowshipdebug camp create|destroy|port - Manage the basic stored campfire.");
+	client->Message(Chat::White, "#fellowshipdebug probe start|stop|next|reset|status|list [interval_ms] - Send controlled fellowship packet probes.");
 }
 
 std::optional<Campfire> LoadCampfire(uint32 fellowship_id, bool active_only = true)
@@ -1080,6 +1242,82 @@ void HandleCampCommand(Client *client, const Seperator *sep)
 	SendHelp(client);
 }
 
+void HandleProbeCommand(Client *client, const Seperator *sep)
+{
+	if (!FeatureEnabled(client) || !client) {
+		return;
+	}
+
+	if (!RuleB(CustomFeatures, FellowshipOpcodeDiscoveryEnabled)) {
+		client->Message(Chat::White, "Fellowship opcode discovery is disabled.");
+		return;
+	}
+
+	auto &session = fellowship_probe_sessions[client->CharacterID()];
+
+	if (!sep || sep->argnum < 2 || !sep->arg[2][0] || !strcasecmp(sep->arg[2], "status")) {
+		client->Message(
+			Chat::White,
+			"Fellowship probe status: %s next %u/%u interval %u ms.",
+			session.active ? "running" : "stopped",
+			std::min<uint32>(session.next_probe + 1, static_cast<uint32>(GetFellowshipProbes().size())),
+			static_cast<uint32>(GetFellowshipProbes().size()),
+			session.interval_ms
+		);
+		return;
+	}
+
+	if (!strcasecmp(sep->arg[2], "list")) {
+		const auto &probes = GetFellowshipProbes();
+		for (uint32 index = 0; index < probes.size(); ++index) {
+			client->Message(Chat::White, "Probe %u/%u: %s", index + 1, static_cast<uint32>(probes.size()), probes[index].label);
+		}
+		return;
+	}
+
+	if (!strcasecmp(sep->arg[2], "stop")) {
+		session.active = false;
+		session.timer.Disable();
+		client->Message(Chat::White, "Fellowship probe stopped.");
+		return;
+	}
+
+	if (!strcasecmp(sep->arg[2], "reset")) {
+		session.active = false;
+		session.next_probe = 0;
+		session.timer.Disable();
+		client->Message(Chat::White, "Fellowship probe reset to the first packet.");
+		return;
+	}
+
+	if (!strcasecmp(sep->arg[2], "next")) {
+		session.active = false;
+		session.timer.Disable();
+		SendFellowshipProbe(client, session, true);
+		return;
+	}
+
+	if (!strcasecmp(sep->arg[2], "start")) {
+		if (sep->argnum >= 3 && sep->arg[3][0] && Strings::IsNumber(sep->arg[3])) {
+			session.interval_ms = std::clamp(
+				Strings::ToUnsignedInt(sep->arg[3]),
+				kFellowshipProbeMinIntervalMs,
+				kFellowshipProbeMaxIntervalMs
+			);
+		}
+		else if (!session.interval_ms) {
+			session.interval_ms = kFellowshipProbeDefaultIntervalMs;
+		}
+
+		session.active = true;
+		client->Message(Chat::White, "Fellowship probe started. Keep the Fellowship window open. Use #fellowshipdebug probe stop if the client acts strange.");
+		SendFellowshipProbe(client, session, true);
+		return;
+	}
+
+	client->Message(Chat::White, "Usage: #fellowshipdebug probe start|stop|next|reset|status|list [interval_ms]");
+}
+
 } // namespace
 
 void FellowshipManager::HandleCommand(Client *client, const Seperator *sep)
@@ -1143,6 +1381,11 @@ void FellowshipManager::HandleCommand(Client *client, const Seperator *sep)
 		return;
 	}
 
+	if (!strcasecmp(sep->arg[1], "probe")) {
+		HandleProbeCommand(client, sep);
+		return;
+	}
+
 	SendHelp(client);
 }
 
@@ -1202,6 +1445,29 @@ void FellowshipManager::LogDiscoveryPacket(Client *client, const EQApplicationPa
 		app->Size(),
 		DumpPacketToString(app)
 	);
+}
+
+void FellowshipManager::ProcessClient(Client *client) const
+{
+	if (
+		!RuleB(CustomFeatures, FellowshipsEnabled) ||
+		!RuleB(CustomFeatures, FellowshipOpcodeDiscoveryEnabled) ||
+		!client ||
+		!client->Connected() ||
+		!client->CharacterID()
+	) {
+		return;
+	}
+
+	auto session_iter = fellowship_probe_sessions.find(client->CharacterID());
+	if (session_iter == fellowship_probe_sessions.end() || !session_iter->second.active) {
+		return;
+	}
+
+	auto &session = session_iter->second;
+	if (session.timer.Check()) {
+		SendFellowshipProbe(client, session, false);
+	}
 }
 
 void FellowshipManager::SendClientState(Client *client) const
