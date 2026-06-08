@@ -2656,6 +2656,27 @@ CREATE TABLE `custom_fellowship_campfires` (
 )",
 		.content_schema_update = false,
 	},
+	ManifestEntry{
+		.version = 18,
+		.description = "2026_06_08_custom_fellowship_invites",
+		.check = "SHOW TABLES LIKE 'custom_fellowship_invites'",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+CREATE TABLE `custom_fellowship_invites` (
+  `target_character_id` INT UNSIGNED NOT NULL,
+  `fellowship_id` INT UNSIGNED NOT NULL DEFAULT 0,
+  `leader_character_id` INT UNSIGNED NOT NULL DEFAULT 0,
+  `inviter_character_id` INT UNSIGNED NOT NULL DEFAULT 0,
+  `created_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  `expires_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`target_character_id`),
+  KEY `idx_fellowship` (`fellowship_id`),
+  KEY `idx_expires_at` (`expires_at`)
+);
+)",
+		.content_schema_update = false,
+	},
 };
 
 // see struct definitions for what each field does

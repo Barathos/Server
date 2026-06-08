@@ -47,6 +47,7 @@ namespace {
 constexpr const char *kFellowshipTable = "custom_fellowships";
 constexpr const char *kMemberTable = "custom_fellowship_members";
 constexpr const char *kCampfireTable = "custom_fellowship_campfires";
+constexpr const char *kInviteTable = "custom_fellowship_invites";
 constexpr uint32 kLeaderRank = 1;
 constexpr uint32 kMemberRank = 0;
 constexpr uint32 kInviteExpirationSeconds = 300;
@@ -316,6 +317,116 @@ bool FeatureEnabled(Client *client)
 	}
 
 	return true;
+}
+
+void DeletePendingInvite(uint32 target_character_id)
+{
+	if (!target_character_id) {
+		return;
+	}
+
+	pending_invites.erase(target_character_id);
+	database.QueryDatabase(
+		fmt::format(
+			"DELETE FROM `{}` WHERE `target_character_id` = {}",
+			kInviteTable,
+			target_character_id
+		)
+	);
+}
+
+void DeleteExpiredPendingInvites()
+{
+	const auto now = Timer::GetTimeSeconds();
+	for (auto invite_iter = pending_invites.begin(); invite_iter != pending_invites.end();) {
+		if (now > invite_iter->second.created_at + kInviteExpirationSeconds) {
+			invite_iter = pending_invites.erase(invite_iter);
+			continue;
+		}
+
+		++invite_iter;
+	}
+
+	database.QueryDatabase(
+		fmt::format(
+			"DELETE FROM `{}` WHERE `expires_at` > 0 AND `expires_at` < UNIX_TIMESTAMP()",
+			kInviteTable
+		)
+	);
+}
+
+bool StorePendingInvite(uint32 fellowship_id, Client *inviter, Client *target)
+{
+	if (!fellowship_id || !inviter || !target || !inviter->CharacterID() || !target->CharacterID()) {
+		return false;
+	}
+
+	DeleteExpiredPendingInvites();
+	pending_invites[target->CharacterID()] = {
+		fellowship_id,
+		inviter->CharacterID(),
+		Timer::GetTimeSeconds()
+	};
+
+	auto results = database.QueryDatabase(
+		fmt::format(
+			"REPLACE INTO `{}` "
+			"(`target_character_id`, `fellowship_id`, `leader_character_id`, `inviter_character_id`, `created_at`, `expires_at`) "
+			"VALUES ({}, {}, {}, {}, UNIX_TIMESTAMP(), UNIX_TIMESTAMP() + {})",
+			kInviteTable,
+			target->CharacterID(),
+			fellowship_id,
+			inviter->CharacterID(),
+			inviter->CharacterID(),
+			kInviteExpirationSeconds
+		)
+	);
+
+	return results.Success();
+}
+
+std::optional<PendingInvite> LoadPendingInvite(uint32 target_character_id)
+{
+	if (!target_character_id) {
+		return std::nullopt;
+	}
+
+	DeleteExpiredPendingInvites();
+
+	auto results = database.QueryDatabase(
+		fmt::format(
+			"SELECT `fellowship_id`, `leader_character_id`, `created_at` "
+			"FROM `{}` WHERE `target_character_id` = {} AND (`expires_at` = 0 OR `expires_at` >= UNIX_TIMESTAMP()) LIMIT 1",
+			kInviteTable,
+			target_character_id
+		)
+	);
+
+	if (results.Success() && results.RowCount() > 0) {
+		auto row = results.begin();
+		return PendingInvite{
+			ToUInt(row[0]),
+			ToUInt(row[1]),
+			ToUInt(row[2])
+		};
+	}
+
+	auto invite_iter = pending_invites.find(target_character_id);
+	if (invite_iter == pending_invites.end()) {
+		return std::nullopt;
+	}
+
+	if (Timer::GetTimeSeconds() > invite_iter->second.created_at + kInviteExpirationSeconds) {
+		pending_invites.erase(invite_iter);
+		return std::nullopt;
+	}
+
+	return invite_iter->second;
+}
+
+bool HasPendingInvite(uint32 target_character_id)
+{
+	return LoadPendingInvite(target_character_id).has_value();
 }
 
 std::optional<Membership> LoadMembership(uint32 character_id)
@@ -1019,11 +1130,10 @@ bool InviteTarget(Client *client, uint32 target_entity_id = 0)
 		return false;
 	}
 
-	pending_invites[target_client->CharacterID()] = {
-		membership->fellowship_id,
-		client->CharacterID(),
-		Timer::GetTimeSeconds()
-	};
+	if (!StorePendingInvite(membership->fellowship_id, client, target_client)) {
+		client->Message(Chat::White, "Creating the fellowship invite failed.");
+		return false;
+	}
 
 	SendFellowshipInvitePopup(client, target_client);
 	client->Message(Chat::White, "Invited %s to fellowship '%s'.", target_client->GetCleanName(), membership->fellowship_name.c_str());
@@ -1042,37 +1152,38 @@ bool AcceptInvite(Client *client)
 		return false;
 	}
 
-	auto invite_iter = pending_invites.find(client->CharacterID());
-	if (invite_iter == pending_invites.end()) {
+	auto invite = LoadPendingInvite(client->CharacterID());
+	if (!invite) {
 		client->Message(Chat::White, "You do not have a pending fellowship invite.");
 		return false;
 	}
 
-	const auto invite = invite_iter->second;
-	pending_invites.erase(invite_iter);
-
-	if (Timer::GetTimeSeconds() > invite.created_at + kInviteExpirationSeconds) {
+	if (Timer::GetTimeSeconds() > invite->created_at + kInviteExpirationSeconds) {
+		DeletePendingInvite(client->CharacterID());
 		client->Message(Chat::White, "Your fellowship invite has expired.");
 		return false;
 	}
 
-	auto leader_membership = LoadMembership(invite.leader_character_id);
-	if (!leader_membership || leader_membership->fellowship_id != invite.fellowship_id) {
+	auto leader_membership = LoadMembership(invite->leader_character_id);
+	if (!leader_membership || leader_membership->fellowship_id != invite->fellowship_id) {
+		DeletePendingInvite(client->CharacterID());
 		client->Message(Chat::White, "That fellowship invite is no longer valid.");
 		return false;
 	}
 
 	if (leader_membership->member_count >= static_cast<uint32>(std::max(1, RuleI(CustomFeatures, FellowshipMaxMembers)))) {
+		DeletePendingInvite(client->CharacterID());
 		client->Message(Chat::White, "That fellowship is now full.");
 		return false;
 	}
 
-	if (!AddMember(invite.fellowship_id, client, kMemberRank)) {
+	if (!AddMember(invite->fellowship_id, client, kMemberRank)) {
 		client->Message(Chat::White, "Joining the fellowship failed.");
 		return false;
 	}
 
-	NotifyOnlineMembers(invite.fellowship_id, fmt::format("{} has joined the fellowship.", client->GetCleanName()));
+	DeletePendingInvite(client->CharacterID());
+	NotifyOnlineMembers(invite->fellowship_id, fmt::format("{} has joined the fellowship.", client->GetCleanName()));
 	return true;
 }
 
@@ -1589,11 +1700,19 @@ void FellowshipManager::HandleClientPacket(Client *client, const EQApplicationPa
 	const auto field_08 = ReadUInt32OrZero(app, 8);
 	const auto field_12 = ReadUInt32OrZero(app, 12);
 	const auto is_fellowship_action = app->GetOpcode() == OP_FellowshipUpdate;
+	const auto is_invite_response = app->GetOpcode() == OP_FellowshipInvite;
+	const auto has_pending_invite = HasPendingInvite(client->CharacterID());
 	const auto possible_create = is_fellowship_action && action == kClientActionCreate && app->Size() == kCreatePacketWireSize;
+	const auto possible_accept = is_fellowship_action &&
+		(
+			action == kClientActionAcceptInvite ||
+			(has_pending_invite && action != 0 && action != kClientActionCreate && action != kClientActionInviteTarget)
+		);
+	const auto possible_invite_response_accept = is_invite_response && has_pending_invite;
 
 	if (RuleB(CustomFeatures, FellowshipOpcodeDiscoveryEnabled)) {
 		LogInfo(
-			"Fellowship client packet character [{}] emu [{}] protocol [{:#06x}] payload_size [{}] wire_size [{}] action [{}] field_04 [{}] field_08 [{}] field_12 [{}] non_zero_bytes [{}] non_zero_offsets [{}]{} {}",
+			"Fellowship client packet character [{}] emu [{}] protocol [{:#06x}] payload_size [{}] wire_size [{}] action [{}] field_04 [{}] field_08 [{}] field_12 [{}] pending_invite [{}] non_zero_bytes [{}] non_zero_offsets [{}]{}{}{} {}",
 			client->GetCleanName(),
 			OpcodeManager::EmuToName(app->GetOpcode()),
 			app->GetProtocolOpcode(),
@@ -1603,16 +1722,19 @@ void FellowshipManager::HandleClientPacket(Client *client, const EQApplicationPa
 			field_04,
 			field_08,
 			field_12,
+			has_pending_invite ? "yes" : "no",
 			CountNonZeroBytes(app),
 			DescribeNonZeroOffsets(app),
 			possible_create ? " possible_create" : "",
+			possible_accept ? " possible_accept" : "",
+			possible_invite_response_accept ? " possible_invite_response_accept" : "",
 			DumpPacketToString(app)
 		);
 	}
 
 	if (possible_create) {
 		CreateFellowship(client, "");
-	} else if (is_fellowship_action && action == kClientActionAcceptInvite) {
+	} else if (possible_accept || possible_invite_response_accept) {
 		AcceptInvite(client);
 	} else if (is_fellowship_action && action == kClientActionInviteTarget) {
 		InviteTarget(client, field_04);

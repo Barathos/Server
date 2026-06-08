@@ -220,6 +220,7 @@ void MapOpcodes()
 	ConnectedOpcodes[OP_EvolveItem] = &Client::Handle_OP_EvolveItem;
 	ConnectedOpcodes[OP_FaceChange] = &Client::Handle_OP_FaceChange;
 	ConnectedOpcodes[OP_FeignDeath] = &Client::Handle_OP_FeignDeath;
+	ConnectedOpcodes[OP_FellowshipInvite] = &Client::Handle_OP_FellowshipUpdate;
 	ConnectedOpcodes[OP_FellowshipUpdate] = &Client::Handle_OP_FellowshipUpdate;
 	ConnectedOpcodes[OP_FellowshipCampfireRequest] = &Client::Handle_OP_FellowshipUpdate;
 	ConnectedOpcodes[OP_FindPersonRequest] = &Client::Handle_OP_FindPersonRequest;
