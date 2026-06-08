@@ -231,8 +231,6 @@ public:
 	{
 		CloseOnESC = 1;
 		SetWndNotification(NativeAutoLootWnd);
-		int (NativeAutoLootWnd::*post_draw)() const = &NativeAutoLootWnd::PostDraw;
-		SetvfTable(3, *(DWORD*)&post_draw);
 
 		PersonalLabel = GetChildItem("AALW_PersonalLabel");
 		SetAllLabel = GetChildItem("AALW_SetAllLabel");
@@ -465,8 +463,6 @@ public:
 		return CSidlScreenWnd::WndNotification(pWnd, Message, unknown);
 	}
 
-	int PostDraw() const;
-
 	void Layout();
 	void SetStatus(const char* text)
 	{
@@ -481,9 +477,6 @@ public:
 private:
 	NativeAutoLootRow* GetSelectedRow();
 	void RefreshList(CListWnd* list, bool shared);
-	void DrawListItemIcons(CListWnd* list, bool shared) const;
-	void DrawListActionIcons(CListWnd* list, bool shared) const;
-	void DrawActionCellIcon(CListWnd* list, int row_index, int column, bool active, bool negative, COLORREF color) const;
 	bool HandleListColumnClick(CListWnd* list, bool shared, void* hit_test_point);
 	bool SendListAction(const NativeAutoLootRow& row, const char* action, const char* status);
 	void SetLabel(CXWnd* label, const char* text);
@@ -6872,222 +6865,6 @@ void NativeAutoLootWnd::SetLabel(CXWnd* label, const char* text)
 	}
 }
 
-int NativeAutoLootWnd::PostDraw() const
-{
-	typedef int(__thiscall* NativeAutoLootPostDrawFn)(const NativeAutoLootWnd*);
-	int result = 0;
-
-	if (OldvfTable && OldvfTable->PostDraw) {
-		__try {
-			result = ((NativeAutoLootPostDrawFn)OldvfTable->PostDraw)(this);
-		}
-		__except (EXCEPTION_EXECUTE_HANDLER) {
-			NativeAutoLootTrace("Advanced Loot base PostDraw faulted");
-		}
-	}
-
-	DrawListItemIcons(PersonalList, false);
-	DrawListItemIcons(SharedList, true);
-	DrawListActionIcons(PersonalList, false);
-	DrawListActionIcons(SharedList, true);
-	return result;
-}
-
-void NativeAutoLootWnd::DrawListItemIcons(CListWnd* list, bool shared) const
-{
-	CTextureAnimation* icon_atlas = NativeAutoLootDragItemAnimation();
-	if (!list || !icon_atlas) {
-		return;
-	}
-
-	int max_rows = 0;
-	for (const NativeAutoLootRow& candidate : gNativeAutoLootRows) {
-		if (candidate.shared == shared) {
-			++max_rows;
-		}
-	}
-
-	for (int row_index = 0; row_index < max_rows; ++row_index) {
-		int entry_id = 0;
-		__try {
-			entry_id = (int)list->GetItemData(row_index);
-		}
-		__except (EXCEPTION_EXECUTE_HANDLER) {
-			break;
-		}
-
-		if (entry_id <= 0) {
-			continue;
-		}
-
-		int icon_id = 0;
-		for (const NativeAutoLootRow& candidate : gNativeAutoLootRows) {
-			if (candidate.entry_id == entry_id) {
-				icon_id = candidate.icon_id;
-				break;
-			}
-		}
-
-		if (icon_id <= 0) {
-			continue;
-		}
-
-		CXRect cell(0, 0, 0, 0);
-		__try {
-			CXRect hit_rect = list->GetItemRect(row_index, kAALPersonalItem);
-			cell.A = hit_rect.A;
-			cell.B = hit_rect.B;
-			cell.C = hit_rect.C;
-			cell.D = hit_rect.D;
-		}
-		__except (EXCEPTION_EXECUTE_HANDLER) {
-			continue;
-		}
-
-		const int cell_height = (int)cell.D - (int)cell.B;
-		int icon_size = cell_height - 2;
-		if (icon_size > 18) {
-			icon_size = 18;
-		}
-		if (icon_size < 12) {
-			icon_size = 12;
-		}
-		const int left = (int)cell.A + 4;
-		int top_padding = (cell_height - icon_size) / 2;
-		if (top_padding < 1) {
-			top_padding = 1;
-		}
-		const int top = (int)cell.B + top_padding;
-		CXRect icon_rect(left, top, left + icon_size, top + icon_size);
-
-		__try {
-			icon_atlas->SetCurCell(NativeAutoLootIconCell(icon_id));
-			icon_atlas->Draw(icon_rect, icon_rect, 0xFFFFFFFF, 0xFFFFFFFF);
-		}
-		__except (EXCEPTION_EXECUTE_HANDLER) {
-			NativeAutoLootTrace("Advanced Loot item icon draw faulted for icon %d", icon_id);
-		}
-	}
-}
-
-void NativeAutoLootWnd::DrawActionCellIcon(CListWnd* list, int row_index, int column, bool active, bool negative, COLORREF color) const
-{
-	CTextureAnimation* animation = NativeAutoLootActionCellAnimation(active, negative);
-	if (!list || !animation) {
-		return;
-	}
-
-	CXRect cell(0, 0, 0, 0);
-	__try {
-		CXRect hit_rect = list->GetItemRect(row_index, column);
-		cell.A = hit_rect.A;
-		cell.B = hit_rect.B;
-		cell.C = hit_rect.C;
-		cell.D = hit_rect.D;
-	}
-	__except (EXCEPTION_EXECUTE_HANDLER) {
-		return;
-	}
-
-	const int cell_width = (int)cell.C - (int)cell.A;
-	const int cell_height = (int)cell.D - (int)cell.B;
-	int icon_size = cell_height - 3;
-	if (icon_size > 18) {
-		icon_size = 18;
-	}
-	if (icon_size < 10) {
-		icon_size = 10;
-	}
-
-	int left_padding = (cell_width - icon_size) / 2;
-	if (left_padding < 1) {
-		left_padding = 1;
-	}
-	int top_padding = (cell_height - icon_size) / 2;
-	if (top_padding < 1) {
-		top_padding = 1;
-	}
-
-	const int left = (int)cell.A + left_padding;
-	const int top = (int)cell.B + top_padding;
-	CXRect icon_rect(left, top, left + icon_size, top + icon_size);
-
-	__try {
-		animation->Draw(icon_rect, icon_rect, color, color);
-	}
-	__except (EXCEPTION_EXECUTE_HANDLER) {
-		NativeAutoLootTrace("Advanced Loot action icon draw faulted for column %d", column);
-	}
-}
-
-void NativeAutoLootWnd::DrawListActionIcons(CListWnd* list, bool shared) const
-{
-	if (!list) {
-		return;
-	}
-
-	int max_rows = 0;
-	for (const NativeAutoLootRow& candidate : gNativeAutoLootRows) {
-		if (candidate.shared == shared) {
-			++max_rows;
-		}
-	}
-
-	for (int row_index = 0; row_index < max_rows; ++row_index) {
-		int entry_id = 0;
-		__try {
-			entry_id = (int)list->GetItemData(row_index);
-		}
-		__except (EXCEPTION_EXECUTE_HANDLER) {
-			break;
-		}
-
-		if (entry_id <= 0) {
-			continue;
-		}
-
-		const NativeAutoLootRow* row = nullptr;
-		for (const NativeAutoLootRow& candidate : gNativeAutoLootRows) {
-			if (candidate.entry_id == entry_id) {
-				row = &candidate;
-				break;
-			}
-		}
-
-		if (!row) {
-			continue;
-		}
-
-		const COLORREF disabled = 0xFF606060;
-		const COLORREF green = 0xFF66FF66;
-		const COLORREF red = 0xFFFF8080;
-		const COLORREF yellow = 0xFFFFFF80;
-		const COLORREF blue = 0xFF5F7388;
-		const bool always_need = row->rule == "always_need" || row->state == "alwaysneed";
-		const bool always_greed = row->rule == "always_greed" || row->state == "alwaysgreed";
-
-		if (!shared) {
-			DrawActionCellIcon(list, row_index, kAALPersonalLoot, row->can_loot && !row->locked, false, row->can_loot && !row->locked ? green : disabled);
-			DrawActionCellIcon(list, row_index, kAALPersonalLeave, row->can_leave && !row->locked, true, row->can_leave && !row->locked ? red : disabled);
-			DrawActionCellIcon(list, row_index, kAALPersonalAlwaysNeed, always_need, false, always_need ? green : blue);
-			DrawActionCellIcon(list, row_index, kAALPersonalAlwaysGreed, always_greed, false, always_greed ? yellow : blue);
-			DrawActionCellIcon(list, row_index, kAALPersonalNever, true, true, red);
-		}
-		else {
-			const bool need = row->state == "need" || row->state == "alwaysneed";
-			const bool greed = row->state == "greed" || row->state == "alwaysgreed";
-			const bool no = row->state == "no" || row->state == "pass";
-			const bool can_vote = row->can_vote && !row->locked;
-			DrawActionCellIcon(list, row_index, kAALSharedNeed, need, false, need ? green : (can_vote ? blue : disabled));
-			DrawActionCellIcon(list, row_index, kAALSharedGreed, greed, false, greed ? yellow : (can_vote ? blue : disabled));
-			DrawActionCellIcon(list, row_index, kAALSharedNo, no, true, no ? red : (can_vote ? blue : disabled));
-			DrawActionCellIcon(list, row_index, kAALSharedAlwaysNeed, always_need, false, always_need ? green : blue);
-			DrawActionCellIcon(list, row_index, kAALSharedAlwaysGreed, always_greed, false, always_greed ? yellow : blue);
-			DrawActionCellIcon(list, row_index, kAALSharedNever, row->rule == "never", true, row->rule == "never" ? red : disabled);
-		}
-	}
-}
-
 bool NativeAutoLootWnd::SendListAction(const NativeAutoLootRow& row, const char* action, const char* status)
 {
 	if (row.entry_id <= 0 || !action || !action[0]) {
@@ -7214,7 +6991,7 @@ void NativeAutoLootWnd::RefreshList(CListWnd* list, bool shared)
 		const NativeAutoLootRow& entry = *entry_ptr;
 		++visible;
 		const COLORREF row_color = entry.locked ? 0xFFFF8080 : 0xFFFFFFFF;
-		CXStr item("");
+		CXStr item(entry.item.c_str());
 		const int row = list->AddString(
 			item,
 			row_color,
@@ -7226,13 +7003,17 @@ void NativeAutoLootWnd::RefreshList(CListWnd* list, bool shared)
 		if (!shared) {
 			const bool always_need = entry.rule == "always_need" || entry.state == "alwaysneed";
 			const bool always_greed = entry.rule == "always_greed" || entry.state == "alwaysgreed";
-			CXStr blank("");
+			CXStr loot(entry.can_loot && !entry.locked ? "X" : "-");
+			CXStr leave(entry.can_leave && !entry.locked ? "X" : "-");
+			CXStr always_need_text(always_need ? "X" : "-");
+			CXStr always_greed_text(always_greed ? "X" : "-");
+			CXStr never(entry.rule == "never" ? "X" : "-");
 			CXStr source(entry.source.c_str());
-			list->SetItemText(row, kAALPersonalLoot, &blank);
-			list->SetItemText(row, kAALPersonalLeave, &blank);
-			list->SetItemText(row, kAALPersonalAlwaysNeed, &blank);
-			list->SetItemText(row, kAALPersonalAlwaysGreed, &blank);
-			list->SetItemText(row, kAALPersonalNever, &blank);
+			list->SetItemText(row, kAALPersonalLoot, &loot);
+			list->SetItemText(row, kAALPersonalLeave, &leave);
+			list->SetItemText(row, kAALPersonalAlwaysNeed, &always_need_text);
+			list->SetItemText(row, kAALPersonalAlwaysGreed, &always_greed_text);
+			list->SetItemText(row, kAALPersonalNever, &never);
 			list->SetItemText(row, kAALPersonalSource, &source);
 			list->SetItemColor(row, kAALPersonalLoot, entry.can_loot && !entry.locked ? 0xFF66FF66 : 0xFF606060);
 			list->SetItemColor(row, kAALPersonalLeave, entry.can_leave && !entry.locked ? 0xFFFF8080 : 0xFF606060);
@@ -7260,13 +7041,21 @@ void NativeAutoLootWnd::RefreshList(CListWnd* list, bool shared)
 			}
 			CXStr source(entry.source.c_str());
 			CXStr status(status_text);
-			CXStr blank("");
-			list->SetItemText(row, kAALSharedNeed, &blank);
-			list->SetItemText(row, kAALSharedGreed, &blank);
-			list->SetItemText(row, kAALSharedNo, &blank);
-			list->SetItemText(row, kAALSharedAlwaysNeed, &blank);
-			list->SetItemText(row, kAALSharedAlwaysGreed, &blank);
-			list->SetItemText(row, kAALSharedNever, &blank);
+			const bool need = entry.state == "need" || entry.state == "alwaysneed";
+			const bool greed = entry.state == "greed" || entry.state == "alwaysgreed";
+			const bool no = entry.state == "no" || entry.state == "pass";
+			CXStr need_text(need ? "X" : "-");
+			CXStr greed_text(greed ? "X" : "-");
+			CXStr no_text(no ? "X" : "-");
+			CXStr always_need_text(entry.rule == "always_need" ? "X" : "-");
+			CXStr always_greed_text(entry.rule == "always_greed" ? "X" : "-");
+			CXStr never(entry.rule == "never" ? "X" : "-");
+			list->SetItemText(row, kAALSharedNeed, &need_text);
+			list->SetItemText(row, kAALSharedGreed, &greed_text);
+			list->SetItemText(row, kAALSharedNo, &no_text);
+			list->SetItemText(row, kAALSharedAlwaysNeed, &always_need_text);
+			list->SetItemText(row, kAALSharedAlwaysGreed, &always_greed_text);
+			list->SetItemText(row, kAALSharedNever, &never);
 			list->SetItemText(row, kAALSharedSource, &source);
 			list->SetItemText(row, kAALSharedStatus, &status);
 			list->SetItemColor(row, kAALSharedNeed, entry.can_vote && !entry.locked ? 0xFF66FF66 : 0xFF606060);
