@@ -224,6 +224,22 @@ static CTextureAnimation* NativeAutoLootActionCellAnimation(bool active, bool ne
 	return NativeAutoLootFindAnimation("A_CheckBoxNormal", gNativeAutoLootCheckNormalAnimation);
 }
 
+static void NativeAutoLootSetColumnJustification(CListWnd* list, int first_column, int last_column, int justification)
+{
+	if (!list) {
+		return;
+	}
+
+	__try {
+		for (int column = first_column; column <= last_column; ++column) {
+			list->SetColumnJustification(column, justification);
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+		NativeAutoLootTrace("Advanced Loot column justification faulted");
+	}
+}
+
 class NativeAutoLootWnd : public CCustomWnd
 {
 public:
@@ -263,6 +279,8 @@ public:
 		ApplyFiltersCheck = (CButtonWnd*)GetChildItem("AALW_ApplyFiltersCheck");
 		GroupedByNpcCheck = (CButtonWnd*)GetChildItem("AALW_GroupedByNpcCheck");
 
+		NativeAutoLootSetColumnJustification(PersonalList, kAALPersonalLoot, kAALPersonalNever, 1);
+		NativeAutoLootSetColumnJustification(SharedList, kAALSharedNeed, kAALSharedNever, 1);
 		Layout();
 		SetStatus("Waiting for Advanced Loot snapshot...");
 		RefreshRows();
@@ -580,6 +598,8 @@ public:
 		UnsetButton = (CButtonWnd*)GetChildItem("AALR_UnsetButton");
 		AutoRollButton = (CButtonWnd*)GetChildItem("AALR_AutoRollButton");
 
+		NativeAutoLootSetColumnJustification(RuleList, 0, 0, 1);
+		NativeAutoLootSetColumnJustification(RuleList, 2, 3, 1);
 		Layout();
 		RefreshRows();
 	}
@@ -6771,7 +6791,7 @@ void NativeAutoLootSettingsWnd::RefreshRows()
 	char summary[160];
 	sprintf_s(
 		summary,
-		"Advanced: %s  Apply Filters: %s  Rules: AN %d / AG %d / NV %d",
+		"Advanced: %s  Filters: %s  Rules AN %d / AG %d / NV %d",
 		gNativeAutoLootEnabled ? "on" : "off",
 		gNativeAutoLootApplyFilters ? "on" : "off",
 		gNativeAutoLootAlwaysNeedCount,
@@ -6783,7 +6803,7 @@ void NativeAutoLootSettingsWnd::RefreshRows()
 	char group_summary[192];
 	sprintf_s(
 		group_summary,
-		"Master: %s  Split: %s  Loot All: %s  Show: %s  Lore: %s",
+		"Master %s / Split %s / Loot All %s / Show %s / Lore %s",
 		gNativeAutoLootMasterCandidate ? "on" : "off",
 		gNativeAutoLootAutoSplit ? "on" : "off",
 		gNativeAutoLootAutoLootAll ? "on" : "off",

@@ -16,7 +16,7 @@
 		<ScreenID>AALW_RuleSummaryLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>112</X><Y>18</Y></Location>
-		<Size><CX>210</CX><CY>18</CY></Size>
+		<Size><CX>260</CX><CY>18</CY></Size>
 		<Text>Rules AN 0 / AG 0 / NV 0</Text>
 		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
 		<NoWrap>true</NoWrap>
@@ -53,13 +53,13 @@
 		<Style_VScroll>true</Style_VScroll>
 		<Style_HScroll>false</Style_HScroll>
 		<Style_Transparent>false</Style_Transparent>
-		<Columns><Width>42</Width><Heading>Item</Heading></Columns>
-		<Columns><Width>40</Width><Heading>Loot</Heading></Columns>
-		<Columns><Width>44</Width><Heading>Leave</Heading></Columns>
+		<Columns><Width>168</Width><Heading>Item</Heading></Columns>
+		<Columns><Width>36</Width><Heading>Loot</Heading></Columns>
+		<Columns><Width>40</Width><Heading>Leave</Heading></Columns>
 		<Columns><Width>30</Width><Heading>AN</Heading></Columns>
 		<Columns><Width>30</Width><Heading>AG</Heading></Columns>
-		<Columns><Width>48</Width><Heading>Never</Heading></Columns>
-		<Columns><Width>360</Width><Heading>NPC Name</Heading></Columns>
+		<Columns><Width>46</Width><Heading>Never</Heading></Columns>
+		<Columns><Width>250</Width><Heading>NPC Name</Heading></Columns>
 	</Listbox>
 
 	<Label item="AALW_SetAllLabel">
@@ -146,7 +146,7 @@
 		<ScreenID>AALW_MasterLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>112</X><Y>214</Y></Location>
-		<Size><CX>390</CX><CY>18</CY></Size>
+		<Size><CX>500</CX><CY>18</CY></Size>
 		<Text>Shared Loot: solo  Master Candidate: on</Text>
 		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
 		<NoWrap>true</NoWrap>
@@ -171,15 +171,15 @@
 		<Style_VScroll>true</Style_VScroll>
 		<Style_HScroll>false</Style_HScroll>
 		<Style_Transparent>false</Style_Transparent>
-		<Columns><Width>42</Width><Heading>Item</Heading></Columns>
-		<Columns><Width>34</Width><Heading>ND</Heading></Columns>
-		<Columns><Width>34</Width><Heading>GD</Heading></Columns>
-		<Columns><Width>34</Width><Heading>NO</Heading></Columns>
+		<Columns><Width>158</Width><Heading>Item</Heading></Columns>
+		<Columns><Width>32</Width><Heading>ND</Heading></Columns>
+		<Columns><Width>32</Width><Heading>GD</Heading></Columns>
+		<Columns><Width>32</Width><Heading>NO</Heading></Columns>
 		<Columns><Width>30</Width><Heading>AN</Heading></Columns>
 		<Columns><Width>30</Width><Heading>AG</Heading></Columns>
-		<Columns><Width>48</Width><Heading>Never</Heading></Columns>
-		<Columns><Width>220</Width><Heading>NPC Name</Heading></Columns>
-		<Columns><Width>116</Width><Heading>Status</Heading></Columns>
+		<Columns><Width>46</Width><Heading>Never</Heading></Columns>
+		<Columns><Width>170</Width><Heading>NPC Name</Heading></Columns>
+		<Columns><Width>72</Width><Heading>Status</Heading></Columns>
 	</Listbox>
 
 	<Button item="AALW_RefreshButton">
@@ -757,9 +757,9 @@
 	<Label item="AALS_TitleLabel">
 		<ScreenID>AALS_TitleLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>8</X><Y>18</Y></Location>
-		<Size><CX>130</CX><CY>18</CY></Size>
-		<Text>Advanced Loot Settings</Text>
+		<Location><X>12</X><Y>18</Y></Location>
+		<Size><CX>66</CX><CY>18</CY></Size>
+		<Text>General</Text>
 		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
@@ -767,9 +767,9 @@
 	<Label item="AALS_SummaryLabel">
 		<ScreenID>AALS_SummaryLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>126</X><Y>18</Y></Location>
-		<Size><CX>286</CX><CY>18</CY></Size>
-		<Text>Advanced: on  Apply Filters: on  Rules: AN 0 / AG 0 / NV 0</Text>
+		<Location><X>84</X><Y>18</Y></Location>
+		<Size><CX>356</CX><CY>18</CY></Size>
+		<Text>Advanced: on  Filters: on  Rules AN 0 / AG 0 / NV 0</Text>
 		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
@@ -873,8 +873,8 @@
 	<Label item="AALS_GroupLabel">
 		<ScreenID>AALS_GroupLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>8</X><Y>126</Y></Location>
-		<Size><CX>110</CX><CY>18</CY></Size>
+		<Location><X>12</X><Y>126</Y></Location>
+		<Size><CX>124</CX><CY>18</CY></Size>
 		<Text>Advanced Options</Text>
 		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
 		<NoWrap>true</NoWrap>
@@ -883,9 +883,9 @@
 	<Label item="AALS_GroupSummaryLabel">
 		<ScreenID>AALS_GroupSummaryLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>126</X><Y>126</Y></Location>
-		<Size><CX>286</CX><CY>18</CY></Size>
-		<Text>Master candidate: on  Auto Split: on  Auto Loot All: off</Text>
+		<Location><X>142</X><Y>126</Y></Location>
+		<Size><CX>298</CX><CY>18</CY></Size>
+		<Text>Master on / Split on / Loot All off / Show all / Lore on</Text>
 		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
@@ -982,7 +982,7 @@
 		<ScreenID>NativeAutoLootSettingsWnd</ScreenID>
 		<RelativePosition>false</RelativePosition>
 		<Location><X>145</X><Y>145</Y></Location>
-		<Size><CX>420</CX><CY>330</CY></Size>
+		<Size><CX>452</CX><CY>330</CY></Size>
 		<Text>Advanced Loot Settings</Text>
 		<DrawTemplate>WDT_Def</DrawTemplate>
 		<Style_Titlebar>true</Style_Titlebar>
