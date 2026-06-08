@@ -64,12 +64,14 @@ const ALL_FEATURES_FORM_SPEC = {
           type: 'checkbox',
           title: 'Which native/custom UI surfaces opened or appeared correctly?',
           choices: [
-            'AutoLoot window',
+            'Advanced Loot window',
             'Item Forge window',
             'Spell Forge window',
             'Achievements window',
             'Multiclass window',
             'HP Fix overlay/window',
+            'Faction window',
+            'DPS Parser window',
             'Native item display or map info',
             'I did not try native/custom UI',
           ],
@@ -114,22 +116,27 @@ const ALL_FEATURES_FORM_SPEC = {
       ],
     },
     {
-      title: 'AutoLoot',
+      title: 'Advanced Loot',
       helpText:
-        'AutoLoot lets players configure loot handling from the native window and server-owned loot filters. Test with normal corpse loot if possible.',
+        'Advanced Loot lets players configure loot handling from the native window and server-owned loot filters. Test with normal corpse loot if possible.',
       items: [
         {
           type: 'multipleChoice',
-          title: 'Did the AutoLoot window open and show status or filter information?',
+          title: 'Did the Advanced Loot window open and show status or filter information?',
           required: true,
           choices: ['Yes', 'No', 'It opened but looked wrong', 'I did not test this'],
         },
         {
           type: 'multipleChoice',
-          title: 'Could you mark an item Keep, Ignore, or Unset and see the expected loot behavior later?',
+          title: 'Could you mark an item Always Need, Always Greed, Never, or Unset and see the expected behavior later?',
           choices: ['Yes', 'No', 'Partly', 'I did not test filters'],
         },
-        { type: 'paragraph', title: 'AutoLoot notes' },
+        {
+          type: 'multipleChoice',
+          title: 'If you grouped, did Shared Loot, Master Looter, Need, Greed, No, or timeout behavior make sense?',
+          choices: ['Yes', 'No', 'Partly', 'I only tested solo loot', 'I did not test this'],
+        },
+        { type: 'paragraph', title: 'Advanced Loot notes' },
       ],
     },
     {
@@ -158,7 +165,7 @@ const ALL_FEATURES_FORM_SPEC = {
       items: [
         {
           type: 'multipleChoice',
-          title: 'Did /mc or #mc open open the Multiclass window and show your profile?',
+          title: 'Did /mc or #mc open the Multiclass window and show your profile?',
           required: true,
           choices: ['Yes', 'No', 'It opened but looked wrong', 'I did not test this'],
         },
@@ -280,14 +287,62 @@ const ALL_FEATURES_FORM_SPEC = {
     {
       title: 'Tradeskill And General Stability Smoke Check',
       helpText:
-        'Tradeskills and general-code changes are not currently a separate public quest line. Do one normal gameplay check instead: open a tradeskill container or perform ordinary actions you would normally do, and report if anything regressed.',
+        'Tradeskills includes the server-owned make-all path, command checks, and a native window shell. Open a tradeskill container or perform ordinary actions you would normally do, and report if anything regressed.',
       items: [
         {
           type: 'multipleChoice',
-          title: 'Did normal tradeskill/container UI and general gameplay remain stable?',
-          choices: ['Yes', 'No, I saw a regression', 'I did not test this'],
+          title: 'Did normal tradeskill/container UI, make-all behavior, and general gameplay remain stable?',
+          choices: ['Yes', 'No, I saw a regression', 'Partly', 'I did not test this'],
         },
         { type: 'paragraph', title: 'Stability notes' },
+      ],
+    },
+    {
+      title: 'Faction, DPS, And Fellowship Tools',
+      helpText:
+        'Faction and DPS use custom native windows. Fellowships currently use server persistence, stock/native packet work, and command/debug paths while the stock UI behavior is being finalized.',
+      items: [
+        {
+          type: 'multipleChoice',
+          title: 'Did #rep or the Faction window show standings, search, pin, hide, or target-faction information correctly?',
+          choices: ['Yes', 'No', 'Partly', 'I did not test this'],
+        },
+        {
+          type: 'multipleChoice',
+          title: 'Did #dps or the DPS Parser window show sensible combat damage, healing, incoming damage, or pet contribution rows?',
+          choices: ['Yes', 'No', 'Partly', 'I did not test this'],
+        },
+        {
+          type: 'multipleChoice',
+          title: 'If you had multiple testers, did Fellowship create, invite, accept, leave, remove, campfire, or stock UI behavior work?',
+          choices: ['Yes', 'No', 'Partly', 'I did not have multiple testers', 'I did not test this'],
+        },
+        { type: 'paragraph', title: 'Faction, DPS, or Fellowship notes' },
+      ],
+    },
+    {
+      title: 'Pet Bags, Autoskills, UseItem, And AutoFollow',
+      helpText:
+        'These are utility systems without a separate quest line. Try only the helpers that apply to your character and report whether they obey normal gameplay limits.',
+      items: [
+        {
+          type: 'checkbox',
+          title: 'Which utility systems did you try?',
+          choices: [
+            'Syncrosatchel pet bags on a summoned or charmed pet',
+            '#autoskill setup or automatic combat skill use',
+            '#useitem or native /useitem rewrite',
+            'Improved AutoFollow',
+            'Server-auth/native stat display behavior',
+            'I did not test utility systems',
+          ],
+        },
+        {
+          type: 'multipleChoice',
+          title: 'Did those utilities respect expected restrictions such as class, level, cooldown, charges, range, pet state, or disabled feature gates?',
+          choices: ['Yes', 'No', 'Partly', 'I did not test restrictions'],
+        },
+        { type: 'paragraph', title: 'Pet Bags / Autoskills / UseItem / AutoFollow notes' },
       ],
     },
     {

@@ -3,19 +3,28 @@
 This branch is the maintained source of truth for the combined custom EQEmu
 distribution on top of a clean EQEmu base:
 
-- AutoLoot
+- Advanced Loot
 - Live Items / Item Forge
 - Live Spells / Spell Forge
 - Achievements
 - Multiclass
+- GearScore / ItemPower
 - Item Rarity
-- Native Interface / Gearscore
+- Native Interface / MQ Helpers
 - Tradeskills
 - HP Fix
 - EQEMU General Code
 - AI NPC Response
 - Augs in Augs
 - Dynamic Quests
+- Pet Bags / Syncrosatchel
+- Faction Reputation Window
+- DPS Parser
+- Fellowships
+- Autoskills
+- UseItem Command
+- Improved AutoFollow
+- Server Auth Stats
 
 ## Branch Shape
 
@@ -36,9 +45,27 @@ Feature gates live in the `CustomFeatures` rule category:
 - `CustomFeatures:HpFixEnabled`
 - `CustomFeatures:AiDialogueEnabled`
 - `CustomFeatures:TradeskillsEnabled`
+- `CustomFeatures:TradeskillMakeAllLimit`
 - `CustomFeatures:AugsInAugsEnabled`
 - `CustomFeatures:DynamicQuestsEnabled`
 - `CustomFeatures:MqInterfaceEnabled`
+- `CustomFeatures:PetBagsEnabled`
+- `CustomFeatures:FactionWindowEnabled`
+- `CustomFeatures:FactionWindowShowAllByDefault`
+- `CustomFeatures:FactionWindowMaxRowsPerSnapshot`
+- `CustomFeatures:DpsParserEnabled`
+- `CustomFeatures:DpsParserSnapshotIntervalMS`
+- `CustomFeatures:DpsParserEncounterTimeoutMS`
+- `CustomFeatures:ImprovedAutoFollowEnabled`
+- `CustomFeatures:UseItemCommandEnabled`
+- `CustomFeatures:AutoskillsEnabled`
+- `CustomFeatures:ServerAuthStatsEnabled`
+- `CustomFeatures:FellowshipsEnabled`
+- `CustomFeatures:FellowshipOpcodeDiscoveryEnabled`
+- `CustomFeatures:FellowshipMaxMembers`
+- `CustomFeatures:FellowshipCampfireRequiredNearbyMembers`
+- `CustomFeatures:FellowshipCampfireNearbyRadius`
+- `CustomFeatures:FellowshipCampfireDurationSeconds`
 
 Use `#customfeatures` in-game as a GM admin to print the current all-features gate
 state. When adding or changing feature behavior, gate it at server authority
@@ -51,15 +78,25 @@ feature from doing real work.
 
 The combined custom database manifest uses:
 
-- Custom version `1`: AutoLoot schema.
+- Custom version `1`: Legacy source-backed AutoLoot schema retained only as migration history.
 - Custom version `2`: Achievement schema.
 - Custom version `3`: Achievement catalog seed.
 - Custom version `4`: Live hunter achievement seed.
 - Custom version `5`: Gearscore item power schema.
 - Custom version `6`: Item rarity schema.
 - Custom version `7`: Multiclass schema.
+- Custom version `8`: Legacy AutoLoot schema repair for older testbeds.
+- Custom version `9`: Achievement reward/account unlock schema repair.
+- Custom version `10`: All-equipment/all-races testbed convenience update.
+- Custom version `11`: Syncrosatchel pet bag rules.
+- Custom version `12`: Tutorial B pet bag vendor seed.
+- Custom versions `13`-`15`: Pet bag vendor and item-cache visibility repairs.
+- Custom version `16`: Faction window preference schema.
+- Custom version `17`: Fellowship schema.
+- Custom version `18`: Fellowship invite persistence schema.
+- Custom version `19`: Advanced Loot live schema; drops legacy `custom_autoloot_*` tables.
 
-`common/version.h` sets `CUSTOM_BINARY_DATABASE_VERSION` to `7`.
+`common/version.h` sets `CUSTOM_BINARY_DATABASE_VERSION` to `19`.
 
 ## Native Client Assets
 
@@ -81,16 +118,31 @@ client DLL.
 - `EQUI_NativeHpFixWnd.xml`
 - `EQUI_NativeAugsInAugsWnd.xml`
 - `EQUI_NativeDynamicQuestsWnd.xml`
+- `EQUI_NativeFactionWnd.xml`
+- `EQUI_NativeDpsWnd.xml`
 
-The runtime handles `AUTOLOOT|`, `LIVEITEM|`, `LIVESPELL|`, `ACH|`, `HPFIX|`,
-`ITEMPOWER|`, and `ITEMRARITY|` transport lines. It also owns the native
-interface module for map commands, native interface diagnostics, and
-Gearscore/ItemPower ItemDisplay decoration. It is no longer only lab code,
-but it is still monolithic internally: most feature-specific client behavior
-lives in `client_files/native_autoloot/eq-core-dll/src/core_autoloot_native.h`
-or `client_files/native_autoloot/eq-core-dll/src/native_interface.cpp`.
-The next cleanup is splitting that into a reusable native-client base plus
-feature-specific native modules.
+The runtime handles these chat transport lines:
+
+- `ADVLOOT|...`
+- `LIVEITEM|...`
+- `LIVESPELL|...`
+- `ACH|...`
+- `MULTICLASS|...`
+- `ITEMPOWER|...`
+- `ITEMRARITY|...`
+- `HPFIX|...`
+- `FACTION|...`
+- `DPS|...`
+
+It also owns native interface diagnostics, map helpers, slash-command rewrites such
+as `/useitem` and improved autofollow, Gearscore/ItemPower ItemDisplay decoration,
+and the custom `OP_ServerAuthStats` side-channel consumed by native labels. It is no
+longer only lab code, but it is still monolithic internally: most feature-specific
+client behavior lives in
+`client_files/native_autoloot/eq-core-dll/src/core_autoloot_native.h` or
+`client_files/native_autoloot/eq-core-dll/src/native_interface.cpp`. The next cleanup
+is splitting that into a reusable native-client base plus feature-specific native
+modules.
 
 ## AI NPC Response
 
@@ -196,10 +248,11 @@ The combined player feedback form pipeline lives under `features/all-features/`:
 
 Use this all-features form for public bundle testing instead of the narrower
 Live Items-only form. It asks patch/login once, then covers the player-visible
-tests for Live Items, Augs-in-Augs, AutoLoot, Achievements, Multiclass, Live
+tests for Live Items, Augs-in-Augs, Advanced Loot, Achievements, Multiclass, Live
 Spells, AI NPC Response, Dynamic Quests, Gearscore, Item Rarity, Native
-Interface, HP Fix, Tradeskills, and general stability without duplicating setup
-questions in each feature section.
+Interface, HP Fix, Tradeskills, Faction, DPS, Fellowships, Pet Bags, Autoskills,
+UseItem, AutoFollow, and general stability without duplicating setup questions in
+each feature section.
 
 ## Verification
 

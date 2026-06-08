@@ -9,6 +9,7 @@
 */
 #pragma once
 
+#include "common/advanced_loot.h"
 #include "common/types.h"
 
 #include <ctime>
@@ -25,19 +26,8 @@ class Seperator;
 
 class AutoLootManager {
 public:
-	enum class VoteChoice {
-		Unset,
-		Need,
-		Greed,
-		Pass
-	};
-
-	enum class LootFilterDecision {
-		Unset,
-		AlwaysNeed,
-		AlwaysGreed,
-		Never
-	};
+	using VoteChoice = EQ::AdvancedLoot::VoteChoice;
+	using LootFilterDecision = EQ::AdvancedLoot::LootFilterDecision;
 
 	void Process();
 	void ProcessCorpseDeath(Corpse *corpse, Mob *killer);
@@ -82,6 +72,7 @@ private:
 		bool dynamic_instance = false;
 		bool auto_roll = false;
 		bool free_grab = false;
+		bool assigned_from_shared = false;
 		std::string item_name;
 		std::string corpse_name;
 		std::string state = "waiting";
@@ -89,6 +80,13 @@ private:
 		std::map<uint32, VoteChoice> votes;
 		time_t created_at = 0;
 		time_t vote_started_at = 0;
+	};
+
+	struct LootSource {
+		Client *client = nullptr;
+		std::string killer_name;
+		std::string owner_name;
+		std::string source_type;
 	};
 
 	CharacterSettings GetCharacterSettings(uint32 character_id, bool create_enabled = false);
@@ -100,13 +98,15 @@ private:
 	void RemoveFilter(uint32 character_id, uint32 item_id);
 	std::vector<FilterEntry> GetFilters(uint32 character_id);
 
+	LootSource ResolveLootSource(Mob *killer);
 	Client *ResolveLootClient(Mob *killer);
 	Client *FindAutoLootClient(Client *resolved_client, Corpse *corpse);
 	Client *DetermineMasterLooter(Group *group, Corpse *corpse, Client *fallback);
 	std::vector<Client *> GetGroupClients(Group *group);
+	std::vector<Client *> GetGroupClientsByID(uint32 group_id);
 
-	bool ProcessCorpse(Corpse *corpse, Client *resolved_client);
-	bool QueueCorpseEntries(Corpse *corpse, Client *resolved_client);
+	bool ProcessCorpse(Corpse *corpse, Client *resolved_client, const LootSource *source = nullptr);
+	bool QueueCorpseEntries(Corpse *corpse, Client *resolved_client, const LootSource *source = nullptr);
 	bool HasQueuedEntry(uint16 corpse_id, uint16 loot_slot) const;
 	bool IsEntryVisibleToClient(const LootEntry &entry, Client *client) const;
 	void PruneLootEntries();
@@ -119,6 +119,7 @@ private:
 	void HandleSharedLootAction(Client *client, uint32 entry_id, const std::string &action, const Seperator *sep);
 	void HandlePersonalLootCommand(Client *client, const Seperator *sep);
 	void InspectEntryForClient(Client *client, uint32 entry_id);
+	void SendManageInfo(Client *client, uint32 entry_id);
 	void RecordSharedVote(Client *client, uint32 entry_id, VoteChoice choice, bool set_always_rule);
 	void ResolveSharedVote(uint32 entry_id, bool timeout);
 	std::vector<Client *> GetEligibleSharedLootClients(const LootEntry &entry, Corpse *corpse);
@@ -127,6 +128,7 @@ private:
 	bool LeaveEntryForClient(Client *client, uint32 entry_id, bool add_never_filter);
 	void FinalizeCorpse(Corpse *corpse, Client *coin_client);
 	void LootCoin(Corpse *corpse, Client *client);
+	void MaybeAutoShowLootWindow(Client *client, bool has_new_items);
 
 	void SendStatus(Client *client);
 	void SendNativeStatus(Client *client);
@@ -136,6 +138,8 @@ private:
 	void Audit(uint32 character_id, const std::string &action, uint32 item_id = 0, uint32 quantity = 0, const std::string &detail = "");
 
 	std::map<uint32, LootEntry> m_loot_entries;
+	std::map<uint32, uint32> m_group_master_looters;
+	std::map<uint32, std::map<uint32, time_t>> m_pending_filter_removals;
 	uint32 m_next_loot_entry_id = 1;
 	time_t m_last_process = 0;
 };

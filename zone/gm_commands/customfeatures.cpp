@@ -22,7 +22,7 @@ void command_customfeatures(Client *c, const Seperator *)
 	c->Message(Chat::White, "All Features rule gates:");
 	SendFeatureStatus(c, "Multiclass", RuleB(CustomFeatures, MulticlassEnabled));
 	SendFeatureStatus(c, "Achievements", RuleB(CustomFeatures, AchievementsEnabled));
-	SendFeatureStatus(c, "AutoLoot", RuleB(CustomFeatures, AutoLootEnabled));
+	SendFeatureStatus(c, "Advanced Loot", RuleB(CustomFeatures, AutoLootEnabled));
 	SendFeatureStatus(c, "GearScore", RuleB(CustomFeatures, GearScoreEnabled));
 	SendFeatureStatus(c, "Live Items", RuleB(CustomFeatures, LiveItemsEnabled));
 	SendFeatureStatus(c, "Live Spells", RuleB(CustomFeatures, LiveSpellsEnabled));

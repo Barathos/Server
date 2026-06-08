@@ -1,6 +1,6 @@
 # All Features Integration Audit
 
-Last updated: 2026-06-01
+Last updated: 2026-06-08
 
 ## Scope
 
@@ -45,15 +45,16 @@ git diff --check
 
 ## Remaining Integration Work
 
-- Native DLL behavior still needs merge work for newer native features. The
-  current bundle DLL handles `AUTOLOOT|`, `LIVEITEM|`, `LIVESPELL|`, and `ACH|`.
-  Standalone native code exists for at least `MULTICLASS|`, `HPFIX|`,
-  `ITEMPOWER|`, and `ITEMRARITY|`; those handlers are not yet merged into this
-  bundle DLL.
-- Custom database manifest still needs final all-features version sequencing for
-  Multiclass and Gearscore schemas, plus a decision on SQL-only/testbed features.
-- Item Rarity standalone expects its own separate `client_files/item_rarity`
-  DLL, but the all-features bundle should use one bundle-owned `dinput8.dll`;
+- Native DLL behavior has moved beyond the original merge checkpoint. The bundle
+  DLL now handles `ADVLOOT|`, `LIVEITEM|`, `LIVESPELL|`, `ACH|`, `MULTICLASS|`,
+  `HPFIX|`, `ITEMPOWER|`, `ITEMRARITY|`, `FACTION|`, and `DPS|` transport lines,
+  plus native helper paths such as `/useitem`, improved autofollow, map/native
+  diagnostics, and `OP_ServerAuthStats` label data.
+- The custom database manifest is sequenced through custom version `19`.
+  Remaining database work is feature hardening, repair/idempotency checks, and
+  seed/testbed coverage rather than basic version ownership.
+- Item Rarity standalone still documents a separate `client_files/item_rarity`
+  DLL in places, but the all-features bundle uses one bundle-owned `dinput8.dll`;
   do not copy that separate DLL as source of truth.
 - Several standalone projects remain dirty/uncommitted. This bundle checkpoint
   owns the copied payloads here, but does not make those standalone branches clean.

@@ -65,12 +65,14 @@ Description:
    - Type: Checkboxes
    - Required: No
    - Choices:
-     - AutoLoot window
+     - Advanced Loot window
      - Item Forge window
      - Spell Forge window
      - Achievements window
      - Multiclass window
      - HP Fix overlay/window
+     - Faction window
+     - DPS Parser window
      - Native item display or map info
      - I did not try native/custom UI
 
@@ -118,13 +120,13 @@ Description:
     - Required: No
     - Help text: `Best item, broken item, NPC issue, missing stat, persistence problem, duplicate/lost item, or anything confusing.`
 
-## Section 4: AutoLoot
+## Section 4: Advanced Loot
 
 Description:
 
-`AutoLoot lets players configure loot handling from the native window and server-owned loot filters. Test with normal corpse loot if possible.`
+`Advanced Loot lets players configure loot handling from the native window and server-owned loot filters. Test with normal corpse loot if possible.`
 
-13. Did the AutoLoot window open and show status or filter information?
+13. Did the Advanced Loot window open and show status or filter information?
     - Type: Multiple choice
     - Required: Yes
     - Choices:
@@ -133,7 +135,7 @@ Description:
       - It opened but looked wrong
       - I did not test this
 
-14. Could you mark an item Keep, Ignore, or Unset and see the expected loot behavior later?
+14. Could you mark an item Always Need, Always Greed, Never, or Unset and see the expected behavior later?
     - Type: Multiple choice
     - Required: No
     - Choices:
@@ -142,7 +144,17 @@ Description:
       - Partly
       - I did not test filters
 
-15. AutoLoot notes
+15. If you grouped, did Shared Loot, Master Looter, Need, Greed, No, or timeout behavior make sense?
+    - Type: Multiple choice
+    - Required: No
+    - Choices:
+      - Yes
+      - No
+      - Partly
+      - I only tested solo loot
+      - I did not test this
+
+16. Advanced Loot notes
     - Type: Paragraph
     - Required: No
 
@@ -152,7 +164,7 @@ Description:
 
 `Achievements tracks categories, objectives, progress, and completion. The native window should query without red database errors.`
 
-16. Did the Achievements window open and load categories/progress?
+17. Did the Achievements window open and load categories/progress?
     - Type: Multiple choice
     - Required: Yes
     - Choices:
@@ -161,7 +173,7 @@ Description:
       - It opened but did not load data
       - I did not test this
 
-17. Did any achievement progress update from normal play, such as leveling, zoning, kills, or tasks?
+18. Did any achievement progress update from normal play, such as leveling, zoning, kills, or tasks?
     - Type: Multiple choice
     - Required: No
     - Choices:
@@ -170,7 +182,7 @@ Description:
       - Not sure
       - I did not test progress
 
-18. Achievements notes
+19. Achievements notes
     - Type: Paragraph
     - Required: No
 
@@ -180,7 +192,7 @@ Description:
 
 `Multiclass lets a character use a trio profile for class capability, pets, skills, disciplines, melody, and item eligibility. Test the main window first, then any class-specific tools that apply to your trio.`
 
-19. Did `/mc` or `#mc open` open the Multiclass window and show your profile?
+20. Did `/mc` or `#mc open` open the Multiclass window and show your profile?
     - Type: Multiple choice
     - Required: Yes
     - Choices:
@@ -189,7 +201,7 @@ Description:
       - It opened but looked wrong
       - I did not test this
 
-20. Which Multiclass behavior did you try?
+21. Which Multiclass behavior did you try?
     - Type: Checkboxes
     - Required: No
     - Choices:
@@ -200,7 +212,7 @@ Description:
       - Checked item usability/equipment masks
       - I did not test Multiclass behavior
 
-21. Multiclass notes
+22. Multiclass notes
     - Type: Paragraph
     - Required: No
 
@@ -210,7 +222,7 @@ Description:
 
 `Live Spells creates generated spell scrolls and server-patched spell data. Test one simple spell if your character can scribe/cast it.`
 
-22. Did the Spell Forge window open?
+23. Did the Spell Forge window open?
     - Type: Multiple choice
     - Required: Yes
     - Choices:
@@ -219,7 +231,7 @@ Description:
       - It opened but looked wrong
       - I did not test this
 
-23. Were you able to create, scribe, memorize, and cast a generated spell?
+24. Were you able to create, scribe, memorize, and cast a generated spell?
     - Type: Multiple choice
     - Required: No
     - Choices:
@@ -228,7 +240,7 @@ Description:
       - I created a scroll but could not complete the full flow
       - I did not test generated spells
 
-24. Live Spells notes
+25. Live Spells notes
     - Type: Paragraph
     - Required: No
 
@@ -238,7 +250,7 @@ Description:
 
 `Sage Aurelian in tutorialb uses the AI NPC Response bridge. Ask one short in-character question and watch whether the response arrives cleanly.`
 
-25. Did Sage Aurelian respond to hail or a simple question?
+26. Did Sage Aurelian respond to hail or a simple question?
     - Type: Multiple choice
     - Required: Yes
     - Choices:
@@ -247,7 +259,7 @@ Description:
       - Response was extremely delayed
       - I did not test this
 
-26. Did the AI response feel useful and in-character?
+27. Did the AI response feel useful and in-character?
     - Type: Multiple choice
     - Required: No
     - Choices:
@@ -256,7 +268,7 @@ Description:
       - No
       - I did not test enough
 
-27. AI NPC notes
+28. AI NPC notes
     - Type: Paragraph
     - Required: No
 
@@ -266,7 +278,7 @@ Description:
 
 `Scout Deryn in tutorialb offers a prototype task. Accept it, make progress, and check the normal quest/task journal.`
 
-28. Were you able to accept and progress Scout Deryn's dynamic quest?
+29. Were you able to accept and progress Scout Deryn's dynamic quest?
     - Type: Multiple choice
     - Required: Yes
     - Choices:
@@ -275,7 +287,7 @@ Description:
       - Could not accept it
       - I did not test this
 
-29. Did the quest journal/task UI match what happened in game?
+30. Did the quest journal/task UI match what happened in game?
     - Type: Multiple choice
     - Required: No
     - Choices:
@@ -284,7 +296,7 @@ Description:
       - Partly
       - I did not check the journal
 
-30. Dynamic Quest notes
+31. Dynamic Quest notes
     - Type: Paragraph
     - Required: No
 
@@ -294,7 +306,7 @@ Description:
 
 `Gearscore, Item Rarity, and Native Interface add information to item links, item inspection, and sometimes map/spawn display. Inspect several items, including any random Live Items you find.`
 
-31. Did item inspect/link windows show extra useful information such as item level, score, rarity, item id, stats, aug slots, or spell details?
+32. Did item inspect/link windows show extra useful information such as item level, score, rarity, item id, stats, aug slots, or spell details?
     - Type: Multiple choice
     - Required: Yes
     - Choices:
@@ -303,7 +315,7 @@ Description:
       - Some items did, some did not
       - I did not inspect items
 
-32. Did rarity colors or extra item text make items easier to understand without making the window messy?
+33. Did rarity colors or extra item text make items easier to understand without making the window messy?
     - Type: Multiple choice
     - Required: No
     - Choices:
@@ -312,7 +324,7 @@ Description:
       - Mixed
       - I did not see rarity or score info
 
-33. Native Interface / Gearscore / Item Rarity notes
+34. Native Interface / Gearscore / Item Rarity notes
     - Type: Paragraph
     - Required: No
 
@@ -322,7 +334,7 @@ Description:
 
 `HP Fix adds a native side-channel for accurate high-HP display while keeping normal client behavior intact. Even without high-HP gear, the overlay should not spam chat or show nonsense.`
 
-34. Did the HP display/overlay look sane during normal damage, healing, zoning, or equipping?
+35. Did the HP display/overlay look sane during normal damage, healing, zoning, or equipping?
     - Type: Multiple choice
     - Required: No
     - Choices:
@@ -331,7 +343,7 @@ Description:
       - I saw no HP Fix UI
       - I did not test this
 
-35. HP Fix notes
+36. HP Fix notes
     - Type: Paragraph
     - Required: No
 
@@ -339,38 +351,107 @@ Description:
 
 Description:
 
-`Tradeskills and general-code changes are not currently a separate public quest line. Do one normal gameplay check instead: open a tradeskill container or perform ordinary actions you would normally do, and report if anything regressed.`
+`Tradeskills includes the server-owned make-all path, command checks, and a native window shell. Open a tradeskill container or perform ordinary actions you would normally do, and report if anything regressed.`
 
-36. Did normal tradeskill/container UI and general gameplay remain stable?
+37. Did normal tradeskill/container UI, make-all behavior, and general gameplay remain stable?
     - Type: Multiple choice
     - Required: No
     - Choices:
       - Yes
       - No, I saw a regression
+      - Partly
       - I did not test this
 
-37. Stability notes
+38. Stability notes
     - Type: Paragraph
     - Required: No
 
-## Section 13: Overall Feedback
+## Section 13: Faction, DPS, And Fellowship Tools
 
-38. Which features felt ready or fun?
+Description:
+
+`Faction and DPS use custom native windows. Fellowships currently use server persistence, stock/native packet work, and command/debug paths while the stock UI behavior is being finalized.`
+
+39. Did `#rep` or the Faction window show standings, search, pin, hide, or target-faction information correctly?
+    - Type: Multiple choice
+    - Required: No
+    - Choices:
+      - Yes
+      - No
+      - Partly
+      - I did not test this
+
+40. Did `#dps` or the DPS Parser window show sensible combat damage, healing, incoming damage, or pet contribution rows?
+    - Type: Multiple choice
+    - Required: No
+    - Choices:
+      - Yes
+      - No
+      - Partly
+      - I did not test this
+
+41. If you had multiple testers, did Fellowship create, invite, accept, leave, remove, campfire, or stock UI behavior work?
+    - Type: Multiple choice
+    - Required: No
+    - Choices:
+      - Yes
+      - No
+      - Partly
+      - I did not have multiple testers
+      - I did not test this
+
+42. Faction, DPS, or Fellowship notes
     - Type: Paragraph
     - Required: No
 
-39. Which features felt confusing, noisy, too strong, too weak, or unfinished?
+## Section 14: Pet Bags, Autoskills, UseItem, And AutoFollow
+
+Description:
+
+`These are utility systems without a separate quest line. Try only the helpers that apply to your character and report whether they obey normal gameplay limits.`
+
+43. Which utility systems did you try?
+    - Type: Checkboxes
+    - Required: No
+    - Choices:
+      - Syncrosatchel pet bags on a summoned or charmed pet
+      - #autoskill setup or automatic combat skill use
+      - #useitem or native /useitem rewrite
+      - Improved AutoFollow
+      - Server-auth/native stat display behavior
+      - I did not test utility systems
+
+44. Did those utilities respect expected restrictions such as class, level, cooldown, charges, range, pet state, or disabled feature gates?
+    - Type: Multiple choice
+    - Required: No
+    - Choices:
+      - Yes
+      - No
+      - Partly
+      - I did not test restrictions
+
+45. Pet Bags / Autoskills / UseItem / AutoFollow notes
     - Type: Paragraph
     - Required: No
 
-40. Overall, how excited are you about the all-features server package?
+## Section 15: Overall Feedback
+
+46. Which features felt ready or fun?
+    - Type: Paragraph
+    - Required: No
+
+47. Which features felt confusing, noisy, too strong, too weak, or unfinished?
+    - Type: Paragraph
+    - Required: No
+
+48. Overall, how excited are you about the all-features server package?
     - Type: Linear scale
     - Required: No
     - Scale: 1 to 5
     - Low label: `Not excited`
     - High label: `Very excited`
 
-41. Would you keep playing on a server with these systems enabled?
+49. Would you keep playing on a server with these systems enabled?
     - Type: Multiple choice
     - Required: No
     - Choices:
@@ -379,9 +460,9 @@ Description:
       - No
       - Not sure
 
-## Section 14: Bugs Or Problems
+## Section 16: Bugs Or Problems
 
-42. Did you hit any bugs or broken behavior?
+50. Did you hit any bugs or broken behavior?
     - Type: Multiple choice
     - Required: Yes
     - Choices:
@@ -390,12 +471,12 @@ Description:
       - Yes, multiple bugs
       - Not sure
 
-43. Bug report
+51. Bug report
     - Type: Paragraph
     - Required: No
     - Help text: `What were you doing? What did you expect? What actually happened? Include item links, NPC names, commands, screenshots, or zone names if useful.`
 
-44. Extra notes
+52. Extra notes
     - Type: Paragraph
     - Required: No
 
@@ -404,7 +485,7 @@ Description:
 ```text
 All-features public test is ready.
 
-Patch your RoF2 client with the all-features patcher, log in, and spend a little time in tutorialb. Please test what you can: Live Items, AutoLoot, Achievements, Multiclass, Live Spells, Sage Aurelian AI dialogue, Dynamic Quests, item inspect/rarity/gearscore, and general stability.
+Patch your RoF2 client with the all-features patcher, log in, and spend a little time in tutorialb. Please test what you can: Live Items, Advanced Loot, Achievements, Multiclass, Live Spells, Sage Aurelian AI dialogue, Dynamic Quests, item inspect/rarity/gearscore, Faction, DPS, Fellowships, Pet Bags, Autoskills, UseItem, AutoFollow, and general stability.
 
 When you are done, fill out this Google Form:
 <form link here>

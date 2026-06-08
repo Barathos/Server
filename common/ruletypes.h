@@ -40,7 +40,7 @@
 RULE_CATEGORY(CustomFeatures)
 RULE_BOOL(CustomFeatures, MulticlassEnabled, true, "Enables the custom Multiclass trio feature, including trio profiles, secondary class permissions, native UI sync, resonance bonuses, and multi-pet behavior.")
 RULE_BOOL(CustomFeatures, AchievementsEnabled, true, "Enables the custom Achievements feature, including achievement progress processing, commands, and native achievement window sync.")
-RULE_BOOL(CustomFeatures, AutoLootEnabled, true, "Enables the custom source-backed AutoLoot, LootFilter, AutoSell, Need/Greed, and native AutoLoot window behavior.")
+RULE_BOOL(CustomFeatures, AutoLootEnabled, true, "Enables the custom Advanced Loot flow, loot filters, Need/Greed, and native Advanced Loot window behavior.")
 RULE_BOOL(CustomFeatures, GearScoreEnabled, true, "Enables the custom item power/gearscore transport and #itemscore tools.")
 RULE_BOOL(CustomFeatures, LiveItemsEnabled, true, "Enables the custom Live Items and Item Forge testing commands and native Item Forge behavior.")
 RULE_BOOL(CustomFeatures, LiveSpellsEnabled, true, "Enables the custom Live Spells and Spell Forge commands, server spell patching, and native Spell Forge sync.")

@@ -14,6 +14,7 @@
 #include "common/item_data.h"
 #include "common/item_instance.h"
 #include "common/deity.h"
+#include "common/multiclass_logic.h"
 #include "common/races.h"
 #include "common/rulesys.h"
 #include "common/seperator.h"
@@ -65,10 +66,12 @@ uint32 ToUInt(const char *value)
 	return value ? Strings::ToUnsignedInt(value) : 0;
 }
 
-bool IsPetClass(uint8 class_id)
-{
-	return class_id == Class::Magician || class_id == Class::Necromancer || class_id == Class::Beastlord;
-}
+using EQ::Multiclass::IsBardClass;
+using EQ::Multiclass::IsHealerClass;
+using EQ::Multiclass::IsIntCasterClass;
+using EQ::Multiclass::IsPetClass;
+using EQ::Multiclass::IsTankClass;
+using EQ::Multiclass::IsWisCasterClass;
 
 constexpr const char *PetClassOriginVariable = "pet_bag_origin_class";
 
@@ -106,51 +109,6 @@ bool IsPetHealthAction(const std::string &action_name)
 		action_name == "stats" ||
 		action_name == "inventory" ||
 		action_name == "inv";
-}
-
-bool IsTankClass(uint8 class_id)
-{
-	return class_id == Class::Warrior || class_id == Class::Paladin || class_id == Class::ShadowKnight;
-}
-
-bool IsHealerClass(uint8 class_id)
-{
-	return class_id == Class::Cleric || class_id == Class::Druid || class_id == Class::Shaman;
-}
-
-bool IsIntCasterClass(uint8 class_id)
-{
-	switch (class_id) {
-		case Class::ShadowKnight:
-		case Class::Bard:
-		case Class::Necromancer:
-		case Class::Wizard:
-		case Class::Magician:
-		case Class::Enchanter:
-			return true;
-		default:
-			return false;
-	}
-}
-
-bool IsWisCasterClass(uint8 class_id)
-{
-	switch (class_id) {
-		case Class::Cleric:
-		case Class::Paladin:
-		case Class::Ranger:
-		case Class::Druid:
-		case Class::Shaman:
-		case Class::Beastlord:
-			return true;
-		default:
-			return false;
-	}
-}
-
-bool IsBardClass(uint8 class_id)
-{
-	return class_id == Class::Bard;
 }
 
 uint8 GetBestSpellLevelForSlots(const MulticlassManager::ClassSlots &class_slots, uint16 spell_id)
@@ -1104,26 +1062,12 @@ MulticlassManager::ClassSlots MulticlassManager::GetClassSlots(const Client *cli
 
 uint32 MulticlassManager::GetClassMask(const Client *client)
 {
-	uint32 mask = 0;
-	for (const auto class_id : GetClassSlots(client)) {
-		if (IsPlayerClass(class_id)) {
-			mask |= GetPlayerClassBit(class_id);
-		}
-	}
-
-	return mask;
+	return EQ::Multiclass::BuildClassMask(GetClassSlots(client));
 }
 
 uint32 MulticlassManager::GetAAClassMask(const Client *client)
 {
-	uint32 mask = 0;
-	for (const auto class_id : GetClassSlots(client)) {
-		if (IsPlayerClass(class_id)) {
-			mask |= (1 << class_id);
-		}
-	}
-
-	return mask;
+	return EQ::Multiclass::BuildAAClassMask(GetClassSlots(client));
 }
 
 uint8 MulticlassManager::GetBestSpellLevel(const Client *client, uint16 spell_id)

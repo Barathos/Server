@@ -7,6 +7,7 @@ set(tests_sources
 )
 
 set(tests_headers
+	advanced_loot_logic_test.h
 	atobool_test.h
 	data_verification_test.h
 	dynamic_item_test.h
@@ -14,7 +15,9 @@ set(tests_headers
 	fixed_memory_variable_test.h
 	hextoi_32_64_test.h
 	ipc_mutex_test.h
+	item_power_test.h
 	memory_mapped_file_test.h
+	multiclass_logic_test.h
 	string_util_test.h
 	skills_util_test.h
 	task_state_test.h

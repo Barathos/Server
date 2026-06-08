@@ -61,7 +61,36 @@ struct NativeAutoLootRow
 	std::string source = "corpse";
 	std::string state = "waiting";
 	std::string rule = "-";
+	std::string owner;
+	std::string assignee;
+	std::string master_name;
+	std::string lock_reason;
 	bool auto_roll = false;
+	bool free_grab = false;
+	bool eligible = false;
+	bool manage = false;
+	bool can_loot = false;
+	bool can_vote = false;
+	bool can_ask = false;
+	bool can_roll = false;
+	bool can_freegrab = false;
+	bool can_give = false;
+	bool can_leave = false;
+	int roll_seconds = 0;
+	int need_count = 0;
+	int greed_count = 0;
+	int no_count = 0;
+	int waiting_count = 0;
+};
+
+struct NativeAutoLootManagePlayer
+{
+	int entry_id = 0;
+	int character_id = 0;
+	bool master = false;
+	bool eligible = false;
+	std::string name;
+	std::string vote = "waiting";
 };
 
 static void NativeAutoLootSendCommand(const char* command);
@@ -71,6 +100,7 @@ static const char* NativeAutoLootToggleApplyFiltersCommand();
 static const char* NativeAutoLootToggleMasterCandidateCommand();
 static void NativeAutoLootShowRulesWindow();
 static void NativeAutoLootShowSettingsWindow();
+static void NativeAutoLootShowManageWindow(int entry_id);
 static void NativeAutoLootMaybeSendInitialRequests();
 static void NativeSpellForgeShowWindow(const std::string& payload);
 static void NativeItemForgeShowWindow(const std::string& payload);
@@ -125,6 +155,12 @@ public:
 		NoButton = (CButtonWnd*)GetChildItem("AALW_NoButton");
 		AlwaysNeedButton = (CButtonWnd*)GetChildItem("AALW_AlwaysNeedButton");
 		AlwaysGreedButton = (CButtonWnd*)GetChildItem("AALW_AlwaysGreedButton");
+		AskButton = (CButtonWnd*)GetChildItem("AALW_AskButton");
+		RollButton = (CButtonWnd*)GetChildItem("AALW_RollButton");
+		FreeGrabButton = (CButtonWnd*)GetChildItem("AALW_FreeGrabButton");
+		GiveButton = (CButtonWnd*)GetChildItem("AALW_GiveButton");
+		ManageButton = (CButtonWnd*)GetChildItem("AALW_ManageButton");
+		LeaveCorpseButton = (CButtonWnd*)GetChildItem("AALW_LeaveCorpseButton");
 		ApplyFiltersCheck = (CButtonWnd*)GetChildItem("AALW_ApplyFiltersCheck");
 		GroupedByNpcCheck = (CButtonWnd*)GetChildItem("AALW_GroupedByNpcCheck");
 
@@ -281,6 +317,44 @@ public:
 				SetStatus("Marked Always Greed.");
 				return 1;
 			}
+
+			if (pWnd == (CXWnd*)AskButton) {
+				char command[128];
+				sprintf_s(command, "/say #advloot action %d ask", row->entry_id);
+				NativeAutoLootSendCommand(command);
+				SetStatus("Started Ask/Roll.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)RollButton) {
+				char command[128];
+				sprintf_s(command, "/say #advloot action %d roll", row->entry_id);
+				NativeAutoLootSendCommand(command);
+				SetStatus("Resolved roll.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)FreeGrabButton) {
+				char command[128];
+				sprintf_s(command, "/say #advloot action %d freegrab", row->entry_id);
+				NativeAutoLootSendCommand(command);
+				SetStatus("Set Free Grab.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)GiveButton || pWnd == (CXWnd*)ManageButton) {
+				NativeAutoLootShowManageWindow(row->entry_id);
+				SetStatus("Opened Manage Loot.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)LeaveCorpseButton) {
+				char command[128];
+				sprintf_s(command, "/say #advloot action %d leave", row->entry_id);
+				NativeAutoLootSendCommand(command);
+				SetStatus("Left item on corpse.");
+				return 1;
+			}
 		}
 
 		return CSidlScreenWnd::WndNotification(pWnd, Message, unknown);
@@ -325,6 +399,12 @@ private:
 	CButtonWnd* NoButton = nullptr;
 	CButtonWnd* AlwaysNeedButton = nullptr;
 	CButtonWnd* AlwaysGreedButton = nullptr;
+	CButtonWnd* AskButton = nullptr;
+	CButtonWnd* RollButton = nullptr;
+	CButtonWnd* FreeGrabButton = nullptr;
+	CButtonWnd* GiveButton = nullptr;
+	CButtonWnd* ManageButton = nullptr;
+	CButtonWnd* LeaveCorpseButton = nullptr;
 	CButtonWnd* ApplyFiltersCheck = nullptr;
 	CButtonWnd* GroupedByNpcCheck = nullptr;
 	int LastLayoutWidth = 0;
@@ -350,8 +430,14 @@ static bool gNativeAutoLootLeader = false;
 static bool gNativeAutoLootMasterCandidate = true;
 static bool gNativeAutoLootAutoSplit = true;
 static bool gNativeAutoLootAutoLootAll = false;
+static bool gNativeAutoLootAutoShow = true;
+static bool gNativeAutoLootShowNewOnly = false;
+static bool gNativeAutoLootConfirmRemove = true;
+static bool gNativeAutoLootAutoRemoveLore = true;
 static bool gNativeAutoLootDebug = false;
 static bool gNativeAutoLootLog = false;
+static int gNativeAutoLootMasterCharacterId = 0;
+static std::string gNativeAutoLootMasterName;
 static int gNativeAutoLootInGamePulses = 0;
 static int gNativeAutoLootAlwaysNeedCount = 0;
 static int gNativeAutoLootAlwaysGreedCount = 0;
@@ -383,8 +469,10 @@ public:
 		RuleList = (CListWnd*)GetChildItem("AALR_RuleList");
 		RefreshButton = (CButtonWnd*)GetChildItem("AALR_RefreshButton");
 		KeepButton = (CButtonWnd*)GetChildItem("AALR_KeepButton");
+		GreedButton = (CButtonWnd*)GetChildItem("AALR_GreedButton");
 		IgnoreButton = (CButtonWnd*)GetChildItem("AALR_IgnoreButton");
 		UnsetButton = (CButtonWnd*)GetChildItem("AALR_UnsetButton");
+		AutoRollButton = (CButtonWnd*)GetChildItem("AALR_AutoRollButton");
 
 		Layout();
 		RefreshRows();
@@ -418,6 +506,13 @@ public:
 				return 1;
 			}
 
+			if (pWnd == (CXWnd*)GreedButton) {
+				sprintf_s(command, "/say #advloot filter set %d always_greed", row->item_id);
+				NativeAutoLootSendCommand(command);
+				SetStatus("Requested Always Greed rule.");
+				return 1;
+			}
+
 			if (pWnd == (CXWnd*)IgnoreButton) {
 				sprintf_s(command, "/say #advloot filter set %d never", row->item_id);
 				NativeAutoLootSendCommand(command);
@@ -429,6 +524,13 @@ public:
 				sprintf_s(command, "/say #advloot filter remove %d", row->item_id);
 				NativeAutoLootSendCommand(command);
 				SetStatus("Requested rule removal.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)AutoRollButton) {
+				sprintf_s(command, "/say #advloot filter autoroll %d %s", row->item_id, row->auto_roll ? "off" : "on");
+				NativeAutoLootSendCommand(command);
+				SetStatus("Toggled Auto Roll.");
 				return 1;
 			}
 		}
@@ -455,8 +557,10 @@ private:
 	CListWnd* RuleList = nullptr;
 	CButtonWnd* RefreshButton = nullptr;
 	CButtonWnd* KeepButton = nullptr;
+	CButtonWnd* GreedButton = nullptr;
 	CButtonWnd* IgnoreButton = nullptr;
 	CButtonWnd* UnsetButton = nullptr;
+	CButtonWnd* AutoRollButton = nullptr;
 	int LastLayoutWidth = 0;
 	int LastLayoutHeight = 0;
 };
@@ -474,6 +578,10 @@ public:
 		StatusLabel = GetChildItem("AALS_StatusLabel");
 		AutoLootCheck = (CButtonWnd*)GetChildItem("AALS_AutoLootCheck");
 		NeedGreedCheck = (CButtonWnd*)GetChildItem("AALS_NeedGreedCheck");
+		AutoShowCheck = (CButtonWnd*)GetChildItem("AALS_AutoShowCheck");
+		ShowNewCheck = (CButtonWnd*)GetChildItem("AALS_ShowNewCheck");
+		ConfirmRemoveCheck = (CButtonWnd*)GetChildItem("AALS_ConfirmRemoveCheck");
+		AutoRemoveLoreCheck = (CButtonWnd*)GetChildItem("AALS_AutoRemoveLoreCheck");
 		RefreshButton = (CButtonWnd*)GetChildItem("AALS_RefreshButton");
 		GroupNoneButton = (CButtonWnd*)GetChildItem("AALS_GroupNoneButton");
 		GroupSoloButton = (CButtonWnd*)GetChildItem("AALS_GroupSoloButton");
@@ -502,6 +610,30 @@ public:
 			if (pWnd == (CXWnd*)NeedGreedCheck) {
 				NativeAutoLootSendCommand(NativeAutoLootToggleMasterCandidateCommand());
 				SetStatus("Toggled Master Looter candidate.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)AutoShowCheck) {
+				NativeAutoLootSendCommand(gNativeAutoLootAutoShow ? "/say #advloot autoshow off" : "/say #advloot autoshow on");
+				SetStatus("Toggled Auto Show.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)ShowNewCheck) {
+				NativeAutoLootSendCommand(gNativeAutoLootShowNewOnly ? "/say #advloot shownew off" : "/say #advloot shownew on");
+				SetStatus("Toggled Show New Only.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)ConfirmRemoveCheck) {
+				NativeAutoLootSendCommand(gNativeAutoLootConfirmRemove ? "/say #advloot confirmremove off" : "/say #advloot confirmremove on");
+				SetStatus("Toggled Confirm Remove.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)AutoRemoveLoreCheck) {
+				NativeAutoLootSendCommand(gNativeAutoLootAutoRemoveLore ? "/say #advloot autoremovelore off" : "/say #advloot autoremovelore on");
+				SetStatus("Toggled Auto Remove Lore.");
 				return 1;
 			}
 
@@ -565,6 +697,10 @@ private:
 	CXWnd* StatusLabel = nullptr;
 	CButtonWnd* AutoLootCheck = nullptr;
 	CButtonWnd* NeedGreedCheck = nullptr;
+	CButtonWnd* AutoShowCheck = nullptr;
+	CButtonWnd* ShowNewCheck = nullptr;
+	CButtonWnd* ConfirmRemoveCheck = nullptr;
+	CButtonWnd* AutoRemoveLoreCheck = nullptr;
 	CButtonWnd* RefreshButton = nullptr;
 	CButtonWnd* GroupNoneButton = nullptr;
 	CButtonWnd* GroupSoloButton = nullptr;
@@ -573,8 +709,235 @@ private:
 	CButtonWnd* GroupKillerButton = nullptr;
 };
 
+static std::vector<NativeAutoLootManagePlayer> gNativeAutoLootManagePlayers;
+static int gNativeAutoLootManageEntryId = 0;
+static int gNativeAutoLootManageMasterId = 0;
+static int gNativeAutoLootManageRollSeconds = 0;
+static bool gNativeAutoLootManageCanManage = false;
+static bool gNativeAutoLootManageFreeGrab = false;
+static bool gNativeAutoLootManageAutoRoll = false;
+static std::string gNativeAutoLootManageItemName;
+static std::string gNativeAutoLootManageSource;
+static std::string gNativeAutoLootManageState;
+static std::string gNativeAutoLootManageMasterName;
+
+class NativeAutoLootManageWnd : public CCustomWnd
+{
+public:
+	NativeAutoLootManageWnd() : CCustomWnd((char*)"NativeAutoLootManageWnd")
+	{
+		CloseOnESC = 1;
+		SetWndNotification(NativeAutoLootManageWnd);
+
+		SummaryLabel = GetChildItem("AALM_SummaryLabel");
+		StatusLabel = GetChildItem("AALM_StatusLabel");
+		PlayerList = (CListWnd*)GetChildItem("AALM_PlayerList");
+		RefreshButton = (CButtonWnd*)GetChildItem("AALM_RefreshButton");
+		AskButton = (CButtonWnd*)GetChildItem("AALM_AskButton");
+		RollButton = (CButtonWnd*)GetChildItem("AALM_RollButton");
+		FreeGrabButton = (CButtonWnd*)GetChildItem("AALM_FreeGrabButton");
+		GiveButton = (CButtonWnd*)GetChildItem("AALM_GiveButton");
+		LeaveButton = (CButtonWnd*)GetChildItem("AALM_LeaveButton");
+		SetMasterButton = (CButtonWnd*)GetChildItem("AALM_SetMasterButton");
+		ClearMasterButton = (CButtonWnd*)GetChildItem("AALM_ClearMasterButton");
+
+		RefreshRows();
+	}
+
+	int WndNotification(CXWnd* pWnd, unsigned int Message, void* unknown)
+	{
+		if (Message == XWM_CLOSE) {
+			pXWnd()->Show(0, 1);
+			return 1;
+		}
+
+		if (Message == XWM_LCLICK) {
+			if (pWnd == (CXWnd*)RefreshButton) {
+				RequestRefresh();
+				return 1;
+			}
+
+			if (gNativeAutoLootManageEntryId <= 0) {
+				SetStatus("Select shared loot from the main window.");
+				return 1;
+			}
+
+			char command[160];
+			if (pWnd == (CXWnd*)AskButton) {
+				sprintf_s(command, "/say #advloot action %d ask", gNativeAutoLootManageEntryId);
+				NativeAutoLootSendCommand(command);
+				SetStatus("Started Ask/Roll.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)RollButton) {
+				sprintf_s(command, "/say #advloot action %d roll", gNativeAutoLootManageEntryId);
+				NativeAutoLootSendCommand(command);
+				SetStatus("Resolved roll.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)FreeGrabButton) {
+				sprintf_s(command, "/say #advloot action %d freegrab", gNativeAutoLootManageEntryId);
+				NativeAutoLootSendCommand(command);
+				SetStatus("Set Free Grab.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)LeaveButton) {
+				sprintf_s(command, "/say #advloot action %d leave", gNativeAutoLootManageEntryId);
+				NativeAutoLootSendCommand(command);
+				SetStatus("Left item on corpse.");
+				return 1;
+			}
+
+			NativeAutoLootManagePlayer* player = GetSelectedPlayer();
+			if (!player && (pWnd == (CXWnd*)GiveButton || pWnd == (CXWnd*)SetMasterButton)) {
+				SetStatus("Select an eligible player first.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)GiveButton) {
+				sprintf_s(command, "/say #advloot action %d give %s", gNativeAutoLootManageEntryId, player->name.c_str());
+				NativeAutoLootSendCommand(command);
+				SetStatus("Assigned selected player.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)SetMasterButton) {
+				sprintf_s(command, "/say #advloot master set %s", player->name.c_str());
+				NativeAutoLootSendCommand(command);
+				SetStatus("Set selected player as Master Looter.");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)ClearMasterButton) {
+				NativeAutoLootSendCommand("/say #advloot master clear");
+				SetStatus("Cleared Master Looter.");
+				return 1;
+			}
+		}
+
+		return CSidlScreenWnd::WndNotification(pWnd, Message, unknown);
+	}
+
+	void RequestRefresh()
+	{
+		if (gNativeAutoLootManageEntryId <= 0) {
+			SetStatus("Select shared loot from the main window.");
+			return;
+		}
+
+		char command[128];
+		sprintf_s(command, "/say #advloot manage %d", gNativeAutoLootManageEntryId);
+		NativeAutoLootSendCommand(command);
+		SetStatus("Refreshing Manage Loot...");
+	}
+
+	void SetStatus(const char* text)
+	{
+		if (StatusLabel) {
+			CXStr value(text ? text : "");
+			StatusLabel->SetWindowTextA(value);
+		}
+	}
+
+	void RefreshRows()
+	{
+		char summary[256];
+		if (gNativeAutoLootManageEntryId > 0) {
+			sprintf_s(
+				summary,
+				"%s from %s  Master: %s  State: %s  Roll: %ds",
+				gNativeAutoLootManageItemName.empty() ? "Loot" : gNativeAutoLootManageItemName.c_str(),
+				gNativeAutoLootManageSource.empty() ? "corpse" : gNativeAutoLootManageSource.c_str(),
+				gNativeAutoLootManageMasterName.empty() ? "-" : gNativeAutoLootManageMasterName.c_str(),
+				gNativeAutoLootManageState.empty() ? "waiting" : gNativeAutoLootManageState.c_str(),
+				gNativeAutoLootManageRollSeconds
+			);
+		}
+		else {
+			sprintf_s(summary, "Select a shared loot row to manage.");
+		}
+		SetLabel(SummaryLabel, summary);
+
+		if (!PlayerList) {
+			return;
+		}
+
+		PlayerList->DeleteAll();
+		if (gNativeAutoLootManagePlayers.empty()) {
+			CXStr dash("-");
+			const int row = PlayerList->AddString(dash, 0xFFB0B0B0, 0, nullptr, nullptr);
+			CXStr empty("No eligible players loaded.");
+			PlayerList->SetItemText(row, 1, &empty);
+			PlayerList->SetItemText(row, 2, &dash);
+			PlayerList->SetItemText(row, 3, &dash);
+			return;
+		}
+
+		for (const NativeAutoLootManagePlayer& player : gNativeAutoLootManagePlayers) {
+			CXStr name(player.name.c_str());
+			const int row = PlayerList->AddString(name, player.eligible ? 0xFFFFFFFF : 0xFFB0B0B0, (uint32_t)player.character_id, nullptr, nullptr);
+			CXStr vote(player.vote.c_str());
+			CXStr master(player.master ? "Master" : "");
+			CXStr eligible(player.eligible ? "Yes" : "No");
+			PlayerList->SetItemText(row, 1, &vote);
+			PlayerList->SetItemText(row, 2, &master);
+			PlayerList->SetItemText(row, 3, &eligible);
+		}
+	}
+
+private:
+	NativeAutoLootManagePlayer* GetSelectedPlayer()
+	{
+		if (!PlayerList) {
+			return nullptr;
+		}
+
+		const int selected = PlayerList->GetCurSel();
+		if (selected < 0) {
+			return nullptr;
+		}
+
+		const int character_id = (int)PlayerList->GetItemData(selected);
+		if (character_id <= 0) {
+			return nullptr;
+		}
+
+		for (NativeAutoLootManagePlayer& player : gNativeAutoLootManagePlayers) {
+			if (player.character_id == character_id) {
+				return &player;
+			}
+		}
+
+		return nullptr;
+	}
+
+	void SetLabel(CXWnd* label, const char* text)
+	{
+		if (label) {
+			CXStr value(text ? text : "");
+			label->SetWindowTextA(value);
+		}
+	}
+
+	CXWnd* SummaryLabel = nullptr;
+	CXWnd* StatusLabel = nullptr;
+	CListWnd* PlayerList = nullptr;
+	CButtonWnd* RefreshButton = nullptr;
+	CButtonWnd* AskButton = nullptr;
+	CButtonWnd* RollButton = nullptr;
+	CButtonWnd* FreeGrabButton = nullptr;
+	CButtonWnd* GiveButton = nullptr;
+	CButtonWnd* LeaveButton = nullptr;
+	CButtonWnd* SetMasterButton = nullptr;
+	CButtonWnd* ClearMasterButton = nullptr;
+};
+
 static NativeAutoLootRulesWnd* gNativeAutoLootRulesWnd = nullptr;
 static NativeAutoLootSettingsWnd* gNativeAutoLootSettingsWnd = nullptr;
+static NativeAutoLootManageWnd* gNativeAutoLootManageWnd = nullptr;
 static std::vector<NativeAutoLootRuleRow> gNativeAutoLootRuleRows;
 
 static const char* NativeAutoLootToggleEnabledCommand()
@@ -6232,6 +6595,7 @@ void NativeAutoLootRulesWnd::RefreshRows()
 		CXStr item_id("-");
 		RuleList->SetItemText(row, 1, &item);
 		RuleList->SetItemText(row, 2, &item_id);
+		RuleList->SetItemText(row, 3, &item_id);
 		return;
 	}
 
@@ -6243,8 +6607,10 @@ void NativeAutoLootRulesWnd::RefreshRows()
 		sprintf_s(item_id, "%d", entry.item_id);
 		CXStr item(entry.item.c_str());
 		CXStr id(item_id);
+		CXStr roll(entry.auto_roll ? "On" : "");
 		RuleList->SetItemText(row, 1, &item);
 		RuleList->SetItemText(row, 2, &id);
+		RuleList->SetItemText(row, 3, &roll);
 	}
 }
 
@@ -6311,15 +6677,21 @@ void NativeAutoLootSettingsWnd::RefreshRows()
 	char group_summary[192];
 	sprintf_s(
 		group_summary,
-		"Master candidate: %s  Auto Split: %s  Auto Loot All: %s",
+		"Master: %s  Split: %s  Loot All: %s  Show: %s  Lore: %s",
 		gNativeAutoLootMasterCandidate ? "on" : "off",
 		gNativeAutoLootAutoSplit ? "on" : "off",
-		gNativeAutoLootAutoLootAll ? "on" : "off"
+		gNativeAutoLootAutoLootAll ? "on" : "off",
+		gNativeAutoLootAutoShow ? (gNativeAutoLootShowNewOnly ? "new" : "all") : "off",
+		gNativeAutoLootAutoRemoveLore ? "on" : "off"
 	);
 	SetLabel(GroupSummaryLabel, group_summary);
 
 	SetButtonCheck(AutoLootCheck, gNativeAutoLootEnabled);
 	SetButtonCheck(NeedGreedCheck, gNativeAutoLootMasterCandidate);
+	SetButtonCheck(AutoShowCheck, gNativeAutoLootAutoShow);
+	SetButtonCheck(ShowNewCheck, gNativeAutoLootShowNewOnly);
+	SetButtonCheck(ConfirmRemoveCheck, gNativeAutoLootConfirmRemove);
+	SetButtonCheck(AutoRemoveLoreCheck, gNativeAutoLootAutoRemoveLore);
 }
 
 static void NativeAutoLootShowSettingsWindow()
@@ -6346,6 +6718,20 @@ static void NativeAutoLootShowRulesWindow()
 	gNativeAutoLootRulesWnd->pXWnd()->Show(1, 1);
 	gNativeAutoLootRulesWnd->SetStatus("Refreshing filters...");
 	NativeAutoLootSendCommand("/say #advloot filter native list");
+}
+
+static void NativeAutoLootShowManageWindow(int entry_id)
+{
+	if (!gNativeAutoLootManageWnd) {
+		NativeAutoLootTrace("creating manage window");
+		gNativeAutoLootManageWnd = new NativeAutoLootManageWnd();
+	}
+
+	gNativeAutoLootManageEntryId = entry_id;
+	gNativeAutoLootManagePlayers.clear();
+	gNativeAutoLootManageWnd->RefreshRows();
+	gNativeAutoLootManageWnd->pXWnd()->Show(1, 1);
+	gNativeAutoLootManageWnd->RequestRefresh();
 }
 
 static void NativeAutoLootEnsureWindow(bool show)
@@ -6444,9 +6830,25 @@ void NativeAutoLootWnd::RefreshList(CListWnd* list, bool shared)
 		else {
 			char qty_text[16];
 			sprintf_s(qty_text, "%d", entry.qty);
+			char status_text[96];
+			if (entry.locked) {
+				sprintf_s(status_text, "Locked");
+			}
+			else if (entry.free_grab) {
+				sprintf_s(status_text, "Free Grab");
+			}
+			else if (entry.roll_seconds > 0) {
+				sprintf_s(status_text, "%s %ds", entry.state.c_str(), entry.roll_seconds);
+			}
+			else if (entry.need_count || entry.greed_count || entry.no_count || entry.waiting_count) {
+				sprintf_s(status_text, "N%d G%d No%d W%d", entry.need_count, entry.greed_count, entry.no_count, entry.waiting_count);
+			}
+			else {
+				sprintf_s(status_text, "%s", entry.state.c_str());
+			}
 			CXStr qty(qty_text);
 			CXStr source(entry.source.c_str());
-			CXStr status(entry.locked ? "Locked" : entry.state.c_str());
+			CXStr status(status_text);
 			CXStr rule(NativeDisplayRule(entry.rule));
 			CXStr nd(entry.state == "need" || entry.state == "alwaysneed" ? "X" : "");
 			CXStr gd(entry.state == "greed" || entry.state == "alwaysgreed" ? "X" : "");
@@ -6518,8 +6920,9 @@ void NativeAutoLootWnd::RefreshRows()
 	char master[192];
 	sprintf_s(
 		master,
-		"Shared Loot: %s  Master Candidate: %s  Auto Roll Filters: %d",
+		"Shared Loot: %s  Master: %s  Candidate: %s  Auto Roll Filters: %d",
 		gNativeAutoLootGrouped ? "grouped" : "solo",
+		gNativeAutoLootMasterName.empty() ? "-" : gNativeAutoLootMasterName.c_str(),
 		gNativeAutoLootMasterCandidate ? "on" : "off",
 		gNativeAutoLootAutoRollCount
 	);
@@ -6535,7 +6938,7 @@ void NativeAutoLootWnd::RefreshRows()
 	if (GroupedByNpcCheck) {
 		GroupedByNpcCheck->Checked = gNativeAutoLootGroupByNpcDisplay ? 1 : 0;
 		GroupedByNpcCheck->SetCheck(gNativeAutoLootGroupByNpcDisplay);
-		CXStr value("Group by NPCs");
+		CXStr value("Group by NPC");
 		((CXWnd*)GroupedByNpcCheck)->SetWindowTextA(value);
 	}
 }
@@ -8441,6 +8844,25 @@ static bool NativeAutoLootParseTransport(const char* message)
 		row.locked = NativeToBool(NativeGetPairValue(payload, "locked"));
 		row.nodrop = NativeToBool(NativeGetPairValue(payload, "nodrop"));
 		row.auto_roll = NativeToBool(NativeGetPairValue(payload, "autoroll"));
+		row.free_grab = NativeToBool(NativeGetPairValue(payload, "freegrab"));
+		row.eligible = NativeToBool(NativeGetPairValue(payload, "eligible"));
+		row.manage = NativeToBool(NativeGetPairValue(payload, "manage"));
+		row.can_loot = NativeToBool(NativeGetPairValue(payload, "canloot"));
+		row.can_vote = NativeToBool(NativeGetPairValue(payload, "canvote"));
+		row.can_ask = NativeToBool(NativeGetPairValue(payload, "canask"));
+		row.can_roll = NativeToBool(NativeGetPairValue(payload, "canroll"));
+		row.can_freegrab = NativeToBool(NativeGetPairValue(payload, "canfreegrab"));
+		row.can_give = NativeToBool(NativeGetPairValue(payload, "cangive"));
+		row.can_leave = NativeToBool(NativeGetPairValue(payload, "canleave"));
+		row.roll_seconds = NativeToInt(NativeGetPairValue(payload, "rollseconds"));
+		row.need_count = NativeToInt(NativeGetPairValue(payload, "need"));
+		row.greed_count = NativeToInt(NativeGetPairValue(payload, "greed"));
+		row.no_count = NativeToInt(NativeGetPairValue(payload, "no"));
+		row.waiting_count = NativeToInt(NativeGetPairValue(payload, "waiting"));
+		row.owner = NativeGetPairValue(payload, "owner");
+		row.assignee = NativeGetPairValue(payload, "assignee");
+		row.master_name = NativeGetPairValue(payload, "mastername");
+		row.lock_reason = NativeGetPairValue(payload, "lockreason");
 		row.item = NativeGetPairValue(payload, "name");
 		if (row.item.empty()) {
 			row.item = NativeGetPairValue(payload, "item_name");
@@ -8492,9 +8914,58 @@ static bool NativeAutoLootParseTransport(const char* message)
 		gNativeAutoLootMasterCandidate = NativeToBool(NativeGetPairValue(payload, "mastercandidate"));
 		gNativeAutoLootAutoSplit = NativeToBool(NativeGetPairValue(payload, "autosplit"));
 		gNativeAutoLootAutoLootAll = NativeToBool(NativeGetPairValue(payload, "autolootall"));
+		gNativeAutoLootAutoShow = NativeToBool(NativeGetPairValue(payload, "autoshow"));
+		gNativeAutoLootShowNewOnly = NativeToBool(NativeGetPairValue(payload, "shownewonly"));
+		gNativeAutoLootConfirmRemove = NativeToBool(NativeGetPairValue(payload, "confirmremove"));
+		gNativeAutoLootAutoRemoveLore = NativeToBool(NativeGetPairValue(payload, "autoremovelore"));
 		gNativeAutoLootDebug = NativeToBool(NativeGetPairValue(payload, "debug"));
 		gNativeAutoLootLog = NativeToBool(NativeGetPairValue(payload, "log"));
+		gNativeAutoLootMasterCharacterId = NativeToInt(NativeGetPairValue(payload, "master"));
+		gNativeAutoLootMasterName = NativeGetPairValue(payload, "mastername");
 		NativeAutoLootUpdateWindow();
+		return true;
+	}
+
+	if (NativeStartsWith(message, "ADVLOOT|manage|begin|")) {
+		const std::string payload(message + strlen("ADVLOOT|manage|begin|"));
+		gNativeAutoLootManagePlayers.clear();
+		gNativeAutoLootManageEntryId = NativeToInt(NativeGetPairValue(payload, "id"));
+		gNativeAutoLootManageItemName = NativeGetPairValue(payload, "name");
+		gNativeAutoLootManageSource = NativeGetPairValue(payload, "source");
+		gNativeAutoLootManageState = NativeGetPairValue(payload, "state");
+		gNativeAutoLootManageMasterId = NativeToInt(NativeGetPairValue(payload, "master"));
+		gNativeAutoLootManageMasterName = NativeGetPairValue(payload, "mastername");
+		gNativeAutoLootManageCanManage = NativeToBool(NativeGetPairValue(payload, "manage"));
+		gNativeAutoLootManageFreeGrab = NativeToBool(NativeGetPairValue(payload, "freegrab"));
+		gNativeAutoLootManageAutoRoll = NativeToBool(NativeGetPairValue(payload, "autoroll"));
+		gNativeAutoLootManageRollSeconds = NativeToInt(NativeGetPairValue(payload, "rollseconds"));
+		if (gNativeAutoLootManageWnd) {
+			gNativeAutoLootManageWnd->RefreshRows();
+			gNativeAutoLootManageWnd->SetStatus("Loading Manage Loot...");
+		}
+		return true;
+	}
+
+	if (NativeStartsWith(message, "ADVLOOT|manage|player|")) {
+		const std::string payload(message + strlen("ADVLOOT|manage|player|"));
+		NativeAutoLootManagePlayer player;
+		player.entry_id = NativeToInt(NativeGetPairValue(payload, "id"));
+		player.character_id = NativeToInt(NativeGetPairValue(payload, "char_id"));
+		player.name = NativeGetPairValue(payload, "name");
+		player.vote = NativeGetPairValue(payload, "vote");
+		player.master = NativeToBool(NativeGetPairValue(payload, "master"));
+		player.eligible = NativeToBool(NativeGetPairValue(payload, "eligible"));
+		if (player.character_id > 0 && !player.name.empty()) {
+			gNativeAutoLootManagePlayers.push_back(player);
+		}
+		return true;
+	}
+
+	if (NativeStartsWith(message, "ADVLOOT|manage|end|")) {
+		if (gNativeAutoLootManageWnd) {
+			gNativeAutoLootManageWnd->RefreshRows();
+			gNativeAutoLootManageWnd->SetStatus("Manage Loot refreshed.");
+		}
 		return true;
 	}
 
@@ -8675,6 +9146,7 @@ static bool NativeAutoLootHasRuntimeWindows()
 		gNativeAutoLootWnd ||
 		gNativeAutoLootRulesWnd ||
 		gNativeAutoLootSettingsWnd ||
+		gNativeAutoLootManageWnd ||
 		gNativeSpellForgeWnd ||
 		gNativeItemForgeWnd ||
 		gNativeAchievementWnd ||
@@ -8709,6 +9181,7 @@ static void NativeAutoLootDestroyRuntimeWindows()
 	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeAutoLootWnd, "AutoLoot");
 	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeAutoLootRulesWnd, "AutoLoot rules");
 	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeAutoLootSettingsWnd, "AutoLoot settings");
+	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeAutoLootManageWnd, "AutoLoot manage");
 	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeSpellForgeWnd, "Spell Forge");
 	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeItemForgeWnd, "Item Forge");
 	NATIVE_AUTOLOOT_DESTROY_WINDOW(gNativeAchievementWnd, "Achievement");
@@ -8729,6 +9202,17 @@ static void NativeAutoLootResetSessionRequests()
 	gNativeAutoLootWasInGame = false;
 	gNativeAutoLootRows.clear();
 	gNativeAutoLootRuleRows.clear();
+	gNativeAutoLootManagePlayers.clear();
+	gNativeAutoLootManageEntryId = 0;
+	gNativeAutoLootManageMasterId = 0;
+	gNativeAutoLootManageRollSeconds = 0;
+	gNativeAutoLootManageCanManage = false;
+	gNativeAutoLootManageFreeGrab = false;
+	gNativeAutoLootManageAutoRoll = false;
+	gNativeAutoLootManageItemName.clear();
+	gNativeAutoLootManageSource.clear();
+	gNativeAutoLootManageState.clear();
+	gNativeAutoLootManageMasterName.clear();
 	gNativeAutoLootEnabled = false;
 	gNativeAutoLootApplyFilters = true;
 	gNativeAutoLootGrouped = false;
@@ -8736,8 +9220,14 @@ static void NativeAutoLootResetSessionRequests()
 	gNativeAutoLootMasterCandidate = true;
 	gNativeAutoLootAutoSplit = true;
 	gNativeAutoLootAutoLootAll = false;
+	gNativeAutoLootAutoShow = true;
+	gNativeAutoLootShowNewOnly = false;
+	gNativeAutoLootConfirmRemove = true;
+	gNativeAutoLootAutoRemoveLore = true;
 	gNativeAutoLootDebug = false;
 	gNativeAutoLootLog = false;
+	gNativeAutoLootMasterCharacterId = 0;
+	gNativeAutoLootMasterName.clear();
 	gNativeAutoLootAlwaysNeedCount = 0;
 	gNativeAutoLootAlwaysGreedCount = 0;
 	gNativeAutoLootNeverCount = 0;
@@ -8764,6 +9254,17 @@ static void NativeAutoLootResetClientUiSession(const char* reason)
 	gNativeAutoLootWasInGame = false;
 	gNativeAutoLootRows.clear();
 	gNativeAutoLootRuleRows.clear();
+	gNativeAutoLootManagePlayers.clear();
+	gNativeAutoLootManageEntryId = 0;
+	gNativeAutoLootManageMasterId = 0;
+	gNativeAutoLootManageRollSeconds = 0;
+	gNativeAutoLootManageCanManage = false;
+	gNativeAutoLootManageFreeGrab = false;
+	gNativeAutoLootManageAutoRoll = false;
+	gNativeAutoLootManageItemName.clear();
+	gNativeAutoLootManageSource.clear();
+	gNativeAutoLootManageState.clear();
+	gNativeAutoLootManageMasterName.clear();
 	gNativeAutoLootEnabled = false;
 	gNativeAutoLootApplyFilters = true;
 	gNativeAutoLootGrouped = false;
@@ -8771,8 +9272,14 @@ static void NativeAutoLootResetClientUiSession(const char* reason)
 	gNativeAutoLootMasterCandidate = true;
 	gNativeAutoLootAutoSplit = true;
 	gNativeAutoLootAutoLootAll = false;
+	gNativeAutoLootAutoShow = true;
+	gNativeAutoLootShowNewOnly = false;
+	gNativeAutoLootConfirmRemove = true;
+	gNativeAutoLootAutoRemoveLore = true;
 	gNativeAutoLootDebug = false;
 	gNativeAutoLootLog = false;
+	gNativeAutoLootMasterCharacterId = 0;
+	gNativeAutoLootMasterName.clear();
 	gNativeAutoLootAlwaysNeedCount = 0;
 	gNativeAutoLootAlwaysGreedCount = 0;
 	gNativeAutoLootNeverCount = 0;
@@ -8868,6 +9375,10 @@ static void NativeAutoLootPulse()
 
 	if (gNativeAutoLootSettingsWnd) {
 		gNativeAutoLootSettingsWnd->Layout();
+	}
+
+	if (gNativeAutoLootManageWnd) {
+		gNativeAutoLootManageWnd->RefreshRows();
 	}
 
 	if (gNativeSpellForgeWnd) {
@@ -9038,6 +9549,11 @@ static void ShutdownAutoLootNative()
 	if (gNativeAutoLootSettingsWnd) {
 		delete gNativeAutoLootSettingsWnd;
 		gNativeAutoLootSettingsWnd = nullptr;
+	}
+
+	if (gNativeAutoLootManageWnd) {
+		delete gNativeAutoLootManageWnd;
+		gNativeAutoLootManageWnd = nullptr;
 	}
 
 	if (gNativeSpellForgeWnd) {

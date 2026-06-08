@@ -36,7 +36,7 @@ then groups tests by player-visible behavior:
 
 - Patch/login and native UI loading.
 - Live Items, Item Forge, and augment/fusion flows.
-- AutoLoot.
+- Advanced Loot.
 - Achievements.
 - Multiclass.
 - Live Spells.
@@ -45,6 +45,8 @@ then groups tests by player-visible behavior:
 - Gearscore, Item Rarity, and Native Interface inspection.
 - HP Fix.
 - Tradeskill and general stability smoke checks.
+- Faction, DPS, and Fellowship tools.
+- Pet Bags, Autoskills, UseItem, AutoFollow, and server-auth native stat checks.
 - Overall feedback and bugs.
 
 Features with no meaningful player-facing test content yet are represented as

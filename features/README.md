@@ -15,7 +15,6 @@ These are not runtime plugins. Each feature pack documents the source files, dat
 
 | Feature | Status | Notes |
 | --- | --- | --- |
-| `autoloot` | `draft`, `shared-runtime`, `proved-build` | Server-side AutoLoot with the native EQ AutoLoot window. Client DLL code is still partly bundled with other native windows. |
 | `live-items` | `draft`, `shared-runtime`, `proved-build` | Live DB item loading, dynamic item data, item editing, and Item Forge input. Native DLL code is still shared runtime. |
 | `live-spells` | `draft`, `shared-runtime`, `proved-build` | Generated spell definitions, Spell Forge input, live spell patch/sync transport, and generated scroll items. Native DLL code is still shared runtime. |
 | `achievements` | `draft`, `shared-runtime`, `proved-build` | Custom achievement schema, native achievement window, player commands, and gameplay progress hooks. Native DLL code is still shared runtime. |

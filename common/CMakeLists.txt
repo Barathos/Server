@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.20.0)
 
 set(common_sources
+    advanced_loot.cpp
     base_packet.cpp
     bazaar.cpp
     bodytypes.cpp
@@ -65,6 +66,7 @@ set(common_sources
     memory/ksm.cpp
     misc_functions.cpp
     misc.cpp
+    multiclass_logic.cpp
     mysql_request_result.cpp
     mysql_request_row.cpp
     mysql_stmt.cpp
@@ -537,6 +539,7 @@ set(repositories
 )
 
 set(common_headers
+    advanced_loot.h
     additive_lagged_fibonacci_engine.h
     base_packet.h
     bazaar.h
@@ -626,6 +629,7 @@ set(common_headers
     memory/ksm.h
     misc_functions.h
     misc.h
+    multiclass_logic.h
     mysql_request_result.h
     mysql_request_row.h
     mysql_stmt.h
