@@ -528,6 +528,7 @@ static bool gNativeChatTimestampEnabled = false;
 static bool gNativeAutoLootRequestedInitialStatus = false;
 static bool gNativeAutoLootPulseHookEnabled = true;
 static bool gNativeAutoLootWasInGame = false;
+static bool gNativeAutoLootWindowConstructionFaulted = false;
 static bool gNativeAutoLootEnabled = false;
 static bool gNativeAutoLootApplyFilters = true;
 static bool gNativeAutoLootGrouped = false;
@@ -6845,10 +6846,30 @@ static void NativeAutoLootEnsureWindow(bool show)
 		return;
 	}
 
+	if (gNativeAutoLootWindowConstructionFaulted) {
+		return;
+	}
+
 	if (!gNativeAutoLootWnd) {
 		NativeAutoLootTrace("creating window");
-		gNativeAutoLootWnd = new NativeAutoLootWnd();
-		gNativeAutoLootWnd->RefreshRows();
+		NativeAutoLootWnd* created_window = nullptr;
+		__try {
+			created_window = new NativeAutoLootWnd();
+			if (created_window) {
+				created_window->RefreshRows();
+			}
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			NativeAutoLootTrace("AutoLoot window construction faulted; check EQUI_NativeAutoLootWnd.xml");
+			created_window = nullptr;
+		}
+
+		if (!created_window) {
+			gNativeAutoLootWindowConstructionFaulted = true;
+			return;
+		}
+
+		gNativeAutoLootWnd = created_window;
 		NativeAutoLootTrace("window created");
 	}
 
@@ -9399,6 +9420,7 @@ static void NativeAutoLootResetSessionRequests()
 	gNativeAutoLootInGamePulses = 0;
 	gNativeAutoLootRequestedInitialStatus = false;
 	gNativeAutoLootWasInGame = false;
+	gNativeAutoLootWindowConstructionFaulted = false;
 	gNativeAutoLootRows.clear();
 	gNativeAutoLootRuleRows.clear();
 	gNativeAutoLootManagePlayers.clear();
@@ -9451,6 +9473,7 @@ static void NativeAutoLootResetClientUiSession(const char* reason)
 	gNativeAutoLootInGamePulses = 0;
 	gNativeAutoLootRequestedInitialStatus = false;
 	gNativeAutoLootWasInGame = false;
+	gNativeAutoLootWindowConstructionFaulted = false;
 	gNativeAutoLootRows.clear();
 	gNativeAutoLootRuleRows.clear();
 	gNativeAutoLootManagePlayers.clear();
@@ -9555,12 +9578,7 @@ static void NativeAutoLootPulse()
 		return;
 	}
 
-	if (!gNativeAutoLootWnd) {
-		NativeAutoLootTrace("creating window");
-		gNativeAutoLootWnd = new NativeAutoLootWnd();
-		gNativeAutoLootWnd->RefreshRows();
-		NativeAutoLootTrace("window created");
-	}
+	NativeAutoLootEnsureWindow(false);
 
 	NativeAutoLootInstallChatHook();
 
