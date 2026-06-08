@@ -336,7 +336,7 @@ void SendFellowshipState(Client *client)
 		}
 	}
 
-	auto outapp = std::make_unique<EQApplicationPacket>(OP_FellowshipUpdate, kFellowshipStatePacketSize);
+	auto outapp = std::make_unique<EQApplicationPacket>(OP_Fellowship, kFellowshipStatePacketSize);
 	std::memset(outapp->pBuffer, 0, outapp->size);
 	WriteUInt32(outapp->pBuffer, 0x000, 1);
 	WriteUInt32(outapp->pBuffer, 0x004, membership->fellowship_id);
