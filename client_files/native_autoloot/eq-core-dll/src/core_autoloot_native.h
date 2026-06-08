@@ -240,6 +240,79 @@ static void NativeAutoLootSetColumnJustification(CListWnd* list, int first_colum
 	}
 }
 
+static int NativeAutoLootGetListWidth(CListWnd* list)
+{
+	if (!list) {
+		return 0;
+	}
+
+	__try {
+		CXRect rect = ((CXWnd*)list)->GetScreenRect();
+		return (int)rect.C - (int)rect.A;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+		NativeAutoLootTrace("Advanced Loot list width faulted");
+		return 0;
+	}
+}
+
+static void NativeAutoLootSetColumnWidth(CListWnd* list, int column, int width)
+{
+	if (!list || width <= 0) {
+		return;
+	}
+
+	__try {
+		list->SetColumnWidth(column, width);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+		NativeAutoLootTrace("Advanced Loot column width faulted");
+	}
+}
+
+static void NativeAutoLootFitListColumns(CListWnd* list, bool shared)
+{
+	const int width = NativeAutoLootGetListWidth(list);
+	if (width <= 0) {
+		return;
+	}
+
+	const int usable_width = width > 28 ? width - 28 : 0;
+	if (!shared) {
+		const int base_total = 168 + 36 + 40 + 30 + 30 + 46 + 250;
+		const int extra = usable_width > base_total ? usable_width - base_total : 0;
+		const int item_width = 168 + (extra * 45 / 100);
+		const int source_width = 250 + (extra - (extra * 45 / 100));
+
+		NativeAutoLootSetColumnWidth(list, kAALPersonalItem, item_width);
+		NativeAutoLootSetColumnWidth(list, kAALPersonalLoot, 36);
+		NativeAutoLootSetColumnWidth(list, kAALPersonalLeave, 40);
+		NativeAutoLootSetColumnWidth(list, kAALPersonalAlwaysNeed, 30);
+		NativeAutoLootSetColumnWidth(list, kAALPersonalAlwaysGreed, 30);
+		NativeAutoLootSetColumnWidth(list, kAALPersonalNever, 46);
+		NativeAutoLootSetColumnWidth(list, kAALPersonalSource, source_width);
+		return;
+	}
+
+	const int base_total = 158 + 32 + 32 + 32 + 30 + 30 + 46 + 170 + 72;
+	const int extra = usable_width > base_total ? usable_width - base_total : 0;
+	const int item_extra = extra * 40 / 100;
+	const int source_extra = extra * 42 / 100;
+	const int item_width = 158 + item_extra;
+	const int source_width = 170 + source_extra;
+	const int status_width = 72 + (extra - item_extra - source_extra);
+
+	NativeAutoLootSetColumnWidth(list, kAALSharedItem, item_width);
+	NativeAutoLootSetColumnWidth(list, kAALSharedNeed, 32);
+	NativeAutoLootSetColumnWidth(list, kAALSharedGreed, 32);
+	NativeAutoLootSetColumnWidth(list, kAALSharedNo, 32);
+	NativeAutoLootSetColumnWidth(list, kAALSharedAlwaysNeed, 30);
+	NativeAutoLootSetColumnWidth(list, kAALSharedAlwaysGreed, 30);
+	NativeAutoLootSetColumnWidth(list, kAALSharedNever, 46);
+	NativeAutoLootSetColumnWidth(list, kAALSharedSource, source_width);
+	NativeAutoLootSetColumnWidth(list, kAALSharedStatus, status_width);
+}
+
 class NativeAutoLootWnd : public CCustomWnd
 {
 public:
@@ -6992,8 +7065,8 @@ bool NativeAutoLootWnd::HandleListColumnClick(CListWnd* list, bool shared, void*
 
 void NativeAutoLootWnd::Layout()
 {
-	// Main-window resize is handled by SIDL AutoStretch anchors. Moving many
-	// child controls manually during construction can fault this client build.
+	NativeAutoLootFitListColumns(PersonalList, false);
+	NativeAutoLootFitListColumns(SharedList, true);
 }
 
 void NativeAutoLootWnd::RefreshList(CListWnd* list, bool shared)
