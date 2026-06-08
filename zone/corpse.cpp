@@ -108,11 +108,17 @@ CorpseAutoLootResult Corpse::AutoLootItem(Client *c, uint16 lootslot, bool send_
 		return result;
 	}
 
-	result.item_id    = item->ID;
-	result.item_name  = item->Name;
+	const auto *resolved_item = inst->GetItem();
+	if (!resolved_item) {
+		safe_delete(inst);
+		return result;
+	}
+
+	result.item_id    = resolved_item->ID;
+	result.item_name  = resolved_item->Name;
 	result.item_count = inst->IsStackable() ? inst->GetCharges() : 1;
 
-	if (c->CheckLoreConflict(item)) {
+	if (c->CheckLoreConflict(resolved_item)) {
 		result.code = CorpseAutoLootResultCode::LoreConflict;
 		if (send_messages) {
 			c->MessageString(Chat::White, LOOT_LORE_ERROR);
@@ -1842,7 +1848,16 @@ void Corpse::LootCorpseItem(Client *c, const EQApplicationPacket *app)
 	}
 
 	if (c && inst) {
-		if (c->CheckLoreConflict(item)) {
+		const auto *resolved_item = inst->GetItem();
+		if (!resolved_item) {
+			c->QueuePacket(app);
+			SendEndLootErrorPacket(c);
+			ResetLooter();
+			delete inst;
+			return;
+		}
+
+		if (c->CheckLoreConflict(resolved_item)) {
 			c->MessageString(Chat::White, LOOT_LORE_ERROR);
 			c->QueuePacket(app);
 			SendEndLootErrorPacket(c);

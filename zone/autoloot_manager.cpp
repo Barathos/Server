@@ -29,6 +29,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <memory>
 
 extern EntityList entity_list;
 extern Zone *zone;
@@ -143,6 +144,17 @@ namespace {
 		return item->Stackable ? std::max<uint32>(1, item_data->charges) : 1;
 	}
 
+	bool IsDynamicCorpseLootItem(const LootItem *item_data)
+	{
+		if (!item_data || item_data->custom_data.empty()) {
+			return false;
+		}
+
+		const auto custom_data = Strings::ToLower(item_data->custom_data);
+		return custom_data.find("dynamic_item.") != std::string::npos ||
+			custom_data.find("live_items_") != std::string::npos;
+	}
+
 	std::string QuantitySuffix(uint32 quantity)
 	{
 		return quantity > 1 ? fmt::format(" x{}", quantity) : "";
@@ -190,6 +202,16 @@ namespace {
 		}
 
 		return inst;
+	}
+
+	const EQ::ItemData *GetCorpseLootDisplayItem(Client *client, const LootItem *item_data, std::unique_ptr<EQ::ItemInstance> &inst)
+	{
+		inst.reset(CreateCorpseLootItemInstance(client, item_data));
+		if (inst && inst->GetItem()) {
+			return inst->GetItem();
+		}
+
+		return item_data ? database.GetItem(item_data->item_id) : nullptr;
 	}
 
 	bool IsAutosellBag(uint32 item_id)
@@ -820,7 +842,8 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 			}
 
 			++visible_loot;
-			const auto *item = database.GetItem(item_data->item_id);
+			std::unique_ptr<EQ::ItemInstance> display_inst;
+			const auto *item = GetCorpseLootDisplayItem(autoloot_client, item_data, display_inst);
 			const auto item_name = item ? item->Name : fmt::format("Unknown Item {}", item_data->item_id);
 			DebugMessage(
 				autoloot_client,
@@ -876,8 +899,10 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 			continue;
 		}
 
-		const auto *item = database.GetItem(item_data->item_id);
+		std::unique_ptr<EQ::ItemInstance> display_inst;
+		const auto *item = GetCorpseLootDisplayItem(autoloot_client, item_data, display_inst);
 		const auto item_name = item ? item->Name : fmt::format("Unknown Item {}", item_data->item_id);
+		const bool dynamic_instance = IsDynamicCorpseLootItem(item_data);
 		const auto quantity = GetCorpseItemQuantity(corpse, loot_slot);
 		if (HasQueuedEntry(corpse->GetID(), loot_slot)) {
 			DebugMessage(
@@ -893,7 +918,9 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 			continue;
 		}
 
-		const auto filter_action = GetFilterAction(autoloot_client->CharacterID(), item_data->item_id, settings.filter_mode);
+		const auto filter_action = dynamic_instance ?
+			std::string("ask") :
+			GetFilterAction(autoloot_client->CharacterID(), item_data->item_id, settings.filter_mode);
 		if (filter_action == "skip") {
 			DebugMessage(
 				autoloot_client,
@@ -943,12 +970,13 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 		entry.owner_character_id = recipient->CharacterID();
 		entry.group_id = group ? group->GetID() : 0;
 		entry.shared = group && group->GroupCount() > 1 && NormalizeGroupMode(group_settings.loot_mode) != "solo";
-		entry.no_drop = IsNoDrop(item_data->item_id);
+		entry.no_drop = item->NoDrop == 0;
+		entry.dynamic_instance = dynamic_instance;
 		entry.item_name = item->Name;
 		entry.corpse_name = corpse->GetCleanName();
 		entry.state = entry.shared && group_settings.need_greed_enabled && entry.no_drop ? "rolling" : "waiting";
 		entry.rule = filter_action == "loot" ? "auto" : "ask";
-		if (filter_action == "loot" && HasFilter(autoloot_client->CharacterID(), item_data->item_id, "include")) {
+		if (!entry.dynamic_instance && filter_action == "loot" && HasFilter(autoloot_client->CharacterID(), item_data->item_id, "include")) {
 			entry.rule = "always";
 		}
 		entry.created_at = std::time(nullptr);
@@ -970,7 +998,7 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 			)
 		);
 
-		if (filter_action == "loot" && entry.state != "rolling") {
+		if (!entry.dynamic_instance && filter_action == "loot" && entry.state != "rolling") {
 			auto_loot_entries.emplace_back(recipient, entry.entry_id);
 		}
 	}
@@ -1150,6 +1178,11 @@ void AutoLootManager::RefreshQueuedRulesForClient(Client *client)
 			continue;
 		}
 
+		if (entry.dynamic_instance) {
+			entry.rule = "ask";
+			continue;
+		}
+
 		const auto filter_action = GetFilterAction(client->CharacterID(), entry.item_id, settings.filter_mode);
 		if (filter_action == "skip") {
 			entry.rule = "never";
@@ -1192,7 +1225,7 @@ void AutoLootManager::HandleLootAction(Client *client, const Seperator *sep)
 		bool filter_changed = false;
 		if (action == "alwaysloot") {
 			auto iter = m_loot_entries.find(entry_id);
-			if (iter != m_loot_entries.end() && IsEntryVisibleToClient(iter->second, client)) {
+			if (iter != m_loot_entries.end() && IsEntryVisibleToClient(iter->second, client) && !iter->second.dynamic_instance) {
 				SetFilter(client->CharacterID(), iter->second.item_id, "include");
 				filter_changed = true;
 			}
@@ -1240,7 +1273,7 @@ void AutoLootManager::HandleLootAction(Client *client, const Seperator *sep)
 		}
 
 		bool filter_changed = false;
-		if (action == "alwaysneed" || action == "alwaysgreed") {
+		if ((action == "alwaysneed" || action == "alwaysgreed") && !iter->second.dynamic_instance) {
 			SetFilter(client->CharacterID(), iter->second.item_id, "include");
 			filter_changed = true;
 		}
@@ -1674,10 +1707,13 @@ bool AutoLootManager::LeaveEntryForClient(Client *client, uint32 entry_id, bool 
 
 	const auto entry = iter->second;
 	bool filter_changed = false;
-	if (add_never_filter) {
+	if (add_never_filter && !entry.dynamic_instance) {
 		SetFilter(client->CharacterID(), entry.item_id, "exclude");
 		client->Message(Chat::White, fmt::format("AutoLoot will never loot {} for this character.", entry.item_name).c_str());
 		filter_changed = true;
+	}
+	else if (add_never_filter) {
+		client->Message(Chat::White, fmt::format("AutoLoot left {} on the corpse. Live item filters are not saved by template item.", entry.item_name).c_str());
 	}
 
 	if (auto corpse = entity_list.GetCorpseByID(entry.corpse_id)) {

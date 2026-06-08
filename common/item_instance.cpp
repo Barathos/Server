@@ -37,6 +37,9 @@ std::unordered_set<uint64> guids{};
 namespace {
 	constexpr const char *DynamicItemModPrefix = "dynamic_item.mod.";
 	constexpr const char *DynamicItemSetPrefix = "dynamic_item.set.";
+	constexpr const char *AugmentInstanceDataPrefix = "_eqemu_augment_instance.";
+	constexpr const char *AugmentInstanceCustomDataField = "custom_data";
+	constexpr const char *AugmentInstanceGuidField = "guid";
 
 	bool HasPrefix(const std::string &value, const char *prefix)
 	{
@@ -66,6 +69,92 @@ namespace {
 	std::string GetDynamicItemKey(const char *prefix, const std::string &identifier)
 	{
 		return std::string(prefix) + NormalizeDynamicItemField(identifier);
+	}
+
+	int HexValue(const char c)
+	{
+		if (c >= '0' && c <= '9') {
+			return c - '0';
+		}
+
+		if (c >= 'a' && c <= 'f') {
+			return c - 'a' + 10;
+		}
+
+		if (c >= 'A' && c <= 'F') {
+			return c - 'A' + 10;
+		}
+
+		return -1;
+	}
+
+	std::string HexEncode(const std::string &value)
+	{
+		static constexpr char HexDigits[] = "0123456789ABCDEF";
+		std::string encoded;
+		encoded.reserve(value.size() * 2);
+
+		for (const auto c : value) {
+			const auto byte = static_cast<unsigned char>(c);
+			encoded.push_back(HexDigits[byte >> 4]);
+			encoded.push_back(HexDigits[byte & 0x0F]);
+		}
+
+		return encoded;
+	}
+
+	std::string HexDecode(const std::string &value)
+	{
+		if (value.size() % 2 != 0) {
+			return "";
+		}
+
+		std::string decoded;
+		decoded.reserve(value.size() / 2);
+
+		for (size_t i = 0; i < value.size(); i += 2) {
+			const auto high = HexValue(value[i]);
+			const auto low = HexValue(value[i + 1]);
+			if (high < 0 || low < 0) {
+				return "";
+			}
+
+			decoded.push_back(static_cast<char>((high << 4) | low));
+		}
+
+		return decoded;
+	}
+
+	std::string GetAugmentInstanceDataKey(const uint8 slot, const char *field)
+	{
+		return std::string(AugmentInstanceDataPrefix) + std::to_string(slot) + "." + field;
+	}
+
+	bool ParseAugmentInstanceDataKey(const std::string &identifier, uint8 &slot, std::string &field)
+	{
+		if (!HasPrefix(identifier, AugmentInstanceDataPrefix)) {
+			return false;
+		}
+
+		const auto remaining = identifier.substr(std::strlen(AugmentInstanceDataPrefix));
+		const auto separator = remaining.find('.');
+		if (separator == std::string::npos) {
+			return false;
+		}
+
+		const auto slot_text = remaining.substr(0, separator);
+		if (!Strings::IsNumber(slot_text)) {
+			return false;
+		}
+
+		const auto slot_id = Strings::ToUnsignedInt(slot_text);
+		if (slot_id > EQ::invaug::SOCKET_END) {
+			return false;
+		}
+
+		slot = static_cast<uint8>(slot_id);
+		field = remaining.substr(separator + 1);
+		return !field.empty();
 	}
 
 	template <typename T>
@@ -230,6 +319,18 @@ namespace {
 		if (field == "stacksize") { ApplyDynamicItemNumber(item.StackSize, value, additive); return true; }
 		if (field == "stackable") { ApplyDynamicItemNumber(item.Stackable, value, additive); return true; }
 		if (field == "magic") { ApplyDynamicItemNumber(item.Magic, value, additive); return true; }
+		if (field == "loregroup") { ApplyDynamicItemNumber(item.LoreGroup, value, additive); item.LoreFlag = item.LoreGroup != 0; return true; }
+		if (field == "loreflag") {
+			ApplyDynamicItemNumber(item.LoreFlag, value, additive);
+			if (!item.LoreFlag) {
+				item.LoreGroup = 0;
+			}
+			else if (item.LoreGroup == 0) {
+				item.LoreGroup = -1;
+			}
+			return true;
+		}
+		if (field == "pendingloreflag" || field == "pendinglore") { ApplyDynamicItemNumber(item.PendingLoreFlag, value, additive); return true; }
 		if (field == "nodrop") { ApplyDynamicItemNumber(item.NoDrop, value, additive); return true; }
 		if (field == "norent") { ApplyDynamicItemNumber(item.NoRent, value, additive); return true; }
 		if (field == "attuneable") { ApplyDynamicItemNumber(item.Attuneable, value, additive); return true; }
@@ -1136,21 +1237,53 @@ const EQ::ItemData* EQ::ItemInstance::GetUnscaledItem() const
 
 std::string EQ::ItemInstance::GetCustomDataString() const {
 	std::string ret_val;
-	auto iter = m_custom_data.begin();
-	while (iter != m_custom_data.end()) {
+	auto append_pair = [&ret_val](const std::string &key, const std::string &value) {
 		if (ret_val.length() > 0) {
 			ret_val += "^";
 		}
-		ret_val += iter->first;
+
+		ret_val += key;
 		ret_val += "^";
-		ret_val += iter->second;
+		ret_val += value;
+	};
+
+	auto iter = m_custom_data.begin();
+	while (iter != m_custom_data.end()) {
+		uint8 ignored_slot = 0;
+		std::string ignored_field;
+		if (ParseAugmentInstanceDataKey(iter->first, ignored_slot, ignored_field)) {
+			++iter;
+			continue;
+		}
+
+		append_pair(iter->first, iter->second);
 		++iter;
 	}
+
+	if (m_item && m_item->IsClassCommon()) {
+		for (uint8 slot = invaug::SOCKET_BEGIN; slot <= invaug::SOCKET_END; ++slot) {
+			const auto *augment = GetAugment(slot);
+			if (!augment) {
+				continue;
+			}
+
+			const auto augment_custom_data = augment->GetCustomDataString();
+			if (augment_custom_data.empty()) {
+				continue;
+			}
+
+			append_pair(GetAugmentInstanceDataKey(slot, AugmentInstanceCustomDataField), HexEncode(augment_custom_data));
+			append_pair(GetAugmentInstanceDataKey(slot, AugmentInstanceGuidField), std::to_string(augment->GetSerialNumber()));
+		}
+	}
+
 	return ret_val;
 }
 
 void EQ::ItemInstance::SetCustomDataString(const std::string& str)
 {
+	std::map<uint8, std::string> augment_custom_data;
+	std::map<uint8, int32> augment_guids;
 	std::vector<std::string> components;
 	for (const auto &component : Strings::Split(str, "^")) {
 		if (!component.empty()) {
@@ -1164,7 +1297,48 @@ void EQ::ItemInstance::SetCustomDataString(const std::string& str)
 		auto identifier = components[i * 2];
 		auto value = components[(i * 2) + 1];
 
+		uint8 augment_slot = 0;
+		std::string augment_field;
+		if (ParseAugmentInstanceDataKey(identifier, augment_slot, augment_field)) {
+			if (Strings::EqualFold(augment_field, AugmentInstanceCustomDataField)) {
+				augment_custom_data[augment_slot] = HexDecode(value);
+			}
+			else if (Strings::EqualFold(augment_field, AugmentInstanceGuidField) && Strings::IsNumber(value)) {
+				augment_guids[augment_slot] = static_cast<int32>(Strings::ToUnsignedBigInt(value));
+			}
+			continue;
+		}
+
 		SetCustomData(identifier, value);
+	}
+
+	for (const auto &[augment_slot, custom_data] : augment_custom_data) {
+		auto *augment = GetAugment(augment_slot);
+		if (!augment) {
+			continue;
+		}
+
+		if (!custom_data.empty()) {
+			augment->SetCustomDataString(custom_data);
+		}
+
+		const auto guid_iter = augment_guids.find(augment_slot);
+		if (guid_iter != augment_guids.end() && guid_iter->second != 0) {
+			EQ::ItemInstance::AddGUIDToMap(guid_iter->second);
+			augment->SetSerialNumber(guid_iter->second);
+		}
+	}
+
+	for (const auto &[augment_slot, guid] : augment_guids) {
+		if (guid == 0 || augment_custom_data.find(augment_slot) != augment_custom_data.end()) {
+			continue;
+		}
+
+		auto *augment = GetAugment(augment_slot);
+		if (augment) {
+			EQ::ItemInstance::AddGUIDToMap(guid);
+			augment->SetSerialNumber(guid);
+		}
 	}
 
 	RebuildDynamicItemData();

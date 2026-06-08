@@ -150,6 +150,8 @@ local function create_random_item_from_template(template)
 	local data = {
 		name = name,
 		lore = "A unique tester roll carried by a tutorialb creature.",
+		loregroup = 0,
+		loreflag = 0,
 		comment = "Live Items tester spawn loot roll: " .. summary,
 	}
 	local modifiers = {}

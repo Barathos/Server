@@ -95,6 +95,7 @@ private:
 		uint32 group_id = 0;
 		bool shared = false;
 		bool no_drop = false;
+		bool dynamic_instance = false;
 		std::string item_name;
 		std::string corpse_name;
 		std::string state = "waiting";

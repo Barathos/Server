@@ -135,6 +135,8 @@ local function create_random_item_from_template(template)
 	local data = {
 		name = name,
 		lore = "A unique tester roll created by the Live Items test cache.",
+		loregroup = 0,
+		loreflag = 0,
 		comment = "Live Items tester instance roll: " .. summary,
 	}
 	local modifiers = {}
