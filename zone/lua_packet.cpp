@@ -905,6 +905,8 @@ luabind::scope lua_register_packet_opcodes() {
 		luabind::value("RemoveNimbusEffect", static_cast<int>(OP_RemoveNimbusEffect)),
 		luabind::value("GuildCreate", static_cast<int>(OP_GuildCreate)),
 		luabind::value("AltCurrency", static_cast<int>(OP_AltCurrency)),
+		luabind::value("FellowshipCampfireRequest", static_cast<int>(OP_FellowshipCampfireRequest)),
+		luabind::value("FellowshipInvite", static_cast<int>(OP_FellowshipInvite)),
 		luabind::value("FellowshipUpdate", static_cast<int>(OP_FellowshipUpdate)),
 		luabind::value("AltCurrencyMerchantRequest", static_cast<int>(OP_AltCurrencyMerchantRequest)),
 		luabind::value("AltCurrencyMerchantReply", static_cast<int>(OP_AltCurrencyMerchantReply)),

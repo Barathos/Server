@@ -51,7 +51,11 @@ constexpr uint32 kLeaderRank = 1;
 constexpr uint32 kMemberRank = 0;
 constexpr uint32 kInviteExpirationSeconds = 300;
 constexpr uint32 kClientActionCreate = 1;
+constexpr uint32 kClientActionAcceptInvite = 4;
+constexpr uint32 kClientActionInviteTarget = 5;
 constexpr uint32 kCreatePacketWireSize = 1078;
+constexpr uint32 kFellowshipInvitePacketSize = 16;
+constexpr uint32 kFellowshipInviteEntityIdOffset = 0x0c;
 constexpr uint32 kFellowshipStatePacketSize = 0x9e4;
 constexpr uint32 kFellowshipStateNameOffset = 0x008;
 constexpr uint32 kFellowshipStateMotdOffset = 0x048;
@@ -67,7 +71,6 @@ constexpr uint32 kFellowshipStateOfflineOffset = 0x9d8;
 constexpr uint32 kFellowshipMaxClientMembers = 12;
 constexpr uint32 kFellowshipStateWithCampfirePacketSize = 0xa04;
 constexpr uint32 kFellowshipActionPacketSize = 1076;
-constexpr uint16 kRoFSelectCampfireOpcode = 0x7802;
 constexpr uint32 kFellowshipProbeDefaultIntervalMs = 2500;
 constexpr uint32 kFellowshipProbeMinIntervalMs = 1000;
 constexpr uint32 kFellowshipProbeMaxIntervalMs = 10000;
@@ -104,6 +107,7 @@ struct PendingInvite {
 
 struct FellowshipMemberState {
 	uint32 character_id = 0;
+	uint32 entity_id = 0;
 	std::string character_name;
 	uint32 rank = 0;
 	bool sharing_enabled = false;
@@ -167,8 +171,6 @@ const std::vector<FellowshipProbeDefinition> &GetFellowshipProbes()
 		{ "rof2-action-state-fixed", OP_Fellowship, 0, FellowshipProbeLayout::ActionStateFixed },
 		{ "create-action-opcode-create-ack", OP_FellowshipUpdate, 0, FellowshipProbeLayout::ActionCreateAck },
 		{ "create-action-opcode-state-fixed", OP_FellowshipUpdate, 0, FellowshipProbeLayout::ActionStateFixed },
-		{ "rof-select-campfire-empty", OP_Unknown, kRoFSelectCampfireOpcode, FellowshipProbeLayout::CampfireOnly },
-		{ "rof-select-campfire-state-fixed", OP_Unknown, kRoFSelectCampfireOpcode, FellowshipProbeLayout::ActionStateFixed },
 	};
 
 	return probes;
@@ -380,6 +382,9 @@ std::vector<FellowshipMemberState> LoadMemberStates(uint32 fellowship_id)
 		FellowshipMemberState member;
 		member.character_id = ToUInt(row[0]);
 		member.character_name = row[1] ? row[1] : "";
+		if (auto *member_client = entity_list.GetClientByName(member.character_name.c_str())) {
+			member.entity_id = member_client->GetID();
+		}
 		member.rank = ToUInt(row[2]);
 		member.sharing_enabled = row[3] ? Strings::ToBool(row[3]) : false;
 		member.level = ToUInt(row[4]);
@@ -454,7 +459,7 @@ std::unique_ptr<EQApplicationPacket> BuildFellowshipMemoryStatePacket(
 	for (uint32 index = 0; index < context.members.size(); ++index) {
 		const auto &member = context.members[index];
 		const auto member_offset = kFellowshipStateMemberListOffset + (index * kFellowshipStateMemberSize);
-		WriteUInt32(outapp->pBuffer, member_offset + 0x00, member.character_id);
+		WriteUInt32(outapp->pBuffer, member_offset + 0x00, member.entity_id ? member.entity_id : member.character_id);
 		WriteFixedString(outapp->pBuffer, member_offset + 0x04, 0x40, member.character_name);
 		WriteUInt32(outapp->pBuffer, member_offset + 0x44, member.zone_id);
 		WriteUInt32(outapp->pBuffer, member_offset + 0x48, member.level);
@@ -535,6 +540,30 @@ std::unique_ptr<EQApplicationPacket> BuildFellowshipActionPacket(
 	WriteUInt32(outapp->pBuffer, 0x0dc, first_member.sharing_enabled ? 1 : 0);
 	WriteFixedString(outapp->pBuffer, 0x100, 0x300, context.membership.motd);
 	return outapp;
+}
+
+void SendFellowshipInvitePopup(Client *inviter, Client *target)
+{
+	if (!inviter || !target) {
+		return;
+	}
+
+	auto outapp = std::make_unique<EQApplicationPacket>(OP_FellowshipInvite, kFellowshipInvitePacketSize);
+	std::memset(outapp->pBuffer, 0, outapp->size);
+	WriteUInt32(outapp->pBuffer, kFellowshipInviteEntityIdOffset, inviter->GetID());
+
+	if (RuleB(CustomFeatures, FellowshipOpcodeDiscoveryEnabled)) {
+		LogInfo(
+			"Sending fellowship invite popup inviter [{}] target [{}] inviter_entity_id [{}] size [{}] {}",
+			inviter->GetCleanName(),
+			target->GetCleanName(),
+			inviter->GetID(),
+			outapp->size,
+			DumpPacketToString(outapp.get())
+		);
+	}
+
+	target->QueuePacket(outapp.get());
 }
 
 std::unique_ptr<EQApplicationPacket> BuildFellowshipProbePacket(
@@ -837,6 +866,7 @@ void NotifyOnlineMembers(uint32 fellowship_id, const std::string &message)
 
 		if (std::find(member_ids.begin(), member_ids.end(), client->CharacterID()) != member_ids.end()) {
 			client->Message(Chat::White, "%s", message.c_str());
+			SendFellowshipState(client);
 		}
 	}
 }
@@ -948,7 +978,7 @@ bool CreateFellowship(Client *client, const std::string &name)
 	return true;
 }
 
-bool InviteTarget(Client *client)
+bool InviteTarget(Client *client, uint32 target_entity_id = 0)
 {
 	if (!FeatureEnabled(client) || !client) {
 		return false;
@@ -964,13 +994,21 @@ bool InviteTarget(Client *client)
 		return false;
 	}
 
-	auto *target = client->GetTarget();
-	if (!target || !target->IsClient()) {
-		client->Message(Chat::White, "Target a player to invite.");
-		return false;
+	Client *target_client = nullptr;
+	if (target_entity_id) {
+		target_client = entity_list.GetClientByID(static_cast<uint16>(target_entity_id));
 	}
 
-	auto *target_client = target->CastToClient();
+	if (!target_client) {
+		auto *target = client->GetTarget();
+		if (!target || !target->IsClient()) {
+			client->Message(Chat::White, "Target a player to invite.");
+			return false;
+		}
+
+		target_client = target->CastToClient();
+	}
+
 	if (!target_client || target_client == client) {
 		client->Message(Chat::White, "Target another player to invite.");
 		return false;
@@ -987,6 +1025,7 @@ bool InviteTarget(Client *client)
 		Timer::GetTimeSeconds()
 	};
 
+	SendFellowshipInvitePopup(client, target_client);
 	client->Message(Chat::White, "Invited %s to fellowship '%s'.", target_client->GetCleanName(), membership->fellowship_name.c_str());
 	target_client->Message(Chat::White, "%s invited you to fellowship '%s'. Use #fellowshipdebug accept to join.", client->GetCleanName(), membership->fellowship_name.c_str());
 	return true;
@@ -1549,7 +1588,8 @@ void FellowshipManager::HandleClientPacket(Client *client, const EQApplicationPa
 	const auto field_04 = ReadUInt32OrZero(app, 4);
 	const auto field_08 = ReadUInt32OrZero(app, 8);
 	const auto field_12 = ReadUInt32OrZero(app, 12);
-	const auto possible_create = action == kClientActionCreate && app->Size() == kCreatePacketWireSize;
+	const auto is_fellowship_action = app->GetOpcode() == OP_FellowshipUpdate;
+	const auto possible_create = is_fellowship_action && action == kClientActionCreate && app->Size() == kCreatePacketWireSize;
 
 	if (RuleB(CustomFeatures, FellowshipOpcodeDiscoveryEnabled)) {
 		LogInfo(
@@ -1572,6 +1612,10 @@ void FellowshipManager::HandleClientPacket(Client *client, const EQApplicationPa
 
 	if (possible_create) {
 		CreateFellowship(client, "");
+	} else if (is_fellowship_action && action == kClientActionAcceptInvite) {
+		AcceptInvite(client);
+	} else if (is_fellowship_action && action == kClientActionInviteTarget) {
+		InviteTarget(client, field_04);
 	}
 }
 
