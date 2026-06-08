@@ -462,6 +462,7 @@
 // CSidlManager 
 #define CSidlManager__FindScreenPieceTemplate1_x                   0x870120
 #define CSidlManager__CreateLabel_x                                0x7556F0
+#define CSidlManager__FindAnimation1_x                             0x86E010
 
 // CSidlScreenWnd 
 #define CSidlScreenWnd__CalculateHSBRange_x                        0x61EE40
@@ -530,6 +531,10 @@
 
 // CTextureFont
 #define CTextureFont__DrawWrappedText_x                            0x889B70
+
+// CTextureAnimation
+#define CTextureAnimation__Draw_x                                  0x87A4A0
+#define CTextureAnimation__SetCurCell_x                            0x87A860
 
 // CXMLDataManager 
 #define CXMLDataManager__GetXMLData_x                              0x8929A0

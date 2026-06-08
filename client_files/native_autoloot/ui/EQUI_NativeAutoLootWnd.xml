@@ -53,11 +53,13 @@
 		<Style_VScroll>true</Style_VScroll>
 		<Style_HScroll>false</Style_HScroll>
 		<Style_Transparent>false</Style_Transparent>
-		<Columns><Width>250</Width><Heading>Item</Heading></Columns>
-		<Columns><Width>42</Width><Heading>Qty</Heading></Columns>
-		<Columns><Width>196</Width><Heading>NPC Name</Heading></Columns>
-		<Columns><Width>60</Width><Heading>Rule</Heading></Columns>
-		<Columns><Width>70</Width><Heading>Status</Heading></Columns>
+		<Columns><Width>42</Width><Heading>Item</Heading></Columns>
+		<Columns><Width>40</Width><Heading>Loot</Heading></Columns>
+		<Columns><Width>44</Width><Heading>Leave</Heading></Columns>
+		<Columns><Width>30</Width><Heading>AN</Heading></Columns>
+		<Columns><Width>30</Width><Heading>AG</Heading></Columns>
+		<Columns><Width>48</Width><Heading>Never</Heading></Columns>
+		<Columns><Width>360</Width><Heading>NPC Name</Heading></Columns>
 	</Listbox>
 
 	<Label item="AALW_SetAllLabel">
@@ -169,17 +171,15 @@
 		<Style_VScroll>true</Style_VScroll>
 		<Style_HScroll>false</Style_HScroll>
 		<Style_Transparent>false</Style_Transparent>
-		<Columns><Width>130</Width><Heading>Item</Heading></Columns>
-		<Columns><Width>36</Width><Heading>Qty</Heading></Columns>
-		<Columns><Width>150</Width><Heading>NPC Name</Heading></Columns>
-		<Columns><Width>54</Width><Heading>Status</Heading></Columns>
-		<Columns><Width>48</Width><Heading>Rule</Heading></Columns>
-		<Columns><Width>30</Width><Heading>ND</Heading></Columns>
-		<Columns><Width>30</Width><Heading>GD</Heading></Columns>
-		<Columns><Width>30</Width><Heading>NO</Heading></Columns>
+		<Columns><Width>42</Width><Heading>Item</Heading></Columns>
+		<Columns><Width>34</Width><Heading>ND</Heading></Columns>
+		<Columns><Width>34</Width><Heading>GD</Heading></Columns>
+		<Columns><Width>34</Width><Heading>NO</Heading></Columns>
 		<Columns><Width>30</Width><Heading>AN</Heading></Columns>
 		<Columns><Width>30</Width><Heading>AG</Heading></Columns>
-		<Columns><Width>30</Width><Heading>NV</Heading></Columns>
+		<Columns><Width>48</Width><Heading>Never</Heading></Columns>
+		<Columns><Width>220</Width><Heading>NPC Name</Heading></Columns>
+		<Columns><Width>116</Width><Heading>Status</Heading></Columns>
 	</Listbox>
 
 	<Button item="AALW_RefreshButton">

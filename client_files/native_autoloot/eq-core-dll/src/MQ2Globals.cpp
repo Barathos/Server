@@ -1520,6 +1520,7 @@ INITIALIZE_EQGAME_OFFSET(CObfuscator__doit);
 
 INITIALIZE_EQGAME_OFFSET(CSidlManager__FindScreenPieceTemplate1);
 INITIALIZE_EQGAME_OFFSET(CSidlManager__CreateLabel);
+INITIALIZE_EQGAME_OFFSET(CSidlManager__FindAnimation1);
 
 INITIALIZE_EQGAME_OFFSET(CSidlScreenWnd__CalculateHSBRange);
 INITIALIZE_EQGAME_OFFSET(CSidlScreenWnd__CalculateVSBRange);
@@ -1580,6 +1581,8 @@ INITIALIZE_EQGAME_OFFSET(CTabWnd__UpdatePage);
 INITIALIZE_EQGAME_OFFSET(CTextOverlay__DisplayText);
 
 INITIALIZE_EQGAME_OFFSET(CTextureFont__DrawWrappedText);
+INITIALIZE_EQGAME_OFFSET(CTextureAnimation__Draw);
+INITIALIZE_EQGAME_OFFSET(CTextureAnimation__SetCurCell);
 
 INITIALIZE_EQGAME_OFFSET(CXMLDataManager__GetXMLData);
 

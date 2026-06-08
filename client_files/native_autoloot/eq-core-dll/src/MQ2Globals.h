@@ -1023,6 +1023,7 @@ EQLIB_VAR DWORD CObfuscator__doit;
 
 EQLIB_VAR DWORD CSidlManager__FindScreenPieceTemplate1;
 EQLIB_VAR DWORD CSidlManager__CreateLabel;
+EQLIB_VAR DWORD CSidlManager__FindAnimation1;
 
 EQLIB_VAR DWORD CSidlScreenWnd__CalculateHSBRange;
 EQLIB_VAR DWORD CSidlScreenWnd__CalculateVSBRange;
@@ -1083,6 +1084,8 @@ EQLIB_VAR DWORD CTabWnd__UpdatePage;
 EQLIB_VAR DWORD CTextOverlay__DisplayText;
 
 EQLIB_VAR DWORD CTextureFont__DrawWrappedText;
+EQLIB_VAR DWORD CTextureAnimation__Draw;
+EQLIB_VAR DWORD CTextureAnimation__SetCurCell;
 
 EQLIB_VAR DWORD CXMLDataManager__GetXMLData;
 
