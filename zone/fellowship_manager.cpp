@@ -59,6 +59,9 @@ constexpr uint32 kFellowshipStateMembersOffset = 0x448;
 constexpr uint32 kFellowshipStateMemberListOffset = 0x44c;
 constexpr uint32 kFellowshipStateMemberSize = 0x54;
 constexpr uint32 kFellowshipMaxClientMembers = 12;
+constexpr uint32 kFellowshipStateWithCampfirePacketSize = 0xa04;
+constexpr uint32 kFellowshipActionPacketSize = 1076;
+constexpr uint16 kRoFSelectCampfireOpcode = 0x7abb;
 constexpr uint32 kFellowshipProbeDefaultIntervalMs = 2500;
 constexpr uint32 kFellowshipProbeMinIntervalMs = 1000;
 constexpr uint32 kFellowshipProbeMaxIntervalMs = 10000;
@@ -115,6 +118,11 @@ enum class FellowshipProbeLayout {
 	MemoryUnknownOne,
 	MemoryUnknownZero,
 	MemoryWithTimestamp,
+	MemoryWithoutLeadingUnknown,
+	MemoryWithCampfireTail,
+	ActionCreateAck,
+	ActionStateFixed,
+	CampfireOnly,
 };
 
 struct FellowshipProbeDefinition {
@@ -146,6 +154,15 @@ const std::vector<FellowshipProbeDefinition> &GetFellowshipProbes()
 		{ "rof-showeq-20130313-memory-one", OP_Unknown, 0x7eb8, FellowshipProbeLayout::MemoryUnknownOne },
 		{ "rof-showeq-20120817-memory-one", OP_Unknown, 0x584f, FellowshipProbeLayout::MemoryUnknownOne },
 		{ "rof-showeq-20121023-memory-one", OP_Unknown, 0x5545, FellowshipProbeLayout::MemoryUnknownOne },
+		{ "rof2-memory-no-leading-unknown", OP_Fellowship, 0, FellowshipProbeLayout::MemoryWithoutLeadingUnknown },
+		{ "rof2-memory-with-campfire-tail", OP_Fellowship, 0, FellowshipProbeLayout::MemoryWithCampfireTail },
+		{ "rof-20121212-memory-with-campfire-tail", OP_Unknown, 0x40fd, FellowshipProbeLayout::MemoryWithCampfireTail },
+		{ "rof2-action-create-ack", OP_Fellowship, 0, FellowshipProbeLayout::ActionCreateAck },
+		{ "rof2-action-state-fixed", OP_Fellowship, 0, FellowshipProbeLayout::ActionStateFixed },
+		{ "create-action-opcode-create-ack", OP_FellowshipUpdate, 0, FellowshipProbeLayout::ActionCreateAck },
+		{ "create-action-opcode-state-fixed", OP_FellowshipUpdate, 0, FellowshipProbeLayout::ActionStateFixed },
+		{ "rof-select-campfire-empty", OP_Unknown, kRoFSelectCampfireOpcode, FellowshipProbeLayout::CampfireOnly },
+		{ "rof-select-campfire-state-fixed", OP_Unknown, kRoFSelectCampfireOpcode, FellowshipProbeLayout::ActionStateFixed },
 	};
 
 	return probes;
@@ -214,6 +231,11 @@ void WriteUInt16(uint8 *buffer, uint32 offset, uint16 value)
 }
 
 void WriteUInt32(uint8 *buffer, uint32 offset, uint32 value)
+{
+	std::memcpy(buffer + offset, &value, sizeof(value));
+}
+
+void WriteFloat(uint8 *buffer, uint32 offset, float value)
 {
 	std::memcpy(buffer + offset, &value, sizeof(value));
 }
@@ -396,10 +418,14 @@ std::unique_ptr<EQApplicationPacket> BuildFellowshipMemoryStatePacket(
 	EmuOpcode opcode,
 	uint16 opcode_bypass,
 	uint32 unknown0,
-	bool write_timestamp
+	bool write_timestamp,
+	bool include_campfire_tail = false
 )
 {
-	auto outapp = std::make_unique<EQApplicationPacket>(opcode, kFellowshipStatePacketSize);
+	auto outapp = std::make_unique<EQApplicationPacket>(
+		opcode,
+		include_campfire_tail ? kFellowshipStateWithCampfirePacketSize : kFellowshipStatePacketSize
+	);
 	if (opcode_bypass) {
 		outapp->SetOpcodeBypass(opcode_bypass);
 	}
@@ -426,6 +452,69 @@ std::unique_ptr<EQApplicationPacket> BuildFellowshipMemoryStatePacket(
 		WriteUInt32(outapp->pBuffer, member_offset + 0x50, member.last_online);
 	}
 
+	if (include_campfire_tail) {
+		WriteFloat(outapp->pBuffer, 0x9e4, 0.0f); // campfire Y
+		WriteFloat(outapp->pBuffer, 0x9e8, 0.0f); // campfire X
+		WriteFloat(outapp->pBuffer, 0x9ec, 0.0f); // campfire Z
+		WriteUInt16(outapp->pBuffer, 0x9f0, 0);    // campfire zone
+		WriteUInt16(outapp->pBuffer, 0x9f2, 0);    // campfire instance
+		WriteUInt32(outapp->pBuffer, 0x9f4, 0);    // campfire timestamp
+		WriteUInt32(outapp->pBuffer, 0x9f8, 0);
+		WriteUInt32(outapp->pBuffer, 0x9fc, 0);    // campfire type?
+		WriteUInt32(outapp->pBuffer, 0xa00, 0);    // campfire active
+	}
+
+	return outapp;
+}
+
+std::unique_ptr<EQApplicationPacket> BuildFellowshipMemoryWithoutLeadingUnknownPacket(
+	const FellowshipStateContext &context,
+	EmuOpcode opcode,
+	uint16 opcode_bypass
+)
+{
+	auto source = BuildFellowshipMemoryStatePacket(context, opcode, opcode_bypass, 1, false);
+	auto outapp = std::make_unique<EQApplicationPacket>(opcode, kFellowshipStatePacketSize - sizeof(uint32));
+	if (opcode_bypass) {
+		outapp->SetOpcodeBypass(opcode_bypass);
+	}
+
+	std::memcpy(outapp->pBuffer, source->pBuffer + sizeof(uint32), outapp->size);
+	return outapp;
+}
+
+std::unique_ptr<EQApplicationPacket> BuildFellowshipActionPacket(
+	const FellowshipStateContext &context,
+	EmuOpcode opcode,
+	uint16 opcode_bypass,
+	uint32 action,
+	bool include_fixed_state
+)
+{
+	auto outapp = std::make_unique<EQApplicationPacket>(opcode, kFellowshipActionPacketSize);
+	if (opcode_bypass) {
+		outapp->SetOpcodeBypass(opcode_bypass);
+	}
+
+	std::memset(outapp->pBuffer, 0, outapp->size);
+	WriteUInt32(outapp->pBuffer, 0x000, action);
+	WriteUInt32(outapp->pBuffer, 0x004, context.membership.fellowship_id);
+	WriteUInt32(outapp->pBuffer, 0x008, static_cast<uint32>(context.members.size()));
+
+	if (!include_fixed_state) {
+		return outapp;
+	}
+
+	const auto &first_member = context.members.front();
+	WriteFixedString(outapp->pBuffer, 0x00c, 0x40, context.membership.fellowship_name);
+	WriteFixedString(outapp->pBuffer, 0x04c, 0x40, context.leader_name);
+	WriteFixedString(outapp->pBuffer, 0x08c, 0x40, first_member.character_name);
+	WriteUInt32(outapp->pBuffer, 0x0cc, first_member.level);
+	WriteUInt32(outapp->pBuffer, 0x0d0, first_member.class_id);
+	WriteUInt32(outapp->pBuffer, 0x0d4, first_member.zone_id);
+	WriteUInt32(outapp->pBuffer, 0x0d8, first_member.instance_id);
+	WriteUInt32(outapp->pBuffer, 0x0dc, first_member.sharing_enabled ? 1 : 0);
+	WriteFixedString(outapp->pBuffer, 0x100, 0x300, context.membership.motd);
 	return outapp;
 }
 
@@ -439,9 +528,42 @@ std::unique_ptr<EQApplicationPacket> BuildFellowshipProbePacket(
 		return BuildFellowshipMemoryStatePacket(context, probe.opcode, probe.opcode_bypass, 0, false);
 	case FellowshipProbeLayout::MemoryWithTimestamp:
 		return BuildFellowshipMemoryStatePacket(context, probe.opcode, probe.opcode_bypass, 1, true);
+	case FellowshipProbeLayout::MemoryWithoutLeadingUnknown:
+		return BuildFellowshipMemoryWithoutLeadingUnknownPacket(context, probe.opcode, probe.opcode_bypass);
+	case FellowshipProbeLayout::MemoryWithCampfireTail:
+		return BuildFellowshipMemoryStatePacket(context, probe.opcode, probe.opcode_bypass, 1, true, true);
+	case FellowshipProbeLayout::ActionCreateAck:
+		return BuildFellowshipActionPacket(context, probe.opcode, probe.opcode_bypass, 1, false);
+	case FellowshipProbeLayout::ActionStateFixed:
+		return BuildFellowshipActionPacket(context, probe.opcode, probe.opcode_bypass, 2, true);
+	case FellowshipProbeLayout::CampfireOnly:
+		return BuildFellowshipActionPacket(context, probe.opcode, probe.opcode_bypass, 0, false);
 	case FellowshipProbeLayout::MemoryUnknownOne:
 	default:
 		return BuildFellowshipMemoryStatePacket(context, probe.opcode, probe.opcode_bypass, 1, false);
+	}
+}
+
+const char *GetFellowshipProbeLayoutName(FellowshipProbeLayout layout)
+{
+	switch (layout) {
+	case FellowshipProbeLayout::MemoryUnknownZero:
+		return "memory_unknown0_zero";
+	case FellowshipProbeLayout::MemoryWithTimestamp:
+		return "memory_with_timestamp";
+	case FellowshipProbeLayout::MemoryWithoutLeadingUnknown:
+		return "memory_without_leading_unknown";
+	case FellowshipProbeLayout::MemoryWithCampfireTail:
+		return "memory_with_campfire_tail";
+	case FellowshipProbeLayout::ActionCreateAck:
+		return "action_create_ack";
+	case FellowshipProbeLayout::ActionStateFixed:
+		return "action_state_fixed";
+	case FellowshipProbeLayout::CampfireOnly:
+		return "campfire_only";
+	case FellowshipProbeLayout::MemoryUnknownOne:
+	default:
+		return "memory_unknown0_one";
 	}
 }
 
@@ -475,10 +597,7 @@ bool SendFellowshipProbe(Client *client, FellowshipProbeSession &session, bool m
 	const auto &probe = probes[probe_index];
 	auto outapp = BuildFellowshipProbePacket(*context, probe);
 	const auto protocol_opcode = probe.opcode_bypass;
-	const auto layout_name =
-		probe.layout == FellowshipProbeLayout::MemoryUnknownZero ? "memory_unknown0_zero" :
-		probe.layout == FellowshipProbeLayout::MemoryWithTimestamp ? "memory_with_timestamp" :
-		"memory_unknown0_one";
+	const auto layout_name = GetFellowshipProbeLayoutName(probe.layout);
 
 	LogInfo(
 		"Fellowship probe character [{}] index [{}]/[{}] label [{}] emu [{}] bypass [{:#06x}] payload_size [{}] wire_size [{}] layout [{}] manual [{}] {}",
@@ -606,7 +725,7 @@ void SendHelp(Client *client)
 	client->Message(Chat::White, "#fellowshipdebug motd <message> - Set the fellowship message.");
 	client->Message(Chat::White, "#fellowshipdebug share - Toggle your fellowship vitality sharing flag.");
 	client->Message(Chat::White, "#fellowshipdebug camp create|destroy|port - Manage the basic stored campfire.");
-	client->Message(Chat::White, "#fellowshipdebug probe start|stop|next|reset|status|list [interval_ms] - Send controlled fellowship packet probes.");
+	client->Message(Chat::White, "#fellowshipdebug probe start|stop|next|reset|status|list [interval_ms|probe_number] - Send controlled fellowship packet probes.");
 }
 
 std::optional<Campfire> LoadCampfire(uint32 fellowship_id, bool active_only = true)
@@ -1283,10 +1402,22 @@ void HandleProbeCommand(Client *client, const Seperator *sep)
 	}
 
 	if (!strcasecmp(sep->arg[2], "reset")) {
+		const auto &probes = GetFellowshipProbes();
 		session.active = false;
 		session.next_probe = 0;
+		if (sep->argnum >= 3 && sep->arg[3][0] && Strings::IsNumber(sep->arg[3])) {
+			const auto requested_probe = Strings::ToUnsignedInt(sep->arg[3]);
+			if (requested_probe >= 1 && requested_probe <= probes.size()) {
+				session.next_probe = requested_probe - 1;
+			}
+		}
 		session.timer.Disable();
-		client->Message(Chat::White, "Fellowship probe reset to the first packet.");
+		client->Message(
+			Chat::White,
+			"Fellowship probe reset to packet %u/%u.",
+			std::min<uint32>(session.next_probe + 1, static_cast<uint32>(probes.size())),
+			static_cast<uint32>(probes.size())
+		);
 		return;
 	}
 
