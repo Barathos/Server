@@ -459,7 +459,7 @@ std::unique_ptr<EQApplicationPacket> BuildFellowshipMemoryStatePacket(
 	for (uint32 index = 0; index < context.members.size(); ++index) {
 		const auto &member = context.members[index];
 		const auto member_offset = kFellowshipStateMemberListOffset + (index * kFellowshipStateMemberSize);
-		WriteUInt32(outapp->pBuffer, member_offset + 0x00, member.entity_id ? member.entity_id : member.character_id);
+		WriteUInt32(outapp->pBuffer, member_offset + 0x00, member.character_id);
 		WriteFixedString(outapp->pBuffer, member_offset + 0x04, 0x40, member.character_name);
 		WriteUInt32(outapp->pBuffer, member_offset + 0x44, member.zone_id);
 		WriteUInt32(outapp->pBuffer, member_offset + 0x48, member.level);
