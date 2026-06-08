@@ -17,7 +17,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location><X>112</X><Y>18</Y></Location>
 		<Size><CX>210</CX><CY>18</CY></Size>
-		<Text>Rules 0 keep / 0 never</Text>
+		<Text>Rules AN 0 / AG 0 / NV 0</Text>
 		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
@@ -145,7 +145,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location><X>112</X><Y>214</Y></Location>
 		<Size><CX>390</CX><CY>18</CY></Size>
-		<Text>Group: solo  Assigned: none</Text>
+		<Text>Shared Loot: solo  Master Candidate: on</Text>
 		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
@@ -203,27 +203,6 @@
 		<Template>BDT_Normal</Template>
 	</Button>
 
-	<Button item="AALW_NearbyButton">
-		<ScreenID>AALW_NearbyButton</ScreenID>
-		<RelativePosition>true</RelativePosition>
-		<AutoStretch>true</AutoStretch>
-		<LeftAnchorOffset>84</LeftAnchorOffset>
-		<TopAnchorOffset>70</TopAnchorOffset>
-		<RightAnchorOffset>176</RightAnchorOffset>
-		<BottomAnchorOffset>48</BottomAnchorOffset>
-		<TopAnchorToTop>false</TopAnchorToTop>
-		<BottomAnchorToTop>false</BottomAnchorToTop>
-		<LeftAnchorToLeft>true</LeftAnchorToLeft>
-		<RightAnchorToLeft>true</RightAnchorToLeft>
-		<Location><X>84</X><Y>350</Y></Location>
-		<Size><CX>92</CX><CY>22</CY></Size>
-		<Text>Loot Nearby</Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
-		<Style_Transparent>false</Style_Transparent>
-		<Style_Checkbox>false</Style_Checkbox>
-		<Template>BDT_Normal</Template>
-	</Button>
-
 	<Button item="AALW_EditFiltersButton">
 		<ScreenID>AALW_EditFiltersButton</ScreenID>
 		<RelativePosition>true</RelativePosition>
@@ -261,7 +240,7 @@
 		<Size><CX>104</CX><CY>22</CY></Size>
 		<Text>Loot Settings</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
-		<TooltipReference>Open source-backed AutoLoot settings.</TooltipReference>
+		<TooltipReference>Open Advanced Loot settings.</TooltipReference>
 		<Style_Transparent>false</Style_Transparent>
 		<Style_Checkbox>false</Style_Checkbox>
 		<Template>BDT_Normal</Template>
@@ -283,7 +262,7 @@
 		<Size><CX>110</CX><CY>18</CY></Size>
 		<Text>Apply Filters</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
-		<TooltipReference>Automatically apply Keep and Never filters when the server processes loot.</TooltipReference>
+		<TooltipReference>Automatically apply saved Advanced Loot filters when the server processes loot.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -441,7 +420,7 @@
 		<RightAnchorToLeft>false</RightAnchorToLeft>
 		<Location><X>8</X><Y>414</Y></Location>
 		<Size><CX>606</CX><CY>18</CY></Size>
-		<Text>Waiting for AutoLoot snapshot...</Text>
+		<Text>Waiting for Advanced Loot snapshot...</Text>
 		<TextColor><R>220</R><G>230</G><B>255</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
@@ -475,7 +454,6 @@
 		<Pieces>AALW_MasterLabel</Pieces>
 		<Pieces>AALW_SharedList</Pieces>
 		<Pieces>AALW_RefreshButton</Pieces>
-		<Pieces>AALW_NearbyButton</Pieces>
 		<Pieces>AALW_EditFiltersButton</Pieces>
 		<Pieces>AALW_LootSettingsButton</Pieces>
 		<Pieces>AALW_ApplyFiltersCheck</Pieces>
@@ -493,7 +471,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location><X>8</X><Y>20</Y></Location>
 		<Size><CX>260</CX><CY>18</CY></Size>
-		<Text>Rules 0 keep / 0 never</Text>
+		<Text>Filters AN 0 / AG 0 / NV 0 / Auto Roll 0</Text>
 		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
@@ -515,7 +493,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location><X>86</X><Y>44</Y></Location>
 		<Size><CX>58</CX><CY>22</CY></Size>
-		<Text>Keep</Text>
+		<Text>AN</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<Style_Transparent>false</Style_Transparent>
 		<Style_Checkbox>false</Style_Checkbox>
@@ -594,7 +572,7 @@
 		<RelativePosition>false</RelativePosition>
 		<Location><X>110</X><Y>120</Y></Location>
 		<Size><CX>520</CX><CY>370</CY></Size>
-		<Text>AutoLoot Filters</Text>
+		<Text>Advanced Loot Filters</Text>
 		<DrawTemplate>WDT_Def</DrawTemplate>
 		<Style_Titlebar>true</Style_Titlebar>
 		<Style_Closebox>true</Style_Closebox>
@@ -616,7 +594,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location><X>8</X><Y>18</Y></Location>
 		<Size><CX>130</CX><CY>18</CY></Size>
-		<Text>Loot Settings</Text>
+		<Text>Advanced Loot Settings</Text>
 		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
@@ -626,7 +604,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location><X>126</X><Y>18</Y></Location>
 		<Size><CX>286</CX><CY>18</CY></Size>
-		<Text>Filter: both  Rules: 0 keep / 0 never</Text>
+		<Text>Advanced: on  Apply Filters: on  Rules: AN 0 / AG 0 / NV 0</Text>
 		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
@@ -636,9 +614,9 @@
 		<RelativePosition>true</RelativePosition>
 		<Location><X>12</X><Y>48</Y></Location>
 		<Size><CX>155</CX><CY>18</CY></Size>
-		<Text>Apply Filters</Text>
+		<Text>Use Advanced Loot</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
-		<TooltipReference>Toggle server-side AutoLoot filter processing.</TooltipReference>
+		<TooltipReference>Toggle server-side Advanced Loot processing.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -652,9 +630,9 @@
 		<RelativePosition>true</RelativePosition>
 		<Location><X>176</X><Y>48</Y></Location>
 		<Size><CX>155</CX><CY>18</CY></Size>
-		<Text>Need/Greed</Text>
+		<Text>Master Looter</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
-		<TooltipReference>Toggle server-side Need/Greed voting for grouped loot.</TooltipReference>
+		<TooltipReference>Allow this character to be selected as Master Looter.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -668,7 +646,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location><X>8</X><Y>82</Y></Location>
 		<Size><CX>110</CX><CY>18</CY></Size>
-		<Text>Group Loot</Text>
+		<Text>Advanced Options</Text>
 		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
@@ -678,7 +656,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location><X>126</X><Y>82</Y></Location>
 		<Size><CX>286</CX><CY>18</CY></Size>
-		<Text>Group: solo  Need/Greed: off  Assigned: none</Text>
+		<Text>Master candidate: on  Auto Split: on  Auto Loot All: off</Text>
 		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
@@ -688,9 +666,9 @@
 		<RelativePosition>true</RelativePosition>
 		<Location><X>12</X><Y>112</Y></Location>
 		<Size><CX>66</CX><CY>22</CY></Size>
-		<Text>None</Text>
+		<Text>Auto Split</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
-		<TooltipReference>Disable grouped AutoLoot handling.</TooltipReference>
+		<TooltipReference>Toggle automatic coin split handling.</TooltipReference>
 		<Style_Transparent>false</Style_Transparent>
 		<Style_Checkbox>false</Style_Checkbox>
 		<Template>BDT_Normal</Template>
@@ -701,9 +679,9 @@
 		<RelativePosition>true</RelativePosition>
 		<Location><X>84</X><Y>112</Y></Location>
 		<Size><CX>66</CX><CY>22</CY></Size>
-		<Text>Solo</Text>
+		<Text>Loot All</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
-		<TooltipReference>Use solo AutoLoot behavior.</TooltipReference>
+		<TooltipReference>Toggle personal Auto Loot All.</TooltipReference>
 		<Style_Transparent>false</Style_Transparent>
 		<Style_Checkbox>false</Style_Checkbox>
 		<Template>BDT_Normal</Template>
@@ -714,9 +692,9 @@
 		<RelativePosition>true</RelativePosition>
 		<Location><X>156</X><Y>112</Y></Location>
 		<Size><CX>66</CX><CY>22</CY></Size>
-		<Text>Master</Text>
+		<Text>Debug</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
-		<TooltipReference>Use master looter AutoLoot behavior.</TooltipReference>
+		<TooltipReference>Toggle Advanced Loot debug chat.</TooltipReference>
 		<Style_Transparent>false</Style_Transparent>
 		<Style_Checkbox>false</Style_Checkbox>
 		<Template>BDT_Normal</Template>
@@ -727,9 +705,9 @@
 		<RelativePosition>true</RelativePosition>
 		<Location><X>228</X><Y>112</Y></Location>
 		<Size><CX>66</CX><CY>22</CY></Size>
-		<Text>Robin</Text>
+		<Text>Log</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
-		<TooltipReference>Use round-robin AutoLoot behavior.</TooltipReference>
+		<TooltipReference>Toggle Advanced Loot audit logging.</TooltipReference>
 		<Style_Transparent>false</Style_Transparent>
 		<Style_Checkbox>false</Style_Checkbox>
 		<Template>BDT_Normal</Template>
@@ -740,58 +718,9 @@
 		<RelativePosition>true</RelativePosition>
 		<Location><X>300</X><Y>112</Y></Location>
 		<Size><CX>66</CX><CY>22</CY></Size>
-		<Text>Killer</Text>
+		<Text>Refresh</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
-		<TooltipReference>Give AutoLoot priority to the killer.</TooltipReference>
-		<Style_Transparent>false</Style_Transparent>
-		<Style_Checkbox>false</Style_Checkbox>
-		<Template>BDT_Normal</Template>
-	</Button>
-
-	<Label item="AALS_AutoSellLabel">
-		<ScreenID>AALS_AutoSellLabel</ScreenID>
-		<RelativePosition>true</RelativePosition>
-		<Location><X>8</X><Y>158</Y></Location>
-		<Size><CX>110</CX><CY>18</CY></Size>
-		<Text>AutoSell</Text>
-		<TextColor><R>190</R><G>210</G><B>230</B></TextColor>
-		<NoWrap>true</NoWrap>
-	</Label>
-
-	<Button item="AALS_AutoSellPreviewButton">
-		<ScreenID>AALS_AutoSellPreviewButton</ScreenID>
-		<RelativePosition>true</RelativePosition>
-		<Location><X>12</X><Y>186</Y></Location>
-		<Size><CX>82</CX><CY>22</CY></Size>
-		<Text>Preview</Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
-		<TooltipReference>Preview sellable AutoLoot items on the server.</TooltipReference>
-		<Style_Transparent>false</Style_Transparent>
-		<Style_Checkbox>false</Style_Checkbox>
-		<Template>BDT_Normal</Template>
-	</Button>
-
-	<Button item="AALS_AutoSellConfirmButton">
-		<ScreenID>AALS_AutoSellConfirmButton</ScreenID>
-		<RelativePosition>true</RelativePosition>
-		<Location><X>100</X><Y>186</Y></Location>
-		<Size><CX>82</CX><CY>22</CY></Size>
-		<Text>Confirm</Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
-		<TooltipReference>Confirm the pending server AutoSell preview.</TooltipReference>
-		<Style_Transparent>false</Style_Transparent>
-		<Style_Checkbox>false</Style_Checkbox>
-		<Template>BDT_Normal</Template>
-	</Button>
-
-	<Button item="AALS_AutoSellCancelButton">
-		<ScreenID>AALS_AutoSellCancelButton</ScreenID>
-		<RelativePosition>true</RelativePosition>
-		<Location><X>188</X><Y>186</Y></Location>
-		<Size><CX>82</CX><CY>22</CY></Size>
-		<Text>Cancel</Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
-		<TooltipReference>Cancel the pending server AutoSell preview.</TooltipReference>
+		<TooltipReference>Refresh Advanced Loot settings.</TooltipReference>
 		<Style_Transparent>false</Style_Transparent>
 		<Style_Checkbox>false</Style_Checkbox>
 		<Template>BDT_Normal</Template>
@@ -804,7 +733,7 @@
 		<Size><CX>82</CX><CY>22</CY></Size>
 		<Text>Refresh</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
-		<TooltipReference>Refresh AutoLoot settings from the server.</TooltipReference>
+		<TooltipReference>Refresh Advanced Loot settings from the server.</TooltipReference>
 		<Style_Transparent>false</Style_Transparent>
 		<Style_Checkbox>false</Style_Checkbox>
 		<Template>BDT_Normal</Template>
@@ -815,7 +744,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location><X>12</X><Y>286</Y></Location>
 		<Size><CX>390</CX><CY>18</CY></Size>
-		<Text>Waiting for AutoLoot settings...</Text>
+		<Text>Waiting for Advanced Loot settings...</Text>
 		<TextColor><R>220</R><G>230</G><B>255</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
@@ -825,7 +754,7 @@
 		<RelativePosition>false</RelativePosition>
 		<Location><X>145</X><Y>145</Y></Location>
 		<Size><CX>420</CX><CY>330</CY></Size>
-		<Text>AutoLoot Settings</Text>
+		<Text>Advanced Loot Settings</Text>
 		<DrawTemplate>WDT_Def</DrawTemplate>
 		<Style_Titlebar>true</Style_Titlebar>
 		<Style_Closebox>true</Style_Closebox>
@@ -844,10 +773,6 @@
 		<Pieces>AALS_GroupMasterButton</Pieces>
 		<Pieces>AALS_GroupRobinButton</Pieces>
 		<Pieces>AALS_GroupKillerButton</Pieces>
-		<Pieces>AALS_AutoSellLabel</Pieces>
-		<Pieces>AALS_AutoSellPreviewButton</Pieces>
-		<Pieces>AALS_AutoSellConfirmButton</Pieces>
-		<Pieces>AALS_AutoSellCancelButton</Pieces>
 		<Pieces>AALS_RefreshButton</Pieces>
 		<Pieces>AALS_StatusLabel</Pieces>
 	</Screen>

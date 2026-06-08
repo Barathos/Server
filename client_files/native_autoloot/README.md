@@ -4,7 +4,7 @@ This folder contains the current client-side native runtime for the custom EQEmu
 
 It supports the native EQ UI windows and transport lines for:
 
-- AutoLoot: `AUTOLOOT|...`
+- Advanced Loot: `ADVLOOT|...`
 - Live Items / Item Forge: `LIVEITEM|...`
 - Live Spells / Spell Forge: `LIVESPELL|...`
 - Achievements: `ACH|...`
@@ -43,7 +43,7 @@ Only load one patched client folder at a time.
 Useful reopen commands:
 
 ```text
-#autoloot native show
+#advloot native show
 #itemforge dialog
 #livespell dialog
 #ach window
@@ -59,9 +59,9 @@ This is a monolithic native runtime. The feature-specific code currently lives m
 client_files/native_autoloot/eq-core-dll/src/core_autoloot_native.h
 ```
 
-The old `EQUI_AoTAutoLootWnd.xml` combined prototype window is intentionally not included. AutoLoot uses `EQUI_NativeAutoLootWnd.xml`.
+The old `EQUI_AoTAutoLootWnd.xml` combined prototype window is intentionally not included. Advanced Loot uses `EQUI_NativeAutoLootWnd.xml`.
 
-The surrounding DLL project still contains older MacroQuest-derived scaffolding because the current hooks were built on that client-side base. That is separate from the removed Lua/MQ AutoLoot UI path.
+The surrounding DLL project still contains older MacroQuest-derived scaffolding because the current hooks were built on that client-side base. That is separate from the removed Lua/MQ loot UI path.
 
 ## Build
 

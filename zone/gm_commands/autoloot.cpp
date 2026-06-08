@@ -10,22 +10,7 @@
 #include "zone/autoloot_manager.h"
 #include "zone/client.h"
 
-void command_autoloot(Client *c, const Seperator *sep)
+void command_advloot(Client *c, const Seperator *sep)
 {
-	auto_loot_manager.HandleAutolootCommand(c, sep);
-}
-
-void command_lootfilter(Client *c, const Seperator *sep)
-{
-	auto_loot_manager.HandleLootFilterCommand(c, sep);
-}
-
-void command_autosell(Client *c, const Seperator *sep)
-{
-	auto_loot_manager.HandleAutosellCommand(c, sep);
-}
-
-void command_needgreed(Client *c, const Seperator *sep)
-{
-	auto_loot_manager.HandleNeedGreedCommand(c, sep);
+	auto_loot_manager.HandleAdvancedLootCommand(c, sep);
 }

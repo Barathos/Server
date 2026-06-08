@@ -61,11 +61,14 @@ struct NativeAutoLootRow
 	std::string source = "corpse";
 	std::string state = "waiting";
 	std::string rule = "-";
+	bool auto_roll = false;
 };
 
 static void NativeAutoLootSendCommand(const char* command);
 static void NativeAutoLootUpdateWindow();
 static const char* NativeAutoLootToggleEnabledCommand();
+static const char* NativeAutoLootToggleApplyFiltersCommand();
+static const char* NativeAutoLootToggleMasterCandidateCommand();
 static void NativeAutoLootShowRulesWindow();
 static void NativeAutoLootShowSettingsWindow();
 static void NativeAutoLootMaybeSendInitialRequests();
@@ -109,7 +112,6 @@ public:
 		MasterLabel = GetChildItem("AALW_MasterLabel");
 		RuleSummaryLabel = GetChildItem("AALW_RuleSummaryLabel");
 		RefreshButton = (CButtonWnd*)GetChildItem("AALW_RefreshButton");
-		NearbyButton = (CButtonWnd*)GetChildItem("AALW_NearbyButton");
 		EditFiltersButton = (CButtonWnd*)GetChildItem("AALW_EditFiltersButton");
 		LootSettingsButton = (CButtonWnd*)GetChildItem("AALW_LootSettingsButton");
 		LootAllButton = (CButtonWnd*)GetChildItem("AALW_LootAllButton");
@@ -127,7 +129,7 @@ public:
 		GroupedByNpcCheck = (CButtonWnd*)GetChildItem("AALW_GroupedByNpcCheck");
 
 		Layout();
-		SetStatus("Waiting for AutoLoot snapshot...");
+		SetStatus("Waiting for Advanced Loot snapshot...");
 		RefreshRows();
 	}
 
@@ -147,7 +149,7 @@ public:
 			}
 
 			char command[128];
-			sprintf_s(command, "/say #autoloot inspect %d", row->entry_id);
+			sprintf_s(command, "/say #advloot inspect %d", row->entry_id);
 			NativeAutoLootSendCommand(command);
 			SetStatus("Inspecting item...");
 			return 1;
@@ -160,44 +162,38 @@ public:
 			}
 
 			if (pWnd == (CXWnd*)RefreshButton) {
-				NativeAutoLootSendCommand("/say #autoloot native status");
-				SetStatus("Refreshing AutoLoot...");
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)NearbyButton) {
-				NativeAutoLootSendCommand("/say #autoloot nearby 75");
-				SetStatus("Scanning nearby corpses...");
+				NativeAutoLootSendCommand("/say #advloot native status");
+				SetStatus("Refreshing Advanced Loot...");
 				return 1;
 			}
 
 			if (pWnd == (CXWnd*)EditFiltersButton) {
 				NativeAutoLootShowRulesWindow();
-				SetStatus("Opened AutoLoot filters.");
+				SetStatus("Opened Advanced Loot filters.");
 				return 1;
 			}
 
 			if (pWnd == (CXWnd*)LootSettingsButton) {
 				NativeAutoLootShowSettingsWindow();
-				SetStatus("Opened AutoLoot settings.");
+				SetStatus("Opened Advanced Loot settings.");
 				return 1;
 			}
 
 			if (pWnd == (CXWnd*)LootAllButton) {
-				NativeAutoLootSendCommand("/say #autoloot personal lootall");
+				NativeAutoLootSendCommand("/say #advloot personal lootall");
 				SetStatus("Requested Loot All.");
 				return 1;
 			}
 
 			if (pWnd == (CXWnd*)LeaveAllButton) {
-				NativeAutoLootSendCommand("/say #autoloot personal leaveall");
+				NativeAutoLootSendCommand("/say #advloot personal leaveall");
 				SetStatus("Requested Leave All.");
 				return 1;
 			}
 
 			if (pWnd == (CXWnd*)ApplyFiltersCheck) {
-				NativeAutoLootSendCommand(NativeAutoLootToggleEnabledCommand());
-				SetStatus("Toggled AutoLoot.");
+				NativeAutoLootSendCommand(NativeAutoLootToggleApplyFiltersCommand());
+				SetStatus("Toggled Apply Filters.");
 				return 1;
 			}
 
@@ -216,7 +212,7 @@ public:
 
 			if (pWnd == (CXWnd*)LootButton) {
 				char command[128];
-				sprintf_s(command, "/say #autoloot action %d loot", row->entry_id);
+				sprintf_s(command, "/say #advloot action %d loot", row->entry_id);
 				NativeAutoLootSendCommand(command);
 				SetStatus("Requested loot.");
 				return 1;
@@ -224,7 +220,7 @@ public:
 
 			if (pWnd == (CXWnd*)LeaveButton) {
 				char command[128];
-				sprintf_s(command, "/say #autoloot action %d leave", row->entry_id);
+				sprintf_s(command, "/say #advloot action %d leave", row->entry_id);
 				NativeAutoLootSendCommand(command);
 				SetStatus("Requested leave.");
 				return 1;
@@ -232,7 +228,7 @@ public:
 
 			if (pWnd == (CXWnd*)AlwaysButton) {
 				char command[128];
-				sprintf_s(command, "/say #autoloot action %d alwaysloot", row->entry_id);
+				sprintf_s(command, "/say #advloot action %d alwaysloot", row->entry_id);
 				NativeAutoLootSendCommand(command);
 				SetStatus("Requested always loot.");
 				return 1;
@@ -240,7 +236,7 @@ public:
 
 			if (pWnd == (CXWnd*)NeverButton) {
 				char command[128];
-				sprintf_s(command, "/say #autoloot action %d never", row->entry_id);
+				sprintf_s(command, "/say #advloot action %d never", row->entry_id);
 				NativeAutoLootSendCommand(command);
 				SetStatus("Requested never loot.");
 				return 1;
@@ -248,7 +244,7 @@ public:
 
 			if (pWnd == (CXWnd*)NeedButton) {
 				char command[128];
-				sprintf_s(command, "/say #autoloot action %d need", row->entry_id);
+				sprintf_s(command, "/say #advloot action %d need", row->entry_id);
 				NativeAutoLootSendCommand(command);
 				SetStatus("Marked Need.");
 				return 1;
@@ -256,7 +252,7 @@ public:
 
 			if (pWnd == (CXWnd*)GreedButton) {
 				char command[128];
-				sprintf_s(command, "/say #autoloot action %d greed", row->entry_id);
+				sprintf_s(command, "/say #advloot action %d greed", row->entry_id);
 				NativeAutoLootSendCommand(command);
 				SetStatus("Marked Greed.");
 				return 1;
@@ -264,7 +260,7 @@ public:
 
 			if (pWnd == (CXWnd*)NoButton) {
 				char command[128];
-				sprintf_s(command, "/say #autoloot action %d no", row->entry_id);
+				sprintf_s(command, "/say #advloot action %d no", row->entry_id);
 				NativeAutoLootSendCommand(command);
 				SetStatus("Marked No.");
 				return 1;
@@ -272,7 +268,7 @@ public:
 
 			if (pWnd == (CXWnd*)AlwaysNeedButton) {
 				char command[128];
-				sprintf_s(command, "/say #autoloot action %d alwaysneed", row->entry_id);
+				sprintf_s(command, "/say #advloot action %d alwaysneed", row->entry_id);
 				NativeAutoLootSendCommand(command);
 				SetStatus("Marked Always Need.");
 				return 1;
@@ -280,7 +276,7 @@ public:
 
 			if (pWnd == (CXWnd*)AlwaysGreedButton) {
 				char command[128];
-				sprintf_s(command, "/say #autoloot action %d alwaysgreed", row->entry_id);
+				sprintf_s(command, "/say #advloot action %d alwaysgreed", row->entry_id);
 				NativeAutoLootSendCommand(command);
 				SetStatus("Marked Always Greed.");
 				return 1;
@@ -316,7 +312,6 @@ private:
 	CXWnd* MasterLabel = nullptr;
 	CXWnd* RuleSummaryLabel = nullptr;
 	CButtonWnd* RefreshButton = nullptr;
-	CButtonWnd* NearbyButton = nullptr;
 	CButtonWnd* EditFiltersButton = nullptr;
 	CButtonWnd* LootSettingsButton = nullptr;
 	CButtonWnd* LootAllButton = nullptr;
@@ -349,23 +344,28 @@ static bool gNativeAutoLootRequestedInitialStatus = false;
 static bool gNativeAutoLootPulseHookEnabled = true;
 static bool gNativeAutoLootWasInGame = false;
 static bool gNativeAutoLootEnabled = false;
+static bool gNativeAutoLootApplyFilters = true;
 static bool gNativeAutoLootGrouped = false;
 static bool gNativeAutoLootLeader = false;
+static bool gNativeAutoLootMasterCandidate = true;
+static bool gNativeAutoLootAutoSplit = true;
+static bool gNativeAutoLootAutoLootAll = false;
+static bool gNativeAutoLootDebug = false;
+static bool gNativeAutoLootLog = false;
 static int gNativeAutoLootInGamePulses = 0;
-static int gNativeAutoLootKeepCount = 0;
-static int gNativeAutoLootIgnoreCount = 0;
+static int gNativeAutoLootAlwaysNeedCount = 0;
+static int gNativeAutoLootAlwaysGreedCount = 0;
+static int gNativeAutoLootNeverCount = 0;
+static int gNativeAutoLootAutoRollCount = 0;
 static bool gNativeLiveSpellSentReady = false;
 static bool gNativeHpFixSentReady = false;
 static bool gNativeAutoLootPulseFaulted = false;
-static std::string gNativeAutoLootGroupMode = "solo";
-static std::string gNativeAutoLootAssigned = "none";
-static std::string gNativeAutoLootFilterMode = "both";
-static bool gNativeAutoLootNeedGreed = false;
 
 struct NativeAutoLootRuleRow
 {
 	int item_id = 0;
 	int icon_id = 0;
+	bool auto_roll = false;
 	std::string item = "Item";
 	std::string rule = "include";
 };
@@ -399,7 +399,7 @@ public:
 
 		if (Message == XWM_LCLICK) {
 			if (pWnd == (CXWnd*)RefreshButton) {
-				NativeAutoLootSendCommand("/say #lootfilter native list both");
+				NativeAutoLootSendCommand("/say #advloot filter native list");
 				SetStatus("Refreshing filters...");
 				return 1;
 			}
@@ -412,21 +412,21 @@ public:
 
 			char command[128];
 			if (pWnd == (CXWnd*)KeepButton) {
-				sprintf_s(command, "/say #lootfilter keep %d", row->item_id);
+				sprintf_s(command, "/say #advloot filter set %d always_need", row->item_id);
 				NativeAutoLootSendCommand(command);
-				SetStatus("Requested Keep rule.");
+				SetStatus("Requested Always Need rule.");
 				return 1;
 			}
 
 			if (pWnd == (CXWnd*)IgnoreButton) {
-				sprintf_s(command, "/say #lootfilter ignore %d", row->item_id);
+				sprintf_s(command, "/say #advloot filter set %d never", row->item_id);
 				NativeAutoLootSendCommand(command);
 				SetStatus("Requested Never rule.");
 				return 1;
 			}
 
 			if (pWnd == (CXWnd*)UnsetButton) {
-				sprintf_s(command, "/say #lootfilter unset %d", row->item_id);
+				sprintf_s(command, "/say #advloot filter remove %d", row->item_id);
 				NativeAutoLootSendCommand(command);
 				SetStatus("Requested rule removal.");
 				return 1;
@@ -480,9 +480,6 @@ public:
 		GroupMasterButton = (CButtonWnd*)GetChildItem("AALS_GroupMasterButton");
 		GroupRobinButton = (CButtonWnd*)GetChildItem("AALS_GroupRobinButton");
 		GroupKillerButton = (CButtonWnd*)GetChildItem("AALS_GroupKillerButton");
-		AutoSellPreviewButton = (CButtonWnd*)GetChildItem("AALS_AutoSellPreviewButton");
-		AutoSellConfirmButton = (CButtonWnd*)GetChildItem("AALS_AutoSellConfirmButton");
-		AutoSellCancelButton = (CButtonWnd*)GetChildItem("AALS_AutoSellCancelButton");
 
 		Layout();
 		RefreshRows();
@@ -498,70 +495,52 @@ public:
 		if (Message == XWM_LCLICK) {
 			if (pWnd == (CXWnd*)AutoLootCheck) {
 				NativeAutoLootSendCommand(NativeAutoLootToggleEnabledCommand());
-				SetStatus("Toggled Apply Filters.");
+				SetStatus("Toggled Advanced Loot.");
 				return 1;
 			}
 
 			if (pWnd == (CXWnd*)NeedGreedCheck) {
-				NativeAutoLootSendCommand(gNativeAutoLootNeedGreed ? "/say #autoloot group needgreed off" : "/say #autoloot group needgreed on");
-				SetStatus("Toggled Need/Greed.");
+				NativeAutoLootSendCommand(NativeAutoLootToggleMasterCandidateCommand());
+				SetStatus("Toggled Master Looter candidate.");
 				return 1;
 			}
 
 			if (pWnd == (CXWnd*)RefreshButton) {
-				NativeAutoLootSendCommand("/say #autoloot native status");
-				NativeAutoLootSendCommand("/say #autoloot group status");
-				SetStatus("Refreshing AutoLoot settings...");
+				NativeAutoLootSendCommand("/say #advloot native status");
+				SetStatus("Refreshing Advanced Loot settings...");
 				return 1;
 			}
 
 			if (pWnd == (CXWnd*)GroupNoneButton) {
-				NativeAutoLootSendCommand("/say #autoloot group none");
-				SetStatus("Requested group mode: none.");
+				NativeAutoLootSendCommand(gNativeAutoLootAutoSplit ? "/say #advloot autosplit off" : "/say #advloot autosplit on");
+				SetStatus("Toggled Auto Split Coin.");
 				return 1;
 			}
 
 			if (pWnd == (CXWnd*)GroupSoloButton) {
-				NativeAutoLootSendCommand("/say #autoloot group solo");
-				SetStatus("Requested group mode: solo.");
+				NativeAutoLootSendCommand(gNativeAutoLootAutoLootAll ? "/say #advloot autolootall off" : "/say #advloot autolootall on");
+				SetStatus("Toggled Auto Loot All.");
 				return 1;
 			}
 
 			if (pWnd == (CXWnd*)GroupMasterButton) {
-				NativeAutoLootSendCommand("/say #autoloot group master");
-				SetStatus("Requested group mode: master.");
+				NativeAutoLootSendCommand(gNativeAutoLootDebug ? "/say #advloot debug off" : "/say #advloot debug on");
+				SetStatus("Toggled debug chat.");
 				return 1;
 			}
 
 			if (pWnd == (CXWnd*)GroupRobinButton) {
-				NativeAutoLootSendCommand("/say #autoloot group robin");
-				SetStatus("Requested group mode: robin.");
+				NativeAutoLootSendCommand(gNativeAutoLootLog ? "/say #advloot log off" : "/say #advloot log on");
+				SetStatus("Toggled audit log.");
 				return 1;
 			}
 
 			if (pWnd == (CXWnd*)GroupKillerButton) {
-				NativeAutoLootSendCommand("/say #autoloot group killer");
-				SetStatus("Requested group mode: killer.");
+				NativeAutoLootSendCommand("/say #advloot native status");
+				SetStatus("Refreshing Advanced Loot settings.");
 				return 1;
 			}
 
-			if (pWnd == (CXWnd*)AutoSellPreviewButton) {
-				NativeAutoLootSendCommand("/say #autosell preview");
-				SetStatus("Requested AutoSell preview.");
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)AutoSellConfirmButton) {
-				NativeAutoLootSendCommand("/say #autosell confirm");
-				SetStatus("Requested AutoSell confirm.");
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)AutoSellCancelButton) {
-				NativeAutoLootSendCommand("/say #autosell cancel");
-				SetStatus("Requested AutoSell cancel.");
-				return 1;
-			}
 		}
 
 		return CSidlScreenWnd::WndNotification(pWnd, Message, unknown);
@@ -592,9 +571,6 @@ private:
 	CButtonWnd* GroupMasterButton = nullptr;
 	CButtonWnd* GroupRobinButton = nullptr;
 	CButtonWnd* GroupKillerButton = nullptr;
-	CButtonWnd* AutoSellPreviewButton = nullptr;
-	CButtonWnd* AutoSellConfirmButton = nullptr;
-	CButtonWnd* AutoSellCancelButton = nullptr;
 };
 
 static NativeAutoLootRulesWnd* gNativeAutoLootRulesWnd = nullptr;
@@ -603,7 +579,17 @@ static std::vector<NativeAutoLootRuleRow> gNativeAutoLootRuleRows;
 
 static const char* NativeAutoLootToggleEnabledCommand()
 {
-	return gNativeAutoLootEnabled ? "/say #autoloot off" : "/say #autoloot on";
+	return gNativeAutoLootEnabled ? "/say #advloot off" : "/say #advloot on";
+}
+
+static const char* NativeAutoLootToggleApplyFiltersCommand()
+{
+	return gNativeAutoLootApplyFilters ? "/say #advloot applyfilters off" : "/say #advloot applyfilters on";
+}
+
+static const char* NativeAutoLootToggleMasterCandidateCommand()
+{
+	return gNativeAutoLootMasterCandidate ? "/say #advloot masterlooter off" : "/say #advloot masterlooter on";
 }
 
 static bool NativeStartsWith(const char* value, const char* prefix)
@@ -2729,7 +2715,7 @@ static void NativeMulticlassInstallContextMenuHook()
 
 static bool NativeIsKeepRule(const std::string& rule)
 {
-	return rule == "include" || rule == "keep" || rule == "always" || rule == "loot";
+	return rule == "always_need" || rule == "always_greed" || rule == "include" || rule == "keep" || rule == "always" || rule == "loot";
 }
 
 static bool NativeIsNeverRule(const std::string& rule)
@@ -2739,11 +2725,19 @@ static bool NativeIsNeverRule(const std::string& rule)
 
 static const char* NativeShortRule(const std::string& rule)
 {
-	if (NativeIsKeepRule(rule)) {
-		return "X";
+	if (rule == "always_need") {
+		return "AN";
+	}
+
+	if (rule == "always_greed") {
+		return "AG";
 	}
 
 	if (NativeIsNeverRule(rule)) {
+		return "NV";
+	}
+
+	if (NativeIsKeepRule(rule)) {
 		return "X";
 	}
 
@@ -2752,8 +2746,16 @@ static const char* NativeShortRule(const std::string& rule)
 
 static const char* NativeDisplayRule(const std::string& rule)
 {
+	if (rule == "always_need") {
+		return "AN";
+	}
+
+	if (rule == "always_greed") {
+		return "AG";
+	}
+
 	if (NativeIsNeverRule(rule)) {
-		return "Never";
+		return "NV";
 	}
 
 	if (NativeIsKeepRule(rule)) {
@@ -6212,8 +6214,15 @@ void NativeAutoLootRulesWnd::RefreshRows()
 
 	RuleList->DeleteAll();
 
-	char summary[96];
-	sprintf_s(summary, "Rules %d keep / %d never", gNativeAutoLootKeepCount, gNativeAutoLootIgnoreCount);
+	char summary[128];
+	sprintf_s(
+		summary,
+		"Filters AN %d / AG %d / NV %d / Auto Roll %d",
+		gNativeAutoLootAlwaysNeedCount,
+		gNativeAutoLootAlwaysGreedCount,
+		gNativeAutoLootNeverCount,
+		gNativeAutoLootAutoRollCount
+	);
 	SetLabel(SummaryLabel, summary);
 
 	if (gNativeAutoLootRuleRows.empty()) {
@@ -6290,25 +6299,27 @@ void NativeAutoLootSettingsWnd::RefreshRows()
 	char summary[160];
 	sprintf_s(
 		summary,
-		"Filter: %s  Rules: %d keep / %d never",
-		gNativeAutoLootFilterMode.c_str(),
-		gNativeAutoLootKeepCount,
-		gNativeAutoLootIgnoreCount
+		"Advanced: %s  Apply Filters: %s  Rules: AN %d / AG %d / NV %d",
+		gNativeAutoLootEnabled ? "on" : "off",
+		gNativeAutoLootApplyFilters ? "on" : "off",
+		gNativeAutoLootAlwaysNeedCount,
+		gNativeAutoLootAlwaysGreedCount,
+		gNativeAutoLootNeverCount
 	);
 	SetLabel(SummaryLabel, summary);
 
 	char group_summary[192];
 	sprintf_s(
 		group_summary,
-		"Group: %s  Need/Greed: %s  Assigned: %s",
-		gNativeAutoLootGroupMode.c_str(),
-		gNativeAutoLootNeedGreed ? "on" : "off",
-		gNativeAutoLootAssigned.c_str()
+		"Master candidate: %s  Auto Split: %s  Auto Loot All: %s",
+		gNativeAutoLootMasterCandidate ? "on" : "off",
+		gNativeAutoLootAutoSplit ? "on" : "off",
+		gNativeAutoLootAutoLootAll ? "on" : "off"
 	);
 	SetLabel(GroupSummaryLabel, group_summary);
 
 	SetButtonCheck(AutoLootCheck, gNativeAutoLootEnabled);
-	SetButtonCheck(NeedGreedCheck, gNativeAutoLootNeedGreed);
+	SetButtonCheck(NeedGreedCheck, gNativeAutoLootMasterCandidate);
 }
 
 static void NativeAutoLootShowSettingsWindow()
@@ -6320,8 +6331,8 @@ static void NativeAutoLootShowSettingsWindow()
 
 	gNativeAutoLootSettingsWnd->RefreshRows();
 	gNativeAutoLootSettingsWnd->pXWnd()->Show(1, 1);
-	gNativeAutoLootSettingsWnd->SetStatus("Refreshing AutoLoot settings...");
-	NativeAutoLootSendCommand("/say #autoloot native status");
+	gNativeAutoLootSettingsWnd->SetStatus("Refreshing Advanced Loot settings...");
+	NativeAutoLootSendCommand("/say #advloot native status");
 }
 
 static void NativeAutoLootShowRulesWindow()
@@ -6334,7 +6345,7 @@ static void NativeAutoLootShowRulesWindow()
 	gNativeAutoLootRulesWnd->RefreshRows();
 	gNativeAutoLootRulesWnd->pXWnd()->Show(1, 1);
 	gNativeAutoLootRulesWnd->SetStatus("Refreshing filters...");
-	NativeAutoLootSendCommand("/say #lootfilter native list both");
+	NativeAutoLootSendCommand("/say #advloot filter native list");
 }
 
 static void NativeAutoLootEnsureWindow(bool show)
@@ -6440,8 +6451,8 @@ void NativeAutoLootWnd::RefreshList(CListWnd* list, bool shared)
 			CXStr nd(entry.state == "need" || entry.state == "alwaysneed" ? "X" : "");
 			CXStr gd(entry.state == "greed" || entry.state == "alwaysgreed" ? "X" : "");
 			CXStr no(entry.state == "no" ? "X" : "");
-			CXStr an(entry.state == "alwaysneed" ? "X" : NativeShortRule(entry.rule));
-			CXStr ag(entry.state == "alwaysgreed" ? "X" : "");
+			CXStr an(entry.state == "alwaysneed" || entry.rule == "always_need" ? "X" : "");
+			CXStr ag(entry.state == "alwaysgreed" || entry.rule == "always_greed" ? "X" : "");
 			CXStr nv(NativeIsNeverRule(entry.rule) ? "X" : "");
 			list->SetItemText(row, 1, &qty);
 			list->SetItemText(row, 2, &source);
@@ -6494,24 +6505,29 @@ void NativeAutoLootWnd::RefreshRows()
 	RefreshList(PersonalList, false);
 	RefreshList(SharedList, true);
 
-	char rules[96];
-	sprintf_s(rules, "Rules %d keep / %d never", gNativeAutoLootKeepCount, gNativeAutoLootIgnoreCount);
+	char rules[128];
+	sprintf_s(
+		rules,
+		"Rules AN %d / AG %d / NV %d",
+		gNativeAutoLootAlwaysNeedCount,
+		gNativeAutoLootAlwaysGreedCount,
+		gNativeAutoLootNeverCount
+	);
 	SetLabel(RuleSummaryLabel, rules);
 
 	char master[192];
 	sprintf_s(
 		master,
-		"Master Looter: %s  Group: %s  Need/Greed: %s  Filter: %s",
-		gNativeAutoLootAssigned.c_str(),
-		gNativeAutoLootGroupMode.c_str(),
-		gNativeAutoLootNeedGreed ? "on" : "off",
-		gNativeAutoLootFilterMode.c_str()
+		"Shared Loot: %s  Master Candidate: %s  Auto Roll Filters: %d",
+		gNativeAutoLootGrouped ? "grouped" : "solo",
+		gNativeAutoLootMasterCandidate ? "on" : "off",
+		gNativeAutoLootAutoRollCount
 	);
 	SetLabel(MasterLabel, master);
 
 	if (ApplyFiltersCheck) {
-		ApplyFiltersCheck->Checked = gNativeAutoLootEnabled ? 1 : 0;
-		ApplyFiltersCheck->SetCheck(gNativeAutoLootEnabled);
+		ApplyFiltersCheck->Checked = gNativeAutoLootApplyFilters ? 1 : 0;
+		ApplyFiltersCheck->SetCheck(gNativeAutoLootApplyFilters);
 		CXStr value("Apply Filters");
 		((CXWnd*)ApplyFiltersCheck)->SetWindowTextA(value);
 	}
@@ -8387,18 +8403,18 @@ static bool NativeAutoLootParseTransport(const char* message)
 		return true;
 	}
 
-	if (NativeStartsWith(message, "AUTOLOOT|snapshot|begin") || NativeStartsWith(message, "AUTOLOOT|clear|loot")) {
+	if (NativeStartsWith(message, "ADVLOOT|snapshot|begin") || NativeStartsWith(message, "ADVLOOT|clear|loot")) {
 		gNativeAutoLootRows.clear();
 		NativeAutoLootUpdateWindow();
 		return true;
 	}
 
-	if (NativeStartsWith(message, "AUTOLOOT|snapshot|end")) {
+	if (NativeStartsWith(message, "ADVLOOT|snapshot|end")) {
 		NativeAutoLootUpdateWindow();
 		return true;
 	}
 
-	if (NativeStartsWith(message, "AUTOLOOT|window|show")) {
+	if (NativeStartsWith(message, "ADVLOOT|window|show")) {
 		NativeAutoLootEnsureWindow(true);
 		if (gNativeAutoLootWnd) {
 			gNativeAutoLootWnd->SetStatus("AutoLoot window reopened.");
@@ -8406,7 +8422,7 @@ static bool NativeAutoLootParseTransport(const char* message)
 		return true;
 	}
 
-	if (NativeStartsWith(message, "AUTOLOOT|entry|") || NativeStartsWith(message, "AUTOLOOT|loot|")) {
+	if (NativeStartsWith(message, "ADVLOOT|entry|") || NativeStartsWith(message, "ADVLOOT|loot|")) {
 		const char* payload_start = strchr(message + 9, '|');
 		if (!payload_start) {
 			return true;
@@ -8424,6 +8440,7 @@ static bool NativeAutoLootParseTransport(const char* message)
 		}
 		row.locked = NativeToBool(NativeGetPairValue(payload, "locked"));
 		row.nodrop = NativeToBool(NativeGetPairValue(payload, "nodrop"));
+		row.auto_roll = NativeToBool(NativeGetPairValue(payload, "autoroll"));
 		row.item = NativeGetPairValue(payload, "name");
 		if (row.item.empty()) {
 			row.item = NativeGetPairValue(payload, "item_name");
@@ -8462,31 +8479,26 @@ static bool NativeAutoLootParseTransport(const char* message)
 		return true;
 	}
 
-	if (NativeStartsWith(message, "AUTOLOOT|status|")) {
-		const std::string payload(message + strlen("AUTOLOOT|status|"));
+	if (NativeStartsWith(message, "ADVLOOT|status|")) {
+		const std::string payload(message + strlen("ADVLOOT|status|"));
 		gNativeAutoLootEnabled = NativeToBool(NativeGetPairValue(payload, "enabled"));
+		gNativeAutoLootApplyFilters = NativeToBool(NativeGetPairValue(payload, "applyfilters"));
 		gNativeAutoLootGrouped = NativeToBool(NativeGetPairValue(payload, "grouped"));
 		gNativeAutoLootLeader = NativeToBool(NativeGetPairValue(payload, "leader"));
-		gNativeAutoLootKeepCount = NativeToInt(NativeGetPairValue(payload, "include"));
-		gNativeAutoLootIgnoreCount = NativeToInt(NativeGetPairValue(payload, "exclude"));
-		gNativeAutoLootGroupMode = NativeGetPairValue(payload, "group_mode");
-		if (gNativeAutoLootGroupMode.empty()) {
-			gNativeAutoLootGroupMode = gNativeAutoLootGrouped ? "group" : "solo";
-		}
-		gNativeAutoLootAssigned = NativeGetPairValue(payload, "assigned");
-		if (gNativeAutoLootAssigned.empty()) {
-			gNativeAutoLootAssigned = "none";
-		}
-		gNativeAutoLootFilterMode = NativeGetPairValue(payload, "filter_mode");
-		if (gNativeAutoLootFilterMode.empty()) {
-			gNativeAutoLootFilterMode = "both";
-		}
-		gNativeAutoLootNeedGreed = NativeToBool(NativeGetPairValue(payload, "needgreed"));
+		gNativeAutoLootAlwaysNeedCount = NativeToInt(NativeGetPairValue(payload, "alwaysneed"));
+		gNativeAutoLootAlwaysGreedCount = NativeToInt(NativeGetPairValue(payload, "alwaysgreed"));
+		gNativeAutoLootNeverCount = NativeToInt(NativeGetPairValue(payload, "never"));
+		gNativeAutoLootAutoRollCount = NativeToInt(NativeGetPairValue(payload, "autoroll"));
+		gNativeAutoLootMasterCandidate = NativeToBool(NativeGetPairValue(payload, "mastercandidate"));
+		gNativeAutoLootAutoSplit = NativeToBool(NativeGetPairValue(payload, "autosplit"));
+		gNativeAutoLootAutoLootAll = NativeToBool(NativeGetPairValue(payload, "autolootall"));
+		gNativeAutoLootDebug = NativeToBool(NativeGetPairValue(payload, "debug"));
+		gNativeAutoLootLog = NativeToBool(NativeGetPairValue(payload, "log"));
 		NativeAutoLootUpdateWindow();
 		return true;
 	}
 
-	if (NativeStartsWith(message, "AUTOLOOT|filters|begin")) {
+	if (NativeStartsWith(message, "ADVLOOT|filters|begin")) {
 		gNativeAutoLootRuleRows.clear();
 		if (gNativeAutoLootRulesWnd) {
 			gNativeAutoLootRulesWnd->RefreshRows();
@@ -8495,10 +8507,14 @@ static bool NativeAutoLootParseTransport(const char* message)
 		return true;
 	}
 
-	if (NativeStartsWith(message, "AUTOLOOT|filter|")) {
-		const std::string payload(message + strlen("AUTOLOOT|filter|"));
+	if (NativeStartsWith(message, "ADVLOOT|filter|")) {
+		const std::string payload(message + strlen("ADVLOOT|filter|"));
 		NativeAutoLootRuleRow row;
-		row.rule = NativeGetPairValue(payload, "mode");
+		row.rule = NativeGetPairValue(payload, "decision");
+		if (row.rule.empty()) {
+			row.rule = NativeGetPairValue(payload, "mode");
+		}
+		row.auto_roll = NativeToBool(NativeGetPairValue(payload, "autoroll"));
 		row.item_id = NativeToInt(NativeGetPairValue(payload, "item_id"));
 		row.icon_id = NativeToInt(NativeGetPairValue(payload, "icon"));
 		row.item = NativeGetPairValue(payload, "name");
@@ -8514,7 +8530,7 @@ static bool NativeAutoLootParseTransport(const char* message)
 		return true;
 	}
 
-	if (NativeStartsWith(message, "AUTOLOOT|filters|end")) {
+	if (NativeStartsWith(message, "ADVLOOT|filters|end")) {
 		if (gNativeAutoLootRulesWnd) {
 			gNativeAutoLootRulesWnd->RefreshRows();
 			gNativeAutoLootRulesWnd->SetStatus("Filters refreshed.");
@@ -8522,11 +8538,11 @@ static bool NativeAutoLootParseTransport(const char* message)
 		return true;
 	}
 
-	if (NativeStartsWith(message, "AUTOLOOT|filters|")) {
+	if (NativeStartsWith(message, "ADVLOOT|filters|")) {
 		return true;
 	}
 
-	if (strstr(message, "You say, '#autoloot") || strstr(message, "You say, '#lootfilter") || strstr(message, "You say, '#livespell") || strstr(message, "You say, '#itemforge") || strstr(message, "You say, '#ach") || strstr(message, "You say, '#rep") || strstr(message, "You say, '#ts") || strstr(message, "You say, '#tradeskill") || strstr(message, "You say, '#mc") || strstr(message, "You say, '#multiclass") || strstr(message, "You say, '#nativeui") || strstr(message, "You say, '#showcase") || strstr(message, "You say, '#hpfix")) {
+	if (strstr(message, "You say, '#advloot") || strstr(message, "You say, '#livespell") || strstr(message, "You say, '#itemforge") || strstr(message, "You say, '#ach") || strstr(message, "You say, '#rep") || strstr(message, "You say, '#ts") || strstr(message, "You say, '#tradeskill") || strstr(message, "You say, '#mc") || strstr(message, "You say, '#multiclass") || strstr(message, "You say, '#nativeui") || strstr(message, "You say, '#showcase") || strstr(message, "You say, '#hpfix")) {
 		return true;
 	}
 
@@ -8714,14 +8730,18 @@ static void NativeAutoLootResetSessionRequests()
 	gNativeAutoLootRows.clear();
 	gNativeAutoLootRuleRows.clear();
 	gNativeAutoLootEnabled = false;
+	gNativeAutoLootApplyFilters = true;
 	gNativeAutoLootGrouped = false;
 	gNativeAutoLootLeader = false;
-	gNativeAutoLootKeepCount = 0;
-	gNativeAutoLootIgnoreCount = 0;
-	gNativeAutoLootGroupMode = "solo";
-	gNativeAutoLootAssigned = "none";
-	gNativeAutoLootFilterMode = "both";
-	gNativeAutoLootNeedGreed = false;
+	gNativeAutoLootMasterCandidate = true;
+	gNativeAutoLootAutoSplit = true;
+	gNativeAutoLootAutoLootAll = false;
+	gNativeAutoLootDebug = false;
+	gNativeAutoLootLog = false;
+	gNativeAutoLootAlwaysNeedCount = 0;
+	gNativeAutoLootAlwaysGreedCount = 0;
+	gNativeAutoLootNeverCount = 0;
+	gNativeAutoLootAutoRollCount = 0;
 	gNativeLiveSpellSentReady = false;
 	gNativeHpFixSentReady = false;
 	gNativeHpFixState = NativeHpFixState();
@@ -8745,14 +8765,18 @@ static void NativeAutoLootResetClientUiSession(const char* reason)
 	gNativeAutoLootRows.clear();
 	gNativeAutoLootRuleRows.clear();
 	gNativeAutoLootEnabled = false;
+	gNativeAutoLootApplyFilters = true;
 	gNativeAutoLootGrouped = false;
 	gNativeAutoLootLeader = false;
-	gNativeAutoLootKeepCount = 0;
-	gNativeAutoLootIgnoreCount = 0;
-	gNativeAutoLootGroupMode = "solo";
-	gNativeAutoLootAssigned = "none";
-	gNativeAutoLootFilterMode = "both";
-	gNativeAutoLootNeedGreed = false;
+	gNativeAutoLootMasterCandidate = true;
+	gNativeAutoLootAutoSplit = true;
+	gNativeAutoLootAutoLootAll = false;
+	gNativeAutoLootDebug = false;
+	gNativeAutoLootLog = false;
+	gNativeAutoLootAlwaysNeedCount = 0;
+	gNativeAutoLootAlwaysGreedCount = 0;
+	gNativeAutoLootNeverCount = 0;
+	gNativeAutoLootAutoRollCount = 0;
 	gNativeLiveSpellSentReady = false;
 	gNativeHpFixSentReady = false;
 	gNativeHpFixState = NativeHpFixState();
@@ -8776,7 +8800,7 @@ static void NativeAutoLootMaybeSendInitialRequests()
 
 	if (!gNativeAutoLootRequestedInitialStatus) {
 		gNativeAutoLootRequestedInitialStatus = true;
-		NativeAutoLootSendCommand("/say #autoloot native status");
+		NativeAutoLootSendCommand("/say #advloot native status");
 	}
 
 	if (!gNativeLiveSpellSentReady) {
@@ -8899,7 +8923,7 @@ static void NativeAutoLootPulse()
 
 	if (!gNativeAutoLootRequestedInitialStatus) {
 		gNativeAutoLootRequestedInitialStatus = true;
-		NativeAutoLootSendCommand("/say #autoloot native status");
+		NativeAutoLootSendCommand("/say #advloot native status");
 	}
 
 	if (!gNativeLiveSpellSentReady) {

@@ -32,56 +32,39 @@ public:
 		Pass
 	};
 
+	enum class LootFilterDecision {
+		Unset,
+		AlwaysNeed,
+		AlwaysGreed,
+		Never
+	};
+
 	void Process();
 	void ProcessCorpseDeath(Corpse *corpse, Mob *killer);
-	void ProcessNearby(Client *client, float radius);
 	void ShowWindow(Client *client);
 
-	void HandleAutolootCommand(Client *client, const Seperator *sep);
-	void HandleLootFilterCommand(Client *client, const Seperator *sep);
-	void HandleAutosellCommand(Client *client, const Seperator *sep);
-	void HandleNeedGreedCommand(Client *client, const Seperator *sep);
+	void HandleAdvancedLootCommand(Client *client, const Seperator *sep);
 	bool IsManualLootLocked(Corpse *corpse, uint16 loot_slot, std::string *reason = nullptr) const;
 
 private:
 	struct CharacterSettings {
-		bool enabled = false;
-		std::string filter_mode = "both";
+		bool use_advanced_looting = true;
+		bool apply_filters = true;
+		bool auto_split_coin = true;
+		bool confirm_remove_filter = true;
+		bool auto_remove_looted_lore = true;
+		bool auto_show_loot_window = true;
+		bool show_new_items_only = false;
+		bool auto_loot_all = false;
+		bool master_looter_candidate = true;
 		bool debug_enabled = false;
 		bool log_enabled = false;
 	};
 
-	struct GroupSettings {
-		std::string loot_mode = "solo";
-		uint32 assigned_character_id = 0;
-		uint32 round_robin_index = 0;
-		bool need_greed_enabled = false;
-	};
-
-	struct PendingVote {
-		uint32 vote_id = 0;
-		uint32 group_id = 0;
-		uint16 corpse_id = 0;
-		uint16 loot_slot = 0;
+	struct FilterEntry {
 		uint32 item_id = 0;
-		std::string item_name;
-		std::map<uint32, VoteChoice> votes;
-		time_t expires_at = 0;
-	};
-
-	struct AutosellEntry {
-		int16 slot_id = 0;
-		uint32 item_id = 0;
-		uint32 quantity = 0;
-		uint64 value = 0;
-		std::string item_name;
-	};
-
-	struct AutosellSession {
-		uint32 session_id = 0;
-		time_t expires_at = 0;
-		std::vector<AutosellEntry> entries;
-		uint64 total_value = 0;
+		LootFilterDecision decision = LootFilterDecision::Unset;
+		bool auto_ask_roll = false;
 	};
 
 	struct LootEntry {
@@ -92,10 +75,13 @@ private:
 		uint32 icon_id = 0;
 		uint32 quantity = 0;
 		uint32 owner_character_id = 0;
+		uint32 master_looter_character_id = 0;
 		uint32 group_id = 0;
 		bool shared = false;
 		bool no_drop = false;
 		bool dynamic_instance = false;
+		bool auto_roll = false;
+		bool free_grab = false;
 		std::string item_name;
 		std::string corpse_name;
 		std::string state = "waiting";
@@ -107,24 +93,20 @@ private:
 
 	CharacterSettings GetCharacterSettings(uint32 character_id, bool create_enabled = false);
 	void SaveCharacterSettings(uint32 character_id, const CharacterSettings &settings);
-	GroupSettings GetGroupSettings(uint32 group_id);
-	void SaveGroupSettings(uint32 group_id, const GroupSettings &settings);
 	void DebugMessage(Client *client, const CharacterSettings &settings, const std::string &message);
 
-	bool ShouldLootItem(uint32 character_id, uint32 item_id, const std::string &filter_mode);
-	std::string GetFilterAction(uint32 character_id, uint32 item_id, const std::string &filter_mode);
-	bool HasFilter(uint32 character_id, uint32 item_id, const std::string &filter_mode);
-	void SetFilter(uint32 character_id, uint32 item_id, const std::string &filter_mode);
-	void RemoveFilter(uint32 character_id, uint32 item_id, const std::string &filter_mode);
-	std::vector<std::pair<uint32, std::string>> GetFilters(uint32 character_id, const std::string &filter_mode);
+	FilterEntry GetFilter(uint32 character_id, uint32 item_id);
+	void SetFilter(uint32 character_id, uint32 item_id, LootFilterDecision decision, bool auto_ask_roll);
+	void RemoveFilter(uint32 character_id, uint32 item_id);
+	std::vector<FilterEntry> GetFilters(uint32 character_id);
 
 	Client *ResolveLootClient(Mob *killer);
 	Client *FindAutoLootClient(Client *resolved_client, Corpse *corpse);
-	Client *DetermineRecipient(Client *resolved_client, Corpse *corpse, const GroupSettings &settings);
+	Client *DetermineMasterLooter(Group *group, Corpse *corpse, Client *fallback);
 	std::vector<Client *> GetGroupClients(Group *group);
 
-	bool ProcessCorpse(Corpse *corpse, Client *resolved_client, bool nearby);
-	bool QueueCorpseEntries(Corpse *corpse, Client *resolved_client, bool nearby);
+	bool ProcessCorpse(Corpse *corpse, Client *resolved_client);
+	bool QueueCorpseEntries(Corpse *corpse, Client *resolved_client);
 	bool HasQueuedEntry(uint16 corpse_id, uint16 loot_slot) const;
 	bool IsEntryVisibleToClient(const LootEntry &entry, Client *client) const;
 	void PruneLootEntries();
@@ -133,6 +115,8 @@ private:
 	void SendNativeUpdate(Client *client);
 	void SendNativeFilterUpdate(Client *client);
 	void HandleLootAction(Client *client, const Seperator *sep);
+	void HandleAdvancedLootFilterCommand(Client *client, const Seperator *sep);
+	void HandleSharedLootAction(Client *client, uint32 entry_id, const std::string &action, const Seperator *sep);
 	void HandlePersonalLootCommand(Client *client, const Seperator *sep);
 	void InspectEntryForClient(Client *client, uint32 entry_id);
 	void RecordSharedVote(Client *client, uint32 entry_id, VoteChoice choice, bool set_always_rule);
@@ -144,34 +128,14 @@ private:
 	void FinalizeCorpse(Corpse *corpse, Client *coin_client);
 	void LootCoin(Corpse *corpse, Client *client);
 
-	bool IsNoDrop(uint32 item_id);
-	bool HasPendingVotes(uint16 corpse_id) const;
-	void StartNeedGreedVote(Group *group, Corpse *corpse, uint16 loot_slot, uint32 item_id);
-	void CastNeedGreedVote(Client *client, uint32 vote_id, VoteChoice choice);
-	void ProcessVote(uint32 vote_id, bool timeout);
-	void ForceProcessVotes(Client *client);
-	void RecoverVotes(Client *client);
-
-	bool IsAutosellExcluded(uint32 character_id, uint32 item_id);
-	void SetAutosellExcluded(uint32 character_id, uint32 item_id, bool excluded);
-	std::vector<uint32> GetAutosellExclusions(uint32 character_id);
-	std::vector<AutosellEntry> BuildAutosellPreview(Client *client, uint64 &total_value);
-	void PreviewAutosell(Client *client);
-	void ConfirmAutosell(Client *client);
-	void CancelAutosell(Client *client);
-
 	void SendStatus(Client *client);
 	void SendNativeStatus(Client *client);
-	void SendNativeFilters(Client *client, const std::string &filter_mode);
+	void SendNativeFilters(Client *client);
 	void SendHelp(Client *client);
 	void SendGroupHelp(Client *client);
 	void Audit(uint32 character_id, const std::string &action, uint32 item_id = 0, uint32 quantity = 0, const std::string &detail = "");
 
-	std::map<uint32, PendingVote> m_pending_votes;
-	std::map<uint32, AutosellSession> m_autosell_sessions;
 	std::map<uint32, LootEntry> m_loot_entries;
-	uint32 m_next_vote_id = 1;
-	uint32 m_next_autosell_session_id = 1;
 	uint32 m_next_loot_entry_id = 1;
 	time_t m_last_process = 0;
 };
