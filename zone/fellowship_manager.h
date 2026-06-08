@@ -18,6 +18,7 @@ public:
 	void HandleCommand(Client *client, const Seperator *sep);
 	void HandleClientPacket(Client *client, const EQApplicationPacket *app) const;
 	void LogDiscoveryPacket(Client *client, const EQApplicationPacket *app, const char *context) const;
+	void SendClientState(Client *client) const;
 };
 
 extern FellowshipManager fellowship_manager;

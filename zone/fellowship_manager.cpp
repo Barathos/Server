@@ -27,8 +27,10 @@
 #include "fmt/format.h"
 
 #include <algorithm>
+#include <cstring>
 #include <ctime>
 #include <map>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -49,6 +51,13 @@ constexpr uint32 kMemberRank = 0;
 constexpr uint32 kInviteExpirationSeconds = 300;
 constexpr uint32 kClientActionCreate = 1;
 constexpr uint32 kCreatePacketWireSize = 1078;
+constexpr uint32 kFellowshipStatePacketSize = 0x9e4;
+constexpr uint32 kFellowshipStateLeaderOffset = 0x008;
+constexpr uint32 kFellowshipStateMotdOffset = 0x048;
+constexpr uint32 kFellowshipStateMembersOffset = 0x448;
+constexpr uint32 kFellowshipStateMemberListOffset = 0x44c;
+constexpr uint32 kFellowshipStateMemberSize = 0x54;
+constexpr uint32 kFellowshipMaxClientMembers = 12;
 
 struct Membership {
 	uint32 fellowship_id = 0;
@@ -78,6 +87,18 @@ struct PendingInvite {
 	uint32 fellowship_id = 0;
 	uint32 leader_character_id = 0;
 	uint32 created_at = 0;
+};
+
+struct FellowshipMemberState {
+	uint32 character_id = 0;
+	std::string character_name;
+	uint32 rank = 0;
+	bool sharing_enabled = false;
+	uint32 level = 0;
+	uint32 class_id = 0;
+	uint32 zone_id = 0;
+	uint32 instance_id = 0;
+	uint32 last_online = 0;
 };
 
 std::map<uint32, PendingInvite> pending_invites;
@@ -137,6 +158,28 @@ std::string DescribeNonZeroOffsets(const EQApplicationPacket *app, uint32 max_of
 	}
 
 	return Strings::Join(offsets, ",");
+}
+
+void WriteUInt16(uint8 *buffer, uint32 offset, uint16 value)
+{
+	std::memcpy(buffer + offset, &value, sizeof(value));
+}
+
+void WriteUInt32(uint8 *buffer, uint32 offset, uint32 value)
+{
+	std::memcpy(buffer + offset, &value, sizeof(value));
+}
+
+void WriteFixedString(uint8 *buffer, uint32 offset, uint32 length, const std::string &value)
+{
+	if (!length) {
+		return;
+	}
+
+	const auto copy_length = std::min<uint32>(length - 1, static_cast<uint32>(value.size()));
+	if (copy_length) {
+		std::memcpy(buffer + offset, value.data(), copy_length);
+	}
 }
 
 uint32 ToUInt(const char *value)
@@ -227,6 +270,105 @@ std::optional<Membership> LoadMembership(uint32 character_id)
 	membership.sharing_enabled = row[5] ? Strings::ToBool(row[5]) : false;
 	membership.member_count = ToUInt(row[6]);
 	return membership;
+}
+
+std::vector<FellowshipMemberState> LoadMemberStates(uint32 fellowship_id)
+{
+	std::vector<FellowshipMemberState> members;
+	if (!fellowship_id) {
+		return members;
+	}
+
+	auto results = database.QueryDatabase(
+		fmt::format(
+			"SELECT `character_id`, `character_name`, `rank`, `sharing_enabled`, `level`, `class_id`, "
+			"`last_zone_id`, `last_instance_id`, `last_online` "
+			"FROM `{}` WHERE `fellowship_id` = {} "
+			"ORDER BY `rank` DESC, `joined_at` ASC LIMIT {}",
+			kMemberTable,
+			fellowship_id,
+			kFellowshipMaxClientMembers
+		)
+	);
+
+	if (!results.Success()) {
+		return members;
+	}
+
+	for (auto row = results.begin(); row != results.end(); ++row) {
+		FellowshipMemberState member;
+		member.character_id = ToUInt(row[0]);
+		member.character_name = row[1] ? row[1] : "";
+		member.rank = ToUInt(row[2]);
+		member.sharing_enabled = row[3] ? Strings::ToBool(row[3]) : false;
+		member.level = ToUInt(row[4]);
+		member.class_id = ToUInt(row[5]);
+		member.zone_id = ToUInt(row[6]);
+		member.instance_id = ToUInt(row[7]);
+		member.last_online = ToUInt(row[8]);
+		members.push_back(member);
+	}
+
+	return members;
+}
+
+void SendFellowshipState(Client *client)
+{
+	if (!client || !client->CharacterID()) {
+		return;
+	}
+
+	auto membership = LoadMembership(client->CharacterID());
+	if (!membership) {
+		return;
+	}
+
+	auto members = LoadMemberStates(membership->fellowship_id);
+	if (members.empty()) {
+		return;
+	}
+
+	std::string leader_name = client->GetCleanName();
+	for (const auto &member : members) {
+		if (member.character_id == membership->leader_character_id) {
+			leader_name = member.character_name;
+			break;
+		}
+	}
+
+	auto outapp = std::make_unique<EQApplicationPacket>(OP_FellowshipUpdate, kFellowshipStatePacketSize);
+	std::memset(outapp->pBuffer, 0, outapp->size);
+	WriteUInt32(outapp->pBuffer, 0x000, 1);
+	WriteUInt32(outapp->pBuffer, 0x004, membership->fellowship_id);
+	WriteFixedString(outapp->pBuffer, kFellowshipStateLeaderOffset, 0x40, leader_name);
+	WriteFixedString(outapp->pBuffer, kFellowshipStateMotdOffset, 0x400, membership->motd);
+	WriteUInt32(outapp->pBuffer, kFellowshipStateMembersOffset, static_cast<uint32>(members.size()));
+
+	for (uint32 index = 0; index < members.size(); ++index) {
+		const auto &member = members[index];
+		const auto member_offset = kFellowshipStateMemberListOffset + (index * kFellowshipStateMemberSize);
+		WriteUInt32(outapp->pBuffer, member_offset + 0x00, member.sharing_enabled ? 1 : 0);
+		WriteFixedString(outapp->pBuffer, member_offset + 0x04, 0x40, member.character_name);
+		WriteUInt16(outapp->pBuffer, member_offset + 0x44, static_cast<uint16>(std::min<uint32>(member.zone_id, UINT16_MAX)));
+		WriteUInt16(outapp->pBuffer, member_offset + 0x46, static_cast<uint16>(std::min<uint32>(member.instance_id, UINT16_MAX)));
+		WriteUInt32(outapp->pBuffer, member_offset + 0x48, member.level);
+		WriteUInt32(outapp->pBuffer, member_offset + 0x4c, member.class_id);
+		WriteUInt32(outapp->pBuffer, member_offset + 0x50, member.last_online);
+	}
+
+	if (RuleB(CustomFeatures, FellowshipOpcodeDiscoveryEnabled)) {
+		LogInfo(
+			"Sending fellowship state packet character [{}] fellowship_id [{}] members [{}] leader [{}] size [{}] {}",
+			client->GetCleanName(),
+			membership->fellowship_id,
+			members.size(),
+			leader_name,
+			outapp->size,
+			DumpPacketToString(outapp.get())
+		);
+	}
+
+	client->QueuePacket(outapp.get());
 }
 
 std::optional<Membership> RequireMembership(Client *client)
@@ -501,6 +643,7 @@ bool CreateFellowship(Client *client, const std::string &name)
 	}
 
 	client->Message(Chat::White, "Created fellowship '%s'.", clean_name.c_str());
+	SendFellowshipState(client);
 	return true;
 }
 
@@ -1058,4 +1201,13 @@ void FellowshipManager::LogDiscoveryPacket(Client *client, const EQApplicationPa
 		app->Size(),
 		DumpPacketToString(app)
 	);
+}
+
+void FellowshipManager::SendClientState(Client *client) const
+{
+	if (!RuleB(CustomFeatures, FellowshipsEnabled)) {
+		return;
+	}
+
+	SendFellowshipState(client);
 }

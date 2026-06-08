@@ -50,6 +50,7 @@
 #include "zone/dialogue_window.h"
 #include "zone/dynamic_zone.h"
 #include "zone/expedition_request.h"
+#include "zone/fellowship_manager.h"
 #include "zone/guild_mgr.h"
 #include "zone/lua_parser.h"
 #include "zone/mob_movement_manager.h"
@@ -883,6 +884,7 @@ void Client::SendZoneInPackets()
 
 	//No idea why live sends this if even were not in a guild
 	SendGuildMOTD();
+	fellowship_manager.SendClientState(this);
 }
 
 void Client::SendLogoutPackets() {
