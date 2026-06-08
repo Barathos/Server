@@ -609,6 +609,7 @@ bool CreateFellowship(Client *client, const std::string &name)
 
 	if (LoadMembership(client->CharacterID())) {
 		client->Message(Chat::White, "You are already in a fellowship.");
+		SendFellowshipState(client);
 		return false;
 	}
 
