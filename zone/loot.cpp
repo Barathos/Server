@@ -327,6 +327,7 @@ void NPC::AddLootDrop(
 	item->trivial_min_level = loot_drop.trivial_min_level;
 	item->trivial_max_level = loot_drop.trivial_max_level;
 	item->equip_slot        = EQ::invslot::SLOT_INVALID;
+	item->lootslot          = EQ::invslot::SLOT_INVALID;
 
 	// unsure if required to equip, YOLO for now
 	if (item2->ItemType == EQ::item::ItemTypeBow) {

@@ -3044,7 +3044,8 @@ bool NPC::Death(Mob* killer_mob, int64 damage, uint16 spell, EQ::skills::SkillTy
 		0, &args
 	);
 
-	auto_loot_manager.ProcessCorpseDeath(corpse, killer_mob ? killer_mob : owner_or_self);
+	const auto advanced_loot_corpse_id = corpse ? corpse->GetID() : 0;
+	auto advanced_loot_source = killer_mob ? killer_mob : owner_or_self;
 
 	// Zone controller process EVENT_DEATH_ZONE (Death events)
 	if (parse->HasQuestSub(ZONE_CONTROLLER_NPC_ID, EVENT_DEATH_ZONE)) {
@@ -3083,6 +3084,12 @@ bool NPC::Death(Mob* killer_mob, int64 damage, uint16 spell, EQ::skills::SkillTy
 		std::vector<std::any> args = { corpse, this, owner_or_self };
 
 		parse->EventZone(EVENT_DEATH_ZONE, zone, export_string, 0, &args);
+	}
+
+	if (advanced_loot_corpse_id) {
+		if (auto corpse_after_death_events = entity_list.GetCorpseByID(advanced_loot_corpse_id)) {
+			auto_loot_manager.ProcessCorpseDeath(corpse_after_death_events, advanced_loot_source);
+		}
 	}
 
 	return true;

@@ -85,6 +85,37 @@ namespace {
 		return item->Stackable ? std::max<uint32>(1, item_data->charges) : 1;
 	}
 
+	void AssignCorpseLootSlots(Corpse *corpse, Client *client)
+	{
+		if (!corpse || !client) {
+			return;
+		}
+
+		const auto *lookup = client->GetInv().GetLookup();
+		if (!lookup) {
+			return;
+		}
+
+		auto loot_slot = EQ::invslot::CORPSE_BEGIN;
+		const auto corpse_mask = lookup->CorpseBitmask;
+		for (auto item_data : corpse->GetLootItems()) {
+			if (!item_data) {
+				continue;
+			}
+
+			item_data->lootslot = EQ::invslot::SLOT_INVALID;
+			while (loot_slot <= EQ::invslot::CORPSE_END && (((uint64) 1 << loot_slot) & corpse_mask) == 0) {
+				++loot_slot;
+			}
+
+			if (loot_slot > EQ::invslot::CORPSE_END) {
+				continue;
+			}
+
+			item_data->lootslot = loot_slot++;
+		}
+	}
+
 	bool IsDynamicCorpseLootItem(const LootItem *item_data)
 	{
 		if (!item_data || item_data->custom_data.empty()) {
@@ -753,9 +784,26 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 		);
 	}
 
+	AssignCorpseLootSlots(corpse, autoloot_client);
+
 	std::vector<uint16> loot_slots;
 	for (auto item_data : corpse->GetLootItems()) {
 		if (!item_data || IsBagChildSlot(item_data->equip_slot)) {
+			continue;
+		}
+
+		if (item_data->lootslot == EQ::invslot::SLOT_INVALID) {
+			const auto *slot_item = database.GetItem(item_data->item_id);
+			const auto item_name = slot_item ? slot_item->Name : fmt::format("Unknown Item {}", item_data->item_id);
+			DebugMessage(
+				autoloot_client,
+				settings,
+				fmt::format(
+					"{} from {} was not queued because no corpse loot slot was available.",
+					item_name,
+					corpse->GetCleanName()
+				)
+			);
 			continue;
 		}
 
@@ -771,6 +819,15 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 	for (const auto loot_slot : loot_slots) {
 		auto item_data = corpse->GetItem(loot_slot);
 		if (!item_data || !item_data->item_id) {
+			DebugMessage(
+				autoloot_client,
+				settings,
+				fmt::format(
+					"Corpse loot slot {} from {} was listed for Advanced Loot but was empty before queueing.",
+					loot_slot,
+					corpse_name
+				)
+			);
 			continue;
 		}
 

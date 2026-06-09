@@ -1146,6 +1146,7 @@ void Corpse::AddItem(
 	i->ornamenticon        = ornamenticon;
 	i->ornamentidfile      = ornamentidfile;
 	i->ornament_hero_model = ornament_hero_model;
+	i->lootslot            = EQ::invslot::SLOT_INVALID;
 
 	m_item_list.push_back(i);
 
