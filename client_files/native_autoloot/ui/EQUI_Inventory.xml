@@ -701,7 +701,7 @@
 			<CX>118</CX>
 			<CY>42</CY>
 		</Size>
-		<Text>SHD Shadow Knight</Text>
+		<Text></Text>
 		<TextColor>
 			<R>255</R>
 			<G>255</G>
@@ -759,7 +759,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location>
 			<X>1</X>
-			<Y>48</Y>
+			<Y>64</Y>
 		</Location>
 		<Size>
 			<CX>20</CX>
@@ -780,7 +780,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location>
 			<X>21</X>
-			<Y>48</Y>
+			<Y>64</Y>
 		</Location>
 		<Size>
 			<CX>47</CX>
@@ -799,7 +799,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location>
 			<X>71</X>
-			<Y>48</Y>
+			<Y>64</Y>
 		</Location>
 		<Size>
 			<CX>8</CX>
@@ -818,7 +818,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location>
 			<X>76</X>
-			<Y>48</Y>
+			<Y>64</Y>
 		</Location>
 		<Size>
 			<CX>47</CX>
@@ -837,7 +837,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location>
 			<X>1</X>
-			<Y>62</Y>
+			<Y>78</Y>
 		</Location>
 		<Size>
 			<CX>20</CX>
@@ -860,7 +860,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location>
 			<X>21</X>
-			<Y>62</Y>
+			<Y>78</Y>
 		</Location>
 		<Size>
 			<CX>47</CX>
@@ -879,7 +879,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location>
 			<X>71</X>
-			<Y>62</Y>
+			<Y>78</Y>
 		</Location>
 		<Size>
 			<CX>8</CX>
@@ -898,7 +898,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location>
 			<X>76</X>
-			<Y>62</Y>
+			<Y>78</Y>
 		</Location>
 		<Size>
 			<CX>47</CX>
@@ -917,7 +917,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location>
 			<X>1</X>
-			<Y>76</Y>
+			<Y>92</Y>
 		</Location>
 		<Size>
 			<CX>20</CX>
@@ -940,7 +940,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location>
 			<X>21</X>
-			<Y>76</Y>
+			<Y>92</Y>
 		</Location>
 		<Size>
 			<CX>47</CX>
@@ -959,7 +959,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location>
 			<X>71</X>
-			<Y>76</Y>
+			<Y>92</Y>
 		</Location>
 		<Size>
 			<CX>8</CX>
@@ -978,7 +978,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location>
 			<X>76</X>
-			<Y>76</Y>
+			<Y>92</Y>
 		</Location>
 		<Size>
 			<CX>47</CX>
@@ -997,7 +997,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location>
 			<X>1</X>
-			<Y>90</Y>
+			<Y>106</Y>
 		</Location>
 		<Size>
 			<CX>64</CX>
@@ -1020,7 +1020,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location>
 			<X>33</X>
-			<Y>90</Y>
+			<Y>106</Y>
 		</Location>
 		<Size>
 			<CX>80</CX>
@@ -1041,7 +1041,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location>
 			<X>1</X>
-			<Y>104</Y>
+			<Y>120</Y>
 		</Location>
 		<Size>
 			<CX>64</CX>
@@ -1064,7 +1064,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location>
 			<X>33</X>
-			<Y>104</Y>
+			<Y>120</Y>
 		</Location>
 		<Size>
 			<CX>80</CX>
@@ -1086,7 +1086,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location>
 			<X>1</X>
-			<Y>122</Y>
+			<Y>138</Y>
 		</Location>
 		<Size>
 			<CX>120</CX>
@@ -1107,7 +1107,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location>
 			<X>1</X>
-			<Y>137</Y>
+			<Y>153</Y>
 		</Location>
 		<Size>
 			<CX>118</CX>

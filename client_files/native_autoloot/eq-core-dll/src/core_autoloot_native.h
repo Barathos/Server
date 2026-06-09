@@ -1742,11 +1742,11 @@ static void NativeMulticlassPatchInventoryClassLabel()
 
 static void NativeMulticlassMaintainPresentationUI()
 {
+	NativeMulticlassPatchInventoryClassLabel();
+
 	if (!gNativeMulticlassState.has_profile) {
 		return;
 	}
-
-	NativeMulticlassPatchInventoryClassLabel();
 
 	if (NativeMulticlassPresentationUsesMana(gNativeMulticlassState.presentation) && pPlayerWnd) {
 		NativeMulticlassPatchLocalVitals();
