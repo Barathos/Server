@@ -631,7 +631,7 @@ int64 Client::CalcBaseManaRegen()
 
 int64 Client::CalcManaRegen(bool bCombat)
 {
-	int64 regen = 0;
+	int64 regen = GetMaxMana() > 0 ? 1 : 0;
 	auto level = GetLevel();
 	// so the new formulas break down with older skill caps where you don't have the skill until 4 or 8
 	// so for servers that want to use the old skill progression they can set this rule so they
@@ -642,15 +642,13 @@ int64 Client::CalcManaRegen(bool bCombat)
 		if (IsSitting() || CanMedOnHorse()) {
 			// kind of weird to do it here w/e
 			// client does some base medding regen for shrouds here
-			if (!multiclass_manager.IsBard(this)) {
-				auto skill = GetSkill(EQ::skills::SkillMeditate);
-				if (skill > 0) {
+			auto skill = GetSkill(EQ::skills::SkillMeditate);
+			if (skill > 0) {
+				regen++;
+				if (skill > 1)
 					regen++;
-					if (skill > 1)
-						regen++;
-					if (skill >= 15)
-						regen += skill / 15;
-				}
+				if (skill >= 15)
+					regen += skill / 15;
 			}
 			if (old)
 				regen = std::max(regen, static_cast<int64>(2));
