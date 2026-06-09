@@ -1,66 +1,6 @@
 <?xml version="1.0" encoding="us-ascii" ?>
 <XML ID="EQInterfaceDefinitionLanguage">
 	<Schema xmlns="EverQuestData" xmlns:dt="EverQuestDataTypes" />
-	<StaticAnimation item="Inv_Seperator1">
-		<RelativePosition>true</RelativePosition>
-		<Location>
-			<X>1</X>
-			<Y>117</Y>
-		</Location>
-		<Size>
-			<CX>120</CX>
-			<CY>4</CY>
-		</Size>
-		<Animation>A_DividerMiddle</Animation>
-	</StaticAnimation>
-	<StaticAnimation item="Inv_Seperator2">
-		<RelativePosition>true</RelativePosition>
-		<Location>
-			<X>0</X>
-			<Y>174</Y>
-		</Location>
-		<Size>
-			<CX>120</CX>
-			<CY>4</CY>
-		</Size>
-		<Animation>A_DividerMiddle</Animation>
-	</StaticAnimation>
-	<StaticAnimation item="Inv_Seperator3">
-		<RelativePosition>true</RelativePosition>
-		<Location>
-			<X>0</X>
-			<Y>280</Y>
-		</Location>
-		<Size>
-			<CX>120</CX>
-			<CY>4</CY>
-		</Size>
-		<Animation>A_DividerMiddle</Animation>
-	</StaticAnimation>
-	<StaticAnimation item="Inv_Seperator4">
-		<RelativePosition>true</RelativePosition>
-		<Location>
-			<X>-1</X>
-			<Y>235</Y>
-		</Location>
-		<Size>
-			<CX>120</CX>
-			<CY>4</CY>
-		</Size>
-		<Animation>A_DividerMiddle</Animation>
-	</StaticAnimation>
-	<StaticAnimation item="Inv_Seperator5">
-		<RelativePosition>true</RelativePosition>
-		<Location>
-			<X>0</X>
-			<Y>374</Y>
-		</Location>
-		<Size>
-			<CX>120</CX>
-			<CY>4</CY>
-		</Size>
-		<Animation>A_DividerMiddle</Animation>
-	</StaticAnimation>
 	<Label item="EbonShardsLabel">
 		<ScreenID>EbonShardsLabel</ScreenID>
 		<Font>2</Font>
@@ -2461,9 +2401,6 @@
 		<Pieces>EbonShardsLabel</Pieces>
 		<Pieces>IW_VitalityGauge</Pieces>
 		<Pieces>IW_AAVitalityGauge</Pieces>
-		<Pieces>Inv_Seperator3</Pieces>
-		<Pieces>Inv_Seperator4</Pieces>
-		<Pieces>Inv_Seperator5</Pieces>
 		<Location>
 			<X>0</X>
 			<Y>22</Y>
