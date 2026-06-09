@@ -652,21 +652,42 @@
 		<EQType>2</EQType>
 		<RelativePosition>true</RelativePosition>
 		<Location>
-			<X>123</X>
-			<Y>374</Y>
+			<X>40</X>
+			<Y>2</Y>
 		</Location>
 		<Size>
-			<CX>140</CX>
-			<CY>14</CY>
+			<CX>22</CX>
+			<CY>20</CY>
 		</Size>
-		<Text>60 Shadow Knight</Text>
+		<Text></Text>
 		<TextColor>
 			<R>255</R>
 			<G>255</G>
 			<B>255</B>
 		</TextColor>
 		<NoWrap>true</NoWrap>
-		<AlignCenter>true</AlignCenter>
+		<AlignCenter>false</AlignCenter>
+		<AlignRight>false</AlignRight>
+	</Label>
+	<Label item="IW_LevelLabel">
+		<ScreenID>LevelClassLabel2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location>
+			<X>2</X>
+			<Y>2</Y>
+		</Location>
+		<Size>
+			<CX>100</CX>
+			<CY>100</CY>
+		</Size>
+		<Text>Level: </Text>
+		<TextColor>
+			<R>255</R>
+			<G>255</G>
+			<B>255</B>
+		</TextColor>
+		<NoWrap>true</NoWrap>
+		<AlignCenter>false</AlignCenter>
 		<AlignRight>false</AlignRight>
 	</Label>
 	<Label item="IW_Class">
@@ -674,7 +695,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location>
 			<X>30</X>
-			<Y>2</Y>
+			<Y>16</Y>
 		</Location>
 		<Size>
 			<CX>90</CX>
@@ -686,7 +707,7 @@
 			<G>255</G>
 			<B>255</B>
 		</TextColor>
-		<NoWrap>false</NoWrap>
+		<NoWrap>true</NoWrap>
 		<AlignCenter>false</AlignCenter>
 		<AlignRight>false</AlignRight>
 	</Label>
@@ -695,7 +716,7 @@
 		<RelativePosition>true</RelativePosition>
 		<Location>
 			<X>2</X>
-			<Y>2</Y>
+			<Y>16</Y>
 		</Location>
 		<Size>
 			<CX>30</CX>
@@ -707,7 +728,7 @@
 			<G>255</G>
 			<B>255</B>
 		</TextColor>
-		<NoWrap>false</NoWrap>
+		<NoWrap>true</NoWrap>
 		<AlignCenter>false</AlignCenter>
 		<AlignRight>false</AlignRight>
 	</Label>
@@ -2376,6 +2397,7 @@
 		<Pieces>IW_Destroy</Pieces>
 		<Pieces>IW_Name</Pieces>
 		<Pieces>IW_Level</Pieces>
+		<Pieces>IW_LevelLabel</Pieces>
 		<Pieces>IW_Class</Pieces>
 		<Pieces>IW_ClassAbbr</Pieces>
 		<Pieces>IW_Deity</Pieces>

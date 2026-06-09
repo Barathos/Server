@@ -1628,78 +1628,21 @@ static void NativeMulticlassShowSpellGemWindow()
 	}
 }
 
-static std::string NativeMulticlassInventoryClassText()
-{
-	if (!gNativeMulticlassState.has_profile) {
-		return "";
-	}
-
-	if (
-		NativeMulticlassIsPlayerClass(gNativeMulticlassState.class1) &&
-		NativeMulticlassIsPlayerClass(gNativeMulticlassState.class2) &&
-		NativeMulticlassIsPlayerClass(gNativeMulticlassState.class3)
-	) {
-		const std::string class1 = gNativeMulticlassState.class1_name.empty() ?
-			NativeMulticlassClassName(gNativeMulticlassState.class1) :
-			gNativeMulticlassState.class1_name;
-		const std::string class2 = gNativeMulticlassState.class2_name.empty() ?
-			NativeMulticlassClassName(gNativeMulticlassState.class2) :
-			gNativeMulticlassState.class2_name;
-		const std::string class3 = gNativeMulticlassState.class3_name.empty() ?
-			NativeMulticlassClassName(gNativeMulticlassState.class3) :
-			gNativeMulticlassState.class3_name;
-
-		return class1 + "\n" + class2 + "\n" + class3;
-	}
-
-	if (!gNativeMulticlassState.profile_name.empty() && gNativeMulticlassState.profile_name != "Unchosen Trio") {
-		return gNativeMulticlassState.profile_name;
-	}
-
-	return "Multiclass Trio";
-}
-
-static std::string NativeMulticlassInventoryClassAbbreviationText()
-{
-	if (
-		!gNativeMulticlassState.has_profile ||
-		!NativeMulticlassIsPlayerClass(gNativeMulticlassState.class1) ||
-		!NativeMulticlassIsPlayerClass(gNativeMulticlassState.class2) ||
-		!NativeMulticlassIsPlayerClass(gNativeMulticlassState.class3)
-	) {
-		return "";
-	}
-
-	return std::string(NativeMulticlassClassAbbreviation(gNativeMulticlassState.class1)) +
-		"\n" +
-		NativeMulticlassClassAbbreviation(gNativeMulticlassState.class2) +
-		"\n" +
-		NativeMulticlassClassAbbreviation(gNativeMulticlassState.class3);
-}
-
 static void NativeMulticlassPatchInventoryClassLabel()
 {
 	if (!gNativeMulticlassState.has_profile || !ppInventoryWnd || !pInventoryWnd) {
 		return;
 	}
 
-	const std::string class_text = NativeMulticlassInventoryClassText();
-	if (class_text.empty()) {
-		return;
-	}
-
 	__try {
 		CXWnd* class_label = pInventoryWnd->GetChildItem((char*)"IW_Class");
 		if (class_label) {
-			CXStr value(class_text.c_str());
-			class_label->SetWindowTextA(value);
+			class_label->Show(1, 1);
 		}
 
-		const std::string class_abbreviations = NativeMulticlassInventoryClassAbbreviationText();
 		CXWnd* abbreviation_label = pInventoryWnd->GetChildItem((char*)"IW_ClassAbbr");
-		if (abbreviation_label && !class_abbreviations.empty()) {
-			CXStr value(class_abbreviations.c_str());
-			abbreviation_label->SetWindowTextA(value);
+		if (abbreviation_label) {
+			abbreviation_label->Show(1, 1);
 		}
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER) {
