@@ -259,24 +259,9 @@ struct NativeAutoLootInlineCellSpec
 
 static std::vector<NativeAutoLootInlineCellSpec> gNativeAutoLootInlineCellSpecs;
 
-struct NativeAutoLootInlineControlState
-{
-	CButtonWnd* button;
-	CListWnd* list;
-	int row;
-	int column;
-};
-
 static void NativeAutoLootSetSquareCell(CListWnd* list, int row, int column, bool active, bool enabled, bool negative)
 {
 	if (!list) {
-		return;
-	}
-
-	CXStr text(NativeAutoLootSquareText(active, enabled));
-
-	if (!enabled) {
-		list->SetItemText(row, column, &text);
 		return;
 	}
 
@@ -372,7 +357,7 @@ static void NativeAutoLootFitListColumns(CListWnd* list, bool shared)
 		return;
 	}
 
-	const int base_total = 110 + 68 + 38 + 38 + 28 + 30 + 30 + 30 + 30 + 30 + 30 + 132;
+	const int base_total = 110 + 68 + 48 + 34 + 28 + 30 + 30 + 30 + 30 + 30 + 30 + 132;
 	const int extra = usable_width > base_total ? usable_width - base_total : 0;
 	const int item_extra = extra * 40 / 100;
 	const int source_extra = extra * 40 / 100;
@@ -382,8 +367,8 @@ static void NativeAutoLootFitListColumns(CListWnd* list, bool shared)
 
 	NativeAutoLootSetColumnWidth(list, kAALSharedItem, item_width);
 	NativeAutoLootSetColumnWidth(list, kAALSharedStatus, status_width);
-	NativeAutoLootSetColumnWidth(list, kAALSharedAction, 38);
-	NativeAutoLootSetColumnWidth(list, kAALSharedManage, 38);
+	NativeAutoLootSetColumnWidth(list, kAALSharedAction, 48);
+	NativeAutoLootSetColumnWidth(list, kAALSharedManage, 34);
 	NativeAutoLootSetColumnWidth(list, kAALSharedAutoRoll, 28);
 	NativeAutoLootSetColumnWidth(list, kAALSharedNeed, 30);
 	NativeAutoLootSetColumnWidth(list, kAALSharedGreed, 30);
@@ -403,6 +388,8 @@ public:
 		SetWndNotification(NativeAutoLootWnd);
 		int (NativeAutoLootWnd::*pfOnProcessFrame)() = &NativeAutoLootWnd::OnProcessFrame;
 		SetvfTable(49, *(DWORD*)&pfOnProcessFrame);
+		int (NativeAutoLootWnd::*pfPostDraw)() const = &NativeAutoLootWnd::PostDraw;
+		SetvfTable(3, *(DWORD*)&pfPostDraw);
 
 		PersonalLabel = GetChildItem("AALW_PersonalLabel");
 		SetAllLabel = GetChildItem("AALW_SetAllLabel");
@@ -444,7 +431,12 @@ public:
 
 	int OnProcessFrame()
 	{
-		SyncInlineCellControls();
+		return 1;
+	}
+
+	int PostDraw() const
+	{
+		DrawInlineCellMarkers();
 		return 1;
 	}
 
@@ -486,10 +478,6 @@ public:
 		}
 
 		if (Message == XWM_LCLICK) {
-			if (HandleInlineCellClick(pWnd)) {
-				return 1;
-			}
-
 			if (pWnd == (CXWnd*)PersonalList || pWnd == (CXWnd*)SharedList) {
 				CListWnd* list = (CListWnd*)pWnd;
 				ActiveList = list;
@@ -692,13 +680,12 @@ private:
 	void RefreshList(CListWnd* list, bool shared);
 	bool HandleListColumnClick(CListWnd* list, bool shared, void* hit_test_point);
 	bool HandleListColumnAction(CListWnd* list, bool shared, int selected, int column);
-	bool HandleInlineCellClick(CXWnd* wnd);
 	bool SendListAction(const NativeAutoLootRow& row, const char* action, const char* status);
 	bool SendCorpseAction(const NativeAutoLootRow& row, const char* action, const char* status);
 	bool ToggleAutoRollFilter(const NativeAutoLootRow& row);
-	CButtonWnd* CreateInlineCellControl();
-	void EnsureInlineCellControlCount(size_t count);
-	void SyncInlineCellControls();
+	bool GetInlineCellDrawRect(const NativeAutoLootInlineCellSpec& spec, CXRect* target, CXRect* clip) const;
+	void DrawInlineCellMarker(const NativeAutoLootInlineCellSpec& spec, const CXRect& target, const CXRect& clip) const;
+	void DrawInlineCellMarkers() const;
 	void SetLabel(CXWnd* label, const char* text);
 
 	CXWnd* PersonalLabel = nullptr;
@@ -732,8 +719,6 @@ private:
 	CButtonWnd* LeaveCorpseButton = nullptr;
 	CButtonWnd* ApplyFiltersCheck = nullptr;
 	CButtonWnd* GroupedByNpcCheck = nullptr;
-	std::vector<CButtonWnd*> InlineCellControls;
-	std::vector<NativeAutoLootInlineControlState> InlineControlStates;
 	int LastLayoutWidth = 0;
 	int LastLayoutHeight = 0;
 };
@@ -7280,146 +7265,100 @@ bool NativeAutoLootWnd::ToggleAutoRollFilter(const NativeAutoLootRow& row)
 	return true;
 }
 
-CButtonWnd* NativeAutoLootWnd::CreateInlineCellControl()
+bool NativeAutoLootWnd::GetInlineCellDrawRect(const NativeAutoLootInlineCellSpec& spec, CXRect* target, CXRect* clip) const
 {
-	if (!pSidlMgr || !ApplyFiltersCheck) {
-		return nullptr;
-	}
-
-	PCSIDLWND template_wnd = (PCSIDLWND)ApplyFiltersCheck;
-	if (!template_wnd || !template_wnd->SidlPiece) {
-		return nullptr;
-	}
-
-	CXWnd* wnd = nullptr;
-	__try {
-		wnd = pSidlMgr->CreateXWndFromTemplate((CXWnd*)this, (CControlTemplate*)template_wnd->SidlPiece);
-	}
-	__except (EXCEPTION_EXECUTE_HANDLER) {
-		NativeAutoLootTrace("Advanced Loot inline checkbox clone faulted");
-		return nullptr;
-	}
-
-	CButtonWnd* button = (CButtonWnd*)wnd;
-	if (!button) {
-		return nullptr;
-	}
-
-	CXStr blank("");
-	((CXWnd*)button)->SetWindowTextA(blank);
-	button->Checked = 0;
-	button->SetCheck(false);
-	((PCXWND)button)->Enabled = 1;
-	((PCXWND)button)->Clickable = 1;
-	((CXWnd*)button)->Show(0, 1);
-	return button;
-}
-
-void NativeAutoLootWnd::EnsureInlineCellControlCount(size_t count)
-{
-	while (InlineCellControls.size() < count) {
-		CButtonWnd* button = CreateInlineCellControl();
-		if (!button) {
-			return;
-		}
-
-		InlineCellControls.push_back(button);
-	}
-}
-
-void NativeAutoLootWnd::SyncInlineCellControls()
-{
-	EnsureInlineCellControlCount(gNativeAutoLootInlineCellSpecs.size());
-	InlineControlStates.clear();
-
-	CXRect parent_rect = ((CXWnd*)this)->GetScreenRect();
-	for (CButtonWnd* button : InlineCellControls) {
-		if (button) {
-			((CXWnd*)button)->Show(0, 1);
-		}
-	}
-
-	for (size_t i = 0; i < gNativeAutoLootInlineCellSpecs.size() && i < InlineCellControls.size(); ++i) {
-		const NativeAutoLootInlineCellSpec& spec = gNativeAutoLootInlineCellSpecs[i];
-		CButtonWnd* button = InlineCellControls[i];
-		if (!button || !spec.enabled || !spec.list) {
-			continue;
-		}
-
-		__try {
-			CXRect cell_rect = spec.list->GetItemRect(spec.row, spec.column);
-			CXRect list_rect = ((CXWnd*)spec.list)->GetScreenRect();
-			CXRect list_clip = ((CXWnd*)spec.list)->GetScreenClipRect();
-
-			int left = (int)cell_rect.A;
-			int top = (int)cell_rect.B;
-			int right = (int)cell_rect.C;
-			int bottom = (int)cell_rect.D;
-
-			if (left < (int)list_rect.A - 4 || top < (int)list_rect.B - 4) {
-				left += (int)list_rect.A;
-				right += (int)list_rect.A;
-				top += (int)list_rect.B;
-				bottom += (int)list_rect.B;
-			}
-
-			if (right <= left || bottom <= top ||
-				right <= (int)list_clip.A || left >= (int)list_clip.C ||
-				bottom <= (int)list_clip.B || top >= (int)list_clip.D) {
-				((CXWnd*)button)->Show(0, 1);
-				continue;
-			}
-
-			const int control_size = 16;
-			int horizontal_inset = (right - left - control_size) / 2;
-			int vertical_inset = (bottom - top - control_size) / 2;
-			if (horizontal_inset < 0) {
-				horizontal_inset = 0;
-			}
-			if (vertical_inset < 0) {
-				vertical_inset = 0;
-			}
-			int target_left = left + horizontal_inset;
-			int target_top = top + vertical_inset;
-			CXRect target(
-				target_left - (int)parent_rect.A,
-				target_top - (int)parent_rect.B,
-				target_left - (int)parent_rect.A + control_size,
-				target_top - (int)parent_rect.B + control_size
-			);
-
-			((CXWnd*)button)->Move(target);
-			button->Checked = spec.active ? 1 : 0;
-			button->SetCheck(spec.active);
-			((CXWnd*)button)->Show(1, 1);
-
-			NativeAutoLootInlineControlState state = { button, spec.list, spec.row, spec.column };
-			InlineControlStates.push_back(state);
-		}
-		__except (EXCEPTION_EXECUTE_HANDLER) {
-			NativeAutoLootTrace("Advanced Loot inline checkbox layout faulted");
-			((CXWnd*)button)->Show(0, 1);
-		}
-	}
-}
-
-bool NativeAutoLootWnd::HandleInlineCellClick(CXWnd* wnd)
-{
-	if (!wnd) {
+	if (!target || !clip || !spec.list) {
 		return false;
 	}
 
-	for (const NativeAutoLootInlineControlState& state : InlineControlStates) {
-		if ((CXWnd*)state.button != wnd || !state.list) {
-			continue;
+	__try {
+		CXRect cell_rect = spec.list->GetItemRect(spec.row, spec.column);
+		CXRect list_rect = ((CXWnd*)spec.list)->GetScreenRect();
+		CXRect list_clip = ((CXWnd*)spec.list)->GetScreenClipRect();
+
+		int left = (int)cell_rect.A;
+		int top = (int)cell_rect.B;
+		int right = (int)cell_rect.C;
+		int bottom = (int)cell_rect.D;
+
+		if (left < (int)list_rect.A - 4 || top < (int)list_rect.B - 4) {
+			left += (int)list_rect.A;
+			right += (int)list_rect.A;
+			top += (int)list_rect.B;
+			bottom += (int)list_rect.B;
 		}
 
-		ActiveList = state.list;
-		state.list->SetCurSel(state.row);
-		return HandleListColumnAction(state.list, state.list == SharedList, state.row, state.column);
-	}
+		if (right <= left || bottom <= top ||
+			right <= (int)list_clip.A || left >= (int)list_clip.C ||
+			bottom <= (int)list_clip.B || top >= (int)list_clip.D) {
+			return false;
+		}
 
-	return false;
+		const int control_size = 16;
+		int horizontal_inset = (right - left - control_size) / 2;
+		int vertical_inset = (bottom - top - control_size) / 2;
+		if (horizontal_inset < 0) {
+			horizontal_inset = 0;
+		}
+		if (vertical_inset < 0) {
+			vertical_inset = 0;
+		}
+
+		int target_left = left + horizontal_inset;
+		int target_top = top + vertical_inset;
+		target->A = target_left;
+		target->B = target_top;
+		target->C = target_left + control_size;
+		target->D = target_top + control_size;
+		clip->A = list_clip.A;
+		clip->B = list_clip.B;
+		clip->C = list_clip.C;
+		clip->D = list_clip.D;
+		return true;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+		NativeAutoLootTrace("Advanced Loot inline checkbox rect faulted");
+		return false;
+	}
+}
+
+void NativeAutoLootWnd::DrawInlineCellMarker(const NativeAutoLootInlineCellSpec& spec, const CXRect& target, const CXRect& clip) const
+{
+	__try {
+		CTextureAnimation* animation = NativeAutoLootActionCellAnimation(spec.active, spec.negative);
+		if (animation) {
+			animation->Draw(target, clip, spec.enabled ? 0xFFFFFFFF : 0xFF707070, 0xFF);
+			return;
+		}
+
+		const unsigned long border_color = spec.enabled ? 0xFF8EA8C0 : 0xFF606060;
+		const unsigned long background_color = 0xFF081018;
+		const unsigned long active_color = spec.negative ? 0xFFC04848 : 0xFF4E9F5D;
+		CXWnd::DrawColoredRect(target, border_color, clip);
+		CXRect inner((int)target.A + 2, (int)target.B + 2, (int)target.C - 2, (int)target.D - 2);
+		CXWnd::DrawColoredRect(inner, spec.active ? active_color : background_color, clip);
+
+		if (spec.active) {
+			CXRect mark_a((int)target.A + 4, (int)target.B + 7, (int)target.C - 4, (int)target.B + 10);
+			CXRect mark_b((int)target.A + 7, (int)target.B + 4, (int)target.A + 10, (int)target.D - 4);
+			CXWnd::DrawColoredRect(mark_a, 0xFFFFFFFF, clip);
+			CXWnd::DrawColoredRect(mark_b, 0xFFFFFFFF, clip);
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+		NativeAutoLootTrace("Advanced Loot inline checkbox draw faulted");
+	}
+}
+
+void NativeAutoLootWnd::DrawInlineCellMarkers() const
+{
+	for (const NativeAutoLootInlineCellSpec& spec : gNativeAutoLootInlineCellSpecs) {
+		CXRect target;
+		CXRect clip;
+		if (GetInlineCellDrawRect(spec, &target, &clip)) {
+			DrawInlineCellMarker(spec, target, clip);
+		}
+	}
 }
 
 bool NativeAutoLootWnd::HandleListColumnClick(CListWnd* list, bool shared, void* hit_test_point)

@@ -173,8 +173,8 @@
 		<Style_Transparent>false</Style_Transparent>
 		<Columns><Width>110</Width><Heading>Item</Heading></Columns>
 		<Columns><Width>68</Width><Heading>Status</Heading></Columns>
-		<Columns><Width>38</Width><Heading>Action</Heading></Columns>
-		<Columns><Width>38</Width><Heading>Manage</Heading></Columns>
+		<Columns><Width>48</Width><Heading>Action</Heading></Columns>
+		<Columns><Width>34</Width><Heading>Mgr</Heading></Columns>
 		<Columns><Width>28</Width><Heading>AR</Heading></Columns>
 		<Columns><Width>30</Width><Heading>ND</Heading></Columns>
 		<Columns><Width>30</Width><Heading>GD</Heading></Columns>
