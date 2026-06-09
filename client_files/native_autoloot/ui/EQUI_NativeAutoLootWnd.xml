@@ -813,7 +813,7 @@
 		<Size><CX>155</CX><CY>18</CY></Size>
 		<Text>Auto Show</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
-		<TooltipReference>Open the Advanced Loot window when new eligible loot appears.</TooltipReference>
+		<TooltipReference>Open the Advanced Loot window when unfiltered loot needs a decision.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -827,9 +827,9 @@
 		<RelativePosition>true</RelativePosition>
 		<Location><X>176</X><Y>72</Y></Location>
 		<Size><CX>155</CX><CY>18</CY></Size>
-		<Text>Show New Only</Text>
+		<Text>Unfiltered Only</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
-		<TooltipReference>Only auto-show the window for newly queued loot.</TooltipReference>
+		<TooltipReference>Only auto-show the window when loot lacks a saved filter or vote.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>

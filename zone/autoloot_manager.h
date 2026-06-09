@@ -43,8 +43,8 @@ private:
 		bool auto_split_coin = true;
 		bool confirm_remove_filter = true;
 		bool auto_remove_looted_lore = true;
-		bool auto_show_loot_window = false;
-		bool show_new_items_only = false;
+		bool auto_show_loot_window = true;
+		bool show_new_items_only = true;
 		bool auto_loot_all = false;
 		bool master_looter_candidate = true;
 		bool debug_enabled = false;
@@ -109,6 +109,7 @@ private:
 	bool QueueCorpseEntries(Corpse *corpse, Client *resolved_client, const LootSource *source = nullptr);
 	bool HasQueuedEntry(uint16 corpse_id, uint16 loot_slot) const;
 	bool IsEntryVisibleToClient(const LootEntry &entry, Client *client) const;
+	bool EntryNeedsDecisionForClient(const LootEntry &entry, Client *client);
 	void PruneLootEntries();
 	void RefreshQueuedRulesForClient(Client *client);
 	void ApplyQueuedPersonalFiltersForClient(Client *client);
@@ -128,8 +129,8 @@ private:
 	void LootEntryForClient(Client *client, uint32 entry_id);
 	bool LeaveEntryForClient(Client *client, uint32 entry_id, bool add_never_filter);
 	void FinalizeCorpse(Corpse *corpse, Client *coin_client);
-	void LootCoin(Corpse *corpse, Client *client);
-	void MaybeAutoShowLootWindow(Client *client, bool has_new_items);
+	bool LootCoin(Corpse *corpse, Client *client);
+	void MaybeAutoShowLootWindow(Client *client, bool has_candidate, bool needs_decision);
 
 	void SendStatus(Client *client);
 	void SendNativeStatus(Client *client);

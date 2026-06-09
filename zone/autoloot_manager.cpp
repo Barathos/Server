@@ -396,8 +396,8 @@ AutoLootManager::CharacterSettings AutoLootManager::GetCharacterSettings(uint32 
 	settings.auto_split_coin         = row[2] ? Strings::ToBool(row[2]) : true;
 	settings.confirm_remove_filter   = row[3] ? Strings::ToBool(row[3]) : true;
 	settings.auto_remove_looted_lore = row[4] ? Strings::ToBool(row[4]) : true;
-	settings.auto_show_loot_window   = row[5] ? Strings::ToBool(row[5]) : false;
-	settings.show_new_items_only     = row[6] ? Strings::ToBool(row[6]) : false;
+	settings.auto_show_loot_window   = row[5] ? Strings::ToBool(row[5]) : true;
+	settings.show_new_items_only     = row[6] ? Strings::ToBool(row[6]) : true;
 	settings.auto_loot_all           = row[7] ? Strings::ToBool(row[7]) : false;
 	settings.master_looter_candidate = row[8] ? Strings::ToBool(row[8]) : true;
 	settings.debug_enabled           = row[9] ? Strings::ToBool(row[9]) : false;
@@ -973,10 +973,10 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 	}
 
 	corpse = entity_list.GetCorpseByID(corpse_id);
+	const bool coin_looted = corpse ? LootCoin(corpse, shared_loot && master_looter ? master_looter : autoloot_client) : false;
 
-	if (queued) {
+	if (queued || coin_looted) {
 		if (corpse) {
-			LootCoin(corpse, shared_loot && master_looter ? master_looter : autoloot_client);
 			corpse->ResetDecayTimer();
 		}
 
@@ -995,7 +995,22 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 			return false;
 		};
 
-		if (shared_loot) {
+		auto has_decision_entry = [this, &queued_entry_ids](Client *client) {
+			if (!client) {
+				return false;
+			}
+
+			for (const auto entry_id : queued_entry_ids) {
+				auto entry_iter = m_loot_entries.find(entry_id);
+				if (entry_iter != m_loot_entries.end() && EntryNeedsDecisionForClient(entry_iter->second, client)) {
+					return true;
+				}
+			}
+
+			return false;
+		};
+
+		if (queued && shared_loot) {
 			auto clients = GetGroupClients(group);
 			clients.erase(
 				std::remove_if(
@@ -1007,12 +1022,16 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 			);
 			SendSharedLootUpdate(clients);
 			for (auto client : clients) {
-				MaybeAutoShowLootWindow(client, has_new_visible_entry(client));
+				MaybeAutoShowLootWindow(client, has_new_visible_entry(client), has_decision_entry(client));
 			}
 		}
-		else {
+		else if (queued) {
 			SendNativeUpdate(autoloot_client);
-			MaybeAutoShowLootWindow(autoloot_client, has_new_visible_entry(autoloot_client));
+			MaybeAutoShowLootWindow(autoloot_client, has_new_visible_entry(autoloot_client), has_decision_entry(autoloot_client));
+		}
+
+		if (!queued && coin_looted && corpse && corpse->IsEmpty()) {
+			corpse->Delete();
 		}
 
 		if (settings.log_enabled) {
@@ -1026,7 +1045,7 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 		}
 	}
 
-	return queued;
+	return queued || coin_looted;
 }
 
 bool AutoLootManager::HasQueuedEntry(uint16 corpse_id, uint16 loot_slot) const
@@ -1084,6 +1103,50 @@ bool AutoLootManager::IsEntryVisibleToClient(const LootEntry &entry, Client *cli
 
 	auto group = client->GetGroup();
 	return group && group->GetID() == entry.group_id;
+}
+
+bool AutoLootManager::EntryNeedsDecisionForClient(const LootEntry &entry, Client *client)
+{
+	if (!client || !IsEntryVisibleToClient(entry, client)) {
+		return false;
+	}
+
+	if (entry.shared) {
+		const bool can_manage =
+			entry.master_looter_character_id == client->CharacterID() ||
+			client->Admin() >= AccountStatus::GMAdmin;
+
+		if ((entry.state == "ask" || entry.state == "rolling") && !entry.free_grab) {
+			auto vote_iter = entry.votes.find(client->CharacterID());
+			return vote_iter == entry.votes.end() || vote_iter->second == VoteChoice::Unset;
+		}
+
+		if (!can_manage || entry.state != "waiting") {
+			return false;
+		}
+
+		if (entry.dynamic_instance) {
+			return true;
+		}
+
+		const auto settings = GetCharacterSettings(client->CharacterID(), true);
+		if (!settings.apply_filters) {
+			return true;
+		}
+
+		return GetFilter(client->CharacterID(), entry.item_id).decision == LootFilterDecision::Unset;
+	}
+
+	if (entry.dynamic_instance) {
+		return true;
+	}
+
+	const auto settings = GetCharacterSettings(client->CharacterID(), true);
+	if (!settings.apply_filters) {
+		return true;
+	}
+
+	return GetFilter(client->CharacterID(), entry.item_id).decision == LootFilterDecision::Unset;
 }
 
 void AutoLootManager::PruneLootEntries()
@@ -1375,6 +1438,12 @@ void AutoLootManager::HandleLootAction(Client *client, const Seperator *sep)
 		return;
 	}
 
+	if (action == "ask" || action == "roll" || action == "freegrab" || action == "give") {
+		client->Message(Chat::Red, "That Advanced Loot action only applies to shared loot rows.");
+		SendNativeUpdate(client);
+		return;
+	}
+
 	client->Message(Chat::White, "Usage: #advloot action [Entry ID] [loot|leave|never|need|greed|no|alwaysneed|alwaysgreed|ask|roll|freegrab|give]");
 }
 
@@ -1437,8 +1506,10 @@ void AutoLootManager::HandleSharedLootAction(Client *client, uint32 entry_id, co
 			LootEntryForClient(client, entry_id);
 		}
 		else {
-			SendNativeUpdate(client);
-			MaybeAutoShowLootWindow(client, true);
+			SendNativeFilterUpdate(client);
+			auto update_iter = m_loot_entries.find(entry_id);
+			const bool has_candidate = update_iter != m_loot_entries.end() && IsEntryVisibleToClient(update_iter->second, client);
+			MaybeAutoShowLootWindow(client, has_candidate, has_candidate && EntryNeedsDecisionForClient(update_iter->second, client));
 		}
 		return;
 	}
@@ -1470,6 +1541,9 @@ void AutoLootManager::HandleSharedLootAction(Client *client, uint32 entry_id, co
 		}
 		else {
 			SendSharedLootUpdate(eligible_clients);
+			for (auto member : eligible_clients) {
+				MaybeAutoShowLootWindow(member, IsEntryVisibleToClient(entry, member), EntryNeedsDecisionForClient(entry, member));
+			}
 		}
 		return;
 	}
@@ -1527,8 +1601,10 @@ void AutoLootManager::HandleSharedLootAction(Client *client, uint32 entry_id, co
 			LootEntryForClient(recipient, entry_id);
 		}
 		else {
-			SendNativeUpdate(recipient);
-			MaybeAutoShowLootWindow(recipient, true);
+			SendNativeFilterUpdate(recipient);
+			auto update_iter = m_loot_entries.find(entry_id);
+			const bool has_candidate = update_iter != m_loot_entries.end() && IsEntryVisibleToClient(update_iter->second, recipient);
+			MaybeAutoShowLootWindow(recipient, has_candidate, has_candidate && EntryNeedsDecisionForClient(update_iter->second, recipient));
 		}
 		return;
 	}
@@ -1903,8 +1979,10 @@ void AutoLootManager::ResolveSharedVote(uint32 entry_id, bool timeout)
 		LootEntryForClient(winner, entry_id);
 	}
 	else {
-		SendNativeUpdate(winner);
-		MaybeAutoShowLootWindow(winner, true);
+		SendNativeFilterUpdate(winner);
+		auto update_iter = m_loot_entries.find(entry_id);
+		const bool has_candidate = update_iter != m_loot_entries.end() && IsEntryVisibleToClient(update_iter->second, winner);
+		MaybeAutoShowLootWindow(winner, has_candidate, has_candidate && EntryNeedsDecisionForClient(update_iter->second, winner));
 	}
 }
 
@@ -2056,10 +2134,10 @@ void AutoLootManager::FinalizeCorpse(Corpse *corpse, Client *coin_client)
 	}
 }
 
-void AutoLootManager::LootCoin(Corpse *corpse, Client *client)
+bool AutoLootManager::LootCoin(Corpse *corpse, Client *client)
 {
 	if (!corpse || !client || !corpse->CanPlayerLoot(client->CharacterID())) {
-		return;
+		return false;
 	}
 
 	const auto copper = corpse->GetCopper();
@@ -2068,7 +2146,7 @@ void AutoLootManager::LootCoin(Corpse *corpse, Client *client)
 	const auto platinum = corpse->GetPlatinum();
 
 	if (!copper && !silver && !gold && !platinum) {
-		return;
+		return false;
 	}
 
 	const auto settings = GetCharacterSettings(client->CharacterID(), true);
@@ -2083,6 +2161,7 @@ void AutoLootManager::LootCoin(Corpse *corpse, Client *client)
 	}
 
 	corpse->RemoveCash();
+	corpse->Save();
 
 	client->Message(
 		Chat::Loot,
@@ -2093,9 +2172,11 @@ void AutoLootManager::LootCoin(Corpse *corpse, Client *client)
 			corpse->GetCleanName()
 		).c_str()
 	);
+
+	return true;
 }
 
-void AutoLootManager::MaybeAutoShowLootWindow(Client *client, bool has_new_items)
+void AutoLootManager::MaybeAutoShowLootWindow(Client *client, bool has_candidate, bool needs_decision)
 {
 	if (!client) {
 		return;
@@ -2106,7 +2187,11 @@ void AutoLootManager::MaybeAutoShowLootWindow(Client *client, bool has_new_items
 		return;
 	}
 
-	if (settings.show_new_items_only && !has_new_items) {
+	if (!has_candidate) {
+		return;
+	}
+
+	if (settings.show_new_items_only && !needs_decision) {
 		return;
 	}
 
@@ -2318,15 +2403,16 @@ void AutoLootManager::HandleAdvancedLootCommand(Client *client, const Seperator 
 		return;
 	}
 
-	if (!strcasecmp(sep->arg[1], "shownew") || !strcasecmp(sep->arg[1], "shownewonly") || !strcasecmp(sep->arg[1], "newonly")) {
+	if (!strcasecmp(sep->arg[1], "shownew") || !strcasecmp(sep->arg[1], "shownewonly") || !strcasecmp(sep->arg[1], "newonly") ||
+		!strcasecmp(sep->arg[1], "unfilteredonly") || !strcasecmp(sep->arg[1], "decisionsonly")) {
 		if (arguments < 2) {
-			client->Message(Chat::White, "Usage: #advloot shownew [on|off]");
+			client->Message(Chat::White, "Usage: #advloot unfilteredonly [on|off]");
 			return;
 		}
 
 		settings.show_new_items_only = Strings::ToBool(sep->arg[2]);
 		SaveCharacterSettings(client->CharacterID(), settings);
-		client->Message(Chat::White, fmt::format("Advanced Loot show new items only {}.", settings.show_new_items_only ? "enabled" : "disabled").c_str());
+		client->Message(Chat::White, fmt::format("Advanced Loot auto show unfiltered only {}.", settings.show_new_items_only ? "enabled" : "disabled").c_str());
 		RefreshWindowIfRequested(this, client, sep);
 		return;
 	}
@@ -2615,7 +2701,7 @@ void AutoLootManager::SendStatus(Client *client)
 	client->Message(
 		Chat::White,
 		fmt::format(
-			"Advanced Loot: {}, Apply Filters: {}, Auto Show: {}, Show New Only: {}, Auto Split Coin: {}, Auto Loot All: {}, Auto Remove Lore: {}, Confirm Remove: {}, Master Looter candidate: {}, debug: {}, log: {}.",
+			"Advanced Loot: {}, Apply Filters: {}, Auto Show: {}, Auto Show Unfiltered Only: {}, Auto Split Coin: {}, Auto Loot All: {}, Auto Remove Lore: {}, Confirm Remove: {}, Master Looter candidate: {}, debug: {}, log: {}.",
 			settings.use_advanced_looting ? "on" : "off",
 			settings.apply_filters ? "on" : "off",
 			settings.auto_show_loot_window ? "on" : "off",
@@ -2730,7 +2816,7 @@ void AutoLootManager::SendHelp(Client *client)
 	client->Message(Chat::White, "Usage: #advloot applyfilters [on|off]");
 	client->Message(Chat::White, "Usage: #advloot autosplit [on|off]");
 	client->Message(Chat::White, "Usage: #advloot autolootall [on|off]");
-	client->Message(Chat::White, "Usage: #advloot autoshow [on|off], shownew [on|off], confirmremove [on|off], autoremovelore [on|off]");
+	client->Message(Chat::White, "Usage: #advloot autoshow [on|off], unfilteredonly [on|off], confirmremove [on|off], autoremovelore [on|off]");
 	client->Message(Chat::White, "Usage: #advloot masterlooter [on|off]");
 	client->Message(Chat::White, "Usage: #advloot master set|clear");
 	client->Message(Chat::White, "Usage: #advloot debug [on|off] or #advloot log [on|off]");

@@ -10,7 +10,7 @@ This project now treats loot as a live-style Advanced Loot system, not the old s
 - Need/Greed rolls use a 60 second timeout, with Need beating Greed.
 - Saved filters are fresh live-style values: `unset`, `always_need`, `always_greed`, `never`, plus a separate Auto Roll flag.
 - Saved personal filters apply immediately: Always Need/Greed auto-loot personal rows, and Never leaves matching rows on the corpse.
-- Auto Show is opt-in; the native window stays closed until `#advloot window` or an explicit native show request opens it.
+- Auto Show is enabled by default, and the existing secondary checkbox now means Unfiltered Only; with that default on, the native window opens only when an unfiltered/undecided row needs player input.
 - Old include/exclude filters are not migrated.
 - Removed player-facing conveniences: Loot Nearby, AutoSell, round-robin/killer/assigned automation modes, `#lootfilter`, `#autosell`, and standalone `#needgreed`.
 
@@ -43,7 +43,7 @@ custom_advloot_filters
 custom_advloot_audit
 ```
 
-The version 19 custom migration drops the old `custom_autoloot_*` tables because this is a testbed and old data is intentionally discarded. Version 21 makes Auto Show opt-in and resets existing `custom_advloot_settings.auto_show_loot_window` values to `0`.
+The version 19 custom migration drops the old `custom_autoloot_*` tables because this is a testbed and old data is intentionally discarded. Version 21 made Auto Show opt-in during testing; version 22 turns it back on and defaults the secondary auto-show filter on so it only opens for unfiltered loot needing a decision.
 
 ## Files
 
@@ -54,13 +54,14 @@ The version 19 custom migration drops the old `custom_autoloot_*` tables because
 - Custom DB migration: `common/database/database_update_manifest_custom.h`
 - SQL mirror: `features/all-features/sql/013_live_advanced_loot_schema.sql`
 - Auto Show opt-in mirror: `features/all-features/sql/014_advloot_autoshow_opt_in.sql`
+- Auto Show unfiltered-default mirror: `features/all-features/sql/015_advloot_autoshow_unfiltered_default_on.sql`
 
 ## Verification Focus
 
 - Solo: kill mobs, verify Personal Loot rows, Loot, Leave, Never, Loot All, Apply Filters on/off.
 - Group: verify Master Looter selection, shared rows, Ask/Roll, Auto Roll, 60 second timeout, Need over Greed, No/pass cases, direct Give to Personal Loot.
 - Messaging: assigned or looted group items should still produce normal group-visible loot messages.
-- UI: right-click inspect items, resize window, reload UI, logout/re-enter, Group by NPC, filter/settings windows.
+- UI: right-click inspect items, resize window, reload UI, logout/re-enter, Group by NPC, filter/settings windows, and Auto Show opening only for unfiltered/undecided loot.
 - Safety: no duplication, inventory full behavior, corpse cleanup, locked/out-of-range rows.
 
 ## Build And Deploy

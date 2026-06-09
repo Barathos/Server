@@ -434,9 +434,22 @@ public:
 				return 1;
 			}
 
-			NativeAutoLootRow* row = GetSelectedRow();
+			const bool shared_action_button =
+				pWnd == (CXWnd*)NeedButton ||
+				pWnd == (CXWnd*)GreedButton ||
+				pWnd == (CXWnd*)NoButton ||
+				pWnd == (CXWnd*)AlwaysNeedButton ||
+				pWnd == (CXWnd*)AlwaysGreedButton ||
+				pWnd == (CXWnd*)AskButton ||
+				pWnd == (CXWnd*)RollButton ||
+				pWnd == (CXWnd*)FreeGrabButton ||
+				pWnd == (CXWnd*)GiveButton ||
+				pWnd == (CXWnd*)ManageButton ||
+				pWnd == (CXWnd*)LeaveCorpseButton;
+
+			NativeAutoLootRow* row = shared_action_button ? GetSelectedRowFromList(SharedList) : GetSelectedRow();
 			if (!row) {
-				SetStatus("Select a real loot row first.");
+				SetStatus(shared_action_button ? "Select a shared loot row first." : "Select a real loot row first.");
 				return 1;
 			}
 
@@ -567,6 +580,7 @@ public:
 
 private:
 	NativeAutoLootRow* GetSelectedRow();
+	NativeAutoLootRow* GetSelectedRowFromList(CListWnd* list);
 	void RefreshList(CListWnd* list, bool shared);
 	bool HandleListColumnClick(CListWnd* list, bool shared, void* hit_test_point);
 	bool SendListAction(const NativeAutoLootRow& row, const char* action, const char* status);
@@ -627,8 +641,8 @@ static bool gNativeAutoLootLeader = false;
 static bool gNativeAutoLootMasterCandidate = true;
 static bool gNativeAutoLootAutoSplit = true;
 static bool gNativeAutoLootAutoLootAll = false;
-static bool gNativeAutoLootAutoShow = false;
-static bool gNativeAutoLootShowNewOnly = false;
+static bool gNativeAutoLootAutoShow = true;
+static bool gNativeAutoLootShowNewOnly = true;
 static bool gNativeAutoLootConfirmRemove = true;
 static bool gNativeAutoLootAutoRemoveLore = true;
 static bool gNativeAutoLootDebug = false;
@@ -820,7 +834,7 @@ public:
 
 			if (pWnd == (CXWnd*)ShowNewCheck) {
 				NativeAutoLootSendCommand(gNativeAutoLootShowNewOnly ? "/say #advloot shownew off" : "/say #advloot shownew on");
-				SetStatus("Toggled Show New Only.");
+				SetStatus("Toggled Unfiltered Only.");
 				return 1;
 			}
 
@@ -7010,7 +7024,7 @@ void NativeAutoLootSettingsWnd::RefreshRows()
 		gNativeAutoLootMasterCandidate ? "on" : "off",
 		gNativeAutoLootAutoSplit ? "on" : "off",
 		gNativeAutoLootAutoLootAll ? "on" : "off",
-		gNativeAutoLootAutoShow ? (gNativeAutoLootShowNewOnly ? "new" : "all") : "off",
+		gNativeAutoLootAutoShow ? (gNativeAutoLootShowNewOnly ? "unfiltered" : "all") : "off",
 		gNativeAutoLootAutoRemoveLore ? "on" : "off"
 	);
 	SetLabel(GroupSummaryLabel, group_summary);
@@ -7385,16 +7399,21 @@ void NativeAutoLootWnd::RefreshRows()
 NativeAutoLootRow* NativeAutoLootWnd::GetSelectedRow()
 {
 	CListWnd* list = ActiveList ? ActiveList : PersonalList;
+	NativeAutoLootRow* row = GetSelectedRowFromList(list);
+	if (!row && list != SharedList) {
+		row = GetSelectedRowFromList(SharedList);
+	}
+
+	return row;
+}
+
+NativeAutoLootRow* NativeAutoLootWnd::GetSelectedRowFromList(CListWnd* list)
+{
 	if (!list) {
 		return nullptr;
 	}
 
-	int selected = list->GetCurSel();
-	if (selected < 0 && list != SharedList && SharedList) {
-		list = SharedList;
-		selected = list->GetCurSel();
-	}
-
+	const int selected = list->GetCurSel();
 	if (selected < 0) {
 		return nullptr;
 	}
@@ -9668,8 +9687,8 @@ static void NativeAutoLootResetSessionRequests()
 	gNativeAutoLootMasterCandidate = true;
 	gNativeAutoLootAutoSplit = true;
 	gNativeAutoLootAutoLootAll = false;
-	gNativeAutoLootAutoShow = false;
-	gNativeAutoLootShowNewOnly = false;
+	gNativeAutoLootAutoShow = true;
+	gNativeAutoLootShowNewOnly = true;
 	gNativeAutoLootConfirmRemove = true;
 	gNativeAutoLootAutoRemoveLore = true;
 	gNativeAutoLootDebug = false;
@@ -9721,8 +9740,8 @@ static void NativeAutoLootResetClientUiSession(const char* reason)
 	gNativeAutoLootMasterCandidate = true;
 	gNativeAutoLootAutoSplit = true;
 	gNativeAutoLootAutoLootAll = false;
-	gNativeAutoLootAutoShow = false;
-	gNativeAutoLootShowNewOnly = false;
+	gNativeAutoLootAutoShow = true;
+	gNativeAutoLootShowNewOnly = true;
 	gNativeAutoLootConfirmRemove = true;
 	gNativeAutoLootAutoRemoveLore = true;
 	gNativeAutoLootDebug = false;
