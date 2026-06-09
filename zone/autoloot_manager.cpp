@@ -33,6 +33,7 @@
 #include <algorithm>
 #include <cstring>
 #include <memory>
+#include <set>
 
 extern EntityList entity_list;
 extern Zone *zone;
@@ -352,14 +353,27 @@ void AutoLootManager::Process()
 	m_last_process = now;
 
 	std::vector<uint32> expired_shared_votes;
+	std::set<Client *> countdown_clients;
 	for (const auto &[entry_id, entry] : m_loot_entries) {
 		if (entry.shared && entry.vote_started_at > 0 && entry.vote_started_at <= now - kNeedGreedSeconds) {
 			expired_shared_votes.push_back(entry_id);
+		}
+		else if (entry.shared && entry.vote_started_at > 0) {
+			auto corpse = entity_list.GetCorpseByID(entry.corpse_id);
+			for (auto client : GetEligibleSharedLootClients(entry, corpse)) {
+				if (client) {
+					countdown_clients.insert(client);
+				}
+			}
 		}
 	}
 
 	for (const auto entry_id : expired_shared_votes) {
 		ResolveSharedVote(entry_id, true);
+	}
+
+	for (auto client : countdown_clients) {
+		SendNativeUpdate(client);
 	}
 
 	PruneLootEntries();
@@ -1197,14 +1211,20 @@ void AutoLootManager::SendNativeSnapshot(Client *client)
 			}
 		}
 
-		auto state = locked ? std::string("locked") : entry.state;
+		const auto status_kind = locked ? std::string("locked") :
+			entry.free_grab ? std::string("freegrab") :
+			(entry.shared && entry.vote_started_at > 0) ? std::string("ask") :
+			entry.state;
+		auto state = status_kind;
+		auto vote_state = std::string("-");
 		auto eligible_clients = entry.shared ? GetEligibleSharedLootClients(entry, corpse) : std::vector<Client *>{};
 		const bool eligible = entry.shared ? ClientInList(eligible_clients, client) : entry.owner_character_id == client->CharacterID();
 		const bool master = entry.shared && (entry.master_looter_character_id == client->CharacterID() || client->Admin() >= AccountStatus::GMAdmin);
 		if (!locked && entry.shared) {
 			auto vote_iter = entry.votes.find(client->CharacterID());
 			if (vote_iter != entry.votes.end()) {
-				state = VoteChoiceState(vote_iter->second);
+				vote_state = VoteChoiceState(vote_iter->second);
+				state = vote_state;
 			}
 		}
 
@@ -1212,18 +1232,42 @@ void AutoLootManager::SendNativeSnapshot(Client *client)
 		uint32 greed_count = 0;
 		uint32 pass_count = 0;
 		uint32 waiting_count = 0;
-		for (const auto &[character_id, vote] : entry.votes) {
-			if (vote == VoteChoice::Need) {
-				++need_count;
+		if (entry.shared && entry.vote_started_at > 0 && !eligible_clients.empty()) {
+			for (const auto eligible_client : eligible_clients) {
+				if (!eligible_client) {
+					continue;
+				}
+
+				const auto vote_iter = entry.votes.find(eligible_client->CharacterID());
+				const auto vote = vote_iter != entry.votes.end() ? vote_iter->second : VoteChoice::Unset;
+				if (vote == VoteChoice::Need) {
+					++need_count;
+				}
+				else if (vote == VoteChoice::Greed) {
+					++greed_count;
+				}
+				else if (vote == VoteChoice::Pass) {
+					++pass_count;
+				}
+				else {
+					++waiting_count;
+				}
 			}
-			else if (vote == VoteChoice::Greed) {
-				++greed_count;
-			}
-			else if (vote == VoteChoice::Pass) {
-				++pass_count;
-			}
-			else {
-				++waiting_count;
+		}
+		else {
+			for (const auto &[character_id, vote] : entry.votes) {
+				if (vote == VoteChoice::Need) {
+					++need_count;
+				}
+				else if (vote == VoteChoice::Greed) {
+					++greed_count;
+				}
+				else if (vote == VoteChoice::Pass) {
+					++pass_count;
+				}
+				else {
+					++waiting_count;
+				}
 			}
 		}
 
@@ -1233,14 +1277,19 @@ void AutoLootManager::SendNativeSnapshot(Client *client)
 		const auto owner_name = ClientNameByCharacterID(entry.owner_character_id);
 		const auto assignee_name = !entry.shared ? owner_name : "";
 		const auto master_name = ClientNameByCharacterID(entry.master_looter_character_id);
+		const bool roll_active = entry.shared && entry.vote_started_at > 0 && !entry.free_grab;
 		const bool can_loot = !locked && ((!entry.shared && entry.owner_character_id == client->CharacterID()) || (entry.shared && entry.free_grab && eligible));
-		const bool can_vote = !locked && entry.shared && eligible && !entry.free_grab;
+		const bool can_vote = !locked && entry.shared && eligible && roll_active;
 		const bool can_manage = !locked && master;
+		const bool can_ask = !locked && master && entry.shared && !entry.free_grab && !roll_active;
+		const bool can_roll = !locked && master && roll_active;
+		const bool can_freegrab = !locked && master && entry.shared && !entry.free_grab;
+		const bool can_give = !locked && master && entry.shared;
 		const bool can_leave = !locked && ((!entry.shared && entry.owner_character_id == client->CharacterID()) || (entry.shared && can_manage));
 		client->Message(
 			Chat::White,
 			fmt::format(
-				"ADVLOOT|entry|scope={}|id={}|corpse_id={}|slot={}|item_id={}|icon={}|name={}|qty={}|source={}|state={}|rule={}|locked={}|nodrop={}|master={}|autoroll={}|freegrab={}|owner={}|assignee={}|mastername={}|eligible={}|manage={}|canloot={}|canvote={}|canask={}|canroll={}|canfreegrab={}|cangive={}|canleave={}|lockreason={}|rollseconds={}|need={}|greed={}|no={}|waiting={}",
+				"ADVLOOT|entry|scope={}|id={}|corpse_id={}|slot={}|item_id={}|icon={}|name={}|qty={}|source={}|state={}|statuskind={}|vote={}|rule={}|locked={}|nodrop={}|master={}|autoroll={}|freegrab={}|owner={}|assignee={}|mastername={}|eligible={}|manage={}|canloot={}|canvote={}|canask={}|canroll={}|canfreegrab={}|cangive={}|canleave={}|lockreason={}|rollseconds={}|need={}|greed={}|no={}|waiting={}",
 				entry.shared ? "shared" : "personal",
 				entry.entry_id,
 				entry.corpse_id,
@@ -1251,6 +1300,8 @@ void AutoLootManager::SendNativeSnapshot(Client *client)
 				std::max<uint32>(1, entry.quantity),
 				ProtocolValue(entry.corpse_name),
 				state,
+				status_kind,
+				vote_state,
 				ProtocolValue(entry.rule),
 				locked ? 1 : 0,
 				entry.no_drop ? 1 : 0,
@@ -1264,10 +1315,10 @@ void AutoLootManager::SendNativeSnapshot(Client *client)
 				can_manage ? 1 : 0,
 				can_loot ? 1 : 0,
 				can_vote ? 1 : 0,
-				can_manage ? 1 : 0,
-				can_manage ? 1 : 0,
-				can_manage ? 1 : 0,
-				can_manage ? 1 : 0,
+				can_ask ? 1 : 0,
+				can_roll ? 1 : 0,
+				can_freegrab ? 1 : 0,
+				can_give ? 1 : 0,
 				can_leave ? 1 : 0,
 				ProtocolValue(lock_reason),
 				roll_seconds,
@@ -1523,6 +1574,16 @@ void AutoLootManager::HandleSharedLootAction(Client *client, uint32 entry_id, co
 	if (action == "ask") {
 		entry.state = "ask";
 		entry.vote_started_at = std::time(nullptr);
+		std::map<uint32, VoteChoice> refreshed_votes;
+		for (auto eligible : eligible_clients) {
+			if (!eligible) {
+				continue;
+			}
+
+			auto vote_iter = entry.votes.find(eligible->CharacterID());
+			refreshed_votes[eligible->CharacterID()] = vote_iter != entry.votes.end() ? vote_iter->second : VoteChoice::Unset;
+		}
+		entry.votes.swap(refreshed_votes);
 		if (corpse) {
 			corpse->Lock();
 		}
@@ -1691,6 +1752,91 @@ void AutoLootManager::InspectEntryForClient(Client *client, uint32 entry_id)
 
 	client->SendItemPacket(0, inst, ItemPacketViewLink);
 	safe_delete(inst);
+}
+
+void AutoLootManager::TargetCorpseForClient(Client *client, uint32 entry_id)
+{
+	auto iter = m_loot_entries.find(entry_id);
+	if (iter == m_loot_entries.end() || !client || !IsEntryVisibleToClient(iter->second, client)) {
+		if (client) {
+			client->Message(Chat::Red, "That Advanced Loot entry is no longer available.");
+			SendNativeUpdate(client);
+		}
+		return;
+	}
+
+	auto corpse = entity_list.GetCorpseByID(iter->second.corpse_id);
+	if (!corpse || !corpse->IsNPCCorpse()) {
+		m_loot_entries.erase(iter);
+		client->Message(Chat::Red, "That corpse is no longer available.");
+		SendNativeUpdate(client);
+		return;
+	}
+
+	client->SetTarget(corpse);
+	client->SendTargetCommand(corpse->GetID());
+	client->Message(Chat::White, fmt::format("Selected {}.", corpse->GetCleanName()).c_str());
+	SendNativeUpdate(client);
+}
+
+void AutoLootManager::LinkCorpseLootForClient(Client *client, uint32 entry_id)
+{
+	auto iter = m_loot_entries.find(entry_id);
+	if (iter == m_loot_entries.end() || !client || !IsEntryVisibleToClient(iter->second, client)) {
+		if (client) {
+			client->Message(Chat::Red, "That Advanced Loot entry is no longer available.");
+			SendNativeUpdate(client);
+		}
+		return;
+	}
+
+	const auto corpse_id = iter->second.corpse_id;
+	const auto corpse_name = iter->second.corpse_name;
+	size_t linked_count = 0;
+	for (const auto &[candidate_id, candidate] : m_loot_entries) {
+		if (candidate.corpse_id != corpse_id || !IsEntryVisibleToClient(candidate, client)) {
+			continue;
+		}
+
+		const auto link = database.CreateItemLink(candidate.item_id);
+		if (link.empty()) {
+			continue;
+		}
+
+		client->Message(
+			Chat::ItemLink,
+			fmt::format("{}: {}{}", corpse_name, link, QuantitySuffix(candidate.quantity)).c_str()
+		);
+		++linked_count;
+	}
+
+	if (!linked_count) {
+		client->Message(Chat::Red, "That corpse has no visible Advanced Loot items to link.");
+	}
+}
+
+void AutoLootManager::HandleCorpseCommand(Client *client, const Seperator *sep)
+{
+	if (!client || !sep || sep->argnum < 3 || !sep->IsNumber(3)) {
+		if (client) {
+			client->Message(Chat::White, "Usage: #advloot corpse [target|link] [Entry ID]");
+		}
+		return;
+	}
+
+	const std::string action = Strings::ToLower(sep->arg[2]);
+	const uint32 entry_id = Strings::ToUnsignedInt(sep->arg[3]);
+	if (action == "target" || action == "select") {
+		TargetCorpseForClient(client, entry_id);
+		return;
+	}
+
+	if (action == "link" || action == "linkall") {
+		LinkCorpseLootForClient(client, entry_id);
+		return;
+	}
+
+	client->Message(Chat::White, "Usage: #advloot corpse [target|link] [Entry ID]");
 }
 
 void AutoLootManager::SendManageInfo(Client *client, uint32 entry_id)
@@ -2273,6 +2419,11 @@ void AutoLootManager::HandleAdvancedLootCommand(Client *client, const Seperator 
 		return;
 	}
 
+	if (!strcasecmp(sep->arg[1], "corpse")) {
+		HandleCorpseCommand(client, sep);
+		return;
+	}
+
 	if (!strcasecmp(sep->arg[1], "inspect") || !strcasecmp(sep->arg[1], "preview")) {
 		if (arguments < 2 || !sep->IsNumber(2)) {
 			client->Message(Chat::White, "Usage: #advloot inspect [Entry ID]");
@@ -2822,6 +2973,7 @@ void AutoLootManager::SendHelp(Client *client)
 	client->Message(Chat::White, "Usage: #advloot debug [on|off] or #advloot log [on|off]");
 	client->Message(Chat::White, "Usage: #advloot inspect [Entry ID]");
 	client->Message(Chat::White, "Usage: #advloot manage [Entry ID]");
+	client->Message(Chat::White, "Usage: #advloot corpse [target|link] [Entry ID]");
 	client->Message(Chat::White, "Usage: #advloot action [Entry ID] [loot|leave|never|need|greed|no|alwaysneed|alwaysgreed|ask|roll|freegrab|give]");
 	client->Message(Chat::White, "Usage: #advloot filter [list|set|autoroll|remove]");
 }

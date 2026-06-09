@@ -24,6 +24,7 @@
 #include "zone/guild_mgr.h"
 #include "zone/worldserver.h"
 
+#include <algorithm>
 #include <map>
 
 /*
@@ -35,6 +36,40 @@ but I dont see a point to that right now, so I dont do it.
 extern WorldServer worldserver;
 std::map<uint32, TributeData> tribute_list{};
 
+namespace {
+	constexpr uint32 kEnhancedTributeFirst = 900100;
+	constexpr uint32 kEnhancedTributeLast = 900105;
+	constexpr uint32 kEnhancedTributeBloodEngine = 900100;
+	constexpr uint32 kEnhancedTributeSpellFurnace = 900101;
+	constexpr uint32 kEnhancedTributeTitansAegis = 900102;
+	constexpr uint32 kEnhancedTributePacklordsPact = 900103;
+	constexpr uint32 kEnhancedTributeWayfarersMomentum = 900104;
+	constexpr uint32 kEnhancedTributeExecutionersOmen = 900105;
+
+	bool IsEnhancedTribute(uint32 tribute_id)
+	{
+		return tribute_id >= kEnhancedTributeFirst && tribute_id <= kEnhancedTributeLast;
+	}
+
+	uint32 TributeTierPower(const Tribute_Struct& tribute)
+	{
+		return std::min<uint32>(tribute.tier + 1, MAX_TRIBUTE_TIERS);
+	}
+
+	template <typename T>
+	void SetIfGreater(T& field, T value)
+	{
+		if (field < value) {
+			field = value;
+		}
+	}
+
+	void AddCappedUint8(uint8& field, int value)
+	{
+		field = static_cast<uint8>(std::min<int>(255, field + value));
+	}
+}
+
 void Client::ToggleTribute(bool enabled) {
 	if(enabled) {
 		//make sure they have enough points to be activating this...
@@ -45,6 +80,12 @@ void Client::ToggleTribute(bool enabled) {
 			uint32 tid = m_pp.tributes[r].tribute;
 			if(tid == TRIBUTE_NONE)
 				continue;
+
+			if (IsEnhancedTribute(tid) && !RuleB(CustomFeatures, EnhancedTributeEnabled)) {
+				Message(Chat::Red, "Enhanced tribute benefits are currently disabled.");
+				ToggleTribute(false);
+				return;
+			}
 
 			if(tribute_list.count(tid) != 1)
 				continue;
@@ -175,6 +216,9 @@ void Client::ChangeTributeSettings(TributeInfo_Struct *t) {
 		if(tid == TRIBUTE_NONE)
 			continue;
 
+		if (IsEnhancedTribute(tid) && !RuleB(CustomFeatures, EnhancedTributeEnabled))
+			continue;
+
 		if(tribute_list.count(tid) != 1)
 			continue;	//print a cheater warning?
 
@@ -194,6 +238,9 @@ void Client::ChangeTributeSettings(TributeInfo_Struct *t) {
 }
 
 void Client::SendTributeDetails(uint32 client_id, uint32 tribute_id) {
+	if (IsEnhancedTribute(tribute_id) && !RuleB(CustomFeatures, EnhancedTributeEnabled))
+		return;
+
 	if(tribute_list.count(tribute_id) != 1) {
 		LogError("Details request for invalid tribute [{}]", (unsigned long)tribute_id);
 		return;
@@ -286,6 +333,10 @@ void Client::SendTributes() {
 	for(; cur != end; ++cur) {
 		if(cur->second.is_guild)
 			continue;	//skip guild tributes here
+
+		if (IsEnhancedTribute(cur->first) && !RuleB(CustomFeatures, EnhancedTributeEnabled))
+			continue;
+
 		int len = cur->second.name.length();
 		EQApplicationPacket outapp(OP_TributeInfo, sizeof(TributeAbility_Struct) + len + 1);
 		TributeAbility_Struct* tas = (TributeAbility_Struct*)outapp.pBuffer;
@@ -617,6 +668,10 @@ uint32 Client::LookupTributeItemID(uint32 tribute_id, uint32 tier)
 		return 0;
 	}
 
+	if (IsEnhancedTribute(tribute_id) && !RuleB(CustomFeatures, EnhancedTributeEnabled)) {
+		return 0;
+	}
+
 	if (tribute_list.contains(tribute_id)) {
 		auto tribute = tribute_list.find(tribute_id);
 		auto item_id = tribute->second.tiers[tier].tribute_item_id;
@@ -625,6 +680,97 @@ uint32 Client::LookupTributeItemID(uint32 tribute_id, uint32 tier)
 		}
 	}
 	return 0;
+}
+
+void Client::ApplyEnhancedTributeBonuses(StatBonuses* b) const
+{
+	if (!b || !RuleB(CustomFeatures, EnhancedTributeEnabled) || !m_pp.tribute_active) {
+		return;
+	}
+
+	constexpr int all_skills = EQ::skills::HIGHEST_SKILL + 1;
+
+	for (const auto& tribute : m_pp.tributes) {
+		if (!IsEnhancedTribute(tribute.tribute)) {
+			continue;
+		}
+
+		const auto tier = TributeTierPower(tribute);
+
+		switch (tribute.tribute) {
+			case kEnhancedTributeBloodEngine:
+				b->CriticalHitChance[all_skills] += static_cast<int32>(tier * 4);
+				b->CritDmgMod[all_skills] += static_cast<int32>(tier * 10);
+				b->Accuracy[all_skills] += static_cast<int32>(tier * 20);
+				b->FlurryChance += static_cast<int32>(tier * 3);
+				b->DoubleMeleeRound[SBIndex::DOUBLE_MELEE_ROUND_CHANCE] += tier * 2;
+				b->DoubleMeleeRound[SBIndex::DOUBLE_MELEE_ROUND_DMG_BONUS] += tier * 10;
+				SetIfGreater<int32>(b->ExtraAttackChance[SBIndex::EXTRA_ATTACK_CHANCE], static_cast<int32>(tier * 4));
+				SetIfGreater<int32>(b->ExtraAttackChance[SBIndex::EXTRA_ATTACK_NUM_ATKS], 1);
+				SetIfGreater<int32>(b->MeleeLifetap, static_cast<int32>(tier * 3));
+				break;
+			case kEnhancedTributeSpellFurnace:
+				b->CriticalSpellChance += static_cast<int32>(tier * 4);
+				b->SpellCritDmgIncrease += static_cast<int32>(tier * 8);
+				b->CriticalDoTChance += static_cast<int32>(tier * 4);
+				b->DotCritDmgIncrease += static_cast<int32>(tier * 8);
+				b->CriticalHealChance += static_cast<int32>(tier * 4);
+				b->HealRate += static_cast<int32>(tier * 3);
+				b->SpellDmg += static_cast<int32>(tier * 40);
+				b->HealAmt += static_cast<int32>(tier * 40);
+				b->ManaRegen += static_cast<int32>(tier * 15);
+				b->ChannelChanceSpells += static_cast<int32>(tier * 5);
+				break;
+			case kEnhancedTributeTitansAegis:
+				b->PercentMaxHPChange += static_cast<int64>(tier * 3);
+				b->FlatMaxHPChange += static_cast<int64>(tier * 500);
+				b->AC += static_cast<int32>(tier * 100);
+				b->HPRegen += static_cast<int32>(tier * 25);
+				b->ItemHPRegenCap += static_cast<int32>(tier * 25);
+				b->MeleeMitigationEffect += static_cast<int32>(tier * 3);
+				b->AvoidMeleeChanceEffect += static_cast<int32>(tier * 3);
+				b->ShieldBlock += static_cast<int32>(tier * 4);
+				b->BlockBehind += static_cast<int32>(tier * 2);
+				b->StunResist += static_cast<int32>(tier * 5);
+				b->DelayDeath += tier * 1000;
+				b->DamageShield += static_cast<int32>(tier * 40);
+				break;
+			case kEnhancedTributePacklordsPact:
+				b->PetMaxHP += static_cast<int32>(tier * 8);
+				b->Pet_Add_Atk += static_cast<int32>(tier * 100);
+				b->PetFlurry += static_cast<int32>(tier * 4);
+				b->PetCriticalHit += static_cast<int32>(tier * 4);
+				b->PetAvoidance += static_cast<int32>(tier * 5);
+				b->PetMeleeMitigation += static_cast<int32>(tier * 5);
+				b->PC_Pet_Rampage[SBIndex::PET_RAMPAGE_CHANCE] += tier * 5;
+				SetIfGreater<uint32>(b->PC_Pet_Rampage[SBIndex::PET_RAMPAGE_DMG_MOD], tier * 20);
+				break;
+			case kEnhancedTributeWayfarersMomentum:
+				b->movementspeed += static_cast<int>(tier * 10);
+				AddCappedUint8(b->IncreaseRunSpeedCap, static_cast<int>(tier * 2));
+				AddCappedUint8(b->ForageAdditionalItems, static_cast<int>(tier * 10));
+				AddCappedUint8(b->SalvageChance, static_cast<int>(tier * 8));
+				b->Packrat += static_cast<int8>(tier * 5);
+				SetIfGreater<int32>(b->FactionModPct, static_cast<int32>(tier * 10));
+				b->GrantForage = std::max(b->GrantForage, 1);
+				for (int skill_id = 0; skill_id <= EQ::skills::HIGHEST_SKILL; ++skill_id) {
+					b->ReduceTradeskillFail[skill_id] += static_cast<int32>(tier * 4);
+				}
+				break;
+			case kEnhancedTributeExecutionersOmen:
+				b->FinishingBlow[SBIndex::FINISHING_EFFECT_PROC_CHANCE] += static_cast<int32>(tier * 150);
+				b->FinishingBlow[SBIndex::FINISHING_EFFECT_DMG] += static_cast<int32>(tier * 5000);
+				SetIfGreater<uint32>(b->FinishingBlowLvl[SBIndex::FINISHING_EFFECT_LEVEL_MAX], 255);
+				SetIfGreater<uint32>(b->FinishingBlowLvl[SBIndex::FINISHING_BLOW_LEVEL_HP_RATIO], 100 + (tier * 20));
+				b->DamageModifier[all_skills] += static_cast<int32>(tier * 5);
+				b->SkillDamageAmount[all_skills] += static_cast<int32>(tier * 15);
+				b->SlayUndead[SBIndex::SLAYUNDEAD_RATE_MOD] += static_cast<int32>(tier * 20);
+				b->SlayUndead[SBIndex::SLAYUNDEAD_DMG_MOD] += static_cast<int32>(tier * 100);
+				break;
+			default:
+				break;
+		}
+	}
 }
 
 /*

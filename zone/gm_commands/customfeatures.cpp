@@ -43,4 +43,5 @@ void command_customfeatures(Client *c, const Seperator *)
 	SendFeatureStatus(c, "Server Auth Stats", RuleB(CustomFeatures, ServerAuthStatsEnabled));
 	SendFeatureStatus(c, "Fellowships", RuleB(CustomFeatures, FellowshipsEnabled));
 	SendFeatureStatus(c, "Fellowship Opcode Discovery", RuleB(CustomFeatures, FellowshipOpcodeDiscoveryEnabled));
+	SendFeatureStatus(c, "Enhanced Tribute", RuleB(CustomFeatures, EnhancedTributeEnabled));
 }

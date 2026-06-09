@@ -121,6 +121,9 @@ private:
 	void HandleSharedLootAction(Client *client, uint32 entry_id, const std::string &action, const Seperator *sep);
 	void HandlePersonalLootCommand(Client *client, const Seperator *sep);
 	void InspectEntryForClient(Client *client, uint32 entry_id);
+	void TargetCorpseForClient(Client *client, uint32 entry_id);
+	void LinkCorpseLootForClient(Client *client, uint32 entry_id);
+	void HandleCorpseCommand(Client *client, const Seperator *sep);
 	void SendManageInfo(Client *client, uint32 entry_id);
 	void RecordSharedVote(Client *client, uint32 entry_id, VoteChoice choice, bool set_always_rule);
 	void ResolveSharedVote(uint32 entry_id, bool timeout);

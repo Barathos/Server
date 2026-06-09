@@ -1094,6 +1094,7 @@ public:
 	void ToggleTribute(bool enabled);
 	std::map<uint32, TributeData> GetTributeList();
 	uint32 LookupTributeItemID(uint32 tribute_id, uint32 tier);
+	void ApplyEnhancedTributeBonuses(StatBonuses* b) const;
 	void SendPathPacket(const std::vector<FindPerson_Point> &path);
 
 	inline PTimerList &GetPTimers() { return(p_timers); }

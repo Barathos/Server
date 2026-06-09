@@ -70,6 +70,7 @@ RULE_INT(CustomFeatures, FellowshipMaxMembers, 12, "Maximum number of members al
 RULE_INT(CustomFeatures, FellowshipCampfireRequiredNearbyMembers, 3, "Number of nearby online fellowship members required to create a campfire.")
 RULE_INT(CustomFeatures, FellowshipCampfireNearbyRadius, 100, "Distance in game units used when checking nearby members for fellowship campfire creation.")
 RULE_INT(CustomFeatures, FellowshipCampfireDurationSeconds, 14400, "Seconds before a basic fellowship campfire expires.")
+RULE_BOOL(CustomFeatures, EnhancedTributeEnabled, true, "Enables custom high-impact Tribute-window choices and their server-side bonus hooks.")
 RULE_CATEGORY_END()
 
 RULE_CATEGORY(Character)

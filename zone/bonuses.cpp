@@ -190,6 +190,8 @@ void Mob::CalcItemBonuses(StatBonuses* b) {
 					safe_delete(inst);
 				}
 			}
+
+			CastToClient()->ApplyEnhancedTributeBonuses(b);
 		}
 	}
 

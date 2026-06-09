@@ -60,6 +60,8 @@ struct NativeAutoLootRow
 	std::string item = "Item";
 	std::string source = "corpse";
 	std::string state = "waiting";
+	std::string status_kind = "waiting";
+	std::string vote = "-";
 	std::string rule = "-";
 	std::string owner;
 	std::string assignee;
@@ -143,14 +145,17 @@ enum NativeAutoLootPersonalColumn
 enum NativeAutoLootSharedColumn
 {
 	kAALSharedItem = 0,
+	kAALSharedStatus,
+	kAALSharedAction,
+	kAALSharedManage,
+	kAALSharedAutoRoll,
 	kAALSharedNeed,
 	kAALSharedGreed,
 	kAALSharedNo,
 	kAALSharedAlwaysNeed,
 	kAALSharedAlwaysGreed,
 	kAALSharedNever,
-	kAALSharedSource,
-	kAALSharedStatus
+	kAALSharedSource
 };
 
 static bool NativeAutoLootTryGetClickedCell(CListWnd* list, void* hit_test_point, int* row_index, int* column_index)
@@ -224,6 +229,39 @@ static CTextureAnimation* NativeAutoLootActionCellAnimation(bool active, bool ne
 	return NativeAutoLootFindAnimation("A_CheckBoxNormal", gNativeAutoLootCheckNormalAnimation);
 }
 
+static const char* NativeAutoLootSquareText(bool active, bool enabled)
+{
+	if (active) {
+		return "[X]";
+	}
+
+	return enabled ? "[ ]" : "-";
+}
+
+static COLORREF NativeAutoLootSquareColor(bool active, bool enabled, COLORREF active_color)
+{
+	if (active) {
+		return active_color;
+	}
+
+	return enabled ? 0xFF8EA8C0 : 0xFF606060;
+}
+
+static bool NativeAutoLootIsNeedVote(const NativeAutoLootRow& row)
+{
+	return row.vote == "need" || row.state == "need" || row.state == "alwaysneed";
+}
+
+static bool NativeAutoLootIsGreedVote(const NativeAutoLootRow& row)
+{
+	return row.vote == "greed" || row.state == "greed" || row.state == "alwaysgreed";
+}
+
+static bool NativeAutoLootIsNoVote(const NativeAutoLootRow& row)
+{
+	return row.vote == "pass" || row.vote == "no" || row.state == "pass" || row.state == "no";
+}
+
 static void NativeAutoLootSetColumnJustification(CListWnd* list, int first_column, int last_column, int justification)
 {
 	if (!list) {
@@ -294,23 +332,26 @@ static void NativeAutoLootFitListColumns(CListWnd* list, bool shared)
 		return;
 	}
 
-	const int base_total = 158 + 32 + 32 + 32 + 30 + 30 + 46 + 170 + 72;
+	const int base_total = 110 + 68 + 38 + 38 + 28 + 30 + 30 + 30 + 30 + 30 + 30 + 132;
 	const int extra = usable_width > base_total ? usable_width - base_total : 0;
 	const int item_extra = extra * 40 / 100;
-	const int source_extra = extra * 42 / 100;
-	const int item_width = 158 + item_extra;
-	const int source_width = 170 + source_extra;
-	const int status_width = 72 + (extra - item_extra - source_extra);
+	const int source_extra = extra * 40 / 100;
+	const int item_width = 110 + item_extra;
+	const int source_width = 132 + source_extra;
+	const int status_width = 68 + (extra - item_extra - source_extra);
 
 	NativeAutoLootSetColumnWidth(list, kAALSharedItem, item_width);
-	NativeAutoLootSetColumnWidth(list, kAALSharedNeed, 32);
-	NativeAutoLootSetColumnWidth(list, kAALSharedGreed, 32);
-	NativeAutoLootSetColumnWidth(list, kAALSharedNo, 32);
+	NativeAutoLootSetColumnWidth(list, kAALSharedStatus, status_width);
+	NativeAutoLootSetColumnWidth(list, kAALSharedAction, 38);
+	NativeAutoLootSetColumnWidth(list, kAALSharedManage, 38);
+	NativeAutoLootSetColumnWidth(list, kAALSharedAutoRoll, 28);
+	NativeAutoLootSetColumnWidth(list, kAALSharedNeed, 30);
+	NativeAutoLootSetColumnWidth(list, kAALSharedGreed, 30);
+	NativeAutoLootSetColumnWidth(list, kAALSharedNo, 30);
 	NativeAutoLootSetColumnWidth(list, kAALSharedAlwaysNeed, 30);
 	NativeAutoLootSetColumnWidth(list, kAALSharedAlwaysGreed, 30);
-	NativeAutoLootSetColumnWidth(list, kAALSharedNever, 46);
+	NativeAutoLootSetColumnWidth(list, kAALSharedNever, 30);
 	NativeAutoLootSetColumnWidth(list, kAALSharedSource, source_width);
-	NativeAutoLootSetColumnWidth(list, kAALSharedStatus, status_width);
 }
 
 class NativeAutoLootWnd : public CCustomWnd
@@ -353,7 +394,7 @@ public:
 		GroupedByNpcCheck = (CButtonWnd*)GetChildItem("AALW_GroupedByNpcCheck");
 
 		NativeAutoLootSetColumnJustification(PersonalList, kAALPersonalLoot, kAALPersonalNever, 1);
-		NativeAutoLootSetColumnJustification(SharedList, kAALSharedNeed, kAALSharedNever, 1);
+		NativeAutoLootSetColumnJustification(SharedList, kAALSharedStatus, kAALSharedNever, 1);
 		Layout();
 		SetStatus("Waiting for Advanced Loot snapshot...");
 		RefreshRows();
@@ -367,10 +408,25 @@ public:
 		}
 
 		if (Message == XWM_RCLICK && (pWnd == (CXWnd*)PersonalList || pWnd == (CXWnd*)SharedList)) {
-			ActiveList = (CListWnd*)pWnd;
-			NativeAutoLootRow* row = GetSelectedRow();
+			CListWnd* list = (CListWnd*)pWnd;
+			ActiveList = list;
+			int selected = list ? list->GetCurSel() : -1;
+			int column = -1;
+			if (list && NativeAutoLootTryGetClickedCell(list, unknown, &selected, &column)) {
+				list->SetCurSel(selected);
+			}
+
+			NativeAutoLootRow* row = GetSelectedRowFromList(list);
 			if (!row) {
 				SetStatus("Select a real loot row first.");
+				return 1;
+			}
+
+			const bool source_column =
+				(list == SharedList && column == kAALSharedSource) ||
+				(list == PersonalList && column == kAALPersonalSource);
+			if (source_column) {
+				SendCorpseAction(*row, "link", "Linked corpse loot.");
 				return 1;
 			}
 
@@ -584,6 +640,8 @@ private:
 	void RefreshList(CListWnd* list, bool shared);
 	bool HandleListColumnClick(CListWnd* list, bool shared, void* hit_test_point);
 	bool SendListAction(const NativeAutoLootRow& row, const char* action, const char* status);
+	bool SendCorpseAction(const NativeAutoLootRow& row, const char* action, const char* status);
+	bool ToggleAutoRollFilter(const NativeAutoLootRow& row);
 	void SetLabel(CXWnd* label, const char* text);
 
 	CXWnd* PersonalLabel = nullptr;
@@ -7136,6 +7194,33 @@ bool NativeAutoLootWnd::SendListAction(const NativeAutoLootRow& row, const char*
 	return true;
 }
 
+bool NativeAutoLootWnd::SendCorpseAction(const NativeAutoLootRow& row, const char* action, const char* status)
+{
+	if (row.entry_id <= 0 || !action || !action[0]) {
+		return false;
+	}
+
+	char command[128];
+	sprintf_s(command, "/say #advloot corpse %s %d", action, row.entry_id);
+	NativeAutoLootSendCommand(command);
+	SetStatus(status && status[0] ? status : "Sent corpse action.");
+	return true;
+}
+
+bool NativeAutoLootWnd::ToggleAutoRollFilter(const NativeAutoLootRow& row)
+{
+	if (row.item_id <= 0) {
+		SetStatus("That row does not have a filterable item.");
+		return true;
+	}
+
+	char command[128];
+	sprintf_s(command, "/say #advloot filter autoroll %d %s", row.item_id, row.auto_roll ? "off" : "on");
+	NativeAutoLootSendCommand(command);
+	SetStatus(row.auto_roll ? "Turned Auto Roll off for this item." : "Turned Auto Roll on for this item.");
+	return true;
+}
+
 bool NativeAutoLootWnd::HandleListColumnClick(CListWnd* list, bool shared, void* hit_test_point)
 {
 	if (!list) {
@@ -7187,11 +7272,55 @@ bool NativeAutoLootWnd::HandleListColumnClick(CListWnd* list, bool shared, void*
 	}
 	else {
 		switch (column) {
+		case kAALSharedStatus:
+			if (row->locked) {
+				SetStatus(row->lock_reason.empty() ? "That corpse is locked." : row->lock_reason.c_str());
+				return true;
+			}
+			if (row->free_grab && row->can_loot) {
+				return SendListAction(*row, "loot", "Requested Free Grab loot.");
+			}
+			if (row->can_freegrab) {
+				return SendListAction(*row, "freegrab", "Set Free Grab.");
+			}
+			SetStatus(row->free_grab ? "Free Grab is active." : "No status action is available.");
+			return true;
+		case kAALSharedAction:
+			if (row->can_roll) {
+				return SendListAction(*row, "roll", "Resolved roll.");
+			}
+			if (row->can_ask) {
+				return SendListAction(*row, "ask", "Started Ask/Roll.");
+			}
+			SetStatus("No Ask/Roll action is available.");
+			return true;
+		case kAALSharedManage:
+			if (row->manage || row->can_give) {
+				NativeAutoLootShowManageWindow(row->entry_id);
+				SetStatus("Opened Manage Loot.");
+				return true;
+			}
+			SetStatus("Only the Master Looter can manage that row.");
+			return true;
+		case kAALSharedAutoRoll:
+			return ToggleAutoRollFilter(*row);
 		case kAALSharedNeed:
+			if (!row->can_vote && !NativeAutoLootIsNeedVote(*row)) {
+				SetStatus("Need is available once Ask/Roll starts.");
+				return true;
+			}
 			return SendListAction(*row, "need", "Marked Need.");
 		case kAALSharedGreed:
+			if (!row->can_vote && !NativeAutoLootIsGreedVote(*row)) {
+				SetStatus("Greed is available once Ask/Roll starts.");
+				return true;
+			}
 			return SendListAction(*row, "greed", "Marked Greed.");
 		case kAALSharedNo:
+			if (!row->can_vote && !NativeAutoLootIsNoVote(*row)) {
+				SetStatus("No is available once Ask/Roll starts.");
+				return true;
+			}
 			return SendListAction(*row, "no", "Marked No.");
 		case kAALSharedAlwaysNeed:
 			return SendListAction(*row, "alwaysneed", "Marked Always Need.");
@@ -7199,6 +7328,11 @@ bool NativeAutoLootWnd::HandleListColumnClick(CListWnd* list, bool shared, void*
 			return SendListAction(*row, "alwaysgreed", "Marked Always Greed.");
 		case kAALSharedNever:
 			return SendListAction(*row, "never", "Marked Never.");
+		case kAALSharedSource:
+			if (GetAsyncKeyState(VK_MENU) & 0x8000) {
+				return SendCorpseAction(*row, "link", "Linked corpse loot.");
+			}
+			return SendCorpseAction(*row, "target", "Selected corpse.");
 		default:
 			break;
 		}
@@ -7261,11 +7395,11 @@ void NativeAutoLootWnd::RefreshList(CListWnd* list, bool shared)
 		if (!shared) {
 			const bool always_need = entry.rule == "always_need" || entry.state == "alwaysneed";
 			const bool always_greed = entry.rule == "always_greed" || entry.state == "alwaysgreed";
-			CXStr loot(entry.can_loot && !entry.locked ? "X" : "-");
-			CXStr leave(entry.can_leave && !entry.locked ? "X" : "-");
-			CXStr always_need_text(always_need ? "X" : "-");
-			CXStr always_greed_text(always_greed ? "X" : "-");
-			CXStr never(entry.rule == "never" ? "X" : "-");
+			CXStr loot(NativeAutoLootSquareText(false, entry.can_loot && !entry.locked));
+			CXStr leave(NativeAutoLootSquareText(false, entry.can_leave && !entry.locked));
+			CXStr always_need_text(NativeAutoLootSquareText(always_need, true));
+			CXStr always_greed_text(NativeAutoLootSquareText(always_greed, true));
+			CXStr never(NativeAutoLootSquareText(entry.rule == "never", true));
 			CXStr source(entry.source.c_str());
 			list->SetItemText(row, kAALPersonalLoot, &loot);
 			list->SetItemText(row, kAALPersonalLeave, &leave);
@@ -7273,15 +7407,16 @@ void NativeAutoLootWnd::RefreshList(CListWnd* list, bool shared)
 			list->SetItemText(row, kAALPersonalAlwaysGreed, &always_greed_text);
 			list->SetItemText(row, kAALPersonalNever, &never);
 			list->SetItemText(row, kAALPersonalSource, &source);
-			list->SetItemColor(row, kAALPersonalLoot, entry.can_loot && !entry.locked ? 0xFF66FF66 : 0xFF606060);
-			list->SetItemColor(row, kAALPersonalLeave, entry.can_leave && !entry.locked ? 0xFFFF8080 : 0xFF606060);
-			list->SetItemColor(row, kAALPersonalAlwaysNeed, always_need ? 0xFF66FF66 : 0xFF5F7388);
-			list->SetItemColor(row, kAALPersonalAlwaysGreed, always_greed ? 0xFFFFFF80 : 0xFF5F7388);
-			list->SetItemColor(row, kAALPersonalNever, 0xFFFF8080);
+			list->SetItemColor(row, kAALPersonalLoot, NativeAutoLootSquareColor(false, entry.can_loot && !entry.locked, 0xFF66FF66));
+			list->SetItemColor(row, kAALPersonalLeave, NativeAutoLootSquareColor(false, entry.can_leave && !entry.locked, 0xFFFF8080));
+			list->SetItemColor(row, kAALPersonalAlwaysNeed, NativeAutoLootSquareColor(always_need, true, 0xFF66FF66));
+			list->SetItemColor(row, kAALPersonalAlwaysGreed, NativeAutoLootSquareColor(always_greed, true, 0xFFFFFF80));
+			list->SetItemColor(row, kAALPersonalNever, NativeAutoLootSquareColor(entry.rule == "never", true, 0xFFFF8080));
 			list->SetItemColor(row, kAALPersonalSource, entry.locked ? 0xFFFF8080 : 0xFFFFFFFF);
 		}
 		else {
 			char status_text[96];
+			const std::string status_kind = entry.status_kind.empty() ? entry.state : entry.status_kind;
 			if (entry.locked) {
 				sprintf_s(status_text, "Locked");
 			}
@@ -7289,7 +7424,8 @@ void NativeAutoLootWnd::RefreshList(CListWnd* list, bool shared)
 				sprintf_s(status_text, "Free Grab");
 			}
 			else if (entry.roll_seconds > 0) {
-				sprintf_s(status_text, "%s %ds", entry.state.c_str(), entry.roll_seconds);
+				const char* phase = status_kind == "rolling" ? "Roll" : "Ask";
+				sprintf_s(status_text, "%s %ds", phase, entry.roll_seconds);
 			}
 			else if (entry.need_count || entry.greed_count || entry.no_count || entry.waiting_count) {
 				sprintf_s(status_text, "N%d G%d No%d W%d", entry.need_count, entry.greed_count, entry.no_count, entry.waiting_count);
@@ -7299,31 +7435,49 @@ void NativeAutoLootWnd::RefreshList(CListWnd* list, bool shared)
 			}
 			CXStr source(entry.source.c_str());
 			CXStr status(status_text);
-			const bool need = entry.state == "need" || entry.state == "alwaysneed";
-			const bool greed = entry.state == "greed" || entry.state == "alwaysgreed";
-			const bool no = entry.state == "no" || entry.state == "pass";
-			CXStr need_text(need ? "X" : "-");
-			CXStr greed_text(greed ? "X" : "-");
-			CXStr no_text(no ? "X" : "-");
-			CXStr always_need_text(entry.rule == "always_need" ? "X" : "-");
-			CXStr always_greed_text(entry.rule == "always_greed" ? "X" : "-");
-			CXStr never(entry.rule == "never" ? "X" : "-");
+			const bool need = NativeAutoLootIsNeedVote(entry);
+			const bool greed = NativeAutoLootIsGreedVote(entry);
+			const bool no = NativeAutoLootIsNoVote(entry);
+			const bool always_need = entry.rule == "always_need";
+			const bool always_greed = entry.rule == "always_greed";
+			const bool never = entry.rule == "never";
+			const bool filter_enabled = entry.item_id > 0;
+			const bool vote_enabled = entry.can_vote && !entry.locked;
+			const char* action_label = entry.can_roll ? "Roll" :
+				entry.can_ask ? "Ask" :
+				(status_kind == "ask" || status_kind == "rolling") ? "Roll" :
+				"-";
+			CXStr action(action_label);
+			CXStr manage((entry.manage || entry.can_give) ? "M" : "-");
+			CXStr auto_roll(NativeAutoLootSquareText(entry.auto_roll, filter_enabled));
+			CXStr need_text(NativeAutoLootSquareText(need, vote_enabled));
+			CXStr greed_text(NativeAutoLootSquareText(greed, vote_enabled));
+			CXStr no_text(NativeAutoLootSquareText(no, vote_enabled));
+			CXStr always_need_text(NativeAutoLootSquareText(always_need, filter_enabled));
+			CXStr always_greed_text(NativeAutoLootSquareText(always_greed, filter_enabled));
+			CXStr never_text(NativeAutoLootSquareText(never, filter_enabled));
+			list->SetItemText(row, kAALSharedStatus, &status);
+			list->SetItemText(row, kAALSharedAction, &action);
+			list->SetItemText(row, kAALSharedManage, &manage);
+			list->SetItemText(row, kAALSharedAutoRoll, &auto_roll);
 			list->SetItemText(row, kAALSharedNeed, &need_text);
 			list->SetItemText(row, kAALSharedGreed, &greed_text);
 			list->SetItemText(row, kAALSharedNo, &no_text);
 			list->SetItemText(row, kAALSharedAlwaysNeed, &always_need_text);
 			list->SetItemText(row, kAALSharedAlwaysGreed, &always_greed_text);
-			list->SetItemText(row, kAALSharedNever, &never);
+			list->SetItemText(row, kAALSharedNever, &never_text);
 			list->SetItemText(row, kAALSharedSource, &source);
-			list->SetItemText(row, kAALSharedStatus, &status);
-			list->SetItemColor(row, kAALSharedNeed, entry.can_vote && !entry.locked ? 0xFF66FF66 : 0xFF606060);
-			list->SetItemColor(row, kAALSharedGreed, entry.can_vote && !entry.locked ? 0xFFFFFF80 : 0xFF606060);
-			list->SetItemColor(row, kAALSharedNo, entry.can_vote && !entry.locked ? 0xFFFF8080 : 0xFF606060);
-			list->SetItemColor(row, kAALSharedAlwaysNeed, entry.rule == "always_need" ? 0xFF66FF66 : 0xFF5F7388);
-			list->SetItemColor(row, kAALSharedAlwaysGreed, entry.rule == "always_greed" ? 0xFFFFFF80 : 0xFF5F7388);
-			list->SetItemColor(row, kAALSharedNever, 0xFFFF8080);
+			list->SetItemColor(row, kAALSharedStatus, entry.locked ? 0xFFFF8080 : entry.free_grab ? 0xFF80D0FF : 0xFFFFFFFF);
+			list->SetItemColor(row, kAALSharedAction, (entry.can_ask || entry.can_roll) && !entry.locked ? 0xFFB8D8FF : 0xFF606060);
+			list->SetItemColor(row, kAALSharedManage, (entry.manage || entry.can_give) && !entry.locked ? 0xFFB8D8FF : 0xFF606060);
+			list->SetItemColor(row, kAALSharedAutoRoll, NativeAutoLootSquareColor(entry.auto_roll, filter_enabled, 0xFF80D0FF));
+			list->SetItemColor(row, kAALSharedNeed, NativeAutoLootSquareColor(need, vote_enabled, 0xFF66FF66));
+			list->SetItemColor(row, kAALSharedGreed, NativeAutoLootSquareColor(greed, vote_enabled, 0xFFFFFF80));
+			list->SetItemColor(row, kAALSharedNo, NativeAutoLootSquareColor(no, vote_enabled, 0xFFFF8080));
+			list->SetItemColor(row, kAALSharedAlwaysNeed, NativeAutoLootSquareColor(always_need, filter_enabled, 0xFF66FF66));
+			list->SetItemColor(row, kAALSharedAlwaysGreed, NativeAutoLootSquareColor(always_greed, filter_enabled, 0xFFFFFF80));
+			list->SetItemColor(row, kAALSharedNever, NativeAutoLootSquareColor(never, filter_enabled, 0xFFFF8080));
 			list->SetItemColor(row, kAALSharedSource, row_color);
-			list->SetItemColor(row, kAALSharedStatus, entry.locked ? 0xFFFF8080 : 0xFFFFFFFF);
 		}
 	}
 
@@ -7344,6 +7498,10 @@ void NativeAutoLootWnd::RefreshList(CListWnd* list, bool shared)
 	}
 	else {
 		CXStr empty(gNativeAutoLootGrouped ? "No shared loot." : "Not grouped.");
+		list->SetItemText(row, kAALSharedStatus, &dash);
+		list->SetItemText(row, kAALSharedAction, &dash);
+		list->SetItemText(row, kAALSharedManage, &dash);
+		list->SetItemText(row, kAALSharedAutoRoll, &dash);
 		list->SetItemText(row, kAALSharedNeed, &dash);
 		list->SetItemText(row, kAALSharedGreed, &dash);
 		list->SetItemText(row, kAALSharedNo, &dash);
@@ -7351,7 +7509,6 @@ void NativeAutoLootWnd::RefreshList(CListWnd* list, bool shared)
 		list->SetItemText(row, kAALSharedAlwaysGreed, &dash);
 		list->SetItemText(row, kAALSharedNever, &dash);
 		list->SetItemText(row, kAALSharedSource, &empty);
-		list->SetItemText(row, kAALSharedStatus, &dash);
 	}
 }
 
@@ -9347,6 +9504,26 @@ static bool NativeAutoLootParseTransport(const char* message)
 		}
 		if (row.state.empty()) {
 			row.state = "waiting";
+		}
+		row.status_kind = NativeGetPairValue(payload, "statuskind");
+		if (row.status_kind.empty()) {
+			row.status_kind = row.state;
+		}
+		row.vote = NativeGetPairValue(payload, "vote");
+		if (row.vote.empty()) {
+			if (
+				row.state == "need" ||
+				row.state == "greed" ||
+				row.state == "pass" ||
+				row.state == "no" ||
+				row.state == "alwaysneed" ||
+				row.state == "alwaysgreed"
+			) {
+				row.vote = row.state;
+			}
+			else {
+				row.vote = "-";
+			}
 		}
 		row.rule = NativeGetPairValue(payload, "rule");
 		if (row.rule.empty()) {

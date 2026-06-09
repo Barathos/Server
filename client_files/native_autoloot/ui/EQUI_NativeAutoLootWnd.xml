@@ -171,15 +171,18 @@
 		<Style_VScroll>true</Style_VScroll>
 		<Style_HScroll>false</Style_HScroll>
 		<Style_Transparent>false</Style_Transparent>
-		<Columns><Width>158</Width><Heading>Item</Heading></Columns>
-		<Columns><Width>32</Width><Heading>ND</Heading></Columns>
-		<Columns><Width>32</Width><Heading>GD</Heading></Columns>
-		<Columns><Width>32</Width><Heading>NO</Heading></Columns>
+		<Columns><Width>110</Width><Heading>Item</Heading></Columns>
+		<Columns><Width>68</Width><Heading>Status</Heading></Columns>
+		<Columns><Width>38</Width><Heading>Action</Heading></Columns>
+		<Columns><Width>38</Width><Heading>Manage</Heading></Columns>
+		<Columns><Width>28</Width><Heading>AR</Heading></Columns>
+		<Columns><Width>30</Width><Heading>ND</Heading></Columns>
+		<Columns><Width>30</Width><Heading>GD</Heading></Columns>
+		<Columns><Width>30</Width><Heading>NO</Heading></Columns>
 		<Columns><Width>30</Width><Heading>AN</Heading></Columns>
 		<Columns><Width>30</Width><Heading>AG</Heading></Columns>
-		<Columns><Width>46</Width><Heading>Never</Heading></Columns>
-		<Columns><Width>170</Width><Heading>NPC Name</Heading></Columns>
-		<Columns><Width>72</Width><Heading>Status</Heading></Columns>
+		<Columns><Width>30</Width><Heading>NV</Heading></Columns>
+		<Columns><Width>132</Width><Heading>NPC Name</Heading></Columns>
 	</Listbox>
 
 	<Button item="AALW_RefreshButton">
@@ -590,17 +593,6 @@
 		<Pieces>AALW_LootSettingsButton</Pieces>
 		<Pieces>AALW_ApplyFiltersCheck</Pieces>
 		<Pieces>AALW_GroupedByNpcCheck</Pieces>
-		<Pieces>AALW_NeedButton</Pieces>
-		<Pieces>AALW_GreedButton</Pieces>
-		<Pieces>AALW_NoButton</Pieces>
-		<Pieces>AALW_AlwaysNeedButton</Pieces>
-		<Pieces>AALW_AlwaysGreedButton</Pieces>
-		<Pieces>AALW_AskButton</Pieces>
-		<Pieces>AALW_RollButton</Pieces>
-		<Pieces>AALW_FreeGrabButton</Pieces>
-		<Pieces>AALW_GiveButton</Pieces>
-		<Pieces>AALW_ManageButton</Pieces>
-		<Pieces>AALW_LeaveCorpseButton</Pieces>
 		<Pieces>AALW_StatusLabel</Pieces>
 	</Screen>
 
