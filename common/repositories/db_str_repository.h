@@ -22,6 +22,9 @@
 #include "common/database.h"
 #include "common/strings.h"
 
+#include <unordered_map>
+#include <vector>
+
 class DbStrRepository: public BaseDbStrRepository {
 public:
 
@@ -75,6 +78,90 @@ public:
 
 		for (auto row : results) {
 			lines.emplace_back(row[0]);
+		}
+
+		return lines;
+	}
+
+	static std::vector<std::string> GetMulticlassDBStrFileLines(Database& db)
+	{
+		std::vector<std::string> lines;
+
+		const std::vector<std::pair<int, std::string>> class_map = {
+			{1, "WAR"}, {2, "CLR"}, {4, "PAL"}, {8, "RNG"}, {16, "SHD"}, {32, "DRU"},
+			{64, "MNK"}, {128, "BRD"}, {256, "ROG"}, {512, "SHM"}, {1024, "NEC"},
+			{2048, "WIZ"}, {4096, "MAG"}, {8192, "ENC"}, {16384, "BST"}, {32768, "BER"}
+		};
+
+		std::unordered_map<std::string, int> desc_sid_to_classes;
+		auto class_results = db.QueryDatabase(
+			"SELECT `aa_ranks`.`desc_sid`, `aa_ability`.`classes` "
+			"FROM `aa_ability` "
+			"JOIN `aa_ranks` ON `aa_ability`.`first_rank_id` = `aa_ranks`.`id`"
+		);
+		for (auto row : class_results) {
+			if (row[0]) {
+				desc_sid_to_classes[row[0]] = row[1] ? Strings::ToInt(row[1]) : 0;
+			}
+		}
+
+		struct ActivationInfo {
+			int recast_time = 0;
+			int spell_id = 0;
+			int ability_id = 0;
+		};
+
+		std::unordered_map<std::string, ActivationInfo> desc_sid_to_activation;
+		auto activation_results = db.QueryDatabase(
+			"SELECT `aa_ranks`.`desc_sid`, `aa_ranks`.`recast_time`, `aa_ranks`.`spell`, `aa_ability`.`id` "
+			"FROM `aa_ability` "
+			"JOIN `aa_ranks` ON `aa_ability`.`first_rank_id` = `aa_ranks`.`id`"
+		);
+		for (auto row : activation_results) {
+			if (row[0]) {
+				desc_sid_to_activation[row[0]] = {
+					row[1] ? Strings::ToInt(row[1]) : 0,
+					row[2] ? Strings::ToInt(row[2]) : 0,
+					row[3] ? Strings::ToInt(row[3]) : 0
+				};
+			}
+		}
+
+		auto results = db.QueryDatabase(
+			fmt::format(
+				"SELECT CONCAT(CONCAT_WS('^', {}), '^0') FROM {} ORDER BY `id`, `type` ASC",
+				ColumnsRaw(),
+				TableName()
+			)
+		);
+
+		for (auto row : results) {
+			auto columns = Strings::Split(row[0] ? row[0] : "", '^');
+			if (columns.size() > 2 && columns[1] == "4") {
+				const auto class_match = desc_sid_to_classes.find(columns[0]);
+				if (class_match != desc_sid_to_classes.end()) {
+					std::string activation_info;
+					const auto activation_match = desc_sid_to_activation.find(columns[0]);
+					if (activation_match != desc_sid_to_activation.end() && activation_match->second.ability_id > 0) {
+						const auto &activation = activation_match->second;
+						activation_info = activation.recast_time > 0 && activation.spell_id > -1 ?
+							fmt::format(" [/alt activate {}]", activation.ability_id) :
+							fmt::format(" [/alt toggle {}]", activation.ability_id);
+					}
+
+					std::vector<std::string> class_tags;
+					for (const auto &[class_bit, class_name] : class_map) {
+						if (class_match->second & class_bit) {
+							class_tags.emplace_back(class_name);
+						}
+					}
+
+					const auto tag = class_tags.empty() ? "(ALL)" : fmt::format("({})", Strings::Join(class_tags, " "));
+					columns[2] = fmt::format("{}{}<br>{}", tag, activation_info, columns[2]);
+				}
+			}
+
+			lines.emplace_back(Strings::Join(columns, "^"));
 		}
 
 		return lines;

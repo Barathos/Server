@@ -624,6 +624,15 @@ bool EQ::ItemInstance::IsEquipable(uint16 race, uint16 class_) const
 	return m_item->IsEquipable(race, class_);
 }
 
+bool EQ::ItemInstance::IsEquipableByClassMask(uint16 race, uint32 class_mask) const
+{
+	if (!m_item || !m_item->Slots) {
+		return false;
+	}
+
+	return m_item->IsEquipableByClassMask(race, class_mask);
+}
+
 // Can item be equipped by Class?
 bool EQ::ItemInstance::IsClassEquipable(uint16 class_) const
 {
@@ -632,6 +641,15 @@ bool EQ::ItemInstance::IsClassEquipable(uint16 class_) const
 	}
 
 	return m_item->IsClassEquipable(class_);
+}
+
+bool EQ::ItemInstance::IsClassMaskEquipable(uint32 class_mask) const
+{
+	if (!m_item || !m_item->Slots) {
+		return false;
+	}
+
+	return m_item->IsClassMaskEquipable(class_mask);
 }
 
 // Can item be equipped by Race?

@@ -23,6 +23,7 @@
 #include "zone/dialogue_window.h"
 #include "zone/dynamic_zone.h"
 #include "zone/embperl.h"
+#include "zone/multiclass_manager.h"
 #include "zone/titles.h"
 
 void Perl_Client_SendSound(Client* self) // @categories Script Utility
@@ -2028,6 +2029,21 @@ uint16_t Perl_Client_GetClassBitmask(Client* self)
 	return GetPlayerClassBit(self->GetClass());
 }
 
+uint32_t Perl_Client_GetClassesBitmask(Client* self)
+{
+	return multiclass_manager.GetClassMask(self);
+}
+
+bool Perl_Client_HasClassID(Client* self, int class_id)
+{
+	return multiclass_manager.HasClass(self, static_cast<uint8>(class_id));
+}
+
+bool Perl_Client_HasMulticlassClass(Client* self, int class_id)
+{
+	return multiclass_manager.HasClass(self, static_cast<uint8>(class_id));
+}
+
 uint32_t Perl_Client_GetDeityBitmask(Client* self)
 {
 	return Deity::GetBitmask(self->GetDeity());
@@ -3563,6 +3579,7 @@ void perl_register_client()
 	package.add("GetCharacterFactionLevel", &Perl_Client_GetCharacterFactionLevel);
 	package.add("GetClassAbbreviation", &Perl_Client_GetClassAbbreviation);
 	package.add("GetClassBitmask", &Perl_Client_GetClassBitmask);
+	package.add("GetClassesBitmask", &Perl_Client_GetClassesBitmask);
 	package.add("GetClientMaxLevel", &Perl_Client_GetClientMaxLevel);
 	package.add("GetClientVersion", &Perl_Client_GetClientVersion);
 	package.add("GetClientVersionBit", &Perl_Client_GetClientVersionBit);
@@ -3677,6 +3694,8 @@ void perl_register_client()
 	package.add("GuildID", &Perl_Client_GuildID);
 	package.add("GuildRank", &Perl_Client_GuildRank);
 	package.add("HasAugmentEquippedByID", &Perl_Client_HasAugmentEquippedByID);
+	package.add("HasClassID", &Perl_Client_HasClassID);
+	package.add("HasMulticlassClass", &Perl_Client_HasMulticlassClass);
 	package.add("HasDisciplineLearned", &Perl_Client_HasDisciplineLearned);
 	package.add("HasExpeditionLockout", &Perl_Client_HasExpeditionLockout);
 	package.add("HasItemEquippedByID", &Perl_Client_HasItemEquippedByID);

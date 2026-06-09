@@ -46,7 +46,7 @@ extern EntityList entity_list;
 extern Zone* zone;
 
 namespace {
-bool HasMulticlassCombatClass(Mob *mob, uint8 class_id)
+bool HasMulticlassCombatClass(const Mob *mob, uint8 class_id)
 {
 	if (!mob) {
 		return false;
@@ -1304,7 +1304,7 @@ int64 Mob::GetWeaponDamage(Mob *against, const EQ::ItemInstance *weapon_item, in
 					MagicGloves = gloves->GetItemMagical(true);
 			}
 
-			if (GetClass() == Class::Monk || GetClass() == Class::Beastlord) {
+			if (HasMulticlassCombatClass(this, Class::Monk) || HasMulticlassCombatClass(this, Class::Beastlord)) {
 				if (MagicGloves || GetLevel() >= 30) {
 					dmg = GetHandToHandDamage();
 					if (hate)
@@ -3555,14 +3555,14 @@ int Mob::GetHandToHandDamage(void)
 		7, 7, 7, 8, 8, 8, 8, 8, 8, 9,        // 21-30
 		9, 9, 9, 9, 9, 10, 10, 10, 10, 10,   // 31-40
 		10, 11, 11, 11, 11, 11, 11, 12, 12 }; // 41-49
-	if (GetClass() == Class::Monk) {
+	if (HasMulticlassCombatClass(this, Class::Monk)) {
 		if (IsClient() && CastToClient()->GetItemIDAt(12) == 10652 && GetLevel() > 50)
 			return 9;
 		if (level > 62)
 			return 15;
 		return mnk_dmg[level];
 	}
-	else if (GetClass() == Class::Beastlord) {
+	else if (HasMulticlassCombatClass(this, Class::Beastlord)) {
 		if (level > 49)
 			return 13;
 		return bst_dmg[level];
@@ -3614,7 +3614,7 @@ int Mob::GetHandToHandDelay(void)
 		28, 28, 28, 27, 27, 27, 27, 27, 26, 26, // 61-70
 		26, 26, 26 };                            // 71-73
 
-	if (GetClass() == Class::Monk) {
+	if (HasMulticlassCombatClass(this, Class::Monk)) {
 		// Have a look to see if we have epic fists on
 		if (IsClient() && CastToClient()->GetItemIDAt(12) == 10652 && GetLevel() > 50)
 			return 16;
@@ -3623,7 +3623,7 @@ int Mob::GetHandToHandDelay(void)
 			return GetRace() == Race::Iksar ? 21 : 20;
 		return GetRace() == Race::Iksar ? mnk_iks_delay[level] : mnk_hum_delay[level];
 	}
-	else if (GetClass() == Class::Beastlord) {
+	else if (HasMulticlassCombatClass(this, Class::Beastlord)) {
 		int level = GetLevel();
 		if (level > 73)
 			return 25;
@@ -5900,7 +5900,7 @@ const DamageTable &Mob::GetDamageTable() const
 		{ 415, 15,  40 }, // 105
 	};
 
-	bool monk = GetClass() == Class::Monk;
+	bool monk = HasMulticlassCombatClass(this, Class::Monk);
 	bool melee = IsWarriorClass();
 	// tables caped at 105 for now -- future proofed for a while at least :P
 	int level = std::min(static_cast<int>(GetLevel()), 105);

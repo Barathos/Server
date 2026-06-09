@@ -80,4 +80,51 @@ public:
 
 		return lines;
 	}
+
+	static std::vector<std::string> GetMulticlassSpellFileLines(Database& db)
+	{
+		std::vector<std::string> lines;
+
+		auto results = db.QueryDatabase(
+			fmt::format(
+				"SELECT CONCAT_WS('^', {}) FROM {} ORDER BY {} ASC",
+				ColumnsRaw(),
+				TableName(),
+				PrimaryKey()
+			)
+		);
+
+		for (auto row : results) {
+			auto columns = Strings::Split(row[0] ? row[0] : "", '^');
+
+			if (columns.size() > 98 && (columns[98] == "14" || columns[98] == "38")) {
+				columns[98] = "6";
+			}
+
+			if (columns.size() > 149) {
+				columns[149] = "1";
+			}
+
+			if (columns.size() > 168 && columns[168] == "-1") {
+				int valid_class_count = 0;
+				int valid_class_id = -1;
+
+				for (int column = 104; column <= 119 && column < static_cast<int>(columns.size()); ++column) {
+					const auto spell_level = Strings::ToInt(columns[column]);
+					if (spell_level > 0 && spell_level <= 70) {
+						++valid_class_count;
+						valid_class_id = column - 103;
+					}
+				}
+
+				if (valid_class_count == 1 && valid_class_id > 0 && columns.size() > 167) {
+					columns[167] = std::to_string(Strings::ToInt(columns[167]) + (20 * valid_class_id));
+				}
+			}
+
+			lines.emplace_back(Strings::Join(columns, "^"));
+		}
+
+		return lines;
+	}
 };

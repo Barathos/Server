@@ -266,6 +266,19 @@ bool EQ::InventoryProfile::SwapItem(
 	uint32 deity_id,
 	uint8 level
 ) {
+	const auto class_mask = class_id ? GetPlayerClassBit(GetPlayerClassValue(class_id)) : 0;
+	return SwapItemByClassMask(source_slot, destination_slot, fail_state, race_id, class_mask, deity_id, level);
+}
+
+bool EQ::InventoryProfile::SwapItemByClassMask(
+	int16 source_slot,
+	int16 destination_slot,
+	SwapItemFailState &fail_state,
+	uint16 race_id,
+	uint32 class_mask,
+	uint32 deity_id,
+	uint8 level
+) {
 	fail_state = swapInvalid;
 
 	if (EQ::ValueWithin(source_slot, EQ::invslot::POSSESSIONS_BEGIN, EQ::invslot::POSSESSIONS_END)) {
@@ -335,7 +348,7 @@ bool EQ::InventoryProfile::SwapItem(
 				return false;
 			}
 
-			if (race_id && class_id && !source_item->IsEquipable(race_id, class_id)) {
+			if (race_id && class_mask && !source_item->IsEquipableByClassMask(race_id, class_mask)) {
 				fail_state = swapRaceClass;
 				return false;
 			}
@@ -369,7 +382,7 @@ bool EQ::InventoryProfile::SwapItem(
 				return false;
 			}
 
-			if (race_id && class_id && !destination_item->IsEquipable(race_id, class_id)) {
+			if (race_id && class_mask && !destination_item->IsEquipableByClassMask(race_id, class_mask)) {
 				fail_state = swapRaceClass;
 				return false;
 			}

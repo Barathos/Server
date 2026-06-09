@@ -2734,6 +2734,24 @@ CREATE TABLE IF NOT EXISTS `custom_advloot_audit` (
 )",
 		.content_schema_update = false,
 	},
+	ManifestEntry{
+		.version = 20,
+		.description = "2026_06_09_custom_multiclass_aa_timers",
+		.check = "SHOW TABLES LIKE 'custom_multiclass_aa_timers'",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+CREATE TABLE IF NOT EXISTS `custom_multiclass_aa_timers` (
+  `character_id` INT UNSIGNED NOT NULL,
+  `aa_id` INT UNSIGNED NOT NULL,
+  `timer_id` INT UNSIGNED NOT NULL,
+  `updated_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`character_id`, `aa_id`),
+  KEY `idx_character_timer` (`character_id`, `timer_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+)",
+		.content_schema_update = false,
+	},
 };
 
 // see struct definitions for what each field does

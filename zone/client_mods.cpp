@@ -26,6 +26,94 @@
 
 #include <algorithm>
 
+namespace {
+uint32 ClassLevelFactor(uint8 class_id, uint8 level)
+{
+	switch (class_id) {
+		case Class::Warrior:
+			if (level < 20) {
+				return 220;
+			} else if (level < 30) {
+				return 230;
+			} else if (level < 40) {
+				return 250;
+			} else if (level < 53) {
+				return 270;
+			} else if (level < 57) {
+				return 280;
+			} else if (level < 60) {
+				return 290;
+			} else if (level < 70) {
+				return 300;
+			}
+			return 311;
+		case Class::Druid:
+		case Class::Cleric:
+		case Class::Shaman:
+			return level < 70 ? 150 : 157;
+		case Class::Berserker:
+		case Class::Paladin:
+		case Class::ShadowKnight:
+			if (level < 35) {
+				return 210;
+			} else if (level < 45) {
+				return 220;
+			} else if (level < 51) {
+				return 230;
+			} else if (level < 56) {
+				return 240;
+			} else if (level < 60) {
+				return 250;
+			} else if (level < 68) {
+				return 260;
+			}
+			return 270;
+		case Class::Monk:
+		case Class::Bard:
+		case Class::Rogue:
+		case Class::Beastlord:
+			if (level < 51) {
+				return 180;
+			} else if (level < 58) {
+				return 190;
+			} else if (level < 70) {
+				return 200;
+			}
+			return 210;
+		case Class::Ranger:
+			if (level < 58) {
+				return 200;
+			} else if (level < 70) {
+				return 210;
+			}
+			return 220;
+		case Class::Magician:
+		case Class::Wizard:
+		case Class::Necromancer:
+		case Class::Enchanter:
+			return level < 70 ? 120 : 127;
+		default:
+			if (level < 35) {
+				return 210;
+			} else if (level < 45) {
+				return 220;
+			} else if (level < 51) {
+				return 230;
+			} else if (level < 56) {
+				return 240;
+			} else if (level < 60) {
+				return 250;
+			}
+			return 260;
+	}
+}
+
+bool HasClientClassMask(const Client *client, uint32 class_mask)
+{
+	return client && (multiclass_manager.GetClassMask(client) & class_mask) != 0;
+}
+}
+
 
 int32 Client::GetMaxStat() const
 {
@@ -341,139 +429,7 @@ int64 Client::CalcMaxHP()
 
 uint32 Mob::GetClassLevelFactor()
 {
-	uint32 multiplier = 0;
-	uint8  mlevel     = GetLevel();
-	switch (GetClass()) {
-		case Class::Warrior: {
-			if (mlevel < 20) {
-				multiplier = 220;
-			}
-			else if (mlevel < 30) {
-				multiplier = 230;
-			}
-			else if (mlevel < 40) {
-				multiplier = 250;
-			}
-			else if (mlevel < 53) {
-				multiplier = 270;
-			}
-			else if (mlevel < 57) {
-				multiplier = 280;
-			}
-			else if (mlevel < 60) {
-				multiplier = 290;
-			}
-			else if (mlevel < 70) {
-				multiplier = 300;
-			}
-			else {
-				multiplier = 311;
-			}
-			break;
-		}
-		case Class::Druid:
-		case Class::Cleric:
-		case Class::Shaman: {
-			if (mlevel < 70) {
-				multiplier = 150;
-			}
-			else {
-				multiplier = 157;
-			}
-			break;
-		}
-		case Class::Berserker:
-		case Class::Paladin:
-		case Class::ShadowKnight: {
-			if (mlevel < 35) {
-				multiplier = 210;
-			}
-			else if (mlevel < 45) {
-				multiplier = 220;
-			}
-			else if (mlevel < 51) {
-				multiplier = 230;
-			}
-			else if (mlevel < 56) {
-				multiplier = 240;
-			}
-			else if (mlevel < 60) {
-				multiplier = 250;
-			}
-			else if (mlevel < 68) {
-				multiplier = 260;
-			}
-			else {
-				multiplier = 270;
-			}
-			break;
-		}
-		case Class::Monk:
-		case Class::Bard:
-		case Class::Rogue:
-		case Class::Beastlord: {
-			if (mlevel < 51) {
-				multiplier = 180;
-			}
-			else if (mlevel < 58) {
-				multiplier = 190;
-			}
-			else if (mlevel < 70) {
-				multiplier = 200;
-			}
-			else {
-				multiplier = 210;
-			}
-			break;
-		}
-		case Class::Ranger: {
-			if (mlevel < 58) {
-				multiplier = 200;
-			}
-			else if (mlevel < 70) {
-				multiplier = 210;
-			}
-			else {
-				multiplier = 220;
-			}
-			break;
-		}
-		case Class::Magician:
-		case Class::Wizard:
-		case Class::Necromancer:
-		case Class::Enchanter: {
-			if (mlevel < 70) {
-				multiplier = 120;
-			}
-			else {
-				multiplier = 127;
-			}
-			break;
-		}
-		default: {
-			if (mlevel < 35) {
-				multiplier = 210;
-			}
-			else if (mlevel < 45) {
-				multiplier = 220;
-			}
-			else if (mlevel < 51) {
-				multiplier = 230;
-			}
-			else if (mlevel < 56) {
-				multiplier = 240;
-			}
-			else if (mlevel < 60) {
-				multiplier = 250;
-			}
-			else {
-				multiplier = 260;
-			}
-			break;
-		}
-	}
-
-	return multiplier;
+	return ClassLevelFactor(GetClass(), GetLevel());
 }
 
 int64 Client::CalcBaseHP()
@@ -484,23 +440,43 @@ int64 Client::CalcBaseHP()
 			stats = (stats - 255) / 2;
 			stats += 255;
 		}
-		base_hp = 5;
-		auto base_data = zone->GetBaseData(GetLevel(), GetClass());
-		if (base_data.level == GetLevel()) {
-			base_hp += base_data.hp + (base_data.hp_fac * stats);
-			base_hp += itembonuses.heroic_max_hp;
+
+		base_hp = 0;
+		for (const auto class_id : multiclass_manager.GetClassSlots(this)) {
+			if (!IsPlayerClass(class_id)) {
+				continue;
+			}
+
+			auto base_data = zone->GetBaseData(GetLevel(), class_id);
+			if (base_data.level == GetLevel()) {
+				const auto class_hp = 5 + base_data.hp + (base_data.hp_fac * stats) + itembonuses.heroic_max_hp;
+				base_hp = std::max<int64>(base_hp, class_hp);
+			}
+		}
+
+		if (base_hp <= 0) {
+			base_hp = 5;
 		}
 	}
 	else {
 		uint32 Post255;
-		uint32 lm = GetClassLevelFactor();
 		if ((GetSTA() - 255) / 2 > 0) {
 			Post255 = (GetSTA() - 255) / 2;
 		}
 		else {
 			Post255 = 0;
 		}
-		base_hp = (5) + (GetLevel() * lm / 10) + (((GetSTA() - Post255) * GetLevel() * lm / 3000)) + ((Post255 * GetLevel()) * lm / 6000);
+
+		base_hp = 0;
+		for (const auto class_id : multiclass_manager.GetClassSlots(this)) {
+			if (!IsPlayerClass(class_id)) {
+				continue;
+			}
+
+			const auto lm = ClassLevelFactor(class_id, GetLevel());
+			const auto class_hp = (5) + (GetLevel() * lm / 10) + (((GetSTA() - Post255) * GetLevel() * lm / 3000)) + ((Post255 * GetLevel()) * lm / 6000);
+			base_hp = std::max<int64>(base_hp, class_hp);
+		}
 	}
 	return base_hp;
 }
@@ -1066,7 +1042,7 @@ int32	Client::CalcMR()
 			MR = 20;
 	}
 	MR += itembonuses.MR + spellbonuses.MR + aabonuses.MR;
-	if (GetClass() == Class::Warrior || GetClass() == Class::Berserker) {
+	if (HasClientClassMask(this, GetPlayerClassBit(Class::Warrior) | GetPlayerClassBit(Class::Berserker))) {
 		MR += GetLevel() / 2;
 	}
 	if (MR < 1) {
@@ -1628,9 +1604,16 @@ int64 Client::CalcBaseEndurance()
 		else if (stats > 100.0f) {
 			stats = 2.5f * (stats - 100.0f) + 100.0f;
 		}
-		auto base_data = zone->GetBaseData(GetLevel(), GetClass());
-		if (base_data.level == GetLevel()) {
-			base_end = base_data.end + itembonuses.heroic_max_end + (base_data.end_fac * static_cast<int>(stats));
+		for (const auto class_id : multiclass_manager.GetClassSlots(this)) {
+			if (!IsPlayerClass(class_id)) {
+				continue;
+			}
+
+			auto base_data = zone->GetBaseData(GetLevel(), class_id);
+			if (base_data.level == GetLevel()) {
+				const auto class_end = base_data.end + itembonuses.heroic_max_end + (base_data.end_fac * static_cast<int>(stats));
+				base_end = std::max<int64>(base_end, class_end);
+			}
 		}
 	}
 	else {

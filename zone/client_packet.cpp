@@ -4568,7 +4568,7 @@ void Client::Handle_OP_CastSpell(const EQApplicationPacket *app)
 	else if (slot == CastingSlot::Ability) {
 		uint16 spell_to_cast = 0;
 
-		if (castspell->spell_id == SPELL_LAY_ON_HANDS && GetClass() == Class::Paladin) {
+		if (castspell->spell_id == SPELL_LAY_ON_HANDS && multiclass_manager.HasClass(this, Class::Paladin)) {
 			if (!p_timers.Expired(&database, pTimerLayHands)) {
 				Message(Chat::Red, "Ability recovery time not yet met.");
 				InterruptSpell(castspell->spell_id);
@@ -4578,7 +4578,7 @@ void Client::Handle_OP_CastSpell(const EQApplicationPacket *app)
 			p_timers.Start(pTimerLayHands, LayOnHandsReuseTime);
 		}
 		else if ((castspell->spell_id == SPELL_HARM_TOUCH
-			|| castspell->spell_id == SPELL_HARM_TOUCH2) && GetClass() == Class::ShadowKnight) {
+			|| castspell->spell_id == SPELL_HARM_TOUCH2) && multiclass_manager.HasClass(this, Class::ShadowKnight)) {
 			if (!p_timers.Expired(&database, pTimerHarmTouch)) {
 				Message(Chat::Red, "Ability recovery time not yet met.");
 				InterruptSpell(castspell->spell_id);
@@ -14154,7 +14154,7 @@ void Client::Handle_OP_Shielding(const EQApplicationPacket *app)
 		return;
 	}
 
-	if (GetClass() != Class::Warrior){
+	if (!multiclass_manager.HasClass(this, Class::Warrior)){
 		return;
 	}
 

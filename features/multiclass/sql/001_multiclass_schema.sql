@@ -58,3 +58,12 @@ CREATE TABLE `custom_multiclass_bard_melody` (
   `updated_at` INT UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (`character_id`, `slot_id`)
 );
+
+CREATE TABLE IF NOT EXISTS `custom_multiclass_aa_timers` (
+  `character_id` INT UNSIGNED NOT NULL,
+  `aa_id` INT UNSIGNED NOT NULL,
+  `timer_id` INT UNSIGNED NOT NULL,
+  `updated_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`character_id`, `aa_id`),
+  KEY `idx_character_timer` (`character_id`, `timer_id`)
+);

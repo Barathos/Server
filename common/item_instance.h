@@ -95,7 +95,9 @@ namespace EQ
 
 		// Can item be equipped by/at?
 		bool IsEquipable(uint16 race, uint16 class_) const;
+		bool IsEquipableByClassMask(uint16 race, uint32 class_mask) const;
 		bool IsClassEquipable(uint16 class_) const;
+		bool IsClassMaskEquipable(uint32 class_mask) const;
 		bool IsRaceEquipable(uint16 race) const;
 		bool IsEquipable(int16 slot_id) const;
 

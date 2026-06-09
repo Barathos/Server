@@ -37,6 +37,7 @@
 #include <cstring>
 #include <ctime>
 #include <limits>
+#include <memory>
 #include <vector>
 
 MulticlassManager multiclass_manager;
@@ -129,10 +130,91 @@ uint8 GetBestSpellLevelForSlots(const MulticlassManager::ClassSlots &class_slots
 	return best_level;
 }
 
-void RefreshClientAfterMulticlassProfileChange(Client *client)
+uint32 EjectInvalidMulticlassEquipment(Client *client)
+{
+	if (!client) {
+		return 0;
+	}
+
+	uint32 ejected = 0;
+	for (int16 slot_id = EQ::invslot::EQUIPMENT_BEGIN; slot_id <= EQ::invslot::EQUIPMENT_END; ++slot_id) {
+		const auto *inst = client->GetInv().GetItem(slot_id);
+		if (!inst || multiclass_manager.CanUseItem(client, inst)) {
+			continue;
+		}
+
+		std::unique_ptr<EQ::ItemInstance> ejected_item(inst->Clone());
+		client->DeleteItemInInventory(slot_id, 0, true, true);
+		if (ejected_item) {
+			client->PushItemOnCursor(*ejected_item, true);
+		}
+		client->SendWearChange(EQ::InventoryProfile::CalcMaterialFromSlot(slot_id));
+		++ejected;
+	}
+
+	return ejected;
+}
+
+uint32 PruneInvalidMulticlassPets(Client *client)
+{
+	if (!client) {
+		return 0;
+	}
+
+	uint32 pruned = 0;
+	for (auto *pet : multiclass_manager.GetPetRoster(client)) {
+		if (!pet || !pet->IsNPC()) {
+			continue;
+		}
+
+		auto *pet_npc = pet->CastToNPC();
+		const auto spell_id = pet_npc->GetPetSpellID();
+		const auto origin_class = GetPetOriginClass(pet);
+		const bool origin_class_ok = !IsPetClass(origin_class) || multiclass_manager.HasClass(client, origin_class);
+		const bool spell_ok = !spell_id || multiclass_manager.CanUseSpell(client, spell_id);
+		if (origin_class_ok && spell_ok) {
+			continue;
+		}
+
+		if (client->GetPetID() == pet->GetID()) {
+			client->SetPetID(0);
+		}
+		pet->SetOwnerID(0);
+		pet_npc->Depop(false);
+		++pruned;
+	}
+
+	return pruned;
+}
+
+void ApplyMulticlassProfileCleanup(Client *client)
 {
 	if (!client) {
 		return;
+	}
+
+	client->ClearMulticlassDynamicAATimers();
+	client->RefundUnusableAA();
+
+	const auto ejected_items = EjectInvalidMulticlassEquipment(client);
+	if (ejected_items) {
+		client->Message(Chat::Yellow, "Moved %u item%s that no longer match this Multiclass trio to your cursor.", ejected_items, ejected_items == 1 ? "" : "s");
+	}
+
+	const auto pruned_pets = PruneInvalidMulticlassPets(client);
+	if (pruned_pets) {
+		client->Message(Chat::Yellow, "Dismissed %u pet%s that no longer match this Multiclass trio.", pruned_pets, pruned_pets == 1 ? "" : "s");
+	}
+}
+
+void RefreshClientAfterMulticlassProfileChange(Client *client, bool profile_changed = false)
+{
+	if (!client) {
+		return;
+	}
+
+	if (profile_changed) {
+		ApplyMulticlassProfileCleanup(client);
 	}
 
 	client->CalcBonuses();
@@ -810,7 +892,7 @@ bool MulticlassManager::SetProfile(Client *client, uint8 class_slot_1, uint8 cla
 
 	AuditProfile(profile, source);
 	SeedEligibleSkills(client, true);
-	RefreshClientAfterMulticlassProfileChange(client);
+	RefreshClientAfterMulticlassProfileChange(client, true);
 	return true;
 }
 
@@ -1096,11 +1178,7 @@ bool MulticlassManager::CanUseItem(const Client *client, const EQ::ItemInstance 
 		return false;
 	}
 
-	if (!(item->Races & GetPlayerRaceBit(client->GetBaseRace()))) {
-		return false;
-	}
-
-	return (item->Classes & GetClassMask(client)) != 0;
+	return item->IsEquipableByClassMask(client->GetBaseRace(), GetClassMask(client));
 }
 
 std::string MulticlassManager::BuildItemUseReport(const Client *client, const EQ::ItemInstance *inst, int16 equipment_slot)
@@ -2363,7 +2441,7 @@ bool MulticlassManager::ReweaveProfileSlot(Client *client, uint8 class_slot, uin
 
 	AuditProfile(profile, source);
 	SeedEligibleSkills(client, true);
-	RefreshClientAfterMulticlassProfileChange(client);
+	RefreshClientAfterMulticlassProfileChange(client, true);
 
 	status = fmt::format(
 		"Rewove slot {} from {} to {}. Reweaves left: {}.",

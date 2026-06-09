@@ -178,6 +178,15 @@ bool EQ::ItemData::IsEquipable(uint16 race_id, uint16 class_id) const
 	return true;
 }
 
+bool EQ::ItemData::IsEquipableByClassMask(uint16 race_id, uint32 class_mask) const
+{
+	if (!(Races & GetPlayerRaceBit(race_id))) {
+		return false;
+	}
+
+	return IsClassMaskEquipable(class_mask);
+}
+
 bool EQ::ItemData::IsClassEquipable(uint16 class_id) const
 {
 
@@ -186,6 +195,11 @@ bool EQ::ItemData::IsClassEquipable(uint16 class_id) const
 	}
 
 	return true;
+}
+
+bool EQ::ItemData::IsClassMaskEquipable(uint32 class_mask) const
+{
+	return (Classes & class_mask) != 0;
 }
 
 bool EQ::ItemData::IsRaceEquipable(uint16 race_id) const

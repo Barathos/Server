@@ -2291,7 +2291,7 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 		}
 
 		fail_state = EQ::InventoryProfile::swapInvalid;
-		if (!m_inv.SwapItem(src_slot_id, dst_slot_id, fail_state, GetBaseRace(), Class::None, GetDeity(), GetLevel())) {
+		if (!m_inv.SwapItemByClassMask(src_slot_id, dst_slot_id, fail_state, GetBaseRace(), multiclass_manager.GetClassMask(this), GetDeity(), GetLevel())) {
 			const char* fail_message = "The selected slot was invalid.";
 			if (fail_state == EQ::InventoryProfile::swapRaceClass || fail_state == EQ::InventoryProfile::swapDeity)
 				fail_message = "Your class, deity and/or race may not equip that item.";

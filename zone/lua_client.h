@@ -75,6 +75,9 @@ public:
 	void SetBaseRace(int v);
 	void SetBaseGender(int v);
 	uint16 GetClassBitmask();
+	uint32 GetClassesBitmask();
+	bool HasClassID(int class_id);
+	bool HasMulticlassClass(int class_id);
 	uint32 GetDeityBitmask();
 	uint16 GetRaceBitmask();
 	int GetBaseFace();

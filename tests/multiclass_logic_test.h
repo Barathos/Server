@@ -10,7 +10,9 @@
 #pragma once
 
 #include "common/classes.h"
+#include "common/item_data.h"
 #include "common/multiclass_logic.h"
+#include "common/races.h"
 #include "cppunit/cpptest.h"
 
 class MulticlassLogicTest : public Test::Suite {
@@ -21,6 +23,7 @@ public:
 		TEST_ADD(MulticlassLogicTest::AAClassMasksFollowClassSlotIntent);
 		TEST_ADD(MulticlassLogicTest::ClassCategoriesMatchManagerBehavior);
 		TEST_ADD(MulticlassLogicTest::MixedTrioFixturesCoverExpectedCapabilities);
+		TEST_ADD(MulticlassLogicTest::ItemClassMasksUseAnyEligibleClass);
 	}
 
 private:
@@ -117,5 +120,21 @@ private:
 		TEST_ASSERT(EQ::Multiclass::IsIntCasterClass(pet_control[0]));
 		TEST_ASSERT(EQ::Multiclass::IsWisCasterClass(pet_control[1]));
 		TEST_ASSERT(EQ::Multiclass::IsIntCasterClass(pet_control[2]));
+	}
+
+	void ItemClassMasksUseAnyEligibleClass()
+	{
+		EQ::ItemData item;
+		item.Races = GetPlayerRaceBit(Race::Human);
+		item.Classes = GetPlayerClassBit(Class::Warrior) | GetPlayerClassBit(Class::Cleric);
+
+		const ClassSlots cleric_trio = {Class::Wizard, Class::Cleric, Class::Rogue};
+		TEST_ASSERT(item.IsClassMaskEquipable(EQ::Multiclass::BuildClassMask(cleric_trio)));
+		TEST_ASSERT(item.IsEquipableByClassMask(Race::Human, EQ::Multiclass::BuildClassMask(cleric_trio)));
+
+		const ClassSlots caster_trio = {Class::Wizard, Class::Magician, Class::Enchanter};
+		TEST_ASSERT(!item.IsClassMaskEquipable(EQ::Multiclass::BuildClassMask(caster_trio)));
+		TEST_ASSERT(!item.IsEquipableByClassMask(Race::Human, EQ::Multiclass::BuildClassMask(caster_trio)));
+		TEST_ASSERT(!item.IsEquipableByClassMask(Race::Gnome, EQ::Multiclass::BuildClassMask(cleric_trio)));
 	}
 };

@@ -46,6 +46,38 @@
 extern WorldServer worldserver;
 extern QueryServ* QServ;
 
+namespace {
+bool MulticlassDynamicAATimersEnabled(const Client *client)
+{
+	return client &&
+		RuleB(CustomFeatures, MulticlassEnabled) &&
+		RuleB(CustomFeatures, MulticlassDynamicAATimersEnabled);
+}
+
+bool MulticlassDynamicAATimerSchemaAvailable()
+{
+	static bool checked = false;
+	static bool available = false;
+
+	if (!checked) {
+		auto results = database.QueryDatabase("SHOW TABLES LIKE 'custom_multiclass_aa_timers'");
+		available = results.Success() && results.RowCount() > 0;
+		checked = true;
+	}
+
+	return available;
+}
+
+bool ShouldUseMulticlassDynamicAATimer(const Client *client, const AA::Rank *rank)
+{
+	return MulticlassDynamicAATimersEnabled(client) &&
+		rank &&
+		rank->base_ability &&
+		!rank->base_ability->grant_only &&
+		rank->recast_time > 0;
+}
+}
+
 void Mob::TemporaryPets(uint16 spell_id, Mob *targ, const char *name_override, uint32 duration_override, bool followme, bool sticktarg, uint16 *eye_id) {
 
 	//It might not be a bad idea to put these into the database, eventually..
@@ -879,6 +911,170 @@ void Client::RefundAA() {
 	SendAlternateAdvancementStats();
 }
 
+void Client::RefundUnusableAA()
+{
+	int refunded = 0;
+
+	auto rank_value = aa_ranks.begin();
+	while (rank_value != aa_ranks.end()) {
+		auto ability_rank = zone->GetAlternateAdvancementAbilityAndRank(rank_value->first, rank_value->second.first);
+		auto ability      = ability_rank.first;
+		auto rank         = ability_rank.second;
+
+		if (!ability || !rank || ability->grant_only) {
+			++rank_value;
+			continue;
+		}
+
+		if (ability->charges > 0 && rank_value->second.second < 1) {
+			++rank_value;
+			continue;
+		}
+
+		if (CanUseAlternateAdvancementRank(rank)) {
+			++rank_value;
+			continue;
+		}
+
+		refunded += rank->total_cost;
+		rank_value = aa_ranks.erase(rank_value);
+	}
+
+	if (refunded > 0) {
+		m_pp.aapoints += refunded;
+		SaveAA();
+		Save();
+		Message(Chat::Yellow, "Refunded %u AA point%s from abilities no longer usable by this Multiclass trio.", refunded, refunded == 1 ? "" : "s");
+	}
+}
+
+void Client::LoadMulticlassDynamicAATimers()
+{
+	m_multiclass_dynamic_aa_timers.clear();
+	m_multiclass_dynamic_aa_timers_loaded = true;
+
+	if (!MulticlassDynamicAATimersEnabled(this) || !CharacterID() || !MulticlassDynamicAATimerSchemaAvailable()) {
+		return;
+	}
+
+	auto results = database.QueryDatabase(
+		fmt::format(
+			"SELECT `aa_id`, `timer_id` FROM `custom_multiclass_aa_timers` WHERE `character_id` = {}",
+			CharacterID()
+		)
+	);
+
+	if (!results.Success()) {
+		return;
+	}
+
+	for (auto row = results.begin(); row != results.end(); ++row) {
+		const auto aa_id = row[0] ? static_cast<uint32>(Strings::ToUnsignedInt(row[0])) : 0;
+		const auto timer_id = row[1] ? static_cast<uint32>(Strings::ToUnsignedInt(row[1])) : 0;
+		if (aa_id && timer_id) {
+			m_multiclass_dynamic_aa_timers[aa_id] = timer_id;
+		}
+	}
+}
+
+uint32 Client::GetMulticlassDynamicAATimer(uint32 aa_id)
+{
+	if (!MulticlassDynamicAATimersEnabled(this) || !aa_id) {
+		return 0;
+	}
+
+	if (!m_multiclass_dynamic_aa_timers_loaded) {
+		LoadMulticlassDynamicAATimers();
+	}
+
+	const auto timer = m_multiclass_dynamic_aa_timers.find(aa_id);
+	if (timer != m_multiclass_dynamic_aa_timers.end()) {
+		return timer->second;
+	}
+
+	return AssignMulticlassDynamicAATimer(aa_id);
+}
+
+uint32 Client::AssignMulticlassDynamicAATimer(uint32 aa_id)
+{
+	if (!MulticlassDynamicAATimersEnabled(this) || !aa_id || !CharacterID() || !MulticlassDynamicAATimerSchemaAvailable()) {
+		return 0;
+	}
+
+	if (!m_multiclass_dynamic_aa_timers_loaded) {
+		LoadMulticlassDynamicAATimers();
+	}
+
+	for (uint32 timer_id = 1; timer_id <= static_cast<uint32>(pTimerAAEnd - pTimerAAStart); ++timer_id) {
+		const auto timer_in_use = std::any_of(
+			m_multiclass_dynamic_aa_timers.begin(),
+			m_multiclass_dynamic_aa_timers.end(),
+			[timer_id](const auto &entry) { return entry.second == timer_id; }
+		);
+
+		if (timer_in_use) {
+			continue;
+		}
+
+		auto results = database.QueryDatabase(
+			fmt::format(
+				"INSERT INTO `custom_multiclass_aa_timers` (`character_id`, `aa_id`, `timer_id`, `updated_at`) "
+				"VALUES ({}, {}, {}, {}) "
+				"ON DUPLICATE KEY UPDATE `timer_id` = VALUES(`timer_id`), `updated_at` = VALUES(`updated_at`)",
+				CharacterID(),
+				aa_id,
+				timer_id,
+				static_cast<uint32>(time(nullptr))
+			)
+		);
+
+		if (results.Success()) {
+			m_multiclass_dynamic_aa_timers[aa_id] = timer_id;
+			return timer_id;
+		}
+	}
+
+	LogError("Unable to assign Multiclass dynamic AA timer for [{}] aa [{}]: no available AA timer slots", GetCleanName(), aa_id);
+	return 0;
+}
+
+void Client::ClearMulticlassDynamicAATimers()
+{
+	if (MulticlassDynamicAATimersEnabled(this)) {
+		ResetAlternateAdvancementTimers();
+	}
+
+	m_multiclass_dynamic_aa_timers.clear();
+	m_multiclass_dynamic_aa_timers_loaded = true;
+
+	if (!CharacterID() || !MulticlassDynamicAATimerSchemaAvailable()) {
+		return;
+	}
+
+	database.QueryDatabase(
+		fmt::format(
+			"DELETE FROM `custom_multiclass_aa_timers` WHERE `character_id` = {}",
+			CharacterID()
+		)
+	);
+}
+
+uint32 Client::GetAlternateAdvancementTimerType(AA::Rank *rank)
+{
+	if (!rank) {
+		return 0;
+	}
+
+	if (ShouldUseMulticlassDynamicAATimer(this, rank)) {
+		const auto timer_id = GetMulticlassDynamicAATimer(rank->base_ability->id);
+		if (timer_id) {
+			return timer_id;
+		}
+	}
+
+	return rank->spell_type;
+}
+
 SwarmPet::SwarmPet()
 {
 	target = 0;
@@ -900,6 +1096,10 @@ Mob *SwarmPet::GetOwner()
 
 //New AA
 void Client::SendAlternateAdvancementTable() {
+	if (MulticlassDynamicAATimersEnabled(this)) {
+		LoadMulticlassDynamicAATimers();
+	}
+
 	for(auto &aa : zone->aa_abilities) {
 		uint32 charges = 0;
 		auto ranks = GetAA(aa.second->first_rank_id, &charges);
@@ -949,7 +1149,7 @@ void Client::SendAlternateAdvancementRank(int aa_id, int level) {
 	aai->seq = aa_id;
 	aai->type = ability->type;
 	aai->spell = rank->spell;
-	aai->spell_type = rank->spell_type;
+	aai->spell_type = GetAlternateAdvancementTimerType(rank);
 	aai->spell_refresh = rank->recast_time;
 	aai->classes = ability->classes | multiclass_manager.GetAAClassMask(this);
 	aai->level_req = rank->level_req;
@@ -1060,10 +1260,11 @@ void Client::SendAlternateAdvancementTimers() {
 }
 
 void Client::ResetAlternateAdvancementTimer(int ability) {
-	AA::Rank *rank = zone->GetAlternateAdvancementRank(casting_spell_aa_id);
+	AA::Rank *rank = zone->GetAlternateAdvancementRank(ability ? ability : casting_spell_aa_id);
 	if(rank) {
-		SendAlternateAdvancementTimer(rank->spell_type, 0, time(0));
-		p_timers.Clear(&database, rank->spell_type + pTimerAAStart);
+		const auto timer_type = GetAlternateAdvancementTimerType(rank);
+		SendAlternateAdvancementTimer(timer_type, 0, time(0));
+		p_timers.Clear(&database, timer_type + pTimerAAStart);
 	}
 }
 
@@ -1108,7 +1309,7 @@ void Client::ResetOnDeathAlternateAdvancement() {
 
 		// since they're dying, we just need to clear the DB
 		if (ability->reset_on_death)
-			p_timers.Clear(&database, rank->spell_type + pTimerAAStart);
+			p_timers.Clear(&database, GetAlternateAdvancementTimerType(rank) + pTimerAAStart);
 	}
 }
 
@@ -1291,9 +1492,11 @@ void Client::ActivateAlternateAdvancementAbility(int rank_id, int target_id) {
 	if (ability->charges > 0 && charges < 1)
 		return;
 
+	const auto timer_type = GetAlternateAdvancementTimerType(rank);
+
 	//check cooldown
-	if (!p_timers.Expired(&database, rank->spell_type + pTimerAAStart, false)) {
-		uint32 aaremain = p_timers.GetRemainingTime(rank->spell_type + pTimerAAStart);
+	if (!p_timers.Expired(&database, timer_type + pTimerAAStart, false)) {
+		uint32 aaremain = p_timers.GetRemainingTime(timer_type + pTimerAAStart);
 		uint32 aaremain_hr = aaremain / (60 * 60);
 		uint32 aaremain_min = (aaremain / 60) % 60;
 		uint32 aaremain_sec = aaremain % 60;
@@ -1349,12 +1552,12 @@ void Client::ActivateAlternateAdvancementAbility(int rank_id, int target_id) {
 			}
 
 			if (!SpellFinished(rank->spell, entity_list.GetMob(target_id), EQ::spells::CastingSlot::AltAbility, spells[rank->spell].mana, -1, spells[rank->spell].resist_difficulty, false, -1,
-				rank->spell_type + pTimerAAStart, timer_duration, false, rank->id)) {
+				timer_type + pTimerAAStart, timer_duration, false, rank->id)) {
 				return;
 			}
 		}
 		else {
-			if (!CastSpell(rank->spell, target_id, EQ::spells::CastingSlot::AltAbility, -1, -1, 0, -1, rank->spell_type + pTimerAAStart, timer_duration, nullptr, rank->id)) {
+			if (!CastSpell(rank->spell, target_id, EQ::spells::CastingSlot::AltAbility, -1, -1, 0, -1, timer_type + pTimerAAStart, timer_duration, nullptr, rank->id)) {
 				return;
 			}
 		}

@@ -39,6 +39,7 @@
 
 RULE_CATEGORY(CustomFeatures)
 RULE_BOOL(CustomFeatures, MulticlassEnabled, true, "Enables the custom Multiclass trio feature, including trio profiles, secondary class permissions, native UI sync, resonance bonuses, and multi-pet behavior.")
+RULE_BOOL(CustomFeatures, MulticlassDynamicAATimersEnabled, true, "Enables dynamic AA timer assignment for Multiclass characters so active AAs from multiple classes do not collide on stock client reuse timers.")
 RULE_BOOL(CustomFeatures, AchievementsEnabled, true, "Enables the custom Achievements feature, including achievement progress processing, commands, and native achievement window sync.")
 RULE_BOOL(CustomFeatures, AutoLootEnabled, true, "Enables the custom Advanced Loot flow, loot filters, Need/Greed, and native Advanced Loot window behavior.")
 RULE_BOOL(CustomFeatures, GearScoreEnabled, true, "Enables the custom item power/gearscore transport and #itemscore tools.")

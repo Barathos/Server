@@ -1033,6 +1033,16 @@ bool Mob::IsIntelligenceCasterClass() const
 
 bool Mob::IsPureMeleeClass() const
 {
+	if (IsClient()) {
+		const uint32 pure_melee_mask =
+			GetPlayerClassBit(Class::Warrior) |
+			GetPlayerClassBit(Class::Monk) |
+			GetPlayerClassBit(Class::Rogue) |
+			GetPlayerClassBit(Class::Berserker);
+
+		return (multiclass_manager.GetClassMask(CastToClient()) & pure_melee_mask) != 0;
+	}
+
 	switch (GetClass()) {
 		case Class::Warrior:
 		case Class::Monk:
@@ -1052,6 +1062,21 @@ bool Mob::IsPureMeleeClass() const
 
 bool Mob::IsWarriorClass() const
 {
+	if (IsClient()) {
+		const uint32 melee_mask =
+			GetPlayerClassBit(Class::Warrior) |
+			GetPlayerClassBit(Class::Paladin) |
+			GetPlayerClassBit(Class::Ranger) |
+			GetPlayerClassBit(Class::ShadowKnight) |
+			GetPlayerClassBit(Class::Monk) |
+			GetPlayerClassBit(Class::Bard) |
+			GetPlayerClassBit(Class::Rogue) |
+			GetPlayerClassBit(Class::Beastlord) |
+			GetPlayerClassBit(Class::Berserker);
+
+		return (multiclass_manager.GetClassMask(CastToClient()) & melee_mask) != 0;
+	}
+
 	switch (GetClass()) {
 		case Class::Warrior:
 		case Class::Paladin:

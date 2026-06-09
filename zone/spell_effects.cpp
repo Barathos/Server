@@ -522,7 +522,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 			case SpellEffect::CurrentMana:
 			{
 				// Bards don't get mana from effects, good or bad.
-				if(GetClass() == Class::Bard)
+				if(MulticlassRestrictionHasClass(this, Class::Bard))
 					break;
 				if(IsManaTapSpell(spell_id)) {
 					if (!IsPureMeleeClass()) {
@@ -559,7 +559,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, float partial, int level_ove
 			case SpellEffect::CurrentManaOnce:
 			{
 				// Bards don't get mana from effects, good or bad.
-				if(GetClass() == Class::Bard)
+				if(MulticlassRestrictionHasClass(this, Class::Bard))
 					break;
 #ifdef SPELL_EFFECT_SPAM
 				snprintf(effect_desc, _EDLEN, "Current Mana Once: %+i", effect_value);
@@ -8117,8 +8117,18 @@ bool Mob::PassCastRestriction(int value)
 		}
 
 		case IS_CLASS_CHAIN_OR_PLATE:
-			if ((GetClass() == Class::Warrior) || (GetClass() == Class::Bard) || (GetClass() == Class::ShadowKnight) || (GetClass() == Class::Paladin) || (GetClass() == Class::Cleric)
-				|| (GetClass() == Class::Ranger) || (GetClass() == Class::Shaman) || (GetClass() == Class::Rogue) || (GetClass() == Class::Berserker)) {
+			if (MulticlassRestrictionHasAnyClass(
+				this,
+				GetPlayerClassBit(Class::Warrior) |
+				GetPlayerClassBit(Class::Bard) |
+				GetPlayerClassBit(Class::ShadowKnight) |
+				GetPlayerClassBit(Class::Paladin) |
+				GetPlayerClassBit(Class::Cleric) |
+				GetPlayerClassBit(Class::Ranger) |
+				GetPlayerClassBit(Class::Shaman) |
+				GetPlayerClassBit(Class::Rogue) |
+				GetPlayerClassBit(Class::Berserker)
+			)) {
 				return true;
 			}
 			break;
@@ -8485,34 +8495,56 @@ bool Mob::PassCastRestriction(int value)
 		}
 
 		case IS_CLIENT_AND_MALE_PLATE_USER:
-			if (IsClient() && GetGender() == Gender::Male && IsPlateClass(GetClass()))
+			if (
+				IsClient() &&
+				GetGender() == Gender::Male &&
+				MulticlassRestrictionHasAnyClass(this, GetPlayerClassBit(Class::Warrior) | GetPlayerClassBit(Class::Paladin) | GetPlayerClassBit(Class::ShadowKnight) | GetPlayerClassBit(Class::Cleric) | GetPlayerClassBit(Class::Bard))
+			)
 				return true;
 			break;
 
 		case IS_CLEINT_AND_MALE_DRUID_ENCHANTER_MAGICIAN_NECROANCER_SHAMAN_OR_WIZARD:
-			if (IsClient() && GetGender() == Gender::Male && (IsCasterClass(GetClass()) && GetClass() != Class::Cleric))
+			if (
+				IsClient() &&
+				GetGender() == Gender::Male &&
+				MulticlassRestrictionHasAnyClass(this, GetPlayerClassBit(Class::Druid) | GetPlayerClassBit(Class::Enchanter) | GetPlayerClassBit(Class::Magician) | GetPlayerClassBit(Class::Necromancer) | GetPlayerClassBit(Class::Shaman) | GetPlayerClassBit(Class::Wizard))
+			)
 				return true;
 			break;
 
 		case IS_CLIENT_AND_MALE_BEASTLORD_BERSERKER_MONK_RANGER_OR_ROGUE:
-			if (IsClient() && GetGender() == Gender::Male &&
-				(GetClass() == Class::Beastlord || GetClass() == Class::Berserker || GetClass() == Class::Monk || GetClass() == Class::Ranger || GetClass() == Class::Rogue))
+			if (
+				IsClient() &&
+				GetGender() == Gender::Male &&
+				MulticlassRestrictionHasAnyClass(this, GetPlayerClassBit(Class::Beastlord) | GetPlayerClassBit(Class::Berserker) | GetPlayerClassBit(Class::Monk) | GetPlayerClassBit(Class::Ranger) | GetPlayerClassBit(Class::Rogue))
+			)
 				return true;
 			break;
 
 		case IS_CLIENT_AND_FEMALE_PLATE_USER:
-			if (IsClient() && GetGender() == Gender::Female && IsPlateClass(GetClass()))
+			if (
+				IsClient() &&
+				GetGender() == Gender::Female &&
+				MulticlassRestrictionHasAnyClass(this, GetPlayerClassBit(Class::Warrior) | GetPlayerClassBit(Class::Paladin) | GetPlayerClassBit(Class::ShadowKnight) | GetPlayerClassBit(Class::Cleric) | GetPlayerClassBit(Class::Bard))
+			)
 				return true;
 			break;
 
 		case IS_CLIENT_AND_FEMALE_DRUID_ENCHANTER_MAGICIAN_NECROANCER_SHAMAN_OR_WIZARD:
-			if (IsClient() && GetGender() == Gender::Female && (IsCasterClass(GetClass()) && GetClass() != Class::Cleric))
+			if (
+				IsClient() &&
+				GetGender() == Gender::Female &&
+				MulticlassRestrictionHasAnyClass(this, GetPlayerClassBit(Class::Druid) | GetPlayerClassBit(Class::Enchanter) | GetPlayerClassBit(Class::Magician) | GetPlayerClassBit(Class::Necromancer) | GetPlayerClassBit(Class::Shaman) | GetPlayerClassBit(Class::Wizard))
+			)
 				return true;
 			break;
 
 		case IS_CLIENT_AND_FEMALE_BEASTLORD_BERSERKER_MONK_RANGER_OR_ROGUE:
-			if (IsClient() && GetGender() == Gender::Female &&
-				(GetClass() == Class::Beastlord || GetClass() == Class::Berserker || GetClass() == Class::Monk || GetClass() == Class::Ranger || GetClass() == Class::Rogue))
+			if (
+				IsClient() &&
+				GetGender() == Gender::Female &&
+				MulticlassRestrictionHasAnyClass(this, GetPlayerClassBit(Class::Beastlord) | GetPlayerClassBit(Class::Berserker) | GetPlayerClassBit(Class::Monk) | GetPlayerClassBit(Class::Ranger) | GetPlayerClassBit(Class::Rogue))
+			)
 				return true;
 			break;
 

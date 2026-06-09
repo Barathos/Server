@@ -78,6 +78,7 @@ namespace EQ
 #include <set>
 #include <algorithm>
 #include <memory>
+#include <unordered_map>
 #include <deque>
 
 #define CLIENT_LD_TIMEOUT 30000 // length of time client stays in zone after LDing
@@ -1113,6 +1114,11 @@ public:
 	void ResetAlternateAdvancementTimer(int ability);
 	void ResetAlternateAdvancementTimers();
 	void ResetOnDeathAlternateAdvancement();
+	void LoadMulticlassDynamicAATimers();
+	uint32 GetMulticlassDynamicAATimer(uint32 aa_id);
+	uint32 AssignMulticlassDynamicAATimer(uint32 aa_id);
+	void ClearMulticlassDynamicAATimers();
+	uint32 GetAlternateAdvancementTimerType(AA::Rank *rank);
 
 	void SetAAPoints(uint32 points);
 	void AddAAPoints(uint32 points);
@@ -1160,6 +1166,7 @@ public:
 	void ResetAA();
 	void ResetLeadershipAA();
 	void RefundAA();
+	void RefundUnusableAA();
 	void SendClearLeadershipAA();
 	void SendClearPlayerAA();
 	inline uint32 GetAAXP() const { return m_pp.expAA; }
@@ -2211,6 +2218,8 @@ private:
 	bool m_has_last_recipe_auto_combine = false;
 	bool m_has_last_recipe_auto_combine_context = false;
 	std::map<EQ::skills::SkillType, bool> m_autoskill;
+	std::unordered_map<uint32, uint32> m_multiclass_dynamic_aa_timers;
+	bool m_multiclass_dynamic_aa_timers_loaded = false;
 	PetInfo m_petinfo; // current pet data, used while loading from and saving to DB
 	PetInfo m_suspendedminion; // pet data for our suspended minion.
 	MercInfo m_mercinfo[MAXMERCS]; // current mercenary

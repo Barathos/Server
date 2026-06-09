@@ -9,6 +9,12 @@ files:
     destination: dinput8.dll
   - source: client_files/native_autoloot/config/native_interface.ini
     destination: native_interface.ini
+  - source: client_files/generated/all-features/spells_us.txt
+    destination: spells_us.txt
+  - source: client_files/generated/all-features/dbstr_us.txt
+    destination: dbstr_us.txt
+  - source: client_files/generated/all-features/SkillCaps.txt
+    destination: SkillCaps.txt
   - source: client_files/login/rof/eqlsClient.ini
     destination: eqlsClient.ini
   - source: client_files/login/rof/eqlsnews.txt

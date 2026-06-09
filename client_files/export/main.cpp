@@ -90,6 +90,18 @@ int main(int argc, char **argv)
 		content_db.SetMySQL(database);
 	}
 
+	{
+		std::string rule_set_name;
+		if (database.GetVariable("RuleSet", rule_set_name)) {
+			LogInfo("Loading rule set [{}]", rule_set_name);
+			if (!RuleManager::Instance()->LoadRules(&database, rule_set_name, false)) {
+				LogError("Failed to load ruleset [{}], falling back to defaults", rule_set_name);
+			}
+		} else if (!RuleManager::Instance()->LoadRules(&database, "default", false)) {
+			LogInfo("No rule set configured, using default rules");
+		}
+	}
+
 	EQEmuLogSys::Instance()->SetDatabase(&database)
 		->SetLogPath(PathManager::Instance()->GetLogPath())
 		->LoadLogDatabaseSettings()
@@ -133,7 +145,9 @@ void ExportSpells(SharedDatabase* db)
 		return;
 	}
 
-	const auto& lines = SpellsNewRepository::GetSpellFileLines(*db);
+	const auto& lines = RuleB(CustomFeatures, MulticlassEnabled) ?
+		SpellsNewRepository::GetMulticlassSpellFileLines(*db) :
+		SpellsNewRepository::GetSpellFileLines(*db);
 
 	const std::string& file_string = Strings::Implode("\n", lines);
 
@@ -141,7 +155,7 @@ void ExportSpells(SharedDatabase* db)
 
 	file.close();
 
-	LogInfo("Exported [{}] Spell{}", lines.size(), lines.size() != 1 ? "s" : "");
+	LogInfo("Exported [{}] {}Spell{}", lines.size(), RuleB(CustomFeatures, MulticlassEnabled) ? "Multiclass " : "", lines.size() != 1 ? "s" : "");
 }
 
 void ExportSkillCaps(SharedDatabase* db)
@@ -190,7 +204,9 @@ void ExportDBStrings(SharedDatabase *db)
 		return;
 	}
 
-	const auto& lines = DbStrRepository::GetDBStrFileLines(*db);
+	const auto& lines = RuleB(CustomFeatures, MulticlassEnabled) ?
+		DbStrRepository::GetMulticlassDBStrFileLines(*db) :
+		DbStrRepository::GetDBStrFileLines(*db);
 
 	const std::string& file_string = Strings::Implode("\n", lines);
 
@@ -198,6 +214,6 @@ void ExportDBStrings(SharedDatabase *db)
 
 	file.close();
 
-	LogInfo("Exported [{}] Database String{}", lines.size(), lines.size() != 1 ? "s" : "");
+	LogInfo("Exported [{}] {}Database String{}", lines.size(), RuleB(CustomFeatures, MulticlassEnabled) ? "Multiclass " : "", lines.size() != 1 ? "s" : "");
 }
 

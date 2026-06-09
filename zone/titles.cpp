@@ -18,11 +18,13 @@
 #include "titles.h"
 
 #include "common/eq_packet_structs.h"
+#include "common/classes.h"
 #include "common/misc_functions.h"
 #include "common/repositories/player_titlesets_repository.h"
 #include "common/strings.h"
 #include "zone/client.h"
 #include "zone/mob.h"
+#include "zone/multiclass_manager.h"
 #include "zone/worldserver.h"
 
 extern WorldServer worldserver;
@@ -152,8 +154,14 @@ std::vector<TitlesRepository::Titles> TitleManager::GetEligibleTitles(Client* c)
 			continue;
 		}
 
-		if (t.class_ >= Class::None && c->GetBaseClass() != t.class_) {
-			continue;
+		if (t.class_ >= Class::None) {
+			if (IsPlayerClass(t.class_)) {
+				if (!multiclass_manager.HasClass(c, static_cast<uint8>(t.class_))) {
+					continue;
+				}
+			} else if (c->GetBaseClass() != t.class_) {
+				continue;
+			}
 		}
 
 		if (t.min_aa_points >= 0 && c->GetSpentAA() < t.min_aa_points) {

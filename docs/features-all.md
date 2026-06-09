@@ -36,6 +36,7 @@ gates instead of maintaining separate live implementations.
 Feature gates live in the `CustomFeatures` rule category:
 
 - `CustomFeatures:MulticlassEnabled`
+- `CustomFeatures:MulticlassDynamicAATimersEnabled`
 - `CustomFeatures:AchievementsEnabled`
 - `CustomFeatures:AutoLootEnabled`
 - `CustomFeatures:GearScoreEnabled`
@@ -95,8 +96,9 @@ The combined custom database manifest uses:
 - Custom version `17`: Fellowship schema.
 - Custom version `18`: Fellowship invite persistence schema.
 - Custom version `19`: Advanced Loot live schema; drops legacy `custom_autoloot_*` tables.
+- Custom version `20`: Multiclass dynamic AA timer mapping table.
 
-`common/version.h` sets `CUSTOM_BINARY_DATABASE_VERSION` to `19`.
+`common/version.h` sets `CUSTOM_BINARY_DATABASE_VERSION` to `20`.
 
 ## Native Client Assets
 
@@ -204,10 +206,26 @@ Current patcher manifest responsibilities:
 
 - Publish `client_files/native_autoloot/eq-core-dll/bin/dinput8.dll` to `dinput8.dll`.
 - Publish `client_files/native_autoloot/config/native_interface.ini` to `native_interface.ini`.
+- Publish generated client data from `client_files/generated/all-features/`:
+  `spells_us.txt`, `dbstr_us.txt`, and `SkillCaps.txt`.
 - Publish all native XML windows to `uifiles/default/`.
 - Generate `eqhost`.
 - Generate `EQUI.xml` with includes for every custom native window listed in
   `features/all-features/patcher.yml`.
+
+Generated client data should be refreshed after database spell, AA, DB string, skill
+cap, or multiclass export logic changes:
+
+```powershell
+cd D:\Codex\Apps\EQEmu-feature-all
+.\features\all-features\Update-AllFeaturesClientData.ps1 -ServerPath D:\EQServers\EQServer-All-Features
+```
+
+The script builds `export_client_files`, runs it from the server install so
+`eqemu_config.json` and live rules are used, creates the server `export` directory if
+needed, then copies the patcher-owned files into
+`client_files/generated/all-features/`. Commit those generated files with the server
+change before publishing the testbed feed.
 
 Regenerate and test the all-features feed from the patcher service. The `-Project`
 value is the workspace install id from

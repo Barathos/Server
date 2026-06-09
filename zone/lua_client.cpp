@@ -31,6 +31,7 @@
 #include "zone/lua_npc.h"
 #include "zone/lua_packet.h"
 #include "zone/lua_raid.h"
+#include "zone/multiclass_manager.h"
 #include "zone/titles.h"
 
 #include "lua.hpp"
@@ -171,6 +172,21 @@ void Lua_Client::SetBaseGender(int v) {
 uint16 Lua_Client::GetClassBitmask() {
 	Lua_Safe_Call_Int();
 	return GetPlayerClassBit(self->GetClass());
+}
+
+uint32 Lua_Client::GetClassesBitmask() {
+	Lua_Safe_Call_Int();
+	return multiclass_manager.GetClassMask(self);
+}
+
+bool Lua_Client::HasClassID(int class_id) {
+	Lua_Safe_Call_Bool();
+	return multiclass_manager.HasClass(self, static_cast<uint8>(class_id));
+}
+
+bool Lua_Client::HasMulticlassClass(int class_id) {
+	Lua_Safe_Call_Bool();
+	return multiclass_manager.HasClass(self, static_cast<uint8>(class_id));
 }
 
 uint32 Lua_Client::GetDeityBitmask() {
@@ -3834,6 +3850,7 @@ luabind::scope lua_register_client() {
 	.def("GetCharacterFactionLevel", (int(Lua_Client::*)(int))&Lua_Client::GetCharacterFactionLevel)
 	.def("GetClassAbbreviation", (std::string(Lua_Client::*)(void))&Lua_Client::GetClassAbbreviation)
 	.def("GetClassBitmask", (uint16(Lua_Client::*)(void))&Lua_Client::GetClassBitmask)
+	.def("GetClassesBitmask", (uint32(Lua_Client::*)(void))&Lua_Client::GetClassesBitmask)
 	.def("GetClientMaxLevel", (int(Lua_Client::*)(void))&Lua_Client::GetClientMaxLevel)
 	.def("GetClientVersion", (int(Lua_Client::*)(void))&Lua_Client::GetClientVersion)
 	.def("GetClientVersionBit", (uint32(Lua_Client::*)(void))&Lua_Client::GetClientVersionBit)
@@ -3941,6 +3958,8 @@ luabind::scope lua_register_client() {
 	.def("GuildID", (uint32(Lua_Client::*)(void))&Lua_Client::GuildID)
 	.def("GuildRank", (int(Lua_Client::*)(void))&Lua_Client::GuildRank)
 	.def("HasAugmentEquippedByID", (bool(Lua_Client::*)(uint32))&Lua_Client::HasAugmentEquippedByID)
+	.def("HasClassID", (bool(Lua_Client::*)(int))&Lua_Client::HasClassID)
+	.def("HasMulticlassClass", (bool(Lua_Client::*)(int))&Lua_Client::HasMulticlassClass)
 	.def("HasDisciplineLearned", (bool(Lua_Client::*)(uint16))&Lua_Client::HasDisciplineLearned)
 	.def("HasExpeditionLockout", (bool(Lua_Client::*)(std::string, std::string))&Lua_Client::HasExpeditionLockout)
 	.def("HasItemEquippedByID", (bool(Lua_Client::*)(uint32))&Lua_Client::HasItemEquippedByID)

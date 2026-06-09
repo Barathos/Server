@@ -2835,7 +2835,9 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, CastingSlot slot, in
 					ExpendAlternateAdvancementCharge(rank->base_ability->id);
 				}
 				//set AA recast timer
-				CastToClient()->SendAlternateAdvancementTimer(rank->spell_type, 0, 0);
+				if (rank) {
+					CastToClient()->SendAlternateAdvancementTimer(CastToClient()->GetAlternateAdvancementTimerType(rank), 0, 0);
+				}
 			}
 		}
 		//handle bard AA and Discipline recast timers when singing
