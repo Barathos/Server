@@ -1007,6 +1007,7 @@ EQLIB_VAR DWORD CListWnd__SetColumnWidth;
 EQLIB_VAR DWORD CListWnd__SetCurSel;
 EQLIB_VAR DWORD CListWnd__SetItemColor;
 EQLIB_VAR DWORD CListWnd__SetItemData;
+EQLIB_VAR DWORD CListWnd__SetItemIcon;
 EQLIB_VAR DWORD CListWnd__SetItemText;
 EQLIB_VAR DWORD CListWnd__ShiftColumnSeparator;
 EQLIB_VAR DWORD CListWnd__Sort;

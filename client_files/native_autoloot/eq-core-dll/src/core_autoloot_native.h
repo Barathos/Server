@@ -247,6 +247,24 @@ static COLORREF NativeAutoLootSquareColor(bool active, bool enabled, COLORREF ac
 	return enabled ? 0xFF8EA8C0 : 0xFF606060;
 }
 
+static void NativeAutoLootSetSquareCell(CListWnd* list, int row, int column, bool active, bool enabled, bool negative)
+{
+	if (!list) {
+		return;
+	}
+
+	CTextureAnimation* animation = enabled ? NativeAutoLootActionCellAnimation(active, negative) : nullptr;
+	CXStr text(animation ? " " : NativeAutoLootSquareText(active, enabled));
+
+	__try {
+		list->SetItemText(row, column, &text);
+		list->SetItemIcon(row, column, animation);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+		NativeAutoLootTrace("Advanced Loot checkbox cell paint faulted");
+	}
+}
+
 static bool NativeAutoLootIsNeedVote(const NativeAutoLootRow& row)
 {
 	return row.vote == "need" || row.state == "need" || row.state == "alwaysneed";
@@ -7395,17 +7413,12 @@ void NativeAutoLootWnd::RefreshList(CListWnd* list, bool shared)
 		if (!shared) {
 			const bool always_need = entry.rule == "always_need" || entry.state == "alwaysneed";
 			const bool always_greed = entry.rule == "always_greed" || entry.state == "alwaysgreed";
-			CXStr loot(NativeAutoLootSquareText(false, entry.can_loot && !entry.locked));
-			CXStr leave(NativeAutoLootSquareText(false, entry.can_leave && !entry.locked));
-			CXStr always_need_text(NativeAutoLootSquareText(always_need, true));
-			CXStr always_greed_text(NativeAutoLootSquareText(always_greed, true));
-			CXStr never(NativeAutoLootSquareText(entry.rule == "never", true));
 			CXStr source(entry.source.c_str());
-			list->SetItemText(row, kAALPersonalLoot, &loot);
-			list->SetItemText(row, kAALPersonalLeave, &leave);
-			list->SetItemText(row, kAALPersonalAlwaysNeed, &always_need_text);
-			list->SetItemText(row, kAALPersonalAlwaysGreed, &always_greed_text);
-			list->SetItemText(row, kAALPersonalNever, &never);
+			NativeAutoLootSetSquareCell(list, row, kAALPersonalLoot, false, entry.can_loot && !entry.locked, false);
+			NativeAutoLootSetSquareCell(list, row, kAALPersonalLeave, false, entry.can_leave && !entry.locked, true);
+			NativeAutoLootSetSquareCell(list, row, kAALPersonalAlwaysNeed, always_need, true, false);
+			NativeAutoLootSetSquareCell(list, row, kAALPersonalAlwaysGreed, always_greed, true, false);
+			NativeAutoLootSetSquareCell(list, row, kAALPersonalNever, entry.rule == "never", true, true);
 			list->SetItemText(row, kAALPersonalSource, &source);
 			list->SetItemColor(row, kAALPersonalLoot, NativeAutoLootSquareColor(false, entry.can_loot && !entry.locked, 0xFF66FF66));
 			list->SetItemColor(row, kAALPersonalLeave, NativeAutoLootSquareColor(false, entry.can_leave && !entry.locked, 0xFFFF8080));
@@ -7449,23 +7462,16 @@ void NativeAutoLootWnd::RefreshList(CListWnd* list, bool shared)
 				"-";
 			CXStr action(action_label);
 			CXStr manage((entry.manage || entry.can_give) ? "M" : "-");
-			CXStr auto_roll(NativeAutoLootSquareText(entry.auto_roll, filter_enabled));
-			CXStr need_text(NativeAutoLootSquareText(need, vote_enabled));
-			CXStr greed_text(NativeAutoLootSquareText(greed, vote_enabled));
-			CXStr no_text(NativeAutoLootSquareText(no, vote_enabled));
-			CXStr always_need_text(NativeAutoLootSquareText(always_need, filter_enabled));
-			CXStr always_greed_text(NativeAutoLootSquareText(always_greed, filter_enabled));
-			CXStr never_text(NativeAutoLootSquareText(never, filter_enabled));
 			list->SetItemText(row, kAALSharedStatus, &status);
 			list->SetItemText(row, kAALSharedAction, &action);
 			list->SetItemText(row, kAALSharedManage, &manage);
-			list->SetItemText(row, kAALSharedAutoRoll, &auto_roll);
-			list->SetItemText(row, kAALSharedNeed, &need_text);
-			list->SetItemText(row, kAALSharedGreed, &greed_text);
-			list->SetItemText(row, kAALSharedNo, &no_text);
-			list->SetItemText(row, kAALSharedAlwaysNeed, &always_need_text);
-			list->SetItemText(row, kAALSharedAlwaysGreed, &always_greed_text);
-			list->SetItemText(row, kAALSharedNever, &never_text);
+			NativeAutoLootSetSquareCell(list, row, kAALSharedAutoRoll, entry.auto_roll, filter_enabled, false);
+			NativeAutoLootSetSquareCell(list, row, kAALSharedNeed, need, vote_enabled || need, false);
+			NativeAutoLootSetSquareCell(list, row, kAALSharedGreed, greed, vote_enabled || greed, false);
+			NativeAutoLootSetSquareCell(list, row, kAALSharedNo, no, vote_enabled || no, true);
+			NativeAutoLootSetSquareCell(list, row, kAALSharedAlwaysNeed, always_need, filter_enabled, false);
+			NativeAutoLootSetSquareCell(list, row, kAALSharedAlwaysGreed, always_greed, filter_enabled, false);
+			NativeAutoLootSetSquareCell(list, row, kAALSharedNever, never, filter_enabled, true);
 			list->SetItemText(row, kAALSharedSource, &source);
 			list->SetItemColor(row, kAALSharedStatus, entry.locked ? 0xFFFF8080 : entry.free_grab ? 0xFF80D0FF : 0xFFFFFFFF);
 			list->SetItemColor(row, kAALSharedAction, (entry.can_ask || entry.can_roll) && !entry.locked ? 0xFFB8D8FF : 0xFF606060);

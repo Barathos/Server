@@ -7635,6 +7635,9 @@ FUNCTION_AT_ADDRESS(void  CListWnd::ClearSel(int),CListWnd__ClearSel);
 #ifdef CListWnd__SetItemData_x
 FUNCTION_AT_ADDRESS(void  CListWnd::SetItemData(int,unsigned __int32),CListWnd__SetItemData);
 #endif
+#ifdef CListWnd__SetItemIcon_x
+FUNCTION_AT_ADDRESS(void  CListWnd::SetItemIcon(int,int,class CTextureAnimation const *),CListWnd__SetItemIcon);
+#endif
 #ifdef CListWnd__SetItemText_x
 FUNCTION_AT_ADDRESS(void  CListWnd::SetItemText(int,int,class CXStr *),CListWnd__SetItemText);
 #endif

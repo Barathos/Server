@@ -442,6 +442,7 @@
 #define CListWnd__SetCurSel_x                                      0x853470
 #define CListWnd__SetItemColor_x                                   0x857770
 #define CListWnd__SetItemData_x                                    0x8542D0
+#define CListWnd__SetItemIcon_x                                    0x857540
 #define CListWnd__SetItemText_x                                    0x8575B0
 #define CListWnd__ShiftColumnSeparator_x                           0x857440
 #define CListWnd__Sort_x                                           0x858D80
