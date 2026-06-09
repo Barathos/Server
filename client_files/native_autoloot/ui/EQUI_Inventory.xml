@@ -691,17 +691,17 @@
 		<AlignRight>false</AlignRight>
 	</Label>
 	<Label item="IW_Class">
-		<EQType>3</EQType>
+		<EQType>0</EQType>
 		<RelativePosition>true</RelativePosition>
 		<Location>
-			<X>30</X>
+			<X>2</X>
 			<Y>16</Y>
 		</Location>
 		<Size>
-			<CX>90</CX>
+			<CX>118</CX>
 			<CY>42</CY>
 		</Size>
-		<Text>Shadow Knight</Text>
+		<Text>SHD Shadow Knight</Text>
 		<TextColor>
 			<R>255</R>
 			<G>255</G>
@@ -712,17 +712,17 @@
 		<AlignRight>false</AlignRight>
 	</Label>
 	<Label item="IW_ClassAbbr">
-		<EQType>6666</EQType>
+		<EQType>0</EQType>
 		<RelativePosition>true</RelativePosition>
 		<Location>
-			<X>2</X>
+			<X>10000</X>
 			<Y>16</Y>
 		</Location>
 		<Size>
-			<CX>30</CX>
+			<CX>1</CX>
 			<CY>42</CY>
 		</Size>
-		<Text>SHD</Text>
+		<Text></Text>
 		<TextColor>
 			<R>255</R>
 			<G>255</G>
@@ -2399,7 +2399,6 @@
 		<Pieces>IW_Level</Pieces>
 		<Pieces>IW_LevelLabel</Pieces>
 		<Pieces>IW_Class</Pieces>
-		<Pieces>IW_ClassAbbr</Pieces>
 		<Pieces>IW_Deity</Pieces>
 		<Pieces>IW_HP</Pieces>
 		<Pieces>IW_CurrentHP</Pieces>

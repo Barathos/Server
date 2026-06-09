@@ -1628,15 +1628,106 @@ static void NativeMulticlassShowSpellGemWindow()
 	}
 }
 
+static int NativeMulticlassGetLocalClass()
+{
+	__try {
+		PCHARINFO2 char_info = GetCharInfo2();
+		if (char_info && NativeMulticlassIsPlayerClass(static_cast<int>(char_info->Class))) {
+			return static_cast<int>(char_info->Class);
+		}
+
+		if (ppLocalPlayer && pLocalPlayer && NativeMulticlassIsPlayerClass(static_cast<int>(pLocalPlayer->Data.Class))) {
+			return static_cast<int>(pLocalPlayer->Data.Class);
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+	}
+
+	return 0;
+}
+
+static bool NativeMulticlassIsUsableClassName(const std::string& class_name)
+{
+	return !class_name.empty() &&
+		class_name != "Base" &&
+		class_name != "Unchosen" &&
+		class_name != "Unknown";
+}
+
+static void NativeMulticlassAppendInventoryClassRow(
+	std::string& text,
+	int class_id,
+	const std::string& class_name
+)
+{
+	if (!NativeMulticlassIsPlayerClass(class_id)) {
+		return;
+	}
+
+	const std::string row_name = NativeMulticlassIsUsableClassName(class_name) ?
+		class_name :
+		NativeMulticlassClassName(class_id);
+
+	const char* abbreviation = NativeMulticlassClassAbbreviation(class_id);
+	if (!abbreviation || !abbreviation[0] || row_name.empty() || row_name == "Unchosen") {
+		return;
+	}
+
+	if (!text.empty()) {
+		text += "\n";
+	}
+
+	text += abbreviation;
+	text += " ";
+	text += row_name;
+}
+
+static std::string NativeMulticlassInventoryClassText()
+{
+	std::string text;
+
+	if (gNativeMulticlassState.has_profile) {
+		NativeMulticlassAppendInventoryClassRow(
+			text,
+			gNativeMulticlassState.class1,
+			gNativeMulticlassState.class1_name
+		);
+		NativeMulticlassAppendInventoryClassRow(
+			text,
+			gNativeMulticlassState.class2,
+			gNativeMulticlassState.class2_name
+		);
+		NativeMulticlassAppendInventoryClassRow(
+			text,
+			gNativeMulticlassState.class3,
+			gNativeMulticlassState.class3_name
+		);
+	}
+
+	if (text.empty()) {
+		const int local_class = NativeMulticlassGetLocalClass();
+		NativeMulticlassAppendInventoryClassRow(text, local_class, "");
+	}
+
+	return text;
+}
+
 static void NativeMulticlassPatchInventoryClassLabel()
 {
-	if (!gNativeMulticlassState.has_profile || !ppInventoryWnd || !pInventoryWnd) {
+	if (!ppInventoryWnd || !pInventoryWnd) {
+		return;
+	}
+
+	const std::string class_text = NativeMulticlassInventoryClassText();
+	if (class_text.empty()) {
 		return;
 	}
 
 	__try {
 		CXWnd* class_label = pInventoryWnd->GetChildItem((char*)"IW_Class");
 		if (class_label) {
+			CXStr value(class_text.c_str());
+			class_label->SetWindowTextA(value);
 			class_label->Show(1, 1);
 		}
 
