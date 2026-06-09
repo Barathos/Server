@@ -226,6 +226,8 @@ namespace {
 
 	using EQ::AdvancedLoot::FilterDecisionKey;
 	using EQ::AdvancedLoot::FilterDecisionLabel;
+	using EQ::AdvancedLoot::FilterDecisionAutoLootsPersonal;
+	using EQ::AdvancedLoot::FilterDecisionVoteChoice;
 	using EQ::AdvancedLoot::IsValidFilterDecision;
 	using EQ::AdvancedLoot::ParseFilterDecision;
 	using EQ::AdvancedLoot::ResolveVotes;
@@ -394,7 +396,7 @@ AutoLootManager::CharacterSettings AutoLootManager::GetCharacterSettings(uint32 
 	settings.auto_split_coin         = row[2] ? Strings::ToBool(row[2]) : true;
 	settings.confirm_remove_filter   = row[3] ? Strings::ToBool(row[3]) : true;
 	settings.auto_remove_looted_lore = row[4] ? Strings::ToBool(row[4]) : true;
-	settings.auto_show_loot_window   = row[5] ? Strings::ToBool(row[5]) : true;
+	settings.auto_show_loot_window   = row[5] ? Strings::ToBool(row[5]) : false;
 	settings.show_new_items_only     = row[6] ? Strings::ToBool(row[6]) : false;
 	settings.auto_loot_all           = row[7] ? Strings::ToBool(row[7]) : false;
 	settings.master_looter_candidate = row[8] ? Strings::ToBool(row[8]) : true;
@@ -816,6 +818,7 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 	bool queued = false;
 	std::vector<std::pair<Client *, uint32>> auto_loot_entries;
 	std::vector<uint32> auto_roll_entries;
+	std::vector<uint32> queued_entry_ids;
 	for (const auto loot_slot : loot_slots) {
 		auto item_data = corpse->GetItem(loot_slot);
 		if (!item_data || !item_data->item_id) {
@@ -851,7 +854,8 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 		}
 
 		const auto personal_filter = dynamic_instance ? FilterEntry{} : GetFilter(autoloot_client->CharacterID(), item_data->item_id);
-		if (!shared_loot && settings.apply_filters && personal_filter.decision == LootFilterDecision::Never) {
+		const auto active_personal_decision = settings.apply_filters ? personal_filter.decision : LootFilterDecision::Unset;
+		if (!shared_loot && active_personal_decision == LootFilterDecision::Never) {
 			DebugMessage(
 				autoloot_client,
 				settings,
@@ -905,12 +909,13 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 		entry.item_name = item->Name;
 		entry.corpse_name = corpse->GetCleanName();
 		entry.state = "waiting";
-		entry.rule = FilterDecisionKey(personal_filter.decision);
+		entry.rule = FilterDecisionKey(active_personal_decision);
 		entry.created_at = std::time(nullptr);
 
 		if (entry.shared) {
 			const auto master_filter = dynamic_instance ? FilterEntry{} : GetFilter(master_looter->CharacterID(), item_data->item_id);
-			entry.rule = FilterDecisionKey(master_filter.decision);
+			const auto active_master_decision = master_settings.apply_filters ? master_filter.decision : LootFilterDecision::Unset;
+			entry.rule = FilterDecisionKey(active_master_decision);
 			entry.auto_roll = master_settings.apply_filters && master_filter.auto_ask_roll;
 			entry.state = entry.auto_roll ? "ask" : "waiting";
 			entry.vote_started_at = entry.auto_roll ? std::time(nullptr) : 0;
@@ -924,15 +929,7 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 				const auto member_settings = GetCharacterSettings(member->CharacterID(), true);
 				if (!dynamic_instance && member_settings.apply_filters) {
 					const auto member_filter = GetFilter(member->CharacterID(), item_data->item_id);
-					if (member_filter.decision == LootFilterDecision::AlwaysNeed) {
-						vote = VoteChoice::Need;
-					}
-					else if (member_filter.decision == LootFilterDecision::AlwaysGreed) {
-						vote = VoteChoice::Greed;
-					}
-					else if (member_filter.decision == LootFilterDecision::Never) {
-						vote = VoteChoice::Pass;
-					}
+					vote = FilterDecisionVoteChoice(member_filter.decision);
 				}
 
 				entry.votes[member->CharacterID()] = vote;
@@ -941,6 +938,7 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 
 		m_loot_entries[entry.entry_id] = entry;
 		queued = true;
+		queued_entry_ids.push_back(entry.entry_id);
 		DebugMessage(
 			autoloot_client,
 			settings,
@@ -956,7 +954,7 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 			)
 		);
 
-		if (!entry.shared && settings.auto_loot_all) {
+		if (!entry.shared && (settings.auto_loot_all || FilterDecisionAutoLootsPersonal(active_personal_decision))) {
 			auto_loot_entries.emplace_back(recipient, entry.entry_id);
 		}
 		else if (entry.shared && entry.auto_roll) {
@@ -982,6 +980,21 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 			corpse->ResetDecayTimer();
 		}
 
+		auto has_new_visible_entry = [this, &queued_entry_ids](Client *client) {
+			if (!client) {
+				return false;
+			}
+
+			for (const auto entry_id : queued_entry_ids) {
+				auto entry_iter = m_loot_entries.find(entry_id);
+				if (entry_iter != m_loot_entries.end() && IsEntryVisibleToClient(entry_iter->second, client)) {
+					return true;
+				}
+			}
+
+			return false;
+		};
+
 		if (shared_loot) {
 			auto clients = GetGroupClients(group);
 			clients.erase(
@@ -994,12 +1007,12 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 			);
 			SendSharedLootUpdate(clients);
 			for (auto client : clients) {
-				MaybeAutoShowLootWindow(client, true);
+				MaybeAutoShowLootWindow(client, has_new_visible_entry(client));
 			}
 		}
 		else {
 			SendNativeUpdate(autoloot_client);
-			MaybeAutoShowLootWindow(autoloot_client, true);
+			MaybeAutoShowLootWindow(autoloot_client, has_new_visible_entry(autoloot_client));
 		}
 
 		if (settings.log_enabled) {
@@ -1241,12 +1254,53 @@ void AutoLootManager::RefreshQueuedRulesForClient(Client *client)
 	}
 }
 
+void AutoLootManager::ApplyQueuedPersonalFiltersForClient(Client *client)
+{
+	if (!AutoLootEnabled()) {
+		return;
+	}
+
+	if (!client) {
+		return;
+	}
+
+	const auto settings = GetCharacterSettings(client->CharacterID(), true);
+	if (!settings.use_advanced_looting || !settings.apply_filters) {
+		return;
+	}
+
+	std::vector<uint32> loot_entries;
+	std::vector<uint32> leave_entries;
+	for (const auto &[entry_id, entry] : m_loot_entries) {
+		if (entry.shared || entry.dynamic_instance || !IsEntryVisibleToClient(entry, client)) {
+			continue;
+		}
+
+		const auto filter = GetFilter(client->CharacterID(), entry.item_id);
+		if (filter.decision == LootFilterDecision::Never) {
+			leave_entries.push_back(entry_id);
+		}
+		else if (FilterDecisionAutoLootsPersonal(filter.decision)) {
+			loot_entries.push_back(entry_id);
+		}
+	}
+
+	for (const auto entry_id : leave_entries) {
+		LeaveEntryForClient(client, entry_id, false);
+	}
+
+	for (const auto entry_id : loot_entries) {
+		LootEntryForClient(client, entry_id);
+	}
+}
+
 void AutoLootManager::SendNativeFilterUpdate(Client *client)
 {
 	if (!AutoLootEnabled()) {
 		return;
 	}
 
+	ApplyQueuedPersonalFiltersForClient(client);
 	RefreshQueuedRulesForClient(client);
 	SendNativeUpdate(client);
 	SendNativeFilters(client);
@@ -1406,7 +1460,17 @@ void AutoLootManager::HandleSharedLootAction(Client *client, uint32 entry_id, co
 				member->Message(Chat::Yellow, fmt::format("{} is asking Need/Greed for {}.", client->GetCleanName(), entry.item_name).c_str());
 			}
 		}
-		SendSharedLootUpdate(eligible_clients);
+		const bool complete = !entry.votes.empty() && std::all_of(
+			entry.votes.begin(),
+			entry.votes.end(),
+			[](const auto &vote) { return vote.second != VoteChoice::Unset; }
+		);
+		if (complete) {
+			ResolveSharedVote(entry_id, false);
+		}
+		else {
+			SendSharedLootUpdate(eligible_clients);
+		}
 		return;
 	}
 
@@ -2164,6 +2228,13 @@ void AutoLootManager::HandleAdvancedLootCommand(Client *client, const Seperator 
 		settings.apply_filters = Strings::ToBool(sep->arg[2]);
 		SaveCharacterSettings(client->CharacterID(), settings);
 		client->Message(Chat::White, fmt::format("Advanced Loot Apply Filters {}.", settings.apply_filters ? "enabled" : "disabled").c_str());
+		if (settings.apply_filters) {
+			SendNativeFilterUpdate(client);
+		}
+		else {
+			RefreshQueuedRulesForClient(client);
+			SendNativeUpdate(client);
+		}
 		RefreshWindowIfRequested(this, client, sep);
 		return;
 	}

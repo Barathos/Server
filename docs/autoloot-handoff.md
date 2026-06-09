@@ -9,6 +9,8 @@ This project now treats loot as a live-style Advanced Loot system, not the old s
 - Shared assignments move an item to the target player's Personal Loot list; the target still loots from there.
 - Need/Greed rolls use a 60 second timeout, with Need beating Greed.
 - Saved filters are fresh live-style values: `unset`, `always_need`, `always_greed`, `never`, plus a separate Auto Roll flag.
+- Saved personal filters apply immediately: Always Need/Greed auto-loot personal rows, and Never leaves matching rows on the corpse.
+- Auto Show is opt-in; the native window stays closed until `#advloot window` or an explicit native show request opens it.
 - Old include/exclude filters are not migrated.
 - Removed player-facing conveniences: Loot Nearby, AutoSell, round-robin/killer/assigned automation modes, `#lootfilter`, `#autosell`, and standalone `#needgreed`.
 
@@ -41,7 +43,7 @@ custom_advloot_filters
 custom_advloot_audit
 ```
 
-The version 19 custom migration drops the old `custom_autoloot_*` tables because this is a testbed and old data is intentionally discarded.
+The version 19 custom migration drops the old `custom_autoloot_*` tables because this is a testbed and old data is intentionally discarded. Version 21 makes Auto Show opt-in and resets existing `custom_advloot_settings.auto_show_loot_window` values to `0`.
 
 ## Files
 
@@ -51,6 +53,7 @@ The version 19 custom migration drops the old `custom_autoloot_*` tables because
 - Native XML: `client_files/native_autoloot/ui/EQUI_NativeAutoLootWnd.xml`
 - Custom DB migration: `common/database/database_update_manifest_custom.h`
 - SQL mirror: `features/all-features/sql/013_live_advanced_loot_schema.sql`
+- Auto Show opt-in mirror: `features/all-features/sql/014_advloot_autoshow_opt_in.sql`
 
 ## Verification Focus
 

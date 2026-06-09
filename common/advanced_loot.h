@@ -45,6 +45,8 @@ namespace EQ::AdvancedLoot
 	LootFilterDecision ParseFilterDecision(const std::string &decision);
 	std::string FilterDecisionKey(LootFilterDecision decision);
 	std::string FilterDecisionLabel(LootFilterDecision decision);
+	bool FilterDecisionAutoLootsPersonal(LootFilterDecision decision);
+	VoteChoice FilterDecisionVoteChoice(LootFilterDecision decision);
 
 	VoteResolution ResolveVotes(
 		const std::vector<uint32> &eligible_character_ids,

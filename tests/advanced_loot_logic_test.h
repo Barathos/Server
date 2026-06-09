@@ -22,6 +22,7 @@ public:
 	{
 		TEST_ADD(AdvancedLootLogicTest::FilterAliasesParseToCanonicalDecisions);
 		TEST_ADD(AdvancedLootLogicTest::FilterKeysAndLabelsRemainStable);
+		TEST_ADD(AdvancedLootLogicTest::FilterDecisionsMapToAutomaticActions);
 		TEST_ADD(AdvancedLootLogicTest::VoteStatesAndLabelsRemainStable);
 		TEST_ADD(AdvancedLootLogicTest::NonTimeoutVotesWaitForEveryEligiblePlayer);
 		TEST_ADD(AdvancedLootLogicTest::TimeoutVotesIgnoreMissingAndUnsetVotes);
@@ -66,6 +67,19 @@ private:
 		TEST_ASSERT(EQ::AdvancedLoot::FilterDecisionLabel(LootFilterDecision::AlwaysGreed) == "AG");
 		TEST_ASSERT(EQ::AdvancedLoot::FilterDecisionLabel(LootFilterDecision::Never) == "NV");
 		TEST_ASSERT(EQ::AdvancedLoot::FilterDecisionLabel(LootFilterDecision::Unset) == "-");
+	}
+
+	void FilterDecisionsMapToAutomaticActions()
+	{
+		TEST_ASSERT(EQ::AdvancedLoot::FilterDecisionAutoLootsPersonal(LootFilterDecision::AlwaysNeed));
+		TEST_ASSERT(EQ::AdvancedLoot::FilterDecisionAutoLootsPersonal(LootFilterDecision::AlwaysGreed));
+		TEST_ASSERT(!EQ::AdvancedLoot::FilterDecisionAutoLootsPersonal(LootFilterDecision::Never));
+		TEST_ASSERT(!EQ::AdvancedLoot::FilterDecisionAutoLootsPersonal(LootFilterDecision::Unset));
+
+		TEST_ASSERT(EQ::AdvancedLoot::FilterDecisionVoteChoice(LootFilterDecision::AlwaysNeed) == VoteChoice::Need);
+		TEST_ASSERT(EQ::AdvancedLoot::FilterDecisionVoteChoice(LootFilterDecision::AlwaysGreed) == VoteChoice::Greed);
+		TEST_ASSERT(EQ::AdvancedLoot::FilterDecisionVoteChoice(LootFilterDecision::Never) == VoteChoice::Pass);
+		TEST_ASSERT(EQ::AdvancedLoot::FilterDecisionVoteChoice(LootFilterDecision::Unset) == VoteChoice::Unset);
 	}
 
 	void VoteStatesAndLabelsRemainStable()

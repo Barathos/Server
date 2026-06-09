@@ -627,7 +627,7 @@ static bool gNativeAutoLootLeader = false;
 static bool gNativeAutoLootMasterCandidate = true;
 static bool gNativeAutoLootAutoSplit = true;
 static bool gNativeAutoLootAutoLootAll = false;
-static bool gNativeAutoLootAutoShow = true;
+static bool gNativeAutoLootAutoShow = false;
 static bool gNativeAutoLootShowNewOnly = false;
 static bool gNativeAutoLootConfirmRemove = true;
 static bool gNativeAutoLootAutoRemoveLore = true;
@@ -9568,7 +9568,7 @@ static void NativeAutoLootResetSessionRequests()
 	gNativeAutoLootMasterCandidate = true;
 	gNativeAutoLootAutoSplit = true;
 	gNativeAutoLootAutoLootAll = false;
-	gNativeAutoLootAutoShow = true;
+	gNativeAutoLootAutoShow = false;
 	gNativeAutoLootShowNewOnly = false;
 	gNativeAutoLootConfirmRemove = true;
 	gNativeAutoLootAutoRemoveLore = true;
@@ -9621,7 +9621,7 @@ static void NativeAutoLootResetClientUiSession(const char* reason)
 	gNativeAutoLootMasterCandidate = true;
 	gNativeAutoLootAutoSplit = true;
 	gNativeAutoLootAutoLootAll = false;
-	gNativeAutoLootAutoShow = true;
+	gNativeAutoLootAutoShow = false;
 	gNativeAutoLootShowNewOnly = false;
 	gNativeAutoLootConfirmRemove = true;
 	gNativeAutoLootAutoRemoveLore = true;
@@ -9704,8 +9704,6 @@ static void NativeAutoLootPulse()
 		++gNativeAutoLootInGamePulses;
 		return;
 	}
-
-	NativeAutoLootEnsureWindow(false);
 
 	NativeAutoLootInstallChatHook();
 

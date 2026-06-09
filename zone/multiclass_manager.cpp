@@ -1649,6 +1649,15 @@ void MulticlassManager::SendNativeSpellLevelForSpell(Client *client, uint16 spel
 	SendNativeSpellLevelPatchRow(client, spell_id, GetClientPresentationClass(client));
 }
 
+void MulticlassManager::SendNativeLoginSnapshot(Client *client)
+{
+	if (!MulticlassEnabled() || !client || !SchemaAvailable()) {
+		return;
+	}
+
+	SendNativeSnapshot(client, "", false, false);
+}
+
 bool MulticlassManager::SendNativeSpellLevelPatchRow(Client *client, uint16 spell_id, uint8 presentation_class)
 {
 	if (!client || !IsPlayerClass(presentation_class) || !IsValidSpell(spell_id)) {

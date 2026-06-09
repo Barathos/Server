@@ -84,6 +84,7 @@ public:
 	void ProcessBardMelody(Client *client);
 	void SendNativeSpellLevelSnapshot(Client *client);
 	void SendNativeSpellLevelForSpell(Client *client, uint16 spell_id);
+	void SendNativeLoginSnapshot(Client *client);
 
 private:
 	void SendHelp(Client *client);

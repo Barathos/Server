@@ -43,7 +43,7 @@ private:
 		bool auto_split_coin = true;
 		bool confirm_remove_filter = true;
 		bool auto_remove_looted_lore = true;
-		bool auto_show_loot_window = true;
+		bool auto_show_loot_window = false;
 		bool show_new_items_only = false;
 		bool auto_loot_all = false;
 		bool master_looter_candidate = true;
@@ -111,6 +111,7 @@ private:
 	bool IsEntryVisibleToClient(const LootEntry &entry, Client *client) const;
 	void PruneLootEntries();
 	void RefreshQueuedRulesForClient(Client *client);
+	void ApplyQueuedPersonalFiltersForClient(Client *client);
 	void SendNativeSnapshot(Client *client);
 	void SendNativeUpdate(Client *client);
 	void SendNativeFilterUpdate(Client *client);

@@ -800,6 +800,10 @@ void Client::CompleteConnect()
 
 	conn_state = ClientConnectFinished;
 
+	if (RuleB(CustomFeatures, MulticlassEnabled)) {
+		multiclass_manager.SendNativeLoginSnapshot(this);
+	}
+
 	if (zone)
 		zone->weatherSend(this);
 

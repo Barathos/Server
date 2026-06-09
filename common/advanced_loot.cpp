@@ -98,6 +98,25 @@ std::string EQ::AdvancedLoot::FilterDecisionLabel(LootFilterDecision decision)
 	}
 }
 
+bool EQ::AdvancedLoot::FilterDecisionAutoLootsPersonal(LootFilterDecision decision)
+{
+	return decision == LootFilterDecision::AlwaysNeed || decision == LootFilterDecision::AlwaysGreed;
+}
+
+EQ::AdvancedLoot::VoteChoice EQ::AdvancedLoot::FilterDecisionVoteChoice(LootFilterDecision decision)
+{
+	switch (decision) {
+	case LootFilterDecision::AlwaysNeed:
+		return VoteChoice::Need;
+	case LootFilterDecision::AlwaysGreed:
+		return VoteChoice::Greed;
+	case LootFilterDecision::Never:
+		return VoteChoice::Pass;
+	default:
+		return VoteChoice::Unset;
+	}
+}
+
 EQ::AdvancedLoot::VoteResolution EQ::AdvancedLoot::ResolveVotes(
 	const std::vector<uint32> &eligible_character_ids,
 	const std::map<uint32, VoteChoice> &votes,
