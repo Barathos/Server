@@ -1466,13 +1466,17 @@ static bool gNativeMulticlassContextMenuHookInstalled = false;
 static bool gNativeMulticlassContextMenuHookEnabled = true;
 static bool gNativeMulticlassSpellLevelsLoading = false;
 static int gNativeMulticlassSpellLevelPatchCount = 0;
+static int gNativeMulticlassSpellLevelReapplyDelay = 0;
+static int gNativeMulticlassSpellLevelReapplyPasses = 0;
 static int gNativeMulticlassShowCasterUiPulses = 0;
 static std::unordered_map<int, int> gNativeMulticlassSpellLevelsById;
 static std::unordered_map<std::string, int> gNativeMulticlassSpellLevelsByName;
 
 static void NativeMulticlassRefreshWindows();
 static void NativeMulticlassNormalizeSelections();
-static bool NativeMulticlassRewriteSpellMenuText(const char* text, std::string& rewritten);
+static void NativeMulticlassScheduleSpellLevelReapply();
+static void NativeMulticlassMaintainSpellLevelPatches();
+static bool NativeMulticlassRewriteSpellMenuText(const char* text, unsigned int menu_id, std::string& rewritten);
 
 static bool NativeMulticlassIsPlayerClass(int class_id)
 {
@@ -1890,22 +1894,16 @@ static NativeMulticlassPetRow* NativeMulticlassFindPet(int pet_id)
 	return nullptr;
 }
 
-static bool NativeMulticlassApplySpellLevelPatch(const std::string& payload)
+static bool NativeMulticlassApplyCachedSpellLevel(int spell_id, int level)
 {
-	const int spell_id = NativeToInt(NativeGetPairValue(payload, "id"));
-	const int level = NativeToInt(NativeGetPairValue(payload, "level"), 255);
-	const int presentation = NativeToInt(NativeGetPairValue(payload, "presentation"));
-
-	if (!pSpellMgr || spell_id <= 0 || spell_id >= TOTAL_SPELL_COUNT || level <= 0 || level > 254 || presentation < 1 || presentation > 16) {
-		NativeAutoLootTrace("multiclass rejected spell level patch: id=%d level=%d presentation=%d", spell_id, level, presentation);
-		return true;
+	if (!pSpellMgr || spell_id <= 0 || spell_id >= TOTAL_SPELL_COUNT || level <= 0 || level > 254) {
+		return false;
 	}
 
 	PSPELLMGR spell_mgr = (PSPELLMGR)pSpellMgr;
 	PSPELL spell = spell_mgr->Spells[spell_id];
 	if (!spell) {
-		NativeAutoLootTrace("multiclass spell level patch missing spell: id=%d", spell_id);
-		return true;
+		return false;
 	}
 
 	auto apply_spell_level = [&](int class_id) {
@@ -1914,19 +1912,118 @@ static bool NativeMulticlassApplySpellLevelPatch(const std::string& payload)
 		}
 	};
 
-	apply_spell_level(presentation);
 	apply_spell_level(gNativeMulticlassState.presentation);
 	apply_spell_level(gNativeMulticlassState.base);
 	apply_spell_level(gNativeMulticlassState.class1);
 	apply_spell_level(gNativeMulticlassState.class2);
 	apply_spell_level(gNativeMulticlassState.class3);
 
-	gNativeMulticlassSpellLevelsById[spell_id] = level;
-
 	if (spell->Name[0]) {
 		gNativeMulticlassSpellLevelsByName[NativeMulticlassNormalizedName(spell->Name)] = level;
 	}
 
+	return true;
+}
+
+static int NativeMulticlassApplyCachedSpellLevels()
+{
+	if (!pSpellMgr || gNativeMulticlassSpellLevelsById.empty()) {
+		return 0;
+	}
+
+	int applied = 0;
+	for (const auto& entry : gNativeMulticlassSpellLevelsById) {
+		if (NativeMulticlassApplyCachedSpellLevel(entry.first, entry.second)) {
+			++applied;
+		}
+	}
+
+	return applied;
+}
+
+static void NativeMulticlassScheduleSpellLevelReapply()
+{
+	if (gNativeMulticlassSpellLevelsById.empty()) {
+		gNativeMulticlassSpellLevelReapplyDelay = 0;
+		gNativeMulticlassSpellLevelReapplyPasses = 0;
+		return;
+	}
+
+	gNativeMulticlassSpellLevelReapplyDelay = 0;
+	gNativeMulticlassSpellLevelReapplyPasses = 24;
+}
+
+static void NativeMulticlassMaintainSpellLevelPatches()
+{
+	if (gNativeMulticlassSpellLevelsLoading || gNativeMulticlassSpellLevelReapplyPasses <= 0) {
+		return;
+	}
+
+	if (gNativeMulticlassSpellLevelReapplyDelay > 0) {
+		--gNativeMulticlassSpellLevelReapplyDelay;
+		return;
+	}
+
+	const int applied = NativeMulticlassApplyCachedSpellLevels();
+	if (
+		applied > 0 &&
+		applied == static_cast<int>(gNativeMulticlassSpellLevelsById.size()) &&
+		gNativeMulticlassSpellLevelReapplyPasses > 6
+	) {
+		gNativeMulticlassSpellLevelReapplyPasses = (std::min)(gNativeMulticlassSpellLevelReapplyPasses, 6);
+	}
+	else {
+		--gNativeMulticlassSpellLevelReapplyPasses;
+	}
+
+	gNativeMulticlassSpellLevelReapplyDelay = 30;
+}
+
+static int NativeMulticlassFindCachedSpellLevelByName(const std::string& spell_name)
+{
+	const auto found_by_name = gNativeMulticlassSpellLevelsByName.find(spell_name);
+	if (found_by_name != gNativeMulticlassSpellLevelsByName.end()) {
+		return found_by_name->second;
+	}
+
+	if (!pSpellMgr || gNativeMulticlassSpellLevelsById.empty()) {
+		return 0;
+	}
+
+	PSPELLMGR spell_mgr = (PSPELLMGR)pSpellMgr;
+	for (const auto& entry : gNativeMulticlassSpellLevelsById) {
+		if (entry.first <= 0 || entry.first >= TOTAL_SPELL_COUNT) {
+			continue;
+		}
+
+		PSPELL spell = spell_mgr->Spells[entry.first];
+		if (!spell || !spell->Name[0]) {
+			continue;
+		}
+
+		const std::string cached_name = NativeMulticlassNormalizedName(spell->Name);
+		gNativeMulticlassSpellLevelsByName[cached_name] = entry.second;
+		if (cached_name == spell_name) {
+			return entry.second;
+		}
+	}
+
+	return 0;
+}
+
+static bool NativeMulticlassApplySpellLevelPatch(const std::string& payload)
+{
+	const int spell_id = NativeToInt(NativeGetPairValue(payload, "id"));
+	const int level = NativeToInt(NativeGetPairValue(payload, "level"), 255);
+	const int presentation = NativeToInt(NativeGetPairValue(payload, "presentation"));
+
+	if (spell_id <= 0 || spell_id >= TOTAL_SPELL_COUNT || level <= 0 || level > 254 || presentation < 1 || presentation > 16) {
+		NativeAutoLootTrace("multiclass rejected spell level patch: id=%d level=%d presentation=%d", spell_id, level, presentation);
+		return true;
+	}
+
+	gNativeMulticlassSpellLevelsById[spell_id] = level;
+	NativeMulticlassApplyCachedSpellLevel(spell_id, level);
 	++gNativeMulticlassSpellLevelPatchCount;
 	return true;
 }
@@ -1965,10 +2062,7 @@ static bool NativeMulticlassRewriteSpellMenuText(const char* text, unsigned int 
 
 	if (!approved_level) {
 		const std::string spell_name = NativeMulticlassNormalizedName(cursor);
-		const auto found_by_name = gNativeMulticlassSpellLevelsByName.find(spell_name);
-		if (found_by_name != gNativeMulticlassSpellLevelsByName.end()) {
-			approved_level = found_by_name->second;
-		}
+		approved_level = NativeMulticlassFindCachedSpellLevelByName(spell_name);
 	}
 
 	if (approved_level <= 0 || approved_level == displayed_level) {
@@ -3271,6 +3365,8 @@ static void NativeMulticlassResetSessionState(bool hide_windows)
 	gNativeMulticlassSpellLevelsByName.clear();
 	gNativeMulticlassSpellLevelPatchCount = 0;
 	gNativeMulticlassSpellLevelsLoading = false;
+	gNativeMulticlassSpellLevelReapplyDelay = 0;
+	gNativeMulticlassSpellLevelReapplyPasses = 0;
 	gNativeMulticlassShowCasterUiPulses = 0;
 }
 
@@ -8509,6 +8605,8 @@ static bool NativeMulticlassParseTransport(const char* message)
 	if (NativeStartsWith(message, "MULTICLASS|spell_levels|begin")) {
 		gNativeMulticlassSpellLevelsLoading = true;
 		gNativeMulticlassSpellLevelPatchCount = 0;
+		gNativeMulticlassSpellLevelReapplyDelay = 0;
+		gNativeMulticlassSpellLevelReapplyPasses = 0;
 		gNativeMulticlassSpellLevelsById.clear();
 		gNativeMulticlassSpellLevelsByName.clear();
 		return true;
@@ -8522,7 +8620,9 @@ static bool NativeMulticlassParseTransport(const char* message)
 		const std::string payload(message + strlen("MULTICLASS|spell_levels|end"));
 		const int expected_count = NativeToInt(NativeGetPairValue(payload, "count"), gNativeMulticlassSpellLevelPatchCount);
 		gNativeMulticlassSpellLevelsLoading = false;
-		NativeAutoLootTrace("Multiclass spellbook levels patched: %d/%d", gNativeMulticlassSpellLevelPatchCount, expected_count);
+		const int applied_count = NativeMulticlassApplyCachedSpellLevels();
+		NativeMulticlassScheduleSpellLevelReapply();
+		NativeAutoLootTrace("Multiclass spellbook levels cached: %d/%d, applied: %d", gNativeMulticlassSpellLevelPatchCount, expected_count, applied_count);
 		return true;
 	}
 
@@ -9772,6 +9872,7 @@ static void NativeAutoLootPulse()
 	}
 
 	NativeMulticlassMaintainPresentationUI();
+	NativeMulticlassMaintainSpellLevelPatches();
 	NativeAutoFollowPulse();
 
 	if (!gNativeAutoLootRequestedInitialStatus) {
@@ -10006,6 +10107,8 @@ static void ShutdownAutoLootNative()
 	gNativeMulticlassSpellLevelsByName.clear();
 	gNativeMulticlassSpellLevelPatchCount = 0;
 	gNativeMulticlassSpellLevelsLoading = false;
+	gNativeMulticlassSpellLevelReapplyDelay = 0;
+	gNativeMulticlassSpellLevelReapplyPasses = 0;
 }
 
 #endif

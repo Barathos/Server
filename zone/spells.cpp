@@ -1262,6 +1262,7 @@ void Mob::InterruptSpell(uint16 message, uint16 color, uint16 spellid)
 	EQApplicationPacket *outapp = nullptr;
 	uint16 message_other;
 	bool bard_song_mode = false; //has the bard song gone to auto repeat mode
+	const bool was_bard_song = bardsong || IsBardSong(spellid) || IsBardSong(casting_spell_id);
 
 	if (IsBot()) {
 		auto bot = CastToBot();
@@ -1306,11 +1307,14 @@ void Mob::InterruptSpell(uint16 message, uint16 color, uint16 spellid)
 	if(!spellid)
 		return;
 
-	if (bardsong || IsBardSong(casting_spell_id)) {
+	if (was_bard_song) {
 		ZeroBardPulseVars();
 	}
 
 	if(bard_song_mode) {
+		if (IsClient()) {
+			SendSpellBarEnable(spellid);
+		}
 		return;
 	}
 
@@ -1318,16 +1322,18 @@ void Mob::InterruptSpell(uint16 message, uint16 color, uint16 spellid)
 		message = IsBardSong(spellid) ? SONG_ENDS_ABRUPTLY : INTERRUPT_SPELL;
 
 	// clients need some packets
-	if (IsClient() && message != SONG_ENDS)
+	if (IsClient())
 	{
-		// the interrupt message
-		outapp = new EQApplicationPacket(OP_InterruptCast, sizeof(InterruptCast_Struct));
-		InterruptCast_Struct* ic = (InterruptCast_Struct*) outapp->pBuffer;
-		ic->messageid = message;
-		ic->spawnid = GetID();
-		outapp->priority = 5;
-		CastToClient()->QueuePacket(outapp);
-		safe_delete(outapp);
+		if (message != SONG_ENDS) {
+			// the interrupt message
+			outapp = new EQApplicationPacket(OP_InterruptCast, sizeof(InterruptCast_Struct));
+			InterruptCast_Struct* ic = (InterruptCast_Struct*) outapp->pBuffer;
+			ic->messageid = message;
+			ic->spawnid = GetID();
+			outapp->priority = 5;
+			CastToClient()->QueuePacket(outapp);
+			safe_delete(outapp);
+		}
 
 		SendSpellBarEnable(spellid);
 	}
@@ -1392,6 +1398,8 @@ void Mob::StopCasting()
 		mc->keepcasting = 0;
 		mc->slot = casting_slot;
 		c->FastQueuePacket(&outapp);
+
+		SendSpellBarEnable(casting_spell_id);
 	}
 	ZeroCastingVars();
 }
@@ -1492,7 +1500,7 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, CastingSlot slo
 
 	// here we do different things if this is a bard casting a bard song from
 	// a spell bar slot
-	if(IsEffectiveBard(this)) // bard's can move when casting any spell...
+	if(IsEffectiveBard(this) || IsBardSong(spell_id)) // bard's can move when casting any spell...
 	{
 		if (IsBardSong(spell_id) && slot < CastingSlot::MaxGems) {
 			if (spells[spell_id].buff_duration == 0xFFFF) {
