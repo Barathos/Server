@@ -1,7 +1,7 @@
 version: 1
 id: all-features
 label: All Features
-patchVersion: 'Build 65'
+patchVersion: 'Build 66'
 autoIncrementPatchVersion: true
 client: rof
 files:
