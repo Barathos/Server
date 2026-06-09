@@ -1521,6 +1521,7 @@ INITIALIZE_EQGAME_OFFSET(CObfuscator__doit);
 
 INITIALIZE_EQGAME_OFFSET(CSidlManager__FindScreenPieceTemplate1);
 INITIALIZE_EQGAME_OFFSET(CSidlManager__CreateLabel);
+INITIALIZE_EQGAME_OFFSET(CSidlManager__CreateXWndFromTemplate);
 INITIALIZE_EQGAME_OFFSET(CSidlManager__FindAnimation1);
 
 INITIALIZE_EQGAME_OFFSET(CSidlScreenWnd__CalculateHSBRange);

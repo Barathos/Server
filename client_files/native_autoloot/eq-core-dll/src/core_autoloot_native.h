@@ -247,22 +247,44 @@ static COLORREF NativeAutoLootSquareColor(bool active, bool enabled, COLORREF ac
 	return enabled ? 0xFF8EA8C0 : 0xFF606060;
 }
 
+struct NativeAutoLootInlineCellSpec
+{
+	CListWnd* list;
+	int row;
+	int column;
+	bool active;
+	bool enabled;
+	bool negative;
+};
+
+static std::vector<NativeAutoLootInlineCellSpec> gNativeAutoLootInlineCellSpecs;
+
+struct NativeAutoLootInlineControlState
+{
+	CButtonWnd* button;
+	CListWnd* list;
+	int row;
+	int column;
+};
+
 static void NativeAutoLootSetSquareCell(CListWnd* list, int row, int column, bool active, bool enabled, bool negative)
 {
 	if (!list) {
 		return;
 	}
 
-	CTextureAnimation* animation = enabled ? NativeAutoLootActionCellAnimation(active, negative) : nullptr;
-	CXStr text(animation ? " " : NativeAutoLootSquareText(active, enabled));
+	CXStr text(NativeAutoLootSquareText(active, enabled));
 
-	__try {
+	if (!enabled) {
 		list->SetItemText(row, column, &text);
-		list->SetItemIcon(row, column, animation);
+		return;
 	}
-	__except (EXCEPTION_EXECUTE_HANDLER) {
-		NativeAutoLootTrace("Advanced Loot checkbox cell paint faulted");
-	}
+
+	NativeAutoLootInlineCellSpec spec = { list, row, column, active, enabled, negative };
+	gNativeAutoLootInlineCellSpecs.push_back(spec);
+
+	CXStr spacer(" ");
+	list->SetItemText(row, column, &spacer);
 }
 
 static bool NativeAutoLootIsNeedVote(const NativeAutoLootRow& row)
@@ -379,6 +401,8 @@ public:
 	{
 		CloseOnESC = 1;
 		SetWndNotification(NativeAutoLootWnd);
+		int (NativeAutoLootWnd::*pfOnProcessFrame)() = &NativeAutoLootWnd::OnProcessFrame;
+		SetvfTable(49, *(DWORD*)&pfOnProcessFrame);
 
 		PersonalLabel = GetChildItem("AALW_PersonalLabel");
 		SetAllLabel = GetChildItem("AALW_SetAllLabel");
@@ -416,6 +440,12 @@ public:
 		Layout();
 		SetStatus("Waiting for Advanced Loot snapshot...");
 		RefreshRows();
+	}
+
+	int OnProcessFrame()
+	{
+		SyncInlineCellControls();
+		return 1;
 	}
 
 	int WndNotification(CXWnd* pWnd, unsigned int Message, void* unknown)
@@ -456,6 +486,10 @@ public:
 		}
 
 		if (Message == XWM_LCLICK) {
+			if (HandleInlineCellClick(pWnd)) {
+				return 1;
+			}
+
 			if (pWnd == (CXWnd*)PersonalList || pWnd == (CXWnd*)SharedList) {
 				CListWnd* list = (CListWnd*)pWnd;
 				ActiveList = list;
@@ -657,9 +691,14 @@ private:
 	NativeAutoLootRow* GetSelectedRowFromList(CListWnd* list);
 	void RefreshList(CListWnd* list, bool shared);
 	bool HandleListColumnClick(CListWnd* list, bool shared, void* hit_test_point);
+	bool HandleListColumnAction(CListWnd* list, bool shared, int selected, int column);
+	bool HandleInlineCellClick(CXWnd* wnd);
 	bool SendListAction(const NativeAutoLootRow& row, const char* action, const char* status);
 	bool SendCorpseAction(const NativeAutoLootRow& row, const char* action, const char* status);
 	bool ToggleAutoRollFilter(const NativeAutoLootRow& row);
+	CButtonWnd* CreateInlineCellControl();
+	void EnsureInlineCellControlCount(size_t count);
+	void SyncInlineCellControls();
 	void SetLabel(CXWnd* label, const char* text);
 
 	CXWnd* PersonalLabel = nullptr;
@@ -693,6 +732,8 @@ private:
 	CButtonWnd* LeaveCorpseButton = nullptr;
 	CButtonWnd* ApplyFiltersCheck = nullptr;
 	CButtonWnd* GroupedByNpcCheck = nullptr;
+	std::vector<CButtonWnd*> InlineCellControls;
+	std::vector<NativeAutoLootInlineControlState> InlineControlStates;
 	int LastLayoutWidth = 0;
 	int LastLayoutHeight = 0;
 };
@@ -7239,6 +7280,148 @@ bool NativeAutoLootWnd::ToggleAutoRollFilter(const NativeAutoLootRow& row)
 	return true;
 }
 
+CButtonWnd* NativeAutoLootWnd::CreateInlineCellControl()
+{
+	if (!pSidlMgr || !ApplyFiltersCheck) {
+		return nullptr;
+	}
+
+	PCSIDLWND template_wnd = (PCSIDLWND)ApplyFiltersCheck;
+	if (!template_wnd || !template_wnd->SidlPiece) {
+		return nullptr;
+	}
+
+	CXWnd* wnd = nullptr;
+	__try {
+		wnd = pSidlMgr->CreateXWndFromTemplate((CXWnd*)this, (CControlTemplate*)template_wnd->SidlPiece);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+		NativeAutoLootTrace("Advanced Loot inline checkbox clone faulted");
+		return nullptr;
+	}
+
+	CButtonWnd* button = (CButtonWnd*)wnd;
+	if (!button) {
+		return nullptr;
+	}
+
+	CXStr blank("");
+	((CXWnd*)button)->SetWindowTextA(blank);
+	button->Checked = 0;
+	button->SetCheck(false);
+	((PCXWND)button)->Enabled = 1;
+	((PCXWND)button)->Clickable = 1;
+	((CXWnd*)button)->Show(0, 1);
+	return button;
+}
+
+void NativeAutoLootWnd::EnsureInlineCellControlCount(size_t count)
+{
+	while (InlineCellControls.size() < count) {
+		CButtonWnd* button = CreateInlineCellControl();
+		if (!button) {
+			return;
+		}
+
+		InlineCellControls.push_back(button);
+	}
+}
+
+void NativeAutoLootWnd::SyncInlineCellControls()
+{
+	EnsureInlineCellControlCount(gNativeAutoLootInlineCellSpecs.size());
+	InlineControlStates.clear();
+
+	CXRect parent_rect = ((CXWnd*)this)->GetScreenRect();
+	for (CButtonWnd* button : InlineCellControls) {
+		if (button) {
+			((CXWnd*)button)->Show(0, 1);
+		}
+	}
+
+	for (size_t i = 0; i < gNativeAutoLootInlineCellSpecs.size() && i < InlineCellControls.size(); ++i) {
+		const NativeAutoLootInlineCellSpec& spec = gNativeAutoLootInlineCellSpecs[i];
+		CButtonWnd* button = InlineCellControls[i];
+		if (!button || !spec.enabled || !spec.list) {
+			continue;
+		}
+
+		__try {
+			CXRect cell_rect = spec.list->GetItemRect(spec.row, spec.column);
+			CXRect list_rect = ((CXWnd*)spec.list)->GetScreenRect();
+			CXRect list_clip = ((CXWnd*)spec.list)->GetScreenClipRect();
+
+			int left = (int)cell_rect.A;
+			int top = (int)cell_rect.B;
+			int right = (int)cell_rect.C;
+			int bottom = (int)cell_rect.D;
+
+			if (left < (int)list_rect.A - 4 || top < (int)list_rect.B - 4) {
+				left += (int)list_rect.A;
+				right += (int)list_rect.A;
+				top += (int)list_rect.B;
+				bottom += (int)list_rect.B;
+			}
+
+			if (right <= left || bottom <= top ||
+				right <= (int)list_clip.A || left >= (int)list_clip.C ||
+				bottom <= (int)list_clip.B || top >= (int)list_clip.D) {
+				((CXWnd*)button)->Show(0, 1);
+				continue;
+			}
+
+			const int control_size = 16;
+			int horizontal_inset = (right - left - control_size) / 2;
+			int vertical_inset = (bottom - top - control_size) / 2;
+			if (horizontal_inset < 0) {
+				horizontal_inset = 0;
+			}
+			if (vertical_inset < 0) {
+				vertical_inset = 0;
+			}
+			int target_left = left + horizontal_inset;
+			int target_top = top + vertical_inset;
+			CXRect target(
+				target_left - (int)parent_rect.A,
+				target_top - (int)parent_rect.B,
+				target_left - (int)parent_rect.A + control_size,
+				target_top - (int)parent_rect.B + control_size
+			);
+
+			((CXWnd*)button)->Move(target);
+			button->Checked = spec.active ? 1 : 0;
+			button->SetCheck(spec.active);
+			((CXWnd*)button)->Show(1, 1);
+
+			NativeAutoLootInlineControlState state = { button, spec.list, spec.row, spec.column };
+			InlineControlStates.push_back(state);
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			NativeAutoLootTrace("Advanced Loot inline checkbox layout faulted");
+			((CXWnd*)button)->Show(0, 1);
+		}
+	}
+}
+
+bool NativeAutoLootWnd::HandleInlineCellClick(CXWnd* wnd)
+{
+	if (!wnd) {
+		return false;
+	}
+
+	for (const NativeAutoLootInlineControlState& state : InlineControlStates) {
+		if ((CXWnd*)state.button != wnd || !state.list) {
+			continue;
+		}
+
+		ActiveList = state.list;
+		state.list->SetCurSel(state.row);
+		return HandleListColumnAction(state.list, state.list == SharedList, state.row, state.column);
+	}
+
+	return false;
+}
+
 bool NativeAutoLootWnd::HandleListColumnClick(CListWnd* list, bool shared, void* hit_test_point)
 {
 	if (!list) {
@@ -7252,6 +7435,15 @@ bool NativeAutoLootWnd::HandleListColumnClick(CListWnd* list, bool shared, void*
 	}
 
 	if (selected < 0 || column < 0) {
+		return false;
+	}
+
+	return HandleListColumnAction(list, shared, selected, column);
+}
+
+bool NativeAutoLootWnd::HandleListColumnAction(CListWnd* list, bool shared, int selected, int column)
+{
+	if (!list || selected < 0 || column < 0) {
 		return false;
 	}
 
@@ -7520,6 +7712,7 @@ void NativeAutoLootWnd::RefreshList(CListWnd* list, bool shared)
 
 void NativeAutoLootWnd::RefreshRows()
 {
+	gNativeAutoLootInlineCellSpecs.clear();
 	RefreshList(PersonalList, false);
 	RefreshList(SharedList, true);
 

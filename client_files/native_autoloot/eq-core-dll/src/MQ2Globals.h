@@ -1024,6 +1024,7 @@ EQLIB_VAR DWORD CObfuscator__doit;
 
 EQLIB_VAR DWORD CSidlManager__FindScreenPieceTemplate1;
 EQLIB_VAR DWORD CSidlManager__CreateLabel;
+EQLIB_VAR DWORD CSidlManager__CreateXWndFromTemplate;
 EQLIB_VAR DWORD CSidlManager__FindAnimation1;
 
 EQLIB_VAR DWORD CSidlScreenWnd__CalculateHSBRange;

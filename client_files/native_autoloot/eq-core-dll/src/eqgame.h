@@ -463,6 +463,7 @@
 // CSidlManager 
 #define CSidlManager__FindScreenPieceTemplate1_x                   0x870120
 #define CSidlManager__CreateLabel_x                                0x7556F0
+#define CSidlManager__CreateXWndFromTemplate_x                     0x86E5E0
 #define CSidlManager__FindAnimation1_x                             0x86E010
 
 // CSidlScreenWnd 
