@@ -127,20 +127,85 @@ the RAID id when `raid_party` is set), votes map, free_grab, state strings
 - Loot failures send red chat ("inventory is full" / lore / instance /
   partial-stack remaining).
 
+## 2026-06-10 Tester Report — Root Causes (all traced, fixes built)
+
+Three reports about the shared loot section; investigated with the code +
+`native_autoloot.log` evidence. Fixes compiled clean (zone + DLL) and the
+DLL/XML were copied to both local clients. **Server side needs a deploy +
+restart and the patcher needs a publish (Build 80) — both pending user
+go-ahead.**
+
+1. **AG/AN filters never fired without the master's AR; entries never timed
+   out.** Root cause: `QueueCorpseEntries` seeds member votes from saved
+   filters but only ever called `ResolveSharedVote` when the MASTER's
+   `auto_ask_roll` was set. Without it the entry stayed `waiting` with
+   `vote_started_at = 0`, and `Process()` only times out entries with a
+   started vote — so fully-filtered items sat until corpse rot, and any
+   later single manual vote completed the (invisible) seeded set instantly.
+   FIX (zone/autoloot_manager.cpp): after seeding, if every eligible
+   member's vote is non-Unset AND at least one is Need/Greed, set state
+   `ask` + `vote_started_at` and resolve at queue time. Partial filter
+   coverage still waits for the master (Live-like); all-Pass (everyone NV)
+   stays `waiting` so the master can still Give/Free Grab.
+
+2. **"Set all" appearing to apply the wrong action — NOT a mapping bug.**
+   Verified three ways: XML choice order == client mapping == server
+   actions; the `DIAG set-all` log shows a clean 0,1,2,3,4 walk reading
+   correctly and `choice=0` sending `action N need` to every row; personal
+   `choice=3` correctly sent `alwaysgreed`. The scrambled RESULTS were
+   emergent: the other two boxed chars' stale AG/AN filters had pre-voted
+   invisibly (bug 1), so the first manual action resolved every roll using
+   those hidden votes, and the "won with Need/Greed" message reflects the
+   WINNER's pool, not the clicked action. Fixing 1 + 3 removes the
+   confusion (rolls now resolve at kill time, and filters are manageable
+   again so stale ones can be cleared).
+
+3. **Filter list unusable past 12 entries ("last 3 rows have no buttons or
+   pictures", "can no longer add").** Root cause: the Edit Filters window
+   has `kAALRulePoolRows = 12` pooled XML control rows that were mapped to
+   ABSOLUTE list rows 0–11 — rows 13+ never got checkboxes/icons/remove
+   buttons, and scrolling didn't help. There is NO server or DB cap
+   (composite PK table, unbounded `filter set`), and the per-line
+   `ADVLOOT|filter|` sync has no truncation — adds always worked; they just
+   rendered bare (the list sorts by decision then item_id, so new filters
+   often landed in the broken zone → "can't add" perception). FIX (DLL):
+   `NativeAutoLootRulesWnd::Layout` now assigns the 12 pool rows to VISIBLE
+   list rows (scroll-aware cursor, same idea as `SyncInlinePool`) with a
+   `RulePoolListRow[]` click-routing map used by `HandleRuleCell`;
+   `RefreshRows` no longer caps per-row state at 12. Residual: a window
+   stretched tall enough to show >12 rows at once will leave controls off
+   the rows beyond the 12th visible; adding pool rows means new
+   `NAL_BDT_ItemF_R*` templates + per-row `NAL_DragItem_F*` animation
+   copies (~2.8k lines each in EQUI_Animations.xml) — punt until someone
+   actually hits it.
+
+   Also noted for later: shared-section "Leave All" is master-gated per row
+   (`leave` action) — non-masters get a red error per row, which reads like
+   the button "did something weird". Consider mapping non-master Leave All
+   to a Pass vote or disabling the button for non-masters.
+
 ## Open Items
 
-1. **Bottom-row dead clicks** (tester report, Build 79 shipped mitigations,
+1. **Deploy the 2026-06-10 fixes**: server apply + restart (zone binary)
+   and patcher publish Build 80 (dinput8.dll) — needs user authorization.
+   In-game two-box verify: (a) item on both chars' AG/AN lists rolls
+   instantly at kill with no AR set; (b) Edit Filters window with 15+
+   filters shows working buttons on every visible row while scrolling.
+2. **Bottom-row dead clicks** (tester report, Build 79 shipped mitigations,
    root cause UNVERIFIED): FitListColumns now only reapplies on width change
    (scrollbar-flicker oscillation theory) + identity-fallback click routing
    (`PoolListRow` maps) + logging — a recurrence writes
    `DIAG pool fallback ...` lines to native_autoloot.log naming what the
-   click hit. Check the log before theorizing.
-2. **Raid mode needs an in-game test** (two-box `/raidinvite`).
-3. **Branch not pushed** to the `barathos` remote.
-4. Client status line shows raids as "grouped" (cosmetic).
-5. Diagnostics still in the DLL (log-only: pulse counters, notify budget,
+   click hit. Check the log before theorizing. NOTE: pool exhaustion is a
+   suspect — the personal list has only `kAALPoolPersonalRows = 8` pooled
+   rows (shared has 14); a tall-resized window showing more rows than the
+   pool leaves bare/dead rows, same mechanism as the filters window bug.
+3. **Raid mode needs an in-game test** (two-box `/raidinvite`).
+4. **Branch not pushed** to the `barathos` remote.
+5. Client status line shows raids as "grouped" (cosmetic).
+6. Diagnostics still in the DLL (log-only: pulse counters, notify budget,
    set-all traces) — useful for tester reports; strip someday.
-6. Live-parity stretch ideas: taller header band typography, AR column icon
+7. Live-parity stretch ideas: taller header band typography, AR column icon
    header (Header_AutoRoll), engine context menus (offsets unverified).
 
 ## Working Discipline (this is what made the project move)

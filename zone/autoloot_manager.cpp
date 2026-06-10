@@ -1051,6 +1051,30 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 
 				entry.votes[member->CharacterID()] = vote;
 			}
+
+			// Saved AN/AG filters pre-vote for their owners. When every
+			// eligible member already has a saved decision and at least one
+			// wants the item, the roll has nothing to wait on - start it now
+			// rather than requiring the master looter's Auto Roll flag.
+			if (!entry.auto_roll && !entry.votes.empty()) {
+				bool all_voted = true;
+				bool any_roll = false;
+				for (const auto &[vote_character_id, vote] : entry.votes) {
+					if (vote == VoteChoice::Unset) {
+						all_voted = false;
+						break;
+					}
+
+					if (vote != VoteChoice::Pass) {
+						any_roll = true;
+					}
+				}
+
+				if (all_voted && any_roll) {
+					entry.state = "ask";
+					entry.vote_started_at = std::time(nullptr);
+				}
+			}
 		}
 
 		m_loot_entries[entry.entry_id] = entry;
@@ -1074,7 +1098,7 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 		if (!entry.shared && (settings.auto_loot_all || FilterDecisionAutoLootsPersonal(active_personal_decision))) {
 			auto_loot_entries.emplace_back(recipient, entry.entry_id);
 		}
-		else if (entry.shared && entry.auto_roll) {
+		else if (entry.shared && entry.state == "ask") {
 			auto_roll_entries.push_back(entry.entry_id);
 		}
 	}

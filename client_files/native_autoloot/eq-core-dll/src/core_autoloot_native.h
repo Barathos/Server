@@ -1010,6 +1010,8 @@ public:
 			if (IconPool[pool_row]) {
 				((CXWnd*)IconPool[pool_row])->Show(0, 1);
 			}
+
+			RulePoolListRow[pool_row] = -1;
 		}
 
 		NativeAutoLootSetColumnJustification(RuleList, 2, 6, 1);
@@ -1134,7 +1136,7 @@ private:
 	bool RemoveShown[kAALRulePoolRows] = {};
 	bool IconShown[kAALRulePoolRows] = {};
 	int IconCell[kAALRulePoolRows] = {};
-	bool CellActive[kAALRulePoolRows][4] = {};
+	int RulePoolListRow[kAALRulePoolRows] = {};
 	std::vector<int> RowIconIds;
 	std::vector<CButtonWnd*> RulesRefresh;
 	int RowCount = 0;
@@ -7804,12 +7806,38 @@ void NativeAutoLootRulesWnd::Layout()
 	bool check_used[kAALRulePoolRows][4] = {};
 	bool remove_used[kAALRulePoolRows] = {};
 	bool icon_used[kAALRulePoolRows] = {};
+	for (int pool_row = 0; pool_row < kAALRulePoolRows; ++pool_row) {
+		RulePoolListRow[pool_row] = -1;
+	}
 	RulesRefresh.clear();
 
+	// Pool rows are assigned to whichever list rows are currently visible
+	// (scroll-aware, like the main window's SyncInlinePool); a row's
+	// visibility is probed with its AN cell, and rows outside the clip
+	// region are skipped without consuming a pool slot.
 	const int columns_for_slot[4] = { 2, 3, 4, 5 };
-	for (int pool_row = 0; pool_row < kAALRulePoolRows && pool_row < RowCount; ++pool_row) {
+	const int rule_rows = (int)gNativeAutoLootRuleRows.size();
+	int pool_cursor = 0;
+	for (int row = 0; row < RowCount && row < rule_rows; ++row) {
+		if (pool_cursor >= kAALRulePoolRows) {
+			break;
+		}
+
 		CXRect target;
 		CXRect clip;
+		if (!NativeAutoLootCellControlRect(RuleList, row, columns_for_slot[0], 24, false, &target, &clip)) {
+			continue;
+		}
+
+		const int pool_row = pool_cursor++;
+		RulePoolListRow[pool_row] = row;
+		const NativeAutoLootRuleRow& rule = gNativeAutoLootRuleRows[row];
+		const bool cell_active[4] = {
+			rule.rule == "always_need",
+			rule.rule == "always_greed",
+			rule.rule == "never",
+			rule.auto_roll
+		};
 
 		for (int slot = 0; slot < 4; ++slot) {
 			CButtonWnd* button = CheckPool[pool_row][slot];
@@ -7817,7 +7845,7 @@ void NativeAutoLootRulesWnd::Layout()
 				continue;
 			}
 
-			if (!NativeAutoLootCellControlRect(RuleList, pool_row, columns_for_slot[slot], 24, false, &target, &clip)) {
+			if (!NativeAutoLootCellControlRect(RuleList, row, columns_for_slot[slot], 24, false, &target, &clip)) {
 				continue;
 			}
 
@@ -7829,7 +7857,7 @@ void NativeAutoLootRulesWnd::Layout()
 			raw->Location.top = new_top;
 			raw->Location.right = new_left + 24;
 			raw->Location.bottom = new_top + 24;
-			button->Checked = CellActive[pool_row][slot] ? 1 : 0;
+			button->Checked = cell_active[slot] ? 1 : 0;
 			if (moved) {
 				RulesRefresh.push_back(button);
 			}
@@ -7844,7 +7872,7 @@ void NativeAutoLootRulesWnd::Layout()
 		}
 
 		CButtonWnd* remove_button = RemovePool[pool_row];
-		if (remove_button && NativeAutoLootCellControlRect(RuleList, pool_row, 6, 26, false, &target, &clip)) {
+		if (remove_button && NativeAutoLootCellControlRect(RuleList, row, 6, 26, false, &target, &clip)) {
 			PCSIDLWND raw = (PCSIDLWND)remove_button;
 			const int new_left = (int)target.A - window_left + PoolCorrectionX;
 			const int new_top = (int)target.B - window_top + PoolCorrectionY;
@@ -7861,8 +7889,8 @@ void NativeAutoLootRulesWnd::Layout()
 		}
 
 		CButtonWnd* icon_button = IconPool[pool_row];
-		if (icon_button && pool_row < (int)RowIconIds.size() &&
-			NativeAutoLootCellControlRect(RuleList, pool_row, 0, 26, true, &target, &clip)) {
+		if (icon_button && row < (int)RowIconIds.size() &&
+			NativeAutoLootCellControlRect(RuleList, row, 0, 26, true, &target, &clip)) {
 			PCSIDLWND raw = (PCSIDLWND)icon_button;
 			const int new_left = (int)target.A - window_left + PoolCorrectionX;
 			const int new_top = (int)target.B - window_top + PoolCorrectionY;
@@ -7876,7 +7904,7 @@ void NativeAutoLootRulesWnd::Layout()
 			}
 
 			if (!gNativeAutoLootIconCellFaulted) {
-				const int cell = NativeAutoLootIconCell(RowIconIds[pool_row]);
+				const int cell = NativeAutoLootIconCell(RowIconIds[row]);
 				if (IconCell[pool_row] != cell) {
 					DWORD* braw = (DWORD*)icon_button;
 					CTextureAnimation* decal = (CTextureAnimation*)braw[kAALButtonNormalDecalOffset / 4];
@@ -7931,11 +7959,18 @@ void NativeAutoLootRulesWnd::Layout()
 
 void NativeAutoLootRulesWnd::HandleRuleCell(int pool_row, int slot)
 {
-	if (!RuleList) {
+	if (!RuleList || pool_row < 0 || pool_row >= kAALRulePoolRows) {
 		return;
 	}
 
-	const int item_id = (int)RuleList->GetItemData(pool_row);
+	// Pool controls float over visible rows; resolve the clicked pool row
+	// to the list row it is currently parked on.
+	const int list_row = RulePoolListRow[pool_row];
+	if (list_row < 0) {
+		return;
+	}
+
+	const int item_id = (int)RuleList->GetItemData(list_row);
 	if (item_id <= 0) {
 		return;
 	}
@@ -8030,14 +8065,8 @@ void NativeAutoLootRulesWnd::RefreshRows()
 			RuleList->SetItemText(row, column, &spacer);
 		}
 
-		if (RowCount < kAALRulePoolRows) {
-			CellActive[RowCount][0] = entry.rule == "always_need";
-			CellActive[RowCount][1] = entry.rule == "always_greed";
-			CellActive[RowCount][2] = entry.rule == "never";
-			CellActive[RowCount][3] = entry.auto_roll;
-			RowIconIds.push_back(entry.icon_id);
-			++RowCount;
-		}
+		RowIconIds.push_back(entry.icon_id);
+		++RowCount;
 	}
 }
 
