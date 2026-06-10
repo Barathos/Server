@@ -1406,6 +1406,15 @@ public:
 		gNativeAutoLootMenuShared = shared;
 		gNativeAutoLootMenuEntryId = entry_id;
 
+		__try {
+			if (((DWORD*)ActionList)[0x21C / 4] != 24) {
+				((DWORD*)ActionList)[0x21C / 4] = 24;
+			}
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			NativeAutoLootTrace("menu row height apply faulted");
+		}
+
 		ActionList->DeleteAll();
 		AddEntry("Inspect Item", kAALMenuInspect);
 		if (shared) {
@@ -1422,14 +1431,8 @@ public:
 		AddEntry("Select Corpse", kAALMenuSelectCorpse);
 
 		PCSIDLWND raw = (PCSIDLWND)this;
-		int width = raw->Location.right - raw->Location.left;
-		int height = raw->Location.bottom - raw->Location.top;
-		if (width <= 0) {
-			width = 220;
-		}
-		if (height <= 0) {
-			height = 176;
-		}
+		const int width = 220;
+		const int height = 156;
 		raw->Location.left = anchor_x;
 		raw->Location.top = anchor_y;
 		raw->Location.right = anchor_x + width;
