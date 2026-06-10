@@ -3091,9 +3091,10 @@
 	</Screen>
 	<Label item="AALR_SummaryLabel">
 		<ScreenID>AALR_SummaryLabel</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>8</X><Y>20</Y></Location>
-		<Size><CX>260</CX><CY>18</CY></Size>
+		<Size><CX>540</CX><CY>24</CY></Size>
 		<Text>Filters AN 0 / AG 0 / NV 0 / Auto Roll 0</Text>
 		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
 		<NoWrap>true</NoWrap>
@@ -3101,70 +3102,11 @@
 
 	<Button item="AALR_RefreshButton">
 		<ScreenID>AALR_RefreshButton</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
-		<Location><X>8</X><Y>44</Y></Location>
-		<Size><CX>70</CX><CY>22</CY></Size>
+		<Location><X>12</X><Y>132</Y></Location>
+		<Size><CX>96</CX><CY>26</CY></Size>
 		<Text>Refresh</Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
-		<Style_Transparent>false</Style_Transparent>
-		<Style_Checkbox>false</Style_Checkbox>
-		<Template>BDT_Normal</Template>
-	</Button>
-
-	<Button item="AALR_KeepButton">
-		<ScreenID>AALR_KeepButton</ScreenID>
-		<RelativePosition>true</RelativePosition>
-		<Location><X>86</X><Y>44</Y></Location>
-		<Size><CX>58</CX><CY>22</CY></Size>
-		<Text>AN</Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
-		<Style_Transparent>false</Style_Transparent>
-		<Style_Checkbox>false</Style_Checkbox>
-		<Template>BDT_Normal</Template>
-	</Button>
-
-	<Button item="AALR_IgnoreButton">
-		<ScreenID>AALR_IgnoreButton</ScreenID>
-		<RelativePosition>true</RelativePosition>
-		<Location><X>214</X><Y>44</Y></Location>
-		<Size><CX>66</CX><CY>22</CY></Size>
-		<Text>NV</Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
-		<Style_Transparent>false</Style_Transparent>
-		<Style_Checkbox>false</Style_Checkbox>
-		<Template>BDT_Normal</Template>
-	</Button>
-
-	<Button item="AALR_GreedButton">
-		<ScreenID>AALR_GreedButton</ScreenID>
-		<RelativePosition>true</RelativePosition>
-		<Location><X>150</X><Y>44</Y></Location>
-		<Size><CX>58</CX><CY>22</CY></Size>
-		<Text>AG</Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
-		<Style_Transparent>false</Style_Transparent>
-		<Style_Checkbox>false</Style_Checkbox>
-		<Template>BDT_Normal</Template>
-	</Button>
-
-	<Button item="AALR_UnsetButton">
-		<ScreenID>AALR_UnsetButton</ScreenID>
-		<RelativePosition>true</RelativePosition>
-		<Location><X>286</X><Y>44</Y></Location>
-		<Size><CX>66</CX><CY>22</CY></Size>
-		<Text>Unset</Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
-		<Style_Transparent>false</Style_Transparent>
-		<Style_Checkbox>false</Style_Checkbox>
-		<Template>BDT_Normal</Template>
-	</Button>
-
-	<Button item="AALR_AutoRollButton">
-		<ScreenID>AALR_AutoRollButton</ScreenID>
-		<RelativePosition>true</RelativePosition>
-		<Location><X>358</X><Y>44</Y></Location>
-		<Size><CX>82</CX><CY>22</CY></Size>
-		<Text>Auto Roll</Text>
 		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
 		<Style_Transparent>false</Style_Transparent>
 		<Style_Checkbox>false</Style_Checkbox>
@@ -3173,31 +3115,36 @@
 
 	<Listbox item="AALR_RuleList">
 		<ScreenID>AALR_RuleList</ScreenID>
+		<Font>5</Font>
 		<DrawTemplate>WDT_Inner</DrawTemplate>
 		<RelativePosition>true</RelativePosition>
 		<AutoStretch>true</AutoStretch>
 		<LeftAnchorOffset>8</LeftAnchorOffset>
-		<TopAnchorOffset>74</TopAnchorOffset>
+		<TopAnchorOffset>168</TopAnchorOffset>
 		<RightAnchorOffset>16</RightAnchorOffset>
 		<BottomAnchorOffset>50</BottomAnchorOffset>
 		<TopAnchorToTop>true</TopAnchorToTop>
 		<BottomAnchorToTop>false</BottomAnchorToTop>
 		<LeftAnchorToLeft>true</LeftAnchorToLeft>
 		<RightAnchorToLeft>false</RightAnchorToLeft>
-		<Location><X>8</X><Y>74</Y></Location>
+		<Location><X>8</X><Y>168</Y></Location>
 		<Size><CX>496</CX><CY>246</CY></Size>
 		<Style_Border>true</Style_Border>
 		<Style_VScroll>true</Style_VScroll>
 		<Style_HScroll>false</Style_HScroll>
 		<Style_Transparent>false</Style_Transparent>
-		<Columns><Width>76</Width><Heading>Rule</Heading></Columns>
-		<Columns><Width>292</Width><Heading>Item Name</Heading></Columns>
-		<Columns><Width>76</Width><Heading>Item ID</Heading></Columns>
-		<Columns><Width>52</Width><Heading>Roll</Heading></Columns>
+			<Columns><Width>44</Width><Heading></Heading></Columns>
+		<Columns><Width>280</Width><Heading>Item Name</Heading></Columns>
+		<Columns><Width>46</Width><Heading>AN</Heading></Columns>
+		<Columns><Width>46</Width><Heading>AG</Heading></Columns>
+		<Columns><Width>46</Width><Heading>NV</Heading></Columns>
+		<Columns><Width>46</Width><Heading>AR</Heading></Columns>
+		<Columns><Width>56</Width><Heading>Del</Heading></Columns>
 	</Listbox>
 
 	<Label item="AALR_StatusLabel">
 		<ScreenID>AALR_StatusLabel</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<AutoStretch>true</AutoStretch>
 		<LeftAnchorOffset>8</LeftAnchorOffset>
@@ -3209,17 +3156,953 @@
 		<LeftAnchorToLeft>true</LeftAnchorToLeft>
 		<RightAnchorToLeft>false</RightAnchorToLeft>
 		<Location><X>8</X><Y>328</Y></Location>
-		<Size><CX>496</CX><CY>18</CY></Size>
+		<Size><CX>496</CX><CY>24</CY></Size>
 		<Text>Click Refresh to load filters.</Text>
 		<TextColor><R>220</R><G>230</G><B>255</B></TextColor>
 		<NoWrap>true</NoWrap>
 	</Label>
 
+	<Button item="AALR_TglEnabled">
+		<ScreenID>AALR_TglEnabled</ScreenID>
+		<Font>5</Font>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>44</Y></Location>
+		<Size><CX>310</CX><CY>24</CY></Size>
+		<Text>Use Advanced Looting</Text>
+		<TextColor><R>255</R><G>255</G><B>0</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>22</CX><CY>22</CY></DecalSize>
+		<TextAlignCenter>false</TextAlignCenter>
+		<TextOffsetX>28</TextOffsetX>
+	</Button>
+
+	<Button item="AALR_TglSplit">
+		<ScreenID>AALR_TglSplit</ScreenID>
+		<Font>5</Font>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>330</X><Y>44</Y></Location>
+		<Size><CX>310</CX><CY>24</CY></Size>
+		<Text>Auto Split Coin</Text>
+		<TextColor><R>255</R><G>255</G><B>0</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>22</CX><CY>22</CY></DecalSize>
+		<TextAlignCenter>false</TextAlignCenter>
+		<TextOffsetX>28</TextOffsetX>
+	</Button>
+
+	<Button item="AALR_TglConfirm">
+		<ScreenID>AALR_TglConfirm</ScreenID>
+		<Font>5</Font>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>72</Y></Location>
+		<Size><CX>310</CX><CY>24</CY></Size>
+		<Text>Confirm Remove Item Filter</Text>
+		<TextColor><R>255</R><G>255</G><B>0</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>22</CX><CY>22</CY></DecalSize>
+		<TextAlignCenter>false</TextAlignCenter>
+		<TextOffsetX>28</TextOffsetX>
+	</Button>
+
+	<Button item="AALR_TglLore">
+		<ScreenID>AALR_TglLore</ScreenID>
+		<Font>5</Font>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>330</X><Y>72</Y></Location>
+		<Size><CX>310</CX><CY>24</CY></Size>
+		<Text>Auto Remove Looted Lore Items</Text>
+		<TextColor><R>255</R><G>255</G><B>0</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>22</CX><CY>22</CY></DecalSize>
+		<TextAlignCenter>false</TextAlignCenter>
+		<TextOffsetX>28</TextOffsetX>
+	</Button>
+
+	<Button item="AALR_TglShow">
+		<ScreenID>AALR_TglShow</ScreenID>
+		<Font>5</Font>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>12</X><Y>100</Y></Location>
+		<Size><CX>310</CX><CY>24</CY></Size>
+		<Text>Auto Show Loot Window</Text>
+		<TextColor><R>255</R><G>255</G><B>0</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>22</CX><CY>22</CY></DecalSize>
+		<TextAlignCenter>false</TextAlignCenter>
+		<TextOffsetX>28</TextOffsetX>
+	</Button>
+
+	<Button item="AALR_TglLootAll">
+		<ScreenID>AALR_TglLootAll</ScreenID>
+		<Font>5</Font>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>330</X><Y>100</Y></Location>
+		<Size><CX>310</CX><CY>24</CY></Size>
+		<Text>Auto Loot All</Text>
+		<TextColor><R>255</R><G>255</G><B>0</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>22</CX><CY>22</CY></DecalSize>
+		<TextAlignCenter>false</TextAlignCenter>
+		<TextOffsetX>28</TextOffsetX>
+	</Button>
+
+	<Button item="AALR_CB_R0C0">
+		<ScreenID>AALR_CB_R0C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R0C1">
+		<ScreenID>AALR_CB_R0C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R0C2">
+		<ScreenID>AALR_CB_R0C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R0C3">
+		<ScreenID>AALR_CB_R0C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_RM_R0">
+		<ScreenID>AALR_RM_R0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>26</CX><CY>26</CY></Size>
+		<Text></Text>
+		<TooltipReference>Remove this filter.</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Cancel</Template>
+	</Button>
+
+	<Button item="AALR_IB_R0">
+		<ScreenID>AALR_IB_R0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>26</CX><CY>26</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_ItemF_R0</Template>
+		<DecalSize><CX>26</CX><CY>26</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R1C0">
+		<ScreenID>AALR_CB_R1C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R1C1">
+		<ScreenID>AALR_CB_R1C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R1C2">
+		<ScreenID>AALR_CB_R1C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R1C3">
+		<ScreenID>AALR_CB_R1C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_RM_R1">
+		<ScreenID>AALR_RM_R1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>26</CX><CY>26</CY></Size>
+		<Text></Text>
+		<TooltipReference>Remove this filter.</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Cancel</Template>
+	</Button>
+
+	<Button item="AALR_IB_R1">
+		<ScreenID>AALR_IB_R1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>26</CX><CY>26</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_ItemF_R1</Template>
+		<DecalSize><CX>26</CX><CY>26</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R2C0">
+		<ScreenID>AALR_CB_R2C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R2C1">
+		<ScreenID>AALR_CB_R2C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R2C2">
+		<ScreenID>AALR_CB_R2C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R2C3">
+		<ScreenID>AALR_CB_R2C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_RM_R2">
+		<ScreenID>AALR_RM_R2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>26</CX><CY>26</CY></Size>
+		<Text></Text>
+		<TooltipReference>Remove this filter.</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Cancel</Template>
+	</Button>
+
+	<Button item="AALR_IB_R2">
+		<ScreenID>AALR_IB_R2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>26</CX><CY>26</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_ItemF_R2</Template>
+		<DecalSize><CX>26</CX><CY>26</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R3C0">
+		<ScreenID>AALR_CB_R3C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R3C1">
+		<ScreenID>AALR_CB_R3C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R3C2">
+		<ScreenID>AALR_CB_R3C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R3C3">
+		<ScreenID>AALR_CB_R3C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_RM_R3">
+		<ScreenID>AALR_RM_R3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>26</CX><CY>26</CY></Size>
+		<Text></Text>
+		<TooltipReference>Remove this filter.</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Cancel</Template>
+	</Button>
+
+	<Button item="AALR_IB_R3">
+		<ScreenID>AALR_IB_R3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>26</CX><CY>26</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_ItemF_R3</Template>
+		<DecalSize><CX>26</CX><CY>26</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R4C0">
+		<ScreenID>AALR_CB_R4C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R4C1">
+		<ScreenID>AALR_CB_R4C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R4C2">
+		<ScreenID>AALR_CB_R4C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R4C3">
+		<ScreenID>AALR_CB_R4C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_RM_R4">
+		<ScreenID>AALR_RM_R4</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>26</CX><CY>26</CY></Size>
+		<Text></Text>
+		<TooltipReference>Remove this filter.</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Cancel</Template>
+	</Button>
+
+	<Button item="AALR_IB_R4">
+		<ScreenID>AALR_IB_R4</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>26</CX><CY>26</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_ItemF_R4</Template>
+		<DecalSize><CX>26</CX><CY>26</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R5C0">
+		<ScreenID>AALR_CB_R5C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R5C1">
+		<ScreenID>AALR_CB_R5C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R5C2">
+		<ScreenID>AALR_CB_R5C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R5C3">
+		<ScreenID>AALR_CB_R5C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_RM_R5">
+		<ScreenID>AALR_RM_R5</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>26</CX><CY>26</CY></Size>
+		<Text></Text>
+		<TooltipReference>Remove this filter.</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Cancel</Template>
+	</Button>
+
+	<Button item="AALR_IB_R5">
+		<ScreenID>AALR_IB_R5</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>26</CX><CY>26</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_ItemF_R5</Template>
+		<DecalSize><CX>26</CX><CY>26</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R6C0">
+		<ScreenID>AALR_CB_R6C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R6C1">
+		<ScreenID>AALR_CB_R6C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R6C2">
+		<ScreenID>AALR_CB_R6C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R6C3">
+		<ScreenID>AALR_CB_R6C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_RM_R6">
+		<ScreenID>AALR_RM_R6</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>26</CX><CY>26</CY></Size>
+		<Text></Text>
+		<TooltipReference>Remove this filter.</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Cancel</Template>
+	</Button>
+
+	<Button item="AALR_IB_R6">
+		<ScreenID>AALR_IB_R6</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>26</CX><CY>26</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_ItemF_R6</Template>
+		<DecalSize><CX>26</CX><CY>26</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R7C0">
+		<ScreenID>AALR_CB_R7C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R7C1">
+		<ScreenID>AALR_CB_R7C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R7C2">
+		<ScreenID>AALR_CB_R7C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R7C3">
+		<ScreenID>AALR_CB_R7C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_RM_R7">
+		<ScreenID>AALR_RM_R7</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>26</CX><CY>26</CY></Size>
+		<Text></Text>
+		<TooltipReference>Remove this filter.</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Cancel</Template>
+	</Button>
+
+	<Button item="AALR_IB_R7">
+		<ScreenID>AALR_IB_R7</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>26</CX><CY>26</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_ItemF_R7</Template>
+		<DecalSize><CX>26</CX><CY>26</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R8C0">
+		<ScreenID>AALR_CB_R8C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R8C1">
+		<ScreenID>AALR_CB_R8C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R8C2">
+		<ScreenID>AALR_CB_R8C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R8C3">
+		<ScreenID>AALR_CB_R8C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_RM_R8">
+		<ScreenID>AALR_RM_R8</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>26</CX><CY>26</CY></Size>
+		<Text></Text>
+		<TooltipReference>Remove this filter.</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Cancel</Template>
+	</Button>
+
+	<Button item="AALR_IB_R8">
+		<ScreenID>AALR_IB_R8</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>26</CX><CY>26</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_ItemF_R8</Template>
+		<DecalSize><CX>26</CX><CY>26</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R9C0">
+		<ScreenID>AALR_CB_R9C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R9C1">
+		<ScreenID>AALR_CB_R9C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R9C2">
+		<ScreenID>AALR_CB_R9C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R9C3">
+		<ScreenID>AALR_CB_R9C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_RM_R9">
+		<ScreenID>AALR_RM_R9</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>26</CX><CY>26</CY></Size>
+		<Text></Text>
+		<TooltipReference>Remove this filter.</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Cancel</Template>
+	</Button>
+
+	<Button item="AALR_IB_R9">
+		<ScreenID>AALR_IB_R9</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>26</CX><CY>26</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_ItemF_R9</Template>
+		<DecalSize><CX>26</CX><CY>26</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R10C0">
+		<ScreenID>AALR_CB_R10C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R10C1">
+		<ScreenID>AALR_CB_R10C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R10C2">
+		<ScreenID>AALR_CB_R10C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R10C3">
+		<ScreenID>AALR_CB_R10C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_RM_R10">
+		<ScreenID>AALR_RM_R10</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>26</CX><CY>26</CY></Size>
+		<Text></Text>
+		<TooltipReference>Remove this filter.</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Cancel</Template>
+	</Button>
+
+	<Button item="AALR_IB_R10">
+		<ScreenID>AALR_IB_R10</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>26</CX><CY>26</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_ItemF_R10</Template>
+		<DecalSize><CX>26</CX><CY>26</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R11C0">
+		<ScreenID>AALR_CB_R11C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R11C1">
+		<ScreenID>AALR_CB_R11C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R11C2">
+		<ScreenID>AALR_CB_R11C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_CB_R11C3">
+		<ScreenID>AALR_CB_R11C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>24</CX><CY>24</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>24</CX><CY>24</CY></DecalSize>
+	</Button>
+
+	<Button item="AALR_RM_R11">
+		<ScreenID>AALR_RM_R11</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>26</CX><CY>26</CY></Size>
+		<Text></Text>
+		<TooltipReference>Remove this filter.</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Cancel</Template>
+	</Button>
+
+	<Button item="AALR_IB_R11">
+		<ScreenID>AALR_IB_R11</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>26</CX><CY>26</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_ItemF_R11</Template>
+		<DecalSize><CX>26</CX><CY>26</CY></DecalSize>
+	</Button>
+
 	<Screen item="NativeAutoLootRulesWnd">
 		<ScreenID>NativeAutoLootRulesWnd</ScreenID>
 		<RelativePosition>false</RelativePosition>
 		<Location><X>110</X><Y>120</Y></Location>
-		<Size><CX>520</CX><CY>370</CY></Size>
+		<Size><CX>680</CX><CY>620</CY></Size>
 		<Text>Advanced Loot Filters</Text>
 		<DrawTemplate>WDT_Def</DrawTemplate>
 		<Style_Titlebar>true</Style_Titlebar>
@@ -3230,17 +4113,91 @@
 		<Style_Transparent>false</Style_Transparent>
 		<Pieces>AALR_SummaryLabel</Pieces>
 		<Pieces>AALR_RefreshButton</Pieces>
-		<Pieces>AALR_KeepButton</Pieces>
-		<Pieces>AALR_GreedButton</Pieces>
-		<Pieces>AALR_IgnoreButton</Pieces>
-		<Pieces>AALR_UnsetButton</Pieces>
-		<Pieces>AALR_AutoRollButton</Pieces>
 		<Pieces>AALR_RuleList</Pieces>
 		<Pieces>AALR_StatusLabel</Pieces>
+		<Pieces>AALR_TglEnabled</Pieces>
+		<Pieces>AALR_TglSplit</Pieces>
+		<Pieces>AALR_TglConfirm</Pieces>
+		<Pieces>AALR_TglLore</Pieces>
+		<Pieces>AALR_TglShow</Pieces>
+		<Pieces>AALR_TglLootAll</Pieces>
+		<Pieces>AALR_CB_R0C0</Pieces>
+		<Pieces>AALR_CB_R0C1</Pieces>
+		<Pieces>AALR_CB_R0C2</Pieces>
+		<Pieces>AALR_CB_R0C3</Pieces>
+		<Pieces>AALR_RM_R0</Pieces>
+		<Pieces>AALR_IB_R0</Pieces>
+		<Pieces>AALR_CB_R1C0</Pieces>
+		<Pieces>AALR_CB_R1C1</Pieces>
+		<Pieces>AALR_CB_R1C2</Pieces>
+		<Pieces>AALR_CB_R1C3</Pieces>
+		<Pieces>AALR_RM_R1</Pieces>
+		<Pieces>AALR_IB_R1</Pieces>
+		<Pieces>AALR_CB_R2C0</Pieces>
+		<Pieces>AALR_CB_R2C1</Pieces>
+		<Pieces>AALR_CB_R2C2</Pieces>
+		<Pieces>AALR_CB_R2C3</Pieces>
+		<Pieces>AALR_RM_R2</Pieces>
+		<Pieces>AALR_IB_R2</Pieces>
+		<Pieces>AALR_CB_R3C0</Pieces>
+		<Pieces>AALR_CB_R3C1</Pieces>
+		<Pieces>AALR_CB_R3C2</Pieces>
+		<Pieces>AALR_CB_R3C3</Pieces>
+		<Pieces>AALR_RM_R3</Pieces>
+		<Pieces>AALR_IB_R3</Pieces>
+		<Pieces>AALR_CB_R4C0</Pieces>
+		<Pieces>AALR_CB_R4C1</Pieces>
+		<Pieces>AALR_CB_R4C2</Pieces>
+		<Pieces>AALR_CB_R4C3</Pieces>
+		<Pieces>AALR_RM_R4</Pieces>
+		<Pieces>AALR_IB_R4</Pieces>
+		<Pieces>AALR_CB_R5C0</Pieces>
+		<Pieces>AALR_CB_R5C1</Pieces>
+		<Pieces>AALR_CB_R5C2</Pieces>
+		<Pieces>AALR_CB_R5C3</Pieces>
+		<Pieces>AALR_RM_R5</Pieces>
+		<Pieces>AALR_IB_R5</Pieces>
+		<Pieces>AALR_CB_R6C0</Pieces>
+		<Pieces>AALR_CB_R6C1</Pieces>
+		<Pieces>AALR_CB_R6C2</Pieces>
+		<Pieces>AALR_CB_R6C3</Pieces>
+		<Pieces>AALR_RM_R6</Pieces>
+		<Pieces>AALR_IB_R6</Pieces>
+		<Pieces>AALR_CB_R7C0</Pieces>
+		<Pieces>AALR_CB_R7C1</Pieces>
+		<Pieces>AALR_CB_R7C2</Pieces>
+		<Pieces>AALR_CB_R7C3</Pieces>
+		<Pieces>AALR_RM_R7</Pieces>
+		<Pieces>AALR_IB_R7</Pieces>
+		<Pieces>AALR_CB_R8C0</Pieces>
+		<Pieces>AALR_CB_R8C1</Pieces>
+		<Pieces>AALR_CB_R8C2</Pieces>
+		<Pieces>AALR_CB_R8C3</Pieces>
+		<Pieces>AALR_RM_R8</Pieces>
+		<Pieces>AALR_IB_R8</Pieces>
+		<Pieces>AALR_CB_R9C0</Pieces>
+		<Pieces>AALR_CB_R9C1</Pieces>
+		<Pieces>AALR_CB_R9C2</Pieces>
+		<Pieces>AALR_CB_R9C3</Pieces>
+		<Pieces>AALR_RM_R9</Pieces>
+		<Pieces>AALR_IB_R9</Pieces>
+		<Pieces>AALR_CB_R10C0</Pieces>
+		<Pieces>AALR_CB_R10C1</Pieces>
+		<Pieces>AALR_CB_R10C2</Pieces>
+		<Pieces>AALR_CB_R10C3</Pieces>
+		<Pieces>AALR_RM_R10</Pieces>
+		<Pieces>AALR_IB_R10</Pieces>
+		<Pieces>AALR_CB_R11C0</Pieces>
+		<Pieces>AALR_CB_R11C1</Pieces>
+		<Pieces>AALR_CB_R11C2</Pieces>
+		<Pieces>AALR_CB_R11C3</Pieces>
+		<Pieces>AALR_RM_R11</Pieces>
+		<Pieces>AALR_IB_R11</Pieces>
 	</Screen>
 
 	<Label item="AALS_TitleLabel">
 		<ScreenID>AALS_TitleLabel</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>12</X><Y>18</Y></Location>
 		<Size><CX>66</CX><CY>18</CY></Size>
@@ -3251,6 +4208,7 @@
 
 	<Label item="AALS_SummaryLabel">
 		<ScreenID>AALS_SummaryLabel</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>84</X><Y>18</Y></Location>
 		<Size><CX>356</CX><CY>18</CY></Size>
@@ -3261,6 +4219,7 @@
 
 	<Button item="AALS_AutoLootCheck">
 		<ScreenID>AALS_AutoLootCheck</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>12</X><Y>48</Y></Location>
 		<Size><CX>155</CX><CY>18</CY></Size>
@@ -3270,13 +4229,14 @@
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<DecalSize><CX>22</CX><CY>22</CY></DecalSize>
 		<TextAlignCenter>false</TextAlignCenter>
-		<TextOffsetX>20</TextOffsetX>
+		<TextOffsetX>28</TextOffsetX>
 	</Button>
 
 	<Button item="AALS_NeedGreedCheck">
 		<ScreenID>AALS_NeedGreedCheck</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>176</X><Y>48</Y></Location>
 		<Size><CX>155</CX><CY>18</CY></Size>
@@ -3286,13 +4246,14 @@
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<DecalSize><CX>22</CX><CY>22</CY></DecalSize>
 		<TextAlignCenter>false</TextAlignCenter>
-		<TextOffsetX>20</TextOffsetX>
+		<TextOffsetX>28</TextOffsetX>
 	</Button>
 
 	<Button item="AALS_AutoShowCheck">
 		<ScreenID>AALS_AutoShowCheck</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>12</X><Y>72</Y></Location>
 		<Size><CX>155</CX><CY>18</CY></Size>
@@ -3302,13 +4263,14 @@
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<DecalSize><CX>22</CX><CY>22</CY></DecalSize>
 		<TextAlignCenter>false</TextAlignCenter>
-		<TextOffsetX>20</TextOffsetX>
+		<TextOffsetX>28</TextOffsetX>
 	</Button>
 
 	<Button item="AALS_ShowNewCheck">
 		<ScreenID>AALS_ShowNewCheck</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>176</X><Y>72</Y></Location>
 		<Size><CX>155</CX><CY>18</CY></Size>
@@ -3318,13 +4280,14 @@
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<DecalSize><CX>22</CX><CY>22</CY></DecalSize>
 		<TextAlignCenter>false</TextAlignCenter>
-		<TextOffsetX>20</TextOffsetX>
+		<TextOffsetX>28</TextOffsetX>
 	</Button>
 
 	<Button item="AALS_ConfirmRemoveCheck">
 		<ScreenID>AALS_ConfirmRemoveCheck</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>12</X><Y>96</Y></Location>
 		<Size><CX>155</CX><CY>18</CY></Size>
@@ -3334,13 +4297,14 @@
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<DecalSize><CX>22</CX><CY>22</CY></DecalSize>
 		<TextAlignCenter>false</TextAlignCenter>
-		<TextOffsetX>20</TextOffsetX>
+		<TextOffsetX>28</TextOffsetX>
 	</Button>
 
 	<Button item="AALS_AutoRemoveLoreCheck">
 		<ScreenID>AALS_AutoRemoveLoreCheck</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>176</X><Y>96</Y></Location>
 		<Size><CX>170</CX><CY>18</CY></Size>
@@ -3350,13 +4314,14 @@
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<DecalSize><CX>22</CX><CY>22</CY></DecalSize>
 		<TextAlignCenter>false</TextAlignCenter>
-		<TextOffsetX>20</TextOffsetX>
+		<TextOffsetX>28</TextOffsetX>
 	</Button>
 
 	<Label item="AALS_GroupLabel">
 		<ScreenID>AALS_GroupLabel</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>12</X><Y>126</Y></Location>
 		<Size><CX>124</CX><CY>18</CY></Size>
@@ -3367,6 +4332,7 @@
 
 	<Label item="AALS_GroupSummaryLabel">
 		<ScreenID>AALS_GroupSummaryLabel</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>142</X><Y>126</Y></Location>
 		<Size><CX>298</CX><CY>18</CY></Size>
@@ -3377,6 +4343,7 @@
 
 	<Button item="AALS_GroupNoneButton">
 		<ScreenID>AALS_GroupNoneButton</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>12</X><Y>156</Y></Location>
 		<Size><CX>66</CX><CY>22</CY></Size>
@@ -3390,6 +4357,7 @@
 
 	<Button item="AALS_GroupSoloButton">
 		<ScreenID>AALS_GroupSoloButton</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>84</X><Y>156</Y></Location>
 		<Size><CX>66</CX><CY>22</CY></Size>
@@ -3403,6 +4371,7 @@
 
 	<Button item="AALS_GroupMasterButton">
 		<ScreenID>AALS_GroupMasterButton</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>156</X><Y>156</Y></Location>
 		<Size><CX>66</CX><CY>22</CY></Size>
@@ -3416,6 +4385,7 @@
 
 	<Button item="AALS_GroupRobinButton">
 		<ScreenID>AALS_GroupRobinButton</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>228</X><Y>156</Y></Location>
 		<Size><CX>66</CX><CY>22</CY></Size>
@@ -3429,6 +4399,7 @@
 
 	<Button item="AALS_GroupKillerButton">
 		<ScreenID>AALS_GroupKillerButton</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>300</X><Y>156</Y></Location>
 		<Size><CX>66</CX><CY>22</CY></Size>
@@ -3442,6 +4413,7 @@
 
 	<Button item="AALS_RefreshButton">
 		<ScreenID>AALS_RefreshButton</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>12</X><Y>236</Y></Location>
 		<Size><CX>82</CX><CY>22</CY></Size>
@@ -3455,6 +4427,7 @@
 
 	<Label item="AALS_StatusLabel">
 		<ScreenID>AALS_StatusLabel</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>12</X><Y>286</Y></Location>
 		<Size><CX>390</CX><CY>18</CY></Size>
@@ -3467,7 +4440,7 @@
 		<ScreenID>NativeAutoLootSettingsWnd</ScreenID>
 		<RelativePosition>false</RelativePosition>
 		<Location><X>145</X><Y>145</Y></Location>
-		<Size><CX>452</CX><CY>330</CY></Size>
+		<Size><CX>560</CX><CY>400</CY></Size>
 		<Text>Advanced Loot Settings</Text>
 		<DrawTemplate>WDT_Def</DrawTemplate>
 		<Style_Titlebar>true</Style_Titlebar>
@@ -3497,6 +4470,7 @@
 
 	<Label item="AALM_SummaryLabel">
 		<ScreenID>AALM_SummaryLabel</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>8</X><Y>18</Y></Location>
 		<Size><CX>480</CX><CY>18</CY></Size>
@@ -3507,6 +4481,7 @@
 
 	<Listbox item="AALM_PlayerList">
 		<ScreenID>AALM_PlayerList</ScreenID>
+		<Font>5</Font>
 		<DrawTemplate>WDT_Inner</DrawTemplate>
 		<RelativePosition>true</RelativePosition>
 		<AutoStretch>true</AutoStretch>
@@ -3532,6 +4507,7 @@
 
 	<Button item="AALM_RefreshButton">
 		<ScreenID>AALM_RefreshButton</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<AutoStretch>true</AutoStretch>
 		<LeftAnchorOffset>8</LeftAnchorOffset>
@@ -3553,6 +4529,7 @@
 
 	<Button item="AALM_AskButton">
 		<ScreenID>AALM_AskButton</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<AutoStretch>true</AutoStretch>
 		<LeftAnchorOffset>84</LeftAnchorOffset>
@@ -3574,6 +4551,7 @@
 
 	<Button item="AALM_RollButton">
 		<ScreenID>AALM_RollButton</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<AutoStretch>true</AutoStretch>
 		<LeftAnchorOffset>138</LeftAnchorOffset>
@@ -3595,6 +4573,7 @@
 
 	<Button item="AALM_FreeGrabButton">
 		<ScreenID>AALM_FreeGrabButton</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<AutoStretch>true</AutoStretch>
 		<LeftAnchorOffset>192</LeftAnchorOffset>
@@ -3616,6 +4595,7 @@
 
 	<Button item="AALM_GiveButton">
 		<ScreenID>AALM_GiveButton</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<AutoStretch>true</AutoStretch>
 		<LeftAnchorOffset>276</LeftAnchorOffset>
@@ -3637,6 +4617,7 @@
 
 	<Button item="AALM_LeaveButton">
 		<ScreenID>AALM_LeaveButton</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<AutoStretch>true</AutoStretch>
 		<LeftAnchorOffset>332</LeftAnchorOffset>
@@ -3658,6 +4639,7 @@
 
 	<Button item="AALM_SetMasterButton">
 		<ScreenID>AALM_SetMasterButton</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<AutoStretch>true</AutoStretch>
 		<LeftAnchorOffset>394</LeftAnchorOffset>
@@ -3679,6 +4661,7 @@
 
 	<Button item="AALM_ClearMasterButton">
 		<ScreenID>AALM_ClearMasterButton</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<AutoStretch>true</AutoStretch>
 		<LeftAnchorOffset>454</LeftAnchorOffset>
@@ -3700,6 +4683,7 @@
 
 	<Label item="AALM_StatusLabel">
 		<ScreenID>AALM_StatusLabel</ScreenID>
+		<Font>5</Font>
 		<RelativePosition>true</RelativePosition>
 		<AutoStretch>true</AutoStretch>
 		<LeftAnchorOffset>8</LeftAnchorOffset>
@@ -3721,7 +4705,7 @@
 		<ScreenID>NativeAutoLootManageWnd</ScreenID>
 		<RelativePosition>false</RelativePosition>
 		<Location><X>130</X><Y>130</Y></Location>
-		<Size><CX>520</CX><CY>300</CY></Size>
+		<Size><CX>620</CX><CY>380</CY></Size>
 		<Text>Manage Loot</Text>
 		<DrawTemplate>WDT_Def</DrawTemplate>
 		<Style_Titlebar>true</Style_Titlebar>

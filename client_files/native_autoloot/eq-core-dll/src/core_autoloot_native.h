@@ -313,6 +313,7 @@ static const int kAALPoolPersonalRows = 8;
 static const int kAALPoolPersonalCols = 5;
 static const int kAALPoolSharedRows = 14;
 static const int kAALPoolSharedCols = 10;
+static const int kAALRulePoolRows = 12;
 
 static const int kAALPoolPersonalColumns[kAALPoolPersonalCols] = {
 	kAALPersonalLoot, kAALPersonalLeave, kAALPersonalAlwaysNeed, kAALPersonalAlwaysGreed, kAALPersonalNever
@@ -356,6 +357,67 @@ struct NativeAutoLootPoolCellState
 	int intended_left;
 	int intended_top;
 };
+
+// Shared cell-rect computation for overlay controls: returns the screen-space
+// rect for a control of the given size inside the cell, fully clipped to the
+// list's visible area.
+static bool NativeAutoLootCellControlRect(CListWnd* list, int row, int column, int control_size, bool left_align, CXRect* target, CXRect* clip)
+{
+	if (!list || !target || !clip) {
+		return false;
+	}
+
+	__try {
+		CXRect cell_rect = list->GetItemRect(row, column);
+		CXRect list_rect = ((CXWnd*)list)->GetScreenRect();
+		CXRect list_clip = ((CXWnd*)list)->GetScreenClipRect();
+
+		int left = (int)cell_rect.A;
+		int top = (int)cell_rect.B;
+		int right = (int)cell_rect.C;
+		int bottom = (int)cell_rect.D;
+
+		if (left < (int)list_rect.A - 4 || top < (int)list_rect.B - 4) {
+			left += (int)list_rect.A;
+			right += (int)list_rect.A;
+			top += (int)list_rect.B;
+			bottom += (int)list_rect.B;
+		}
+
+		if (right <= left || bottom <= top ||
+			right <= (int)list_clip.A || left >= (int)list_clip.C ||
+			bottom <= (int)list_clip.B || top >= (int)list_clip.D) {
+			return false;
+		}
+
+		int horizontal_inset = left_align ? 2 : (right - left - control_size) / 2;
+		int vertical_inset = (bottom - top - control_size) / 2;
+		if (horizontal_inset < 0) {
+			horizontal_inset = 0;
+		}
+		if (vertical_inset < 0) {
+			vertical_inset = 0;
+		}
+
+		target->A = left + horizontal_inset;
+		target->B = top + vertical_inset;
+		target->C = left + horizontal_inset + control_size;
+		target->D = top + vertical_inset + control_size;
+		clip->A = list_clip.A;
+		clip->B = list_clip.B;
+		clip->C = list_clip.C;
+		clip->D = list_clip.D;
+
+		if ((int)target->B < (int)clip->B || (int)target->D > (int)clip->D) {
+			return false;
+		}
+
+		return true;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+		return false;
+	}
+}
 
 static void NativeAutoLootSetSquareCell(CListWnd* list, int row, int column, bool active, bool enabled, bool negative)
 {
@@ -877,14 +939,37 @@ public:
 		StatusLabel = GetChildItem("AALR_StatusLabel");
 		RuleList = (CListWnd*)GetChildItem("AALR_RuleList");
 		RefreshButton = (CButtonWnd*)GetChildItem("AALR_RefreshButton");
-		KeepButton = (CButtonWnd*)GetChildItem("AALR_KeepButton");
-		GreedButton = (CButtonWnd*)GetChildItem("AALR_GreedButton");
-		IgnoreButton = (CButtonWnd*)GetChildItem("AALR_IgnoreButton");
-		UnsetButton = (CButtonWnd*)GetChildItem("AALR_UnsetButton");
-		AutoRollButton = (CButtonWnd*)GetChildItem("AALR_AutoRollButton");
+		TglEnabled = (CButtonWnd*)GetChildItem("AALR_TglEnabled");
+		TglSplit = (CButtonWnd*)GetChildItem("AALR_TglSplit");
+		TglConfirm = (CButtonWnd*)GetChildItem("AALR_TglConfirm");
+		TglLore = (CButtonWnd*)GetChildItem("AALR_TglLore");
+		TglShow = (CButtonWnd*)GetChildItem("AALR_TglShow");
+		TglLootAll = (CButtonWnd*)GetChildItem("AALR_TglLootAll");
 
-		NativeAutoLootSetColumnJustification(RuleList, 0, 0, 1);
-		NativeAutoLootSetColumnJustification(RuleList, 2, 3, 1);
+		for (int pool_row = 0; pool_row < kAALRulePoolRows; ++pool_row) {
+			char name[48];
+			for (int slot = 0; slot < 4; ++slot) {
+				sprintf_s(name, "AALR_CB_R%dC%d", pool_row, slot);
+				CheckPool[pool_row][slot] = (CButtonWnd*)GetChildItem(name);
+				if (CheckPool[pool_row][slot]) {
+					((CXWnd*)CheckPool[pool_row][slot])->Show(0, 1);
+				}
+			}
+
+			sprintf_s(name, "AALR_RM_R%d", pool_row);
+			RemovePool[pool_row] = (CButtonWnd*)GetChildItem(name);
+			if (RemovePool[pool_row]) {
+				((CXWnd*)RemovePool[pool_row])->Show(0, 1);
+			}
+
+			sprintf_s(name, "AALR_IB_R%d", pool_row);
+			IconPool[pool_row] = (CButtonWnd*)GetChildItem(name);
+			if (IconPool[pool_row]) {
+				((CXWnd*)IconPool[pool_row])->Show(0, 1);
+			}
+		}
+
+		NativeAutoLootSetColumnJustification(RuleList, 2, 6, 1);
 		Layout();
 		RefreshRows();
 	}
@@ -903,46 +988,58 @@ public:
 				return 1;
 			}
 
-			NativeAutoLootRuleRow* row = GetSelectedRule();
-			if (!row) {
-				SetStatus("Select a rule first.");
+			if (pWnd == (CXWnd*)TglEnabled) {
+				NativeAutoLootSendCommand(NativeAutoLootToggleEnabledCommand());
+				SetStatus("Toggled Advanced Loot.");
 				return 1;
 			}
 
-			char command[128];
-			if (pWnd == (CXWnd*)KeepButton) {
-				sprintf_s(command, "/say #advloot filter set %d always_need", row->item_id);
-				NativeAutoLootSendCommand(command);
-				SetStatus("Requested Always Need rule.");
+			if (pWnd == (CXWnd*)TglSplit) {
+				NativeAutoLootSendCommand(gNativeAutoLootAutoSplit ? "/say #advloot autosplit off" : "/say #advloot autosplit on");
+				SetStatus("Toggled Auto Split Coin.");
 				return 1;
 			}
 
-			if (pWnd == (CXWnd*)GreedButton) {
-				sprintf_s(command, "/say #advloot filter set %d always_greed", row->item_id);
-				NativeAutoLootSendCommand(command);
-				SetStatus("Requested Always Greed rule.");
+			if (pWnd == (CXWnd*)TglConfirm) {
+				NativeAutoLootSendCommand(gNativeAutoLootConfirmRemove ? "/say #advloot confirmremove off" : "/say #advloot confirmremove on");
+				SetStatus("Toggled Confirm Remove.");
 				return 1;
 			}
 
-			if (pWnd == (CXWnd*)IgnoreButton) {
-				sprintf_s(command, "/say #advloot filter set %d never", row->item_id);
-				NativeAutoLootSendCommand(command);
-				SetStatus("Requested Never rule.");
+			if (pWnd == (CXWnd*)TglLore) {
+				NativeAutoLootSendCommand(gNativeAutoLootAutoRemoveLore ? "/say #advloot autoremovelore off" : "/say #advloot autoremovelore on");
+				SetStatus("Toggled Auto Remove Lore.");
 				return 1;
 			}
 
-			if (pWnd == (CXWnd*)UnsetButton) {
-				sprintf_s(command, "/say #advloot filter remove %d", row->item_id);
-				NativeAutoLootSendCommand(command);
-				SetStatus("Requested rule removal.");
+			if (pWnd == (CXWnd*)TglShow) {
+				NativeAutoLootSendCommand(gNativeAutoLootAutoShow ? "/say #advloot autoshow off" : "/say #advloot autoshow on");
+				SetStatus("Toggled Auto Show.");
 				return 1;
 			}
 
-			if (pWnd == (CXWnd*)AutoRollButton) {
-				sprintf_s(command, "/say #advloot filter autoroll %d %s", row->item_id, row->auto_roll ? "off" : "on");
-				NativeAutoLootSendCommand(command);
-				SetStatus("Toggled Auto Roll.");
+			if (pWnd == (CXWnd*)TglLootAll) {
+				NativeAutoLootSendCommand(gNativeAutoLootAutoLootAll ? "/say #advloot autolootall off" : "/say #advloot autolootall on");
+				SetStatus("Toggled Auto Loot All.");
 				return 1;
+			}
+
+			for (int pool_row = 0; pool_row < kAALRulePoolRows; ++pool_row) {
+				for (int slot = 0; slot < 4; ++slot) {
+					if (pWnd == (CXWnd*)CheckPool[pool_row][slot]) {
+						HandleRuleCell(pool_row, slot);
+						return 1;
+					}
+				}
+
+				if (pWnd == (CXWnd*)RemovePool[pool_row]) {
+					HandleRuleCell(pool_row, 4);
+					return 1;
+				}
+
+				if (pWnd == (CXWnd*)IconPool[pool_row]) {
+					return 1;
+				}
 			}
 		}
 
@@ -961,17 +1058,42 @@ public:
 
 private:
 	NativeAutoLootRuleRow* GetSelectedRule();
+	void HandleRuleCell(int pool_row, int slot);
 	void SetLabel(CXWnd* label, const char* text);
+	void SetButtonCheck(CButtonWnd* button, bool checked)
+	{
+		if (button) {
+			button->Checked = checked ? 1 : 0;
+		}
+	}
 
 	CXWnd* SummaryLabel = nullptr;
 	CXWnd* StatusLabel = nullptr;
 	CListWnd* RuleList = nullptr;
 	CButtonWnd* RefreshButton = nullptr;
-	CButtonWnd* KeepButton = nullptr;
-	CButtonWnd* GreedButton = nullptr;
-	CButtonWnd* IgnoreButton = nullptr;
-	CButtonWnd* UnsetButton = nullptr;
-	CButtonWnd* AutoRollButton = nullptr;
+	CButtonWnd* TglEnabled = nullptr;
+	CButtonWnd* TglSplit = nullptr;
+	CButtonWnd* TglConfirm = nullptr;
+	CButtonWnd* TglLore = nullptr;
+	CButtonWnd* TglShow = nullptr;
+	CButtonWnd* TglLootAll = nullptr;
+	CButtonWnd* CheckPool[kAALRulePoolRows][4] = {};
+	CButtonWnd* RemovePool[kAALRulePoolRows] = {};
+	CButtonWnd* IconPool[kAALRulePoolRows] = {};
+	bool CheckShown[kAALRulePoolRows][4] = {};
+	bool RemoveShown[kAALRulePoolRows] = {};
+	bool IconShown[kAALRulePoolRows] = {};
+	int IconCell[kAALRulePoolRows] = {};
+	bool CellActive[kAALRulePoolRows][4] = {};
+	std::vector<int> RowIconIds;
+	std::vector<CButtonWnd*> RulesRefresh;
+	int RowCount = 0;
+	bool PoolCalibrated = false;
+	int PoolCorrectionX = 0;
+	int PoolCorrectionY = 0;
+	CButtonWnd* CalibButton = nullptr;
+	int CalibIntendedX = 0;
+	int CalibIntendedY = 0;
 	int LastLayoutWidth = 0;
 	int LastLayoutHeight = 0;
 };
@@ -1255,6 +1377,16 @@ public:
 
 	void RefreshRows()
 	{
+		__try {
+			if (PlayerList && ((DWORD*)PlayerList)[0x21C / 4] != 30) {
+				((DWORD*)PlayerList)[0x21C / 4] = 30;
+				((CXWnd*)PlayerList)->Show(0, 1);
+				((CXWnd*)PlayerList)->Show(1, 1);
+			}
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+		}
+
 		char summary[256];
 		if (gNativeAutoLootManageEntryId > 0) {
 			sprintf_s(
@@ -7266,8 +7398,236 @@ void NativeAutoLootRulesWnd::SetLabel(CXWnd* label, const char* text)
 
 void NativeAutoLootRulesWnd::Layout()
 {
-	// Filters resize is handled by SIDL AutoStretch anchors. Avoid manually
-	// moving children during construction; this client build can fault there.
+	if (!RuleList) {
+		return;
+	}
+
+	// Hold the filter list at 36px rows (CListWnd row height lives at +0x21C).
+	__try {
+		if (((DWORD*)RuleList)[0x21C / 4] != 36) {
+			((DWORD*)RuleList)[0x21C / 4] = 36;
+			((CXWnd*)RuleList)->Show(0, 1);
+			((CXWnd*)RuleList)->Show(1, 1);
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+		NativeAutoLootTrace("rules row height apply faulted");
+	}
+
+	// Self-calibrate the Location origin from the first placed control.
+	if (!PoolCalibrated && CalibButton) {
+		__try {
+			CXRect actual = ((CXWnd*)CalibButton)->GetScreenRect();
+			const int dx = CalibIntendedX - (int)actual.A;
+			const int dy = CalibIntendedY - (int)actual.B;
+			if (dx >= -64 && dx <= 64 && dy >= -64 && dy <= 64) {
+				PoolCorrectionX += dx;
+				PoolCorrectionY += dy;
+				PoolCalibrated = true;
+			}
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			PoolCalibrated = true;
+		}
+	}
+
+	int window_left = 0;
+	int window_top = 0;
+	bool have_origin = false;
+	__try {
+		CXRect window_rect = ((CXWnd*)this)->GetScreenRect();
+		window_left = (int)window_rect.A;
+		window_top = (int)window_rect.B;
+		have_origin = true;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+	}
+
+	if (!have_origin) {
+		return;
+	}
+
+	bool check_used[kAALRulePoolRows][4] = {};
+	bool remove_used[kAALRulePoolRows] = {};
+	bool icon_used[kAALRulePoolRows] = {};
+	RulesRefresh.clear();
+
+	const int columns_for_slot[4] = { 2, 3, 4, 5 };
+	for (int pool_row = 0; pool_row < kAALRulePoolRows && pool_row < RowCount; ++pool_row) {
+		CXRect target;
+		CXRect clip;
+
+		for (int slot = 0; slot < 4; ++slot) {
+			CButtonWnd* button = CheckPool[pool_row][slot];
+			if (!button) {
+				continue;
+			}
+
+			if (!NativeAutoLootCellControlRect(RuleList, pool_row, columns_for_slot[slot], 24, false, &target, &clip)) {
+				continue;
+			}
+
+			PCSIDLWND raw = (PCSIDLWND)button;
+			const int new_left = (int)target.A - window_left + PoolCorrectionX;
+			const int new_top = (int)target.B - window_top + PoolCorrectionY;
+			const bool moved = raw->Location.left != new_left || raw->Location.top != new_top;
+			raw->Location.left = new_left;
+			raw->Location.top = new_top;
+			raw->Location.right = new_left + 24;
+			raw->Location.bottom = new_top + 24;
+			button->Checked = CellActive[pool_row][slot] ? 1 : 0;
+			if (moved) {
+				RulesRefresh.push_back(button);
+			}
+
+			if (!CalibButton) {
+				CalibButton = button;
+				CalibIntendedX = (int)target.A;
+				CalibIntendedY = (int)target.B;
+			}
+
+			check_used[pool_row][slot] = true;
+		}
+
+		CButtonWnd* remove_button = RemovePool[pool_row];
+		if (remove_button && NativeAutoLootCellControlRect(RuleList, pool_row, 6, 26, false, &target, &clip)) {
+			PCSIDLWND raw = (PCSIDLWND)remove_button;
+			const int new_left = (int)target.A - window_left + PoolCorrectionX;
+			const int new_top = (int)target.B - window_top + PoolCorrectionY;
+			const bool moved = raw->Location.left != new_left || raw->Location.top != new_top;
+			raw->Location.left = new_left;
+			raw->Location.top = new_top;
+			raw->Location.right = new_left + 26;
+			raw->Location.bottom = new_top + 26;
+			if (moved) {
+				RulesRefresh.push_back(remove_button);
+			}
+
+			remove_used[pool_row] = true;
+		}
+
+		CButtonWnd* icon_button = IconPool[pool_row];
+		if (icon_button && pool_row < (int)RowIconIds.size() &&
+			NativeAutoLootCellControlRect(RuleList, pool_row, 0, 26, true, &target, &clip)) {
+			PCSIDLWND raw = (PCSIDLWND)icon_button;
+			const int new_left = (int)target.A - window_left + PoolCorrectionX;
+			const int new_top = (int)target.B - window_top + PoolCorrectionY;
+			const bool moved = raw->Location.left != new_left || raw->Location.top != new_top;
+			raw->Location.left = new_left;
+			raw->Location.top = new_top;
+			raw->Location.right = new_left + 26;
+			raw->Location.bottom = new_top + 26;
+			if (moved) {
+				RulesRefresh.push_back(icon_button);
+			}
+
+			if (!gNativeAutoLootIconCellFaulted) {
+				const int cell = NativeAutoLootIconCell(RowIconIds[pool_row]);
+				if (IconCell[pool_row] != cell) {
+					DWORD* braw = (DWORD*)icon_button;
+					CTextureAnimation* decal = (CTextureAnimation*)braw[kAALButtonNormalDecalOffset / 4];
+					if (decal) {
+						__try {
+							decal->SetCurCell(cell);
+							IconCell[pool_row] = cell;
+							RulesRefresh.push_back(icon_button);
+						}
+						__except (EXCEPTION_EXECUTE_HANDLER) {
+							gNativeAutoLootIconCellFaulted = true;
+							NativeAutoLootTrace("rules icon SetCurCell faulted");
+						}
+					}
+				}
+			}
+
+			icon_used[pool_row] = true;
+		}
+	}
+
+	__try {
+		for (int pool_row = 0; pool_row < kAALRulePoolRows; ++pool_row) {
+			for (int slot = 0; slot < 4; ++slot) {
+				CButtonWnd* button = CheckPool[pool_row][slot];
+				if (button && check_used[pool_row][slot] != CheckShown[pool_row][slot]) {
+					((CXWnd*)button)->Show(check_used[pool_row][slot] ? 1 : 0, 1);
+					CheckShown[pool_row][slot] = check_used[pool_row][slot];
+				}
+			}
+
+			if (RemovePool[pool_row] && remove_used[pool_row] != RemoveShown[pool_row]) {
+				((CXWnd*)RemovePool[pool_row])->Show(remove_used[pool_row] ? 1 : 0, 1);
+				RemoveShown[pool_row] = remove_used[pool_row];
+			}
+
+			if (IconPool[pool_row] && icon_used[pool_row] != IconShown[pool_row]) {
+				((CXWnd*)IconPool[pool_row])->Show(icon_used[pool_row] ? 1 : 0, 1);
+				IconShown[pool_row] = icon_used[pool_row];
+			}
+		}
+
+		for (CButtonWnd* button : RulesRefresh) {
+			((CXWnd*)button)->Show(0, 1);
+			((CXWnd*)button)->Show(1, 1);
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+		NativeAutoLootTrace("rules pool show toggle faulted");
+	}
+}
+
+void NativeAutoLootRulesWnd::HandleRuleCell(int pool_row, int slot)
+{
+	if (!RuleList) {
+		return;
+	}
+
+	const int item_id = (int)RuleList->GetItemData(pool_row);
+	if (item_id <= 0) {
+		return;
+	}
+
+	NativeAutoLootRuleRow* rule = nullptr;
+	for (NativeAutoLootRuleRow& row : gNativeAutoLootRuleRows) {
+		if (row.item_id == item_id) {
+			rule = &row;
+			break;
+		}
+	}
+
+	if (!rule) {
+		return;
+	}
+
+	char command[128];
+	if (slot == 4) {
+		sprintf_s(command, "/say #advloot filter remove %d", item_id);
+		NativeAutoLootSendCommand(command);
+		SetStatus("Requested filter removal.");
+		return;
+	}
+
+	if (slot == 3) {
+		sprintf_s(command, "/say #advloot filter autoroll %d %s", item_id, rule->auto_roll ? "off" : "on");
+		NativeAutoLootSendCommand(command);
+		SetStatus("Toggled Auto Roll.");
+		return;
+	}
+
+	static const char* kRuleNames[3] = { "always_need", "always_greed", "never" };
+	const bool active =
+		(slot == 0 && rule->rule == "always_need") ||
+		(slot == 1 && rule->rule == "always_greed") ||
+		(slot == 2 && rule->rule == "never");
+	if (active) {
+		sprintf_s(command, "/say #advloot filter remove %d", item_id);
+		NativeAutoLootSendCommand(command);
+		SetStatus("Requested rule removal.");
+	}
+	else {
+		sprintf_s(command, "/say #advloot filter set %d %s", item_id, kRuleNames[slot]);
+		NativeAutoLootSendCommand(command);
+		SetStatus("Requested rule change.");
+	}
 }
 
 void NativeAutoLootRulesWnd::RefreshRows()
@@ -7277,6 +7637,8 @@ void NativeAutoLootRulesWnd::RefreshRows()
 	}
 
 	RuleList->DeleteAll();
+	RowCount = 0;
+	RowIconIds.clear();
 
 	char summary[128];
 	sprintf_s(
@@ -7289,29 +7651,39 @@ void NativeAutoLootRulesWnd::RefreshRows()
 	);
 	SetLabel(SummaryLabel, summary);
 
+	SetButtonCheck(TglEnabled, gNativeAutoLootEnabled);
+	SetButtonCheck(TglSplit, gNativeAutoLootAutoSplit);
+	SetButtonCheck(TglConfirm, gNativeAutoLootConfirmRemove);
+	SetButtonCheck(TglLore, gNativeAutoLootAutoRemoveLore);
+	SetButtonCheck(TglShow, gNativeAutoLootAutoShow);
+	SetButtonCheck(TglLootAll, gNativeAutoLootAutoLootAll);
+
 	if (gNativeAutoLootRuleRows.empty()) {
-		CXStr rule("-");
-		const int row = RuleList->AddString(rule, 0xFFB0B0B0, 0, nullptr, nullptr);
-		CXStr item("No filters loaded.");
-		CXStr item_id("-");
-		RuleList->SetItemText(row, 1, &item);
-		RuleList->SetItemText(row, 2, &item_id);
-		RuleList->SetItemText(row, 3, &item_id);
+		CXStr blank("");
+		const int row = RuleList->AddString(blank, 0xFFB0B0B0, 0, nullptr, nullptr);
+		CXStr empty("No filters loaded.");
+		RuleList->SetItemText(row, 1, &empty);
 		return;
 	}
 
+	CXStr spacer(" ");
 	for (const NativeAutoLootRuleRow& entry : gNativeAutoLootRuleRows) {
-		CXStr rule(NativeDisplayRule(entry.rule));
-		const int row = RuleList->AddString(rule, NativeIsNeverRule(entry.rule) ? 0xFFFF8080 : 0xFF66FF66, (uint32_t)entry.item_id, nullptr, nullptr);
-
-		char item_id[32];
-		sprintf_s(item_id, "%d", entry.item_id);
+		CXStr blank("");
+		const int row = RuleList->AddString(blank, 0xFFFFFFFF, (uint32_t)entry.item_id, nullptr, entry.item.c_str());
 		CXStr item(entry.item.c_str());
-		CXStr id(item_id);
-		CXStr roll(entry.auto_roll ? "On" : "");
 		RuleList->SetItemText(row, 1, &item);
-		RuleList->SetItemText(row, 2, &id);
-		RuleList->SetItemText(row, 3, &roll);
+		for (int column = 2; column <= 6; ++column) {
+			RuleList->SetItemText(row, column, &spacer);
+		}
+
+		if (RowCount < kAALRulePoolRows) {
+			CellActive[RowCount][0] = entry.rule == "always_need";
+			CellActive[RowCount][1] = entry.rule == "always_greed";
+			CellActive[RowCount][2] = entry.rule == "never";
+			CellActive[RowCount][3] = entry.auto_roll;
+			RowIconIds.push_back(entry.icon_id);
+			++RowCount;
+		}
 	}
 }
 
