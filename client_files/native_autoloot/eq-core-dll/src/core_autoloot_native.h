@@ -106,6 +106,9 @@ static void NativeAutoLootShowManageWindow(int entry_id);
 static void NativeAutoLootMaybeSendInitialRequests();
 static void NativeSpellForgeShowWindow(const std::string& payload);
 static void NativeItemForgeShowWindow(const std::string& payload);
+static void NativeAutoLootShowManageWindow(int entry_id);
+static void NativeAutoLootShowRowMenu(bool shared, int entry_id, int anchor_x, int anchor_y);
+static void NativeAutoLootHideRowMenu();
 static void NativeAchievementEnsureWindow(bool show);
 static bool NativeAchievementParseTransport(const char* message);
 static void NativeFactionEnsureWindow(bool show);
@@ -575,22 +578,22 @@ public:
 				return 1;
 			}
 
-			const bool source_column =
-				(list == SharedList && column == kAALSharedSource) ||
-				(list == PersonalList && column == kAALPersonalSource);
-			if (source_column) {
-				SendCorpseAction(*row, "link", "Linked corpse loot.");
-				return 1;
+			CXRect cell_rect = list->GetItemRect(selected, column >= 0 ? column : 0);
+			CXRect list_rect = ((CXWnd*)list)->GetScreenRect();
+			int anchor_x = (int)cell_rect.A;
+			int anchor_y = (int)cell_rect.D;
+			if (anchor_x < (int)list_rect.A - 4 || anchor_y < (int)list_rect.B - 4) {
+				anchor_x += (int)list_rect.A;
+				anchor_y += (int)list_rect.B;
 			}
 
-			char command[128];
-			sprintf_s(command, "/say #advloot inspect %d", row->entry_id);
-			NativeAutoLootSendCommand(command);
-			SetStatus("Inspecting item...");
+			NativeAutoLootShowRowMenu(list == SharedList, row->entry_id, anchor_x, anchor_y);
 			return 1;
 		}
 
 		if (Message == XWM_LCLICK) {
+			NativeAutoLootHideRowMenu();
+
 			for (const NativeAutoLootPoolCellState& state : PoolStates) {
 				if ((CXWnd*)state.button != pWnd) {
 					continue;
@@ -1271,6 +1274,163 @@ private:
 static NativeAutoLootRulesWnd* gNativeAutoLootRulesWnd = nullptr;
 static NativeAutoLootSettingsWnd* gNativeAutoLootSettingsWnd = nullptr;
 static NativeAutoLootManageWnd* gNativeAutoLootManageWnd = nullptr;
+
+enum NativeAutoLootMenuAction
+{
+	kAALMenuInspect = 1,
+	kAALMenuLoot,
+	kAALMenuLeave,
+	kAALMenuNever,
+	kAALMenuFreeGrab,
+	kAALMenuGive,
+	kAALMenuLink,
+	kAALMenuSelectCorpse
+};
+
+static int gNativeAutoLootMenuEntryId = 0;
+static bool gNativeAutoLootMenuShared = false;
+
+// Live-style right-click menu, implemented as a small popup window built
+// from the same proven primitives as the loot windows (real engine context
+// menus would require unverified CContextMenu offsets in this client).
+class NativeAutoLootMenuWnd : public CCustomWnd
+{
+public:
+	NativeAutoLootMenuWnd() : CCustomWnd((char*)"NativeAutoLootMenuWnd")
+	{
+		CloseOnESC = 1;
+		SetWndNotification(NativeAutoLootMenuWnd);
+		ActionList = (CListWnd*)GetChildItem("AALM_List");
+		pXWnd()->Show(0, 1);
+	}
+
+	int WndNotification(CXWnd* pWnd, unsigned int Message, void* unknown)
+	{
+		if (Message == XWM_CLOSE) {
+			pXWnd()->Show(0, 1);
+			return 1;
+		}
+
+		if (Message == XWM_LCLICK && pWnd == (CXWnd*)ActionList && ActionList) {
+			const int selected = ActionList->GetCurSel();
+			const int action = selected >= 0 ? (int)ActionList->GetItemData(selected) : 0;
+			pXWnd()->Show(0, 1);
+			ExecuteAction(action);
+			return 1;
+		}
+
+		return CSidlScreenWnd::WndNotification(pWnd, Message, unknown);
+	}
+
+	void PopupForRow(bool shared, int entry_id, int anchor_x, int anchor_y)
+	{
+		if (!ActionList) {
+			return;
+		}
+
+		gNativeAutoLootMenuShared = shared;
+		gNativeAutoLootMenuEntryId = entry_id;
+
+		ActionList->DeleteAll();
+		AddEntry("Inspect Item", kAALMenuInspect);
+		if (shared) {
+			AddEntry("Free Grab", kAALMenuFreeGrab);
+			AddEntry("Leave on Corpse", kAALMenuLeave);
+			AddEntry("Give To...", kAALMenuGive);
+		}
+		else {
+			AddEntry("Loot", kAALMenuLoot);
+			AddEntry("Leave", kAALMenuLeave);
+			AddEntry("Never", kAALMenuNever);
+		}
+		AddEntry("Link Corpse Loot", kAALMenuLink);
+		AddEntry("Select Corpse", kAALMenuSelectCorpse);
+
+		PCSIDLWND raw = (PCSIDLWND)this;
+		int width = raw->Location.right - raw->Location.left;
+		int height = raw->Location.bottom - raw->Location.top;
+		if (width <= 0) {
+			width = 180;
+		}
+		if (height <= 0) {
+			height = 164;
+		}
+		raw->Location.left = anchor_x;
+		raw->Location.top = anchor_y;
+		raw->Location.right = anchor_x + width;
+		raw->Location.bottom = anchor_y + height;
+		pXWnd()->Show(0, 1);
+		pXWnd()->Show(1, 1);
+	}
+
+private:
+	void AddEntry(const char* label, int action)
+	{
+		CXStr text(label);
+		ActionList->AddString(text, 0xFFFFFFFF, (uint32_t)action, nullptr, label);
+	}
+
+	void ExecuteAction(int action)
+	{
+		if (action <= 0 || gNativeAutoLootMenuEntryId <= 0) {
+			return;
+		}
+
+		const int entry_id = gNativeAutoLootMenuEntryId;
+		char command[160];
+		switch (action) {
+		case kAALMenuInspect:
+			sprintf_s(command, "/say #advloot inspect %d", entry_id);
+			break;
+		case kAALMenuLoot:
+			sprintf_s(command, "/say #advloot action %d loot", entry_id);
+			break;
+		case kAALMenuLeave:
+			sprintf_s(command, "/say #advloot action %d leave", entry_id);
+			break;
+		case kAALMenuNever:
+			sprintf_s(command, "/say #advloot action %d never", entry_id);
+			break;
+		case kAALMenuFreeGrab:
+			sprintf_s(command, "/say #advloot action %d freegrab", entry_id);
+			break;
+		case kAALMenuGive:
+			NativeAutoLootShowManageWindow(entry_id);
+			return;
+		case kAALMenuLink:
+			sprintf_s(command, "/say #advloot corpse link %d", entry_id);
+			break;
+		case kAALMenuSelectCorpse:
+			sprintf_s(command, "/say #advloot corpse target %d", entry_id);
+			break;
+		default:
+			return;
+		}
+
+		NativeAutoLootSendCommand(command);
+	}
+
+	CListWnd* ActionList = nullptr;
+};
+
+static NativeAutoLootMenuWnd* gNativeAutoLootMenuWnd = nullptr;
+
+static void NativeAutoLootShowRowMenu(bool shared, int entry_id, int anchor_x, int anchor_y)
+{
+	if (!gNativeAutoLootMenuWnd) {
+		NativeAutoLootTrace("creating menu window");
+		gNativeAutoLootMenuWnd = new NativeAutoLootMenuWnd();
+	}
+
+	gNativeAutoLootMenuWnd->PopupForRow(shared, entry_id, anchor_x, anchor_y);
+}
+
+static void NativeAutoLootHideRowMenu()
+{
+	if (gNativeAutoLootMenuWnd) {
+		gNativeAutoLootMenuWnd->pXWnd()->Show(0, 1);
+	}
+}
 static std::vector<NativeAutoLootRuleRow> gNativeAutoLootRuleRows;
 
 static const char* NativeAutoLootToggleEnabledCommand()
@@ -10599,6 +10759,11 @@ static void ShutdownAutoLootNative()
 	if (gNativeAutoLootManageWnd) {
 		delete gNativeAutoLootManageWnd;
 		gNativeAutoLootManageWnd = nullptr;
+	}
+
+	if (gNativeAutoLootMenuWnd) {
+		delete gNativeAutoLootMenuWnd;
+		gNativeAutoLootMenuWnd = nullptr;
 	}
 
 	if (gNativeSpellForgeWnd) {

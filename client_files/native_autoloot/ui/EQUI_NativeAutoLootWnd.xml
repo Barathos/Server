@@ -2777,6 +2777,43 @@
 		<Pieces>AALW_CBS_R13C9</Pieces>
 	</Screen>
 
+	<Listbox item="AALM_List">
+		<ScreenID>AALM_List</ScreenID>
+		<DrawTemplate>WDT_Inner</DrawTemplate>
+		<RelativePosition>true</RelativePosition>
+		<AutoStretch>true</AutoStretch>
+		<LeftAnchorOffset>2</LeftAnchorOffset>
+		<TopAnchorOffset>2</TopAnchorOffset>
+		<RightAnchorOffset>2</RightAnchorOffset>
+		<BottomAnchorOffset>2</BottomAnchorOffset>
+		<TopAnchorToTop>true</TopAnchorToTop>
+		<BottomAnchorToTop>false</BottomAnchorToTop>
+		<LeftAnchorToLeft>true</LeftAnchorToLeft>
+		<RightAnchorToLeft>false</RightAnchorToLeft>
+		<Location><X>2</X><Y>2</Y></Location>
+		<Size><CX>176</CX><CY>140</CY></Size>
+		<Style_Border>false</Style_Border>
+		<Style_VScroll>false</Style_VScroll>
+		<Style_HScroll>false</Style_HScroll>
+		<Style_Transparent>false</Style_Transparent>
+		<Columns><Width>170</Width><Heading>Loot Actions</Heading></Columns>
+	</Listbox>
+
+	<Screen item="NativeAutoLootMenuWnd">
+		<ScreenID>NativeAutoLootMenuWnd</ScreenID>
+		<RelativePosition>false</RelativePosition>
+		<Location><X>300</X><Y>300</Y></Location>
+		<Size><CX>180</CX><CY>164</CY></Size>
+		<Text></Text>
+		<DrawTemplate>WDT_Inner</DrawTemplate>
+		<Style_Titlebar>false</Style_Titlebar>
+		<Style_Closebox>false</Style_Closebox>
+		<Style_Minimizebox>false</Style_Minimizebox>
+		<Style_Border>true</Style_Border>
+		<Style_Sizable>false</Style_Sizable>
+		<Style_Transparent>false</Style_Transparent>
+		<Pieces>AALM_List</Pieces>
+	</Screen>
 	<Label item="AALR_SummaryLabel">
 		<ScreenID>AALR_SummaryLabel</ScreenID>
 		<RelativePosition>true</RelativePosition>
