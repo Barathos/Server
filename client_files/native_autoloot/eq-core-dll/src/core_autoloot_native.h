@@ -290,7 +290,7 @@ static void NativeAutoLootDiagDumpButton(const char* tag, CButtonWnd* button)
 
 	DWORD* raw = (DWORD*)button;
 	__try {
-		for (int base = 0x1C0; base < 0x2C0; base += 0x20) {
+		for (int base = 0x1C0; base < 0x320; base += 0x20) {
 			char line[256];
 			sprintf_s(line, "DIAG dump %s +%03X: %08X %08X %08X %08X %08X %08X %08X %08X",
 				tag, base,
@@ -327,10 +327,10 @@ static const int kAALPoolSharedColumns[kAALPoolSharedCols] = {
 static int NativeAutoLootPoolControlSize(bool shared, int column)
 {
 	if (!shared) {
-		return (column == kAALPersonalLoot || column == kAALPersonalLeave || column == kAALPersonalNever) ? 18 : 16;
+		return (column == kAALPersonalLoot || column == kAALPersonalLeave || column == kAALPersonalNever) ? 26 : 24;
 	}
 
-	return (column == kAALSharedStatus || column == kAALSharedAction || column == kAALSharedManage) ? 18 : 16;
+	return (column == kAALSharedStatus || column == kAALSharedAction || column == kAALSharedManage) ? 26 : 24;
 }
 
 static int NativeAutoLootPoolSlotForColumn(bool shared, int column)
@@ -440,40 +440,40 @@ static void NativeAutoLootFitListColumns(CListWnd* list, bool shared)
 
 	const int usable_width = width > 28 ? width - 28 : 0;
 	if (!shared) {
-		const int base_total = 168 + 36 + 40 + 30 + 30 + 46 + 250;
+		const int base_total = 210 + 56 + 60 + 46 + 46 + 64 + 280;
 		const int extra = usable_width > base_total ? usable_width - base_total : 0;
-		const int item_width = 168 + (extra * 45 / 100);
-		const int source_width = 250 + (extra - (extra * 45 / 100));
+		const int item_width = 210 + (extra * 45 / 100);
+		const int source_width = 280 + (extra - (extra * 45 / 100));
 
 		NativeAutoLootSetColumnWidth(list, kAALPersonalItem, item_width);
-		NativeAutoLootSetColumnWidth(list, kAALPersonalLoot, 36);
-		NativeAutoLootSetColumnWidth(list, kAALPersonalLeave, 40);
-		NativeAutoLootSetColumnWidth(list, kAALPersonalAlwaysNeed, 30);
-		NativeAutoLootSetColumnWidth(list, kAALPersonalAlwaysGreed, 30);
-		NativeAutoLootSetColumnWidth(list, kAALPersonalNever, 46);
+		NativeAutoLootSetColumnWidth(list, kAALPersonalLoot, 56);
+		NativeAutoLootSetColumnWidth(list, kAALPersonalLeave, 60);
+		NativeAutoLootSetColumnWidth(list, kAALPersonalAlwaysNeed, 46);
+		NativeAutoLootSetColumnWidth(list, kAALPersonalAlwaysGreed, 46);
+		NativeAutoLootSetColumnWidth(list, kAALPersonalNever, 64);
 		NativeAutoLootSetColumnWidth(list, kAALPersonalSource, source_width);
 		return;
 	}
 
-	const int base_total = 110 + 68 + 48 + 34 + 28 + 30 + 30 + 30 + 30 + 30 + 30 + 132;
+	const int base_total = 160 + 88 + 64 + 52 + 44 + 44 + 44 + 44 + 44 + 44 + 44 + 170;
 	const int extra = usable_width > base_total ? usable_width - base_total : 0;
 	const int item_extra = extra * 40 / 100;
 	const int source_extra = extra * 40 / 100;
-	const int item_width = 110 + item_extra;
-	const int source_width = 132 + source_extra;
-	const int status_width = 68 + (extra - item_extra - source_extra);
+	const int item_width = 160 + item_extra;
+	const int source_width = 170 + source_extra;
+	const int status_width = 88 + (extra - item_extra - source_extra);
 
 	NativeAutoLootSetColumnWidth(list, kAALSharedItem, item_width);
 	NativeAutoLootSetColumnWidth(list, kAALSharedStatus, status_width);
-	NativeAutoLootSetColumnWidth(list, kAALSharedAction, 48);
-	NativeAutoLootSetColumnWidth(list, kAALSharedManage, 34);
-	NativeAutoLootSetColumnWidth(list, kAALSharedAutoRoll, 28);
-	NativeAutoLootSetColumnWidth(list, kAALSharedNeed, 30);
-	NativeAutoLootSetColumnWidth(list, kAALSharedGreed, 30);
-	NativeAutoLootSetColumnWidth(list, kAALSharedNo, 30);
-	NativeAutoLootSetColumnWidth(list, kAALSharedAlwaysNeed, 30);
-	NativeAutoLootSetColumnWidth(list, kAALSharedAlwaysGreed, 30);
-	NativeAutoLootSetColumnWidth(list, kAALSharedNever, 30);
+	NativeAutoLootSetColumnWidth(list, kAALSharedAction, 64);
+	NativeAutoLootSetColumnWidth(list, kAALSharedManage, 52);
+	NativeAutoLootSetColumnWidth(list, kAALSharedAutoRoll, 44);
+	NativeAutoLootSetColumnWidth(list, kAALSharedNeed, 44);
+	NativeAutoLootSetColumnWidth(list, kAALSharedGreed, 44);
+	NativeAutoLootSetColumnWidth(list, kAALSharedNo, 44);
+	NativeAutoLootSetColumnWidth(list, kAALSharedAlwaysNeed, 44);
+	NativeAutoLootSetColumnWidth(list, kAALSharedAlwaysGreed, 44);
+	NativeAutoLootSetColumnWidth(list, kAALSharedNever, 44);
 	NativeAutoLootSetColumnWidth(list, kAALSharedSource, source_width);
 }
 
@@ -745,6 +745,7 @@ private:
 	bool GetInlineCellDrawRect(const NativeAutoLootInlineCellSpec& spec, CXRect* target, CXRect* clip) const;
 	bool GetIconCellDrawRect(CListWnd* list, int row, CXRect* target, CXRect* clip) const;
 	void SetIconButtonCell(CButtonWnd* button, int* last_cell, int icon_id);
+	void ApplyListRowHeights();
 	void SyncInlinePool();
 	void ApplySetAll(bool shared, int choice);
 	int ResolveComboChoice(CComboWnd* combo, int hint);
@@ -1424,10 +1425,10 @@ public:
 		int width = raw->Location.right - raw->Location.left;
 		int height = raw->Location.bottom - raw->Location.top;
 		if (width <= 0) {
-			width = 180;
+			width = 220;
 		}
 		if (height <= 0) {
-			height = 128;
+			height = 176;
 		}
 		raw->Location.left = anchor_x;
 		raw->Location.top = anchor_y;
@@ -7671,15 +7672,15 @@ bool NativeAutoLootWnd::GetIconCellDrawRect(CListWnd* list, int row, CXRect* tar
 			return false;
 		}
 
-		const int control_size = 18;
+		const int control_size = 26;
 		int vertical_inset = (bottom - top - control_size) / 2;
 		if (vertical_inset < 0) {
 			vertical_inset = 0;
 		}
 
-		target->A = left + 1;
+		target->A = left + 2;
 		target->B = top + vertical_inset;
-		target->C = left + 1 + control_size;
+		target->C = left + 2 + control_size;
 		target->D = top + vertical_inset + control_size;
 		clip->A = list_clip.A;
 		clip->B = list_clip.B;
@@ -7721,6 +7722,35 @@ void NativeAutoLootWnd::SetIconButtonCell(CButtonWnd* button, int* last_cell, in
 	}
 }
 
+// CListWnd stores its fixed row height at +0x21C (located empirically via
+// the 2026-06-09 stride-scan trials; stock value is 14). Hold it at 36 so
+// rows fit the font-5 text, 24px checkboxes, and 26px item icons.
+void NativeAutoLootWnd::ApplyListRowHeights()
+{
+	__try {
+		bool changed = false;
+		if (PersonalList && ((DWORD*)PersonalList)[0x21C / 4] != 36) {
+			((DWORD*)PersonalList)[0x21C / 4] = 36;
+			((CXWnd*)PersonalList)->Show(0, 1);
+			((CXWnd*)PersonalList)->Show(1, 1);
+			changed = true;
+		}
+
+		if (SharedList && ((DWORD*)SharedList)[0x21C / 4] != 36) {
+			((DWORD*)SharedList)[0x21C / 4] = 36;
+			((CXWnd*)SharedList)->Show(0, 1);
+			((CXWnd*)SharedList)->Show(1, 1);
+			changed = true;
+		}
+
+		if (changed) {
+			NativeAutoLootTrace("applied 36px list row height");
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+		NativeAutoLootTrace("row height apply faulted");
+	}
+}
 void NativeAutoLootWnd::SyncInlinePool()
 {
 	// The engine interprets child Location rects relative to an origin that
@@ -7947,19 +7977,7 @@ void NativeAutoLootWnd::DiagnosticPulse()
 
 	SyncInlinePool();
 
-	if (gNativeAutoLootDiagStructDumpBudget > 0) {
-		--gNativeAutoLootDiagStructDumpBudget;
-		__try {
-			for (int pool_row = 0; pool_row < 3; ++pool_row) {
-				CButtonWnd* button = PersonalIconPool[pool_row];
-				DWORD decal = button ? ((DWORD*)button)[kAALButtonNormalDecalOffset / 4] : 0;
-				NativeAutoLootTrace("DIAG icon pool R%d button=%p decal=%08X", pool_row, button, decal);
-			}
-		}
-		__except (EXCEPTION_EXECUTE_HANDLER) {
-			NativeAutoLootTrace("DIAG icon pool dump faulted");
-		}
-	}
+	ApplyListRowHeights();
 
 	const DWORD now = GetTickCount();
 	if (gNativeAutoLootDiagReportBudget <= 0 || (now - gNativeAutoLootDiagLastReportTick) < 2000) {
