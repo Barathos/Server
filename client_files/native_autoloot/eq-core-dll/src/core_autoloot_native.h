@@ -266,6 +266,7 @@ static unsigned int gNativeAutoLootDiagPostDrawCount = 0;
 static unsigned int gNativeAutoLootDiagOnProcessFrameCount = 0;
 static DWORD gNativeAutoLootDiagLastReportTick = 0;
 static int gNativeAutoLootDiagReportBudget = 300;
+static int gNativeAutoLootDiagNotifyBudget = 120;
 
 // Inline checkbox pool: real XML-declared checkbox controls positioned over
 // the list cells every pulse. Uses only primitives proven to work in this
@@ -482,6 +483,11 @@ public:
 		LeaveCorpseButton = (CButtonWnd*)GetChildItem("AALW_LeaveCorpseButton");
 		ApplyFiltersCheck = (CButtonWnd*)GetChildItem("AALW_ApplyFiltersCheck");
 		GroupedByNpcCheck = (CButtonWnd*)GetChildItem("AALW_GroupedByNpcCheck");
+		PersonalSetCombo = (CComboWnd*)GetChildItem("AALW_PersonalSetCombo");
+		SharedSetCombo = (CComboWnd*)GetChildItem("AALW_SharedSetCombo");
+		SharedLeaveAllButton = (CButtonWnd*)GetChildItem("AALW_SharedLeaveAllButton");
+		NativeAutoLootTrace("DIAG ptrs plist=%p slist=%p pcombo=%p scombo=%p sleave=%p",
+			PersonalList, SharedList, PersonalSetCombo, SharedSetCombo, SharedLeaveAllButton);
 
 		for (int pool_row = 0; pool_row < kAALPoolPersonalRows; ++pool_row) {
 			for (int slot = 0; slot < kAALPoolPersonalCols; ++slot) {
@@ -528,6 +534,27 @@ public:
 
 	int WndNotification(CXWnd* pWnd, unsigned int Message, void* unknown)
 	{
+		if (gNativeAutoLootDiagNotifyBudget > 0 &&
+			Message != XWM_LCLICK && Message != XWM_RCLICK &&
+			Message != XWM_MOUSEOVER && Message != XWM_CLOSE) {
+			--gNativeAutoLootDiagNotifyBudget;
+			NativeAutoLootTrace("DIAG notify pWnd=%p msg=%u data=%d", pWnd, Message, (int)(intptr_t)unknown);
+		}
+
+		// Combo selection in this client notifies with message 33 (msg 32
+		// fires on dropdown open/close), confirmed via the notify log.
+		if (Message == XWM_NEWVALUE || Message == 33) {
+			if (pWnd == (CXWnd*)PersonalSetCombo) {
+				ApplySetAll(false, ResolveComboChoice(PersonalSetCombo, (int)(intptr_t)unknown));
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)SharedSetCombo) {
+				ApplySetAll(true, ResolveComboChoice(SharedSetCombo, (int)(intptr_t)unknown));
+				return 1;
+			}
+		}
+
 		if (Message == XWM_CLOSE) {
 			pXWnd()->Show(0, 1);
 			return 1;
@@ -623,6 +650,11 @@ public:
 				return 1;
 			}
 
+			if (pWnd == (CXWnd*)SharedLeaveAllButton) {
+				ApplySetAll(true, 6);
+				return 1;
+			}
+
 			if (pWnd == (CXWnd*)ApplyFiltersCheck) {
 				NativeAutoLootSendCommand(NativeAutoLootToggleApplyFiltersCommand());
 				SetStatus("Toggled Apply Filters.");
@@ -636,134 +668,6 @@ public:
 				return 1;
 			}
 
-			const bool shared_action_button =
-				pWnd == (CXWnd*)NeedButton ||
-				pWnd == (CXWnd*)GreedButton ||
-				pWnd == (CXWnd*)NoButton ||
-				pWnd == (CXWnd*)AlwaysNeedButton ||
-				pWnd == (CXWnd*)AlwaysGreedButton ||
-				pWnd == (CXWnd*)AskButton ||
-				pWnd == (CXWnd*)RollButton ||
-				pWnd == (CXWnd*)FreeGrabButton ||
-				pWnd == (CXWnd*)GiveButton ||
-				pWnd == (CXWnd*)ManageButton ||
-				pWnd == (CXWnd*)LeaveCorpseButton;
-
-			NativeAutoLootRow* row = shared_action_button ? GetSelectedRowFromList(SharedList) : GetSelectedRow();
-			if (!row) {
-				SetStatus(shared_action_button ? "Select a shared loot row first." : "Select a real loot row first.");
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)LootButton) {
-				char command[128];
-				sprintf_s(command, "/say #advloot action %d loot", row->entry_id);
-				NativeAutoLootSendCommand(command);
-				SetStatus("Requested loot.");
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)LeaveButton) {
-				char command[128];
-				sprintf_s(command, "/say #advloot action %d leave", row->entry_id);
-				NativeAutoLootSendCommand(command);
-				SetStatus("Requested leave.");
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)AlwaysButton) {
-				char command[128];
-				sprintf_s(command, "/say #advloot action %d alwaysloot", row->entry_id);
-				NativeAutoLootSendCommand(command);
-				SetStatus("Requested always loot.");
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)NeverButton) {
-				char command[128];
-				sprintf_s(command, "/say #advloot action %d never", row->entry_id);
-				NativeAutoLootSendCommand(command);
-				SetStatus("Requested never loot.");
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)NeedButton) {
-				char command[128];
-				sprintf_s(command, "/say #advloot action %d need", row->entry_id);
-				NativeAutoLootSendCommand(command);
-				SetStatus("Marked Need.");
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)GreedButton) {
-				char command[128];
-				sprintf_s(command, "/say #advloot action %d greed", row->entry_id);
-				NativeAutoLootSendCommand(command);
-				SetStatus("Marked Greed.");
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)NoButton) {
-				char command[128];
-				sprintf_s(command, "/say #advloot action %d no", row->entry_id);
-				NativeAutoLootSendCommand(command);
-				SetStatus("Marked No.");
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)AlwaysNeedButton) {
-				char command[128];
-				sprintf_s(command, "/say #advloot action %d alwaysneed", row->entry_id);
-				NativeAutoLootSendCommand(command);
-				SetStatus("Marked Always Need.");
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)AlwaysGreedButton) {
-				char command[128];
-				sprintf_s(command, "/say #advloot action %d alwaysgreed", row->entry_id);
-				NativeAutoLootSendCommand(command);
-				SetStatus("Marked Always Greed.");
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)AskButton) {
-				char command[128];
-				sprintf_s(command, "/say #advloot action %d ask", row->entry_id);
-				NativeAutoLootSendCommand(command);
-				SetStatus("Started Ask/Roll.");
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)RollButton) {
-				char command[128];
-				sprintf_s(command, "/say #advloot action %d roll", row->entry_id);
-				NativeAutoLootSendCommand(command);
-				SetStatus("Resolved roll.");
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)FreeGrabButton) {
-				char command[128];
-				sprintf_s(command, "/say #advloot action %d freegrab", row->entry_id);
-				NativeAutoLootSendCommand(command);
-				SetStatus("Set Free Grab.");
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)GiveButton || pWnd == (CXWnd*)ManageButton) {
-				NativeAutoLootShowManageWindow(row->entry_id);
-				SetStatus("Opened Manage Loot.");
-				return 1;
-			}
-
-			if (pWnd == (CXWnd*)LeaveCorpseButton) {
-				char command[128];
-				sprintf_s(command, "/say #advloot action %d leave", row->entry_id);
-				NativeAutoLootSendCommand(command);
-				SetStatus("Left item on corpse.");
-				return 1;
-			}
 		}
 
 		return CSidlScreenWnd::WndNotification(pWnd, Message, unknown);
@@ -791,6 +695,8 @@ private:
 	bool ToggleAutoRollFilter(const NativeAutoLootRow& row);
 	bool GetInlineCellDrawRect(const NativeAutoLootInlineCellSpec& spec, CXRect* target, CXRect* clip) const;
 	void SyncInlinePool();
+	void ApplySetAll(bool shared, int choice);
+	int ResolveComboChoice(CComboWnd* combo, int hint);
 	void SetLabel(CXWnd* label, const char* text);
 
 	CXWnd* PersonalLabel = nullptr;
@@ -824,6 +730,9 @@ private:
 	CButtonWnd* LeaveCorpseButton = nullptr;
 	CButtonWnd* ApplyFiltersCheck = nullptr;
 	CButtonWnd* GroupedByNpcCheck = nullptr;
+	CComboWnd* PersonalSetCombo = nullptr;
+	CComboWnd* SharedSetCombo = nullptr;
+	CButtonWnd* SharedLeaveAllButton = nullptr;
 	CButtonWnd* PersonalPool[kAALPoolPersonalRows][kAALPoolPersonalCols] = {};
 	CButtonWnd* SharedPool[kAALPoolSharedRows][kAALPoolSharedCols] = {};
 	bool PersonalPoolShown[kAALPoolPersonalRows][kAALPoolPersonalCols] = {};
@@ -7379,6 +7288,74 @@ bool NativeAutoLootWnd::ToggleAutoRollFilter(const NativeAutoLootRow& row)
 	return true;
 }
 
+int NativeAutoLootWnd::ResolveComboChoice(CComboWnd* combo, int hint)
+{
+	// GetCurChoice is authoritative; the notification payload is only a
+	// fallback because it reads 0 regardless of selection in this client.
+	int resolved = -1;
+	__try {
+		resolved = combo ? combo->GetCurChoice() : -1;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+		NativeAutoLootTrace("combo GetCurChoice faulted");
+	}
+
+	if (resolved >= 0 && resolved <= 8) {
+		return resolved;
+	}
+
+	return (hint >= 0 && hint <= 8) ? hint : -1;
+}
+
+void NativeAutoLootWnd::ApplySetAll(bool shared, int choice)
+{
+	NativeAutoLootTrace("DIAG set-all shared=%d choice=%d", shared ? 1 : 0, choice);
+
+	if (!shared) {
+		if (choice == 0) {
+			NativeAutoLootSendCommand("/say #advloot personal lootall");
+			SetStatus("Requested Loot All.");
+			return;
+		}
+
+		if (choice == 1) {
+			NativeAutoLootSendCommand("/say #advloot personal leaveall");
+			SetStatus("Requested Leave All.");
+			return;
+		}
+	}
+
+	const char* action = nullptr;
+	if (!shared) {
+		action = choice == 2 ? "alwaysneed" : choice == 3 ? "alwaysgreed" : choice == 4 ? "never" : nullptr;
+	}
+	else {
+		action = choice == 0 ? "need" : choice == 1 ? "greed" : choice == 2 ? "no" :
+			choice == 3 ? "alwaysneed" : choice == 4 ? "alwaysgreed" : choice == 5 ? "never" :
+			choice == 6 ? "leave" : nullptr;
+	}
+
+	if (!action) {
+		return;
+	}
+
+	int sent = 0;
+	for (const NativeAutoLootRow& row : gNativeAutoLootRows) {
+		if (row.shared != shared || row.entry_id <= 0) {
+			continue;
+		}
+
+		char command[128];
+		sprintf_s(command, "/say #advloot action %d %s", row.entry_id, action);
+		NativeAutoLootSendCommand(command);
+		++sent;
+	}
+
+	char status[96];
+	sprintf_s(status, "Applied %s to %d item%s.", action, sent, sent == 1 ? "" : "s");
+	SetStatus(status);
+}
+
 bool NativeAutoLootWnd::GetInlineCellDrawRect(const NativeAutoLootInlineCellSpec& spec, CXRect* target, CXRect* clip) const
 {
 	if (!target || !clip || !spec.list) {
@@ -7636,7 +7613,6 @@ void NativeAutoLootWnd::DiagnosticPulse()
 		PoolCalibrated ? "ok" : "pending");
 
 	NativeAutoLootTrace("%s", report);
-	SetStatus(report);
 }
 
 bool NativeAutoLootWnd::HandleListColumnClick(CListWnd* list, bool shared, void* hit_test_point)
