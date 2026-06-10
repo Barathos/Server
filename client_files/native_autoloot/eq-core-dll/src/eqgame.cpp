@@ -779,8 +779,8 @@ void InitHooks()
 		InitializeMQ2Spawns();
 		InitializeMapPlugin();
 		InitializeMQ2ItemDisplay();
-		InitializeMQ2Labels();
 	}
+	InitializeMQ2Labels();
 
 	if (!baseAddress) return;
 	InitOptions();

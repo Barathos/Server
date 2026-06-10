@@ -6636,6 +6636,78 @@ static void NativeHpFixSetChildLabel(CXWnd* parent, const char* child_name, cons
 	}
 }
 
+bool NativeHpFixGetEqTypeLabel(DWORD eq_type, const char* control_name, char* out, size_t out_size)
+{
+	if (!out || out_size == 0) {
+		return false;
+	}
+
+	out[0] = '\0';
+
+	if (!gNativeHpFixState.has_payload) {
+		return false;
+	}
+
+	std::string text;
+	switch (eq_type) {
+		case 17: // Current HP labels
+			text = (control_name && !strncmp(control_name, "IWS_", 4)) ?
+				NativeHpFixFormatInteger(gNativeHpFixState.current) :
+				NativeHpFixFormatCompact(gNativeHpFixState.current);
+			break;
+		case 18: // Maximum HP labels
+			text = (control_name && !strncmp(control_name, "IWS_", 4)) ?
+				NativeHpFixFormatInteger(gNativeHpFixState.maximum) :
+				NativeHpFixFormatCompact(gNativeHpFixState.maximum);
+			break;
+		case 19: { // Player HP percent label
+			int percent = static_cast<int>(gNativeHpFixState.percent + 0.5f);
+			if (percent < 0) {
+				percent = 0;
+			}
+			else if (percent > 100) {
+				percent = 100;
+			}
+
+			char percent_text[32];
+			sprintf_s(percent_text, "%d", percent);
+			text = percent_text;
+			break;
+		}
+		default:
+			return false;
+	}
+
+	strncpy_s(out, out_size, text.c_str(), _TRUNCATE);
+	return true;
+}
+
+bool NativeHpFixGetGaugeValue(DWORD eq_type, int* out_value)
+{
+	if (!out_value || !gNativeHpFixState.has_payload) {
+		return false;
+	}
+
+	switch (eq_type) {
+		case 1:  // Player HP gauge
+		case 11: // Group window self/first HP gauge
+			break;
+		default:
+			return false;
+	}
+
+	int percent = static_cast<int>(gNativeHpFixState.percent + 0.5f);
+	if (percent < 0) {
+		percent = 0;
+	}
+	else if (percent > 100) {
+		percent = 100;
+	}
+
+	*out_value = percent;
+	return true;
+}
+
 class NativeHpFixWnd : public CCustomWnd
 {
 public:

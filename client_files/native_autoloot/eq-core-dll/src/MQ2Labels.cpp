@@ -10,6 +10,9 @@
 
 typedef string(*pEqTypesFunc)();
 
+extern bool NativeHpFixGetEqTypeLabel(DWORD eq_type, const char* control_name, char* out, size_t out_size);
+extern bool NativeHpFixGetGaugeValue(DWORD eq_type, int* out_value);
+
 map<DWORD, pEqTypesFunc> eqTypesMap;
 
 namespace {
@@ -164,7 +167,22 @@ public:
 
 
 		auto eqtype_iter = eqTypesMap.find((DWORD)pThisLabel->SidlPiece);
-		if (eqtype_iter != eqTypesMap.end()) {
+		CHAR control_name[MAX_STRING] = {0};
+		__try {
+			if (CXMLData* xml_data = ((CXWnd*)pThisLabel)->GetXMLData()) {
+				GetCXStr(xml_data->Name.Ptr, control_name, MAX_STRING);
+			}
+		}
+		__except(EXCEPTION_EXECUTE_HANDLER) {
+			control_name[0] = 0;
+		}
+
+		CHAR hpfix_text[MAX_STRING] = {0};
+		if (NativeHpFixGetEqTypeLabel((DWORD)pThisLabel->SidlPiece, control_name, hpfix_text, sizeof(hpfix_text))) {
+			eqtypesString = hpfix_text;
+			Found = TRUE;
+		}
+		else if (eqtype_iter != eqTypesMap.end()) {
 			auto func = eqtype_iter->second;
 			if (func) {
 				eqtypesString = (*func)();
@@ -189,6 +207,22 @@ public:
 
 DETOUR_TRAMPOLINE_EMPTY(VOID CLabelHook::Draw_Trampoline(VOID));
 
+int __cdecl GetGaugeValueFromEQ_Trampoline(int eq_type, CXStr* text, bool* valid);
+int __cdecl GetGaugeValueFromEQ_Detour(int eq_type, CXStr* text, bool* valid)
+{
+	int hpfix_value = 0;
+	if (NativeHpFixGetGaugeValue((DWORD)eq_type, &hpfix_value)) {
+		if (valid) {
+			*valid = true;
+		}
+		return hpfix_value;
+	}
+
+	return GetGaugeValueFromEQ_Trampoline(eq_type, text, valid);
+}
+
+DETOUR_TRAMPOLINE_EMPTY(int __cdecl GetGaugeValueFromEQ_Trampoline(int, CXStr*, bool*));
+
 BOOL StealNextGauge=FALSE;
 DWORD NextGauge=0;
 
@@ -200,6 +234,12 @@ std::string testDisplayFunction()
 // Called once, when the plugin is to initialize
 PLUGIN_API VOID InitializeMQ2Labels(VOID)
 {
+	static bool initialized = false;
+	if (initialized) {
+		return;
+	}
+
+	initialized = true;
  //   DebugSpewAlways("Initializing MQ2Labels");
 	eqTypesMap[1000] = testDisplayFunction; //and so forth 
 	eqTypesMap[3] = NativeClassNamesLabel;
@@ -209,11 +249,11 @@ PLUGIN_API VOID InitializeMQ2Labels(VOID)
     //EasyClassDetour(CLabel__Draw,CLabelHook,Draw_Detour,VOID,(VOID),Draw_Trampoline);
     EzDetour(CLabel__Draw,&CLabelHook::Draw_Detour,&CLabelHook::Draw_Trampoline);
     EzDetour(CSidlManager__CreateLabel,&CSidlManagerHook::CreateLabel_Detour,&CSidlManagerHook::CreateLabel_Trampoline);
+    EzDetour(__GetGaugeValueFromEQ,GetGaugeValueFromEQ_Detour,GetGaugeValueFromEQ_Trampoline);
 
 
     // currently in testing:
     //    EasyClassDetour(CGauge__Draw,CGaugeHook,Draw_Detour,VOID,(VOID),Draw_Trampoline);
-    //    EasyDetour(__GetGaugeValueFromEQ,GetGaugeValueFromEQ_Hook,int,(int,class CXStr *,bool *),GetGaugeValueFromEQ_Trampoline);
 }
 
 // Called once, when the plugin is to shutdown
@@ -225,6 +265,6 @@ PLUGIN_API VOID ShutdownLabelsPlugin(VOID)
     RemoveDetour(CSidlManager__CreateLabel);
     RemoveDetour(CLabel__Draw);
     //RemoveDetour(CGaugeWnd__Draw);
-    //RemoveDetour(__GetGaugeValueFromEQ);
+    RemoveDetour(__GetGaugeValueFromEQ);
 }
 
