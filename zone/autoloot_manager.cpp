@@ -1284,11 +1284,15 @@ bool AutoLootManager::EntryNeedsDecisionForClient(const LootEntry &entry, Client
 			return vote_iter == entry.votes.end() || vote_iter->second == VoteChoice::Unset;
 		}
 
-		if (!can_manage || entry.state != "waiting") {
+		if (entry.state != "waiting") {
 			return false;
 		}
 
-		if (entry.dynamic_instance) {
+		// The master always has a distribution decision pending. Other
+		// members need attention when their saved filters did not already
+		// cover the item, so new shared loot auto-shows for the whole
+		// party, not just the master.
+		if (can_manage || entry.dynamic_instance) {
 			return true;
 		}
 
@@ -2860,6 +2864,9 @@ void AutoLootManager::HandleAdvancedLootFilterCommand(Client *client, const Sepe
 		client->Message(Chat::White, "Usage: #advloot filter set [Item ID] [unset|always_need|always_greed|never]");
 		client->Message(Chat::White, "Usage: #advloot filter autoroll [Item ID] [on|off]");
 		client->Message(Chat::White, "Usage: #advloot filter remove [Item ID]");
+		client->Message(Chat::White, "Usage: #advloot filter share - offer your filters to your targeted player");
+		client->Message(Chat::White, "Usage: #advloot filter accept [merge|replace] - apply a pending filter offer");
+		client->Message(Chat::White, "Usage: #advloot filter copyfrom [Character Name] - copy filters from your other character");
 	};
 
 	if (command_index > sep->argnum || !sep->arg[command_index][0] || !strcasecmp(sep->arg[command_index], "help")) {
@@ -2877,6 +2884,131 @@ void AutoLootManager::HandleAdvancedLootFilterCommand(Client *client, const Sepe
 		}
 
 		client->Message(Chat::White, "Usage: #advloot filter native list");
+		return;
+	}
+
+	if (action == "share") {
+		auto target = client->GetTarget();
+		if (!target || !target->IsClient() || target == client) {
+			client->Message(Chat::Red, "Target the player you want to share your Advanced Loot filters with, then use #advloot filter share.");
+			return;
+		}
+
+		auto target_client = target->CastToClient();
+		const auto filters = GetFilters(client->CharacterID());
+		if (filters.empty()) {
+			client->Message(Chat::Red, "You have no Advanced Loot filters to share.");
+			return;
+		}
+
+		PendingFilterShare offer;
+		offer.from_name = client->GetCleanName();
+		offer.filters = filters;
+		offer.offered_at = std::time(nullptr);
+		m_pending_filter_shares[target_client->CharacterID()] = offer;
+
+		client->Message(Chat::White, fmt::format("Offered {} Advanced Loot filters to {}.", filters.size(), target_client->GetCleanName()).c_str());
+		target_client->Message(Chat::Yellow, fmt::format("{} wants to share {} Advanced Loot filters with you.", client->GetCleanName(), filters.size()).c_str());
+		target_client->Message(Chat::Yellow, "Type #advloot filter accept merge to add them to yours, or #advloot filter accept replace to replace yours. The offer expires in 5 minutes.");
+		return;
+	}
+
+	if (action == "accept") {
+		auto offer_iter = m_pending_filter_shares.find(client->CharacterID());
+		const bool expired =
+			offer_iter != m_pending_filter_shares.end() &&
+			std::time(nullptr) - offer_iter->second.offered_at > 300;
+		if (offer_iter == m_pending_filter_shares.end() || expired) {
+			if (expired) {
+				m_pending_filter_shares.erase(offer_iter);
+			}
+			client->Message(Chat::Red, "You have no pending Advanced Loot filter offer. Ask the sharer to target you and use #advloot filter share.");
+			return;
+		}
+
+		const bool replace = sep->argnum >= command_index + 1 && !strcasecmp(sep->arg[command_index + 1], "replace");
+		const bool merge = sep->argnum >= command_index + 1 && !strcasecmp(sep->arg[command_index + 1], "merge");
+		if (!replace && !merge) {
+			client->Message(Chat::White, "Usage: #advloot filter accept [merge|replace]");
+			return;
+		}
+
+		const auto offer = offer_iter->second;
+		m_pending_filter_shares.erase(offer_iter);
+
+		if (replace) {
+			for (const auto &existing : GetFilters(client->CharacterID())) {
+				RemoveFilter(client->CharacterID(), existing.item_id);
+			}
+		}
+
+		int applied = 0;
+		for (const auto &filter : offer.filters) {
+			SetFilter(client->CharacterID(), filter.item_id, filter.decision, filter.auto_ask_roll);
+			++applied;
+		}
+
+		client->Message(
+			Chat::White,
+			fmt::format(
+				"{} {} Advanced Loot filters from {}.",
+				replace ? "Replaced your filters with" : "Merged in",
+				applied,
+				offer.from_name
+			).c_str()
+		);
+		SendNativeStatus(client);
+		SendNativeFilters(client);
+		return;
+	}
+
+	if (action == "copyfrom") {
+		if (command_index + 1 > sep->argnum || !sep->arg[command_index + 1][0]) {
+			client->Message(Chat::White, "Usage: #advloot filter copyfrom [Character Name] - copies filters from one of your other characters.");
+			return;
+		}
+
+		const std::string source_name = sep->arg[command_index + 1];
+		auto results = database.QueryDatabase(
+			fmt::format(
+				"SELECT `id`, `account_id` FROM `character_data` WHERE `name` = '{}' LIMIT 1",
+				Strings::Escape(source_name)
+			)
+		);
+
+		if (!results.Success() || !results.RowCount()) {
+			client->Message(Chat::Red, "No character by that name was found.");
+			return;
+		}
+
+		auto row = results.begin();
+		const uint32 source_character_id = Strings::ToUnsignedInt(row[0]);
+		const uint32 source_account_id = Strings::ToUnsignedInt(row[1]);
+		if (source_account_id != client->AccountID()) {
+			client->Message(Chat::Red, "You can only copy filters from characters on your own account. Use #advloot filter share for other players.");
+			return;
+		}
+
+		if (source_character_id == client->CharacterID()) {
+			client->Message(Chat::Red, "That is this character.");
+			return;
+		}
+
+		const auto filters = GetFilters(source_character_id);
+		if (filters.empty()) {
+			client->Message(Chat::Red, fmt::format("{} has no Advanced Loot filters.", source_name).c_str());
+			return;
+		}
+
+		int applied = 0;
+		for (const auto &filter : filters) {
+			SetFilter(client->CharacterID(), filter.item_id, filter.decision, filter.auto_ask_roll);
+			++applied;
+		}
+
+		client->Message(Chat::White, fmt::format("Copied {} Advanced Loot filters from {}.", applied, source_name).c_str());
+		SendNativeStatus(client);
+		SendNativeFilters(client);
 		return;
 	}
 

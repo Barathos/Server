@@ -150,6 +150,13 @@ private:
 	std::map<uint32, LootEntry> m_loot_entries;
 	std::map<uint32, uint32> m_group_master_looters;
 	std::map<uint32, uint32> m_raid_master_looters;
+
+	struct PendingFilterShare {
+		std::string from_name;
+		std::vector<FilterEntry> filters;
+		time_t offered_at = 0;
+	};
+	std::map<uint32, PendingFilterShare> m_pending_filter_shares;
 	std::map<uint32, std::map<uint32, time_t>> m_pending_filter_removals;
 	uint32 m_next_loot_entry_id = 1;
 	time_t m_last_process = 0;
