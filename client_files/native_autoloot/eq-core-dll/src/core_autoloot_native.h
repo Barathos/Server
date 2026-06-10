@@ -1353,7 +1353,7 @@ public:
 			width = 180;
 		}
 		if (height <= 0) {
-			height = 164;
+			height = 128;
 		}
 		raw->Location.left = anchor_x;
 		raw->Location.top = anchor_y;
