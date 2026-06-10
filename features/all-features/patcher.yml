@@ -127,6 +127,14 @@ files:
     destination: uifiles/default/EQLSUI_YesNoDialog.xml
   - source: client_files/native_autoloot/ui/EQUI_NativeAutoLootWnd.xml
     destination: uifiles/default/EQUI_NativeAutoLootWnd.xml
+  - source: client_files/native_autoloot/ui/nal_pieces07.tga
+    destination: uifiles/default/nal_pieces07.tga
+  - source: client_files/native_autoloot/ui/nal_pieces11.tga
+    destination: uifiles/default/nal_pieces11.tga
+  - source: client_files/native_autoloot/ui/EQUI_Animations.xml
+    destination: uifiles/default/EQUI_Animations.xml
+  - source: client_files/native_autoloot/ui/EQUI_Templates.xml
+    destination: uifiles/default/EQUI_Templates.xml
   - source: client_files/native_autoloot/ui/EQUI_NativeItemForgeWnd.xml
     destination: uifiles/default/EQUI_NativeItemForgeWnd.xml
   - source: client_files/native_autoloot/ui/EQUI_NativeSpellForgeWnd.xml

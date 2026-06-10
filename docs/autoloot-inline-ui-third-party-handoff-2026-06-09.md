@@ -482,6 +482,15 @@ Confirmed in-game: pool checkboxes render inline, clicks route correctly (`#advl
 - **Child `Location` is interpreted relative to the window's client origin (below titlebar/border), not its outer screen rect.** Measured delta on this window: (-3,-18). Fixed with self-calibration: place first button, next pulse measure its actual `GetScreenRect`, latch the delta (`PoolCalibrated`/`PoolCorrectionX/Y` members), apply to all Location writes.
 - **The engine caches each control's absolute screen position.** Direct `Location` writes do NOT take visual effect until the cache is invalidated — e.g. by a window move or a hide→show transition (user observed boxes "refresh" into place only after dragging the window). Fix: when a button's Location actually changes, toggle `Show(0,1)`/`Show(1,1)` within the same pulse (between frames, no visible flicker) — `PoolRefresh` vector in `SyncInlinePool`.
 
+### Live-parity phase 1+2 (same evening): authentic Live art + shared icon columns
+
+Goal shifted to matching Live EQ's Advanced Loot look/function (https://www.everquest.com/news/advanced-looting-system; reference screenshots committed under docs/live-advloot-reference/). Implemented:
+
+- Extracted Live's advloot sprite coordinates from the user's Live install (`D:\SteamLibrary\steamapps\common\Everquest F2P\uifiles\default`): Live's own `EQUI_AdvancedLootWnd.xml` names the animations (A_Check*/A_Cancel*/A_Grab*/A_Edit*/A_Question* in window_pieces11.tga + 07), and Live implements rows as per-row button templates — same architecture as our pool.
+- Shipped Live textures renamed `nal_pieces07.tga`/`nal_pieces11.tga` (RoF2 has no window_pieces11; 07 must not be clobbered). Added to patcher.yml.
+- Regenerated the XML pool (180 controls): personal Loot=green check, Leave/Never=red X (18px icon push buttons), AN/AG checkboxes; shared adds Status (blue hand, pressed art when Free Grab active), Action (?-over-dice), Manage (gear) icon slots ahead of the 7 checkboxes (kAALPoolSharedCols now 10). Custom `Ui2DAnimation` + named `ButtonDrawTemplate` (NAL_BDT_*) defined at the top of our window XML — UNVERIFIED whether the RoF2 SIDL parser registers templates from a window include file (no precedent in client files); if buttons render blank, fallback is shipping a patched EQUI_Templates.xml.
+- C++: `NativeAutoLootPoolControlSize` (18 vs 16 px), shared RefreshList registers icon cells for Status/Action/Manage when actionable (text "-"/status string otherwise). Click routing unchanged (column constants already mapped).
+
 ### Future refinement (after pool confirmed)
 
 Live-style green-check/red-X art: pure XML — define custom button draw templates / decal animations in the XML and use them on pool buttons. No new C++ paths needed. SetItemIcon could be revisited only with a trustworthy CTextureAnimation* source (FindAnimation is broken; offset repair would need verified RoF2-era offsets).

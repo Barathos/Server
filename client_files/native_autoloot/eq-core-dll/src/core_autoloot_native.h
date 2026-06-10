@@ -275,15 +275,26 @@ static int gNativeAutoLootDiagReportBudget = 300;
 static const int kAALPoolPersonalRows = 8;
 static const int kAALPoolPersonalCols = 5;
 static const int kAALPoolSharedRows = 14;
-static const int kAALPoolSharedCols = 7;
+static const int kAALPoolSharedCols = 10;
 
 static const int kAALPoolPersonalColumns[kAALPoolPersonalCols] = {
 	kAALPersonalLoot, kAALPersonalLeave, kAALPersonalAlwaysNeed, kAALPersonalAlwaysGreed, kAALPersonalNever
 };
 
 static const int kAALPoolSharedColumns[kAALPoolSharedCols] = {
-	kAALSharedAutoRoll, kAALSharedNeed, kAALSharedGreed, kAALSharedNo, kAALSharedAlwaysNeed, kAALSharedAlwaysGreed, kAALSharedNever
+	kAALSharedStatus, kAALSharedAction, kAALSharedManage, kAALSharedAutoRoll, kAALSharedNeed, kAALSharedGreed, kAALSharedNo, kAALSharedAlwaysNeed, kAALSharedAlwaysGreed, kAALSharedNever
 };
+
+// Icon-art buttons (Live's 36x36 sprites scaled down) get a slightly larger
+// footprint than the plain 16x16 checkboxes.
+static int NativeAutoLootPoolControlSize(bool shared, int column)
+{
+	if (!shared) {
+		return (column == kAALPersonalLoot || column == kAALPersonalLeave || column == kAALPersonalNever) ? 18 : 16;
+	}
+
+	return (column == kAALSharedStatus || column == kAALSharedAction || column == kAALSharedManage) ? 18 : 16;
+}
 
 static int NativeAutoLootPoolSlotForColumn(bool shared, int column)
 {
@@ -7397,7 +7408,7 @@ bool NativeAutoLootWnd::GetInlineCellDrawRect(const NativeAutoLootInlineCellSpec
 			return false;
 		}
 
-		const int control_size = 16;
+		const int control_size = NativeAutoLootPoolControlSize(spec.list == SharedList, spec.column);
 		int horizontal_inset = (right - left - control_size) / 2;
 		int vertical_inset = (bottom - top - control_size) / 2;
 		if (horizontal_inset < 0) {
@@ -7854,15 +7865,33 @@ void NativeAutoLootWnd::RefreshList(CListWnd* list, bool shared)
 			const bool never = entry.rule == "never";
 			const bool filter_enabled = entry.item_id > 0;
 			const bool vote_enabled = entry.can_vote && !entry.locked;
-			const char* action_label = entry.can_roll ? "Roll" :
-				entry.can_ask ? "Ask" :
-				(status_kind == "ask" || status_kind == "rolling") ? "Roll" :
-				"-";
-			CXStr action(action_label);
-			CXStr manage((entry.manage || entry.can_give) ? "M" : "-");
-			list->SetItemText(row, kAALSharedStatus, &status);
-			list->SetItemText(row, kAALSharedAction, &action);
-			list->SetItemText(row, kAALSharedManage, &manage);
+			const bool action_available = (entry.can_roll || entry.can_ask) && !entry.locked;
+			const bool manage_available = (entry.manage || entry.can_give) && !entry.locked;
+			const bool grab_available = !entry.locked && ((entry.free_grab && entry.can_loot) || entry.can_freegrab);
+
+			if (grab_available) {
+				NativeAutoLootSetSquareCell(list, row, kAALSharedStatus, entry.free_grab, true, false);
+			}
+			else {
+				list->SetItemText(row, kAALSharedStatus, &status);
+			}
+
+			if (action_available) {
+				NativeAutoLootSetSquareCell(list, row, kAALSharedAction, false, true, false);
+			}
+			else {
+				CXStr action("-");
+				list->SetItemText(row, kAALSharedAction, &action);
+			}
+
+			if (manage_available) {
+				NativeAutoLootSetSquareCell(list, row, kAALSharedManage, false, true, false);
+			}
+			else {
+				CXStr manage("-");
+				list->SetItemText(row, kAALSharedManage, &manage);
+			}
+
 			NativeAutoLootSetSquareCell(list, row, kAALSharedAutoRoll, entry.auto_roll, filter_enabled, false);
 			NativeAutoLootSetSquareCell(list, row, kAALSharedNeed, need, vote_enabled || need, false);
 			NativeAutoLootSetSquareCell(list, row, kAALSharedGreed, greed, vote_enabled || greed, false);

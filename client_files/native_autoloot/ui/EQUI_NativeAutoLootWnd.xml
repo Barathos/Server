@@ -564,26 +564,22 @@
 		<ScreenID>AALW_CBP_R0C0</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Loot item(s) on corpse(s)</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Check</Template>
 	</Button>
 
 	<Button item="AALW_CBP_R0C1">
 		<ScreenID>AALW_CBP_R0C1</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Leave item(s) on corpse(s)</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Cancel</Template>
 	</Button>
 
 	<Button item="AALW_CBP_R0C2">
@@ -592,7 +588,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Always Need: Always roll need on this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -605,7 +601,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Always Greed: Always roll greed on this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -616,39 +612,33 @@
 		<ScreenID>AALW_CBP_R0C4</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Never loot this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Cancel</Template>
 	</Button>
 
 	<Button item="AALW_CBP_R1C0">
 		<ScreenID>AALW_CBP_R1C0</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Loot item(s) on corpse(s)</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Check</Template>
 	</Button>
 
 	<Button item="AALW_CBP_R1C1">
 		<ScreenID>AALW_CBP_R1C1</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Leave item(s) on corpse(s)</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Cancel</Template>
 	</Button>
 
 	<Button item="AALW_CBP_R1C2">
@@ -657,7 +647,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Always Need: Always roll need on this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -670,7 +660,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Always Greed: Always roll greed on this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -681,39 +671,33 @@
 		<ScreenID>AALW_CBP_R1C4</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Never loot this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Cancel</Template>
 	</Button>
 
 	<Button item="AALW_CBP_R2C0">
 		<ScreenID>AALW_CBP_R2C0</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Loot item(s) on corpse(s)</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Check</Template>
 	</Button>
 
 	<Button item="AALW_CBP_R2C1">
 		<ScreenID>AALW_CBP_R2C1</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Leave item(s) on corpse(s)</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Cancel</Template>
 	</Button>
 
 	<Button item="AALW_CBP_R2C2">
@@ -722,7 +706,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Always Need: Always roll need on this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -735,7 +719,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Always Greed: Always roll greed on this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -746,39 +730,33 @@
 		<ScreenID>AALW_CBP_R2C4</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Never loot this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Cancel</Template>
 	</Button>
 
 	<Button item="AALW_CBP_R3C0">
 		<ScreenID>AALW_CBP_R3C0</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Loot item(s) on corpse(s)</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Check</Template>
 	</Button>
 
 	<Button item="AALW_CBP_R3C1">
 		<ScreenID>AALW_CBP_R3C1</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Leave item(s) on corpse(s)</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Cancel</Template>
 	</Button>
 
 	<Button item="AALW_CBP_R3C2">
@@ -787,7 +765,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Always Need: Always roll need on this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -800,7 +778,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Always Greed: Always roll greed on this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -811,39 +789,33 @@
 		<ScreenID>AALW_CBP_R3C4</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Never loot this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Cancel</Template>
 	</Button>
 
 	<Button item="AALW_CBP_R4C0">
 		<ScreenID>AALW_CBP_R4C0</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Loot item(s) on corpse(s)</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Check</Template>
 	</Button>
 
 	<Button item="AALW_CBP_R4C1">
 		<ScreenID>AALW_CBP_R4C1</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Leave item(s) on corpse(s)</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Cancel</Template>
 	</Button>
 
 	<Button item="AALW_CBP_R4C2">
@@ -852,7 +824,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Always Need: Always roll need on this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -865,7 +837,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Always Greed: Always roll greed on this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -876,39 +848,33 @@
 		<ScreenID>AALW_CBP_R4C4</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Never loot this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Cancel</Template>
 	</Button>
 
 	<Button item="AALW_CBP_R5C0">
 		<ScreenID>AALW_CBP_R5C0</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Loot item(s) on corpse(s)</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Check</Template>
 	</Button>
 
 	<Button item="AALW_CBP_R5C1">
 		<ScreenID>AALW_CBP_R5C1</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Leave item(s) on corpse(s)</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Cancel</Template>
 	</Button>
 
 	<Button item="AALW_CBP_R5C2">
@@ -917,7 +883,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Always Need: Always roll need on this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -930,7 +896,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Always Greed: Always roll greed on this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -941,39 +907,33 @@
 		<ScreenID>AALW_CBP_R5C4</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Never loot this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Cancel</Template>
 	</Button>
 
 	<Button item="AALW_CBP_R6C0">
 		<ScreenID>AALW_CBP_R6C0</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Loot item(s) on corpse(s)</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Check</Template>
 	</Button>
 
 	<Button item="AALW_CBP_R6C1">
 		<ScreenID>AALW_CBP_R6C1</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Leave item(s) on corpse(s)</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Cancel</Template>
 	</Button>
 
 	<Button item="AALW_CBP_R6C2">
@@ -982,7 +942,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Always Need: Always roll need on this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -995,7 +955,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Always Greed: Always roll greed on this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1006,39 +966,33 @@
 		<ScreenID>AALW_CBP_R6C4</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Never loot this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Cancel</Template>
 	</Button>
 
 	<Button item="AALW_CBP_R7C0">
 		<ScreenID>AALW_CBP_R7C0</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Loot item(s) on corpse(s)</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Check</Template>
 	</Button>
 
 	<Button item="AALW_CBP_R7C1">
 		<ScreenID>AALW_CBP_R7C1</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Leave item(s) on corpse(s)</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Cancel</Template>
 	</Button>
 
 	<Button item="AALW_CBP_R7C2">
@@ -1047,7 +1001,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Always Need: Always roll need on this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1060,7 +1014,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Always Greed: Always roll greed on this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1071,52 +1025,44 @@
 		<ScreenID>AALW_CBP_R7C4</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Never loot this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Cancel</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R0C0">
 		<ScreenID>AALW_CBS_R0C0</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Grab 1 item from the corpse, moving it to your personal list.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Grab</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R0C1">
 		<ScreenID>AALW_CBS_R0C1</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Ask members for Need or Greed, or Roll.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Question</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R0C2">
 		<ScreenID>AALW_CBS_R0C2</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Opens the Manage Loot window for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Edit</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R0C3">
@@ -1125,7 +1071,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>When Master Looter, automatically Ask and Roll for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1138,7 +1084,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Need: I need the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1151,7 +1097,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Greed: I want the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1164,7 +1110,46 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>No: I do not want this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R0C7">
+		<ScreenID>AALW_CBS_R0C7</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Need: Always roll need on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R0C8">
+		<ScreenID>AALW_CBS_R0C8</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Greed: Always roll greed on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R0C9">
+		<ScreenID>AALW_CBS_R0C9</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Never loot this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1175,39 +1160,33 @@
 		<ScreenID>AALW_CBS_R1C0</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Grab 1 item from the corpse, moving it to your personal list.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Grab</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R1C1">
 		<ScreenID>AALW_CBS_R1C1</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Ask members for Need or Greed, or Roll.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Question</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R1C2">
 		<ScreenID>AALW_CBS_R1C2</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Opens the Manage Loot window for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Edit</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R1C3">
@@ -1216,7 +1195,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>When Master Looter, automatically Ask and Roll for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1229,7 +1208,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Need: I need the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1242,7 +1221,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Greed: I want the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1255,7 +1234,46 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>No: I do not want this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R1C7">
+		<ScreenID>AALW_CBS_R1C7</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Need: Always roll need on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R1C8">
+		<ScreenID>AALW_CBS_R1C8</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Greed: Always roll greed on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R1C9">
+		<ScreenID>AALW_CBS_R1C9</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Never loot this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1266,39 +1284,33 @@
 		<ScreenID>AALW_CBS_R2C0</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Grab 1 item from the corpse, moving it to your personal list.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Grab</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R2C1">
 		<ScreenID>AALW_CBS_R2C1</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Ask members for Need or Greed, or Roll.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Question</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R2C2">
 		<ScreenID>AALW_CBS_R2C2</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Opens the Manage Loot window for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Edit</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R2C3">
@@ -1307,7 +1319,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>When Master Looter, automatically Ask and Roll for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1320,7 +1332,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Need: I need the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1333,7 +1345,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Greed: I want the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1346,7 +1358,46 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>No: I do not want this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R2C7">
+		<ScreenID>AALW_CBS_R2C7</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Need: Always roll need on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R2C8">
+		<ScreenID>AALW_CBS_R2C8</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Greed: Always roll greed on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R2C9">
+		<ScreenID>AALW_CBS_R2C9</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Never loot this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1357,39 +1408,33 @@
 		<ScreenID>AALW_CBS_R3C0</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Grab 1 item from the corpse, moving it to your personal list.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Grab</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R3C1">
 		<ScreenID>AALW_CBS_R3C1</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Ask members for Need or Greed, or Roll.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Question</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R3C2">
 		<ScreenID>AALW_CBS_R3C2</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Opens the Manage Loot window for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Edit</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R3C3">
@@ -1398,7 +1443,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>When Master Looter, automatically Ask and Roll for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1411,7 +1456,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Need: I need the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1424,7 +1469,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Greed: I want the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1437,7 +1482,46 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>No: I do not want this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R3C7">
+		<ScreenID>AALW_CBS_R3C7</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Need: Always roll need on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R3C8">
+		<ScreenID>AALW_CBS_R3C8</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Greed: Always roll greed on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R3C9">
+		<ScreenID>AALW_CBS_R3C9</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Never loot this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1448,39 +1532,33 @@
 		<ScreenID>AALW_CBS_R4C0</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Grab 1 item from the corpse, moving it to your personal list.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Grab</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R4C1">
 		<ScreenID>AALW_CBS_R4C1</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Ask members for Need or Greed, or Roll.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Question</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R4C2">
 		<ScreenID>AALW_CBS_R4C2</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Opens the Manage Loot window for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Edit</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R4C3">
@@ -1489,7 +1567,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>When Master Looter, automatically Ask and Roll for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1502,7 +1580,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Need: I need the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1515,7 +1593,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Greed: I want the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1528,7 +1606,46 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>No: I do not want this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R4C7">
+		<ScreenID>AALW_CBS_R4C7</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Need: Always roll need on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R4C8">
+		<ScreenID>AALW_CBS_R4C8</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Greed: Always roll greed on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R4C9">
+		<ScreenID>AALW_CBS_R4C9</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Never loot this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1539,39 +1656,33 @@
 		<ScreenID>AALW_CBS_R5C0</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Grab 1 item from the corpse, moving it to your personal list.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Grab</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R5C1">
 		<ScreenID>AALW_CBS_R5C1</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Ask members for Need or Greed, or Roll.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Question</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R5C2">
 		<ScreenID>AALW_CBS_R5C2</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Opens the Manage Loot window for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Edit</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R5C3">
@@ -1580,7 +1691,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>When Master Looter, automatically Ask and Roll for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1593,7 +1704,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Need: I need the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1606,7 +1717,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Greed: I want the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1619,7 +1730,46 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>No: I do not want this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R5C7">
+		<ScreenID>AALW_CBS_R5C7</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Need: Always roll need on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R5C8">
+		<ScreenID>AALW_CBS_R5C8</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Greed: Always roll greed on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R5C9">
+		<ScreenID>AALW_CBS_R5C9</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Never loot this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1630,39 +1780,33 @@
 		<ScreenID>AALW_CBS_R6C0</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Grab 1 item from the corpse, moving it to your personal list.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Grab</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R6C1">
 		<ScreenID>AALW_CBS_R6C1</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Ask members for Need or Greed, or Roll.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Question</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R6C2">
 		<ScreenID>AALW_CBS_R6C2</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Opens the Manage Loot window for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Edit</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R6C3">
@@ -1671,7 +1815,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>When Master Looter, automatically Ask and Roll for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1684,7 +1828,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Need: I need the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1697,7 +1841,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Greed: I want the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1710,7 +1854,46 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>No: I do not want this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R6C7">
+		<ScreenID>AALW_CBS_R6C7</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Need: Always roll need on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R6C8">
+		<ScreenID>AALW_CBS_R6C8</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Greed: Always roll greed on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R6C9">
+		<ScreenID>AALW_CBS_R6C9</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Never loot this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1721,39 +1904,33 @@
 		<ScreenID>AALW_CBS_R7C0</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Grab 1 item from the corpse, moving it to your personal list.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Grab</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R7C1">
 		<ScreenID>AALW_CBS_R7C1</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Ask members for Need or Greed, or Roll.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Question</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R7C2">
 		<ScreenID>AALW_CBS_R7C2</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Opens the Manage Loot window for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Edit</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R7C3">
@@ -1762,7 +1939,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>When Master Looter, automatically Ask and Roll for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1775,7 +1952,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Need: I need the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1788,7 +1965,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Greed: I want the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1801,7 +1978,46 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>No: I do not want this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R7C7">
+		<ScreenID>AALW_CBS_R7C7</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Need: Always roll need on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R7C8">
+		<ScreenID>AALW_CBS_R7C8</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Greed: Always roll greed on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R7C9">
+		<ScreenID>AALW_CBS_R7C9</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Never loot this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1812,39 +2028,33 @@
 		<ScreenID>AALW_CBS_R8C0</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Grab 1 item from the corpse, moving it to your personal list.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Grab</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R8C1">
 		<ScreenID>AALW_CBS_R8C1</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Ask members for Need or Greed, or Roll.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Question</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R8C2">
 		<ScreenID>AALW_CBS_R8C2</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Opens the Manage Loot window for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Edit</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R8C3">
@@ -1853,7 +2063,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>When Master Looter, automatically Ask and Roll for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1866,7 +2076,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Need: I need the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1879,7 +2089,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Greed: I want the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1892,7 +2102,46 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>No: I do not want this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R8C7">
+		<ScreenID>AALW_CBS_R8C7</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Need: Always roll need on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R8C8">
+		<ScreenID>AALW_CBS_R8C8</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Greed: Always roll greed on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R8C9">
+		<ScreenID>AALW_CBS_R8C9</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Never loot this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1903,39 +2152,33 @@
 		<ScreenID>AALW_CBS_R9C0</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Grab 1 item from the corpse, moving it to your personal list.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Grab</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R9C1">
 		<ScreenID>AALW_CBS_R9C1</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Ask members for Need or Greed, or Roll.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Question</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R9C2">
 		<ScreenID>AALW_CBS_R9C2</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Opens the Manage Loot window for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Edit</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R9C3">
@@ -1944,7 +2187,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>When Master Looter, automatically Ask and Roll for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1957,7 +2200,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Need: I need the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1970,7 +2213,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Greed: I want the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1983,7 +2226,46 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>No: I do not want this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R9C7">
+		<ScreenID>AALW_CBS_R9C7</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Need: Always roll need on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R9C8">
+		<ScreenID>AALW_CBS_R9C8</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Greed: Always roll greed on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R9C9">
+		<ScreenID>AALW_CBS_R9C9</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Never loot this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -1994,39 +2276,33 @@
 		<ScreenID>AALW_CBS_R10C0</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Grab 1 item from the corpse, moving it to your personal list.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Grab</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R10C1">
 		<ScreenID>AALW_CBS_R10C1</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Ask members for Need or Greed, or Roll.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Question</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R10C2">
 		<ScreenID>AALW_CBS_R10C2</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Opens the Manage Loot window for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Edit</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R10C3">
@@ -2035,7 +2311,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>When Master Looter, automatically Ask and Roll for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -2048,7 +2324,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Need: I need the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -2061,7 +2337,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Greed: I want the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -2074,7 +2350,46 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>No: I do not want this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R10C7">
+		<ScreenID>AALW_CBS_R10C7</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Need: Always roll need on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R10C8">
+		<ScreenID>AALW_CBS_R10C8</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Greed: Always roll greed on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R10C9">
+		<ScreenID>AALW_CBS_R10C9</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Never loot this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -2085,39 +2400,33 @@
 		<ScreenID>AALW_CBS_R11C0</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Grab 1 item from the corpse, moving it to your personal list.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Grab</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R11C1">
 		<ScreenID>AALW_CBS_R11C1</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Ask members for Need or Greed, or Roll.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Question</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R11C2">
 		<ScreenID>AALW_CBS_R11C2</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Opens the Manage Loot window for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Edit</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R11C3">
@@ -2126,7 +2435,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>When Master Looter, automatically Ask and Roll for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -2139,7 +2448,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Need: I need the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -2152,7 +2461,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Greed: I want the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -2165,7 +2474,46 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>No: I do not want this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R11C7">
+		<ScreenID>AALW_CBS_R11C7</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Need: Always roll need on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R11C8">
+		<ScreenID>AALW_CBS_R11C8</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Greed: Always roll greed on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R11C9">
+		<ScreenID>AALW_CBS_R11C9</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Never loot this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -2176,39 +2524,33 @@
 		<ScreenID>AALW_CBS_R12C0</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Grab 1 item from the corpse, moving it to your personal list.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Grab</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R12C1">
 		<ScreenID>AALW_CBS_R12C1</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Ask members for Need or Greed, or Roll.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Question</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R12C2">
 		<ScreenID>AALW_CBS_R12C2</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Opens the Manage Loot window for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Edit</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R12C3">
@@ -2217,7 +2559,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>When Master Looter, automatically Ask and Roll for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -2230,7 +2572,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Need: I need the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -2243,7 +2585,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Greed: I want the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -2256,7 +2598,46 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>No: I do not want this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R12C7">
+		<ScreenID>AALW_CBS_R12C7</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Need: Always roll need on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R12C8">
+		<ScreenID>AALW_CBS_R12C8</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Greed: Always roll greed on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R12C9">
+		<ScreenID>AALW_CBS_R12C9</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Never loot this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -2267,39 +2648,33 @@
 		<ScreenID>AALW_CBS_R13C0</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Grab 1 item from the corpse, moving it to your personal list.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Grab</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R13C1">
 		<ScreenID>AALW_CBS_R13C1</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Ask members for Need or Greed, or Roll.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Question</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R13C2">
 		<ScreenID>AALW_CBS_R13C2</ScreenID>
 		<RelativePosition>true</RelativePosition>
 		<Location><X>0</X><Y>0</Y></Location>
-		<Size><CX>16</CX><CY>16</CY></Size>
+		<Size><CX>18</CX><CY>18</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Opens the Manage Loot window for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
-		<Style_Checkbox>true</Style_Checkbox>
-		<Template>BDT_CheckboxWithText</Template>
-		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+		<Template>NAL_BDT_Edit</Template>
 	</Button>
 
 	<Button item="AALW_CBS_R13C3">
@@ -2308,7 +2683,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>When Master Looter, automatically Ask and Roll for this item.</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -2321,7 +2696,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Need: I need the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -2334,7 +2709,7 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Greed: I want the item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -2347,7 +2722,46 @@
 		<Location><X>0</X><Y>0</Y></Location>
 		<Size><CX>16</CX><CY>16</CY></Size>
 		<Text></Text>
-		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>No: I do not want this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R13C7">
+		<ScreenID>AALW_CBS_R13C7</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Need: Always roll need on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R13C8">
+		<ScreenID>AALW_CBS_R13C8</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Always Greed: Always roll greed on this item</TooltipReference>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R13C9">
+		<ScreenID>AALW_CBS_R13C9</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TooltipReference>Never loot this item</TooltipReference>
 		<Style_Transparent>true</Style_Transparent>
 		<Style_Checkbox>true</Style_Checkbox>
 		<Template>BDT_CheckboxWithText</Template>
@@ -2435,6 +2849,9 @@
 		<Pieces>AALW_CBS_R0C4</Pieces>
 		<Pieces>AALW_CBS_R0C5</Pieces>
 		<Pieces>AALW_CBS_R0C6</Pieces>
+		<Pieces>AALW_CBS_R0C7</Pieces>
+		<Pieces>AALW_CBS_R0C8</Pieces>
+		<Pieces>AALW_CBS_R0C9</Pieces>
 		<Pieces>AALW_CBS_R1C0</Pieces>
 		<Pieces>AALW_CBS_R1C1</Pieces>
 		<Pieces>AALW_CBS_R1C2</Pieces>
@@ -2442,6 +2859,9 @@
 		<Pieces>AALW_CBS_R1C4</Pieces>
 		<Pieces>AALW_CBS_R1C5</Pieces>
 		<Pieces>AALW_CBS_R1C6</Pieces>
+		<Pieces>AALW_CBS_R1C7</Pieces>
+		<Pieces>AALW_CBS_R1C8</Pieces>
+		<Pieces>AALW_CBS_R1C9</Pieces>
 		<Pieces>AALW_CBS_R2C0</Pieces>
 		<Pieces>AALW_CBS_R2C1</Pieces>
 		<Pieces>AALW_CBS_R2C2</Pieces>
@@ -2449,6 +2869,9 @@
 		<Pieces>AALW_CBS_R2C4</Pieces>
 		<Pieces>AALW_CBS_R2C5</Pieces>
 		<Pieces>AALW_CBS_R2C6</Pieces>
+		<Pieces>AALW_CBS_R2C7</Pieces>
+		<Pieces>AALW_CBS_R2C8</Pieces>
+		<Pieces>AALW_CBS_R2C9</Pieces>
 		<Pieces>AALW_CBS_R3C0</Pieces>
 		<Pieces>AALW_CBS_R3C1</Pieces>
 		<Pieces>AALW_CBS_R3C2</Pieces>
@@ -2456,6 +2879,9 @@
 		<Pieces>AALW_CBS_R3C4</Pieces>
 		<Pieces>AALW_CBS_R3C5</Pieces>
 		<Pieces>AALW_CBS_R3C6</Pieces>
+		<Pieces>AALW_CBS_R3C7</Pieces>
+		<Pieces>AALW_CBS_R3C8</Pieces>
+		<Pieces>AALW_CBS_R3C9</Pieces>
 		<Pieces>AALW_CBS_R4C0</Pieces>
 		<Pieces>AALW_CBS_R4C1</Pieces>
 		<Pieces>AALW_CBS_R4C2</Pieces>
@@ -2463,6 +2889,9 @@
 		<Pieces>AALW_CBS_R4C4</Pieces>
 		<Pieces>AALW_CBS_R4C5</Pieces>
 		<Pieces>AALW_CBS_R4C6</Pieces>
+		<Pieces>AALW_CBS_R4C7</Pieces>
+		<Pieces>AALW_CBS_R4C8</Pieces>
+		<Pieces>AALW_CBS_R4C9</Pieces>
 		<Pieces>AALW_CBS_R5C0</Pieces>
 		<Pieces>AALW_CBS_R5C1</Pieces>
 		<Pieces>AALW_CBS_R5C2</Pieces>
@@ -2470,6 +2899,9 @@
 		<Pieces>AALW_CBS_R5C4</Pieces>
 		<Pieces>AALW_CBS_R5C5</Pieces>
 		<Pieces>AALW_CBS_R5C6</Pieces>
+		<Pieces>AALW_CBS_R5C7</Pieces>
+		<Pieces>AALW_CBS_R5C8</Pieces>
+		<Pieces>AALW_CBS_R5C9</Pieces>
 		<Pieces>AALW_CBS_R6C0</Pieces>
 		<Pieces>AALW_CBS_R6C1</Pieces>
 		<Pieces>AALW_CBS_R6C2</Pieces>
@@ -2477,6 +2909,9 @@
 		<Pieces>AALW_CBS_R6C4</Pieces>
 		<Pieces>AALW_CBS_R6C5</Pieces>
 		<Pieces>AALW_CBS_R6C6</Pieces>
+		<Pieces>AALW_CBS_R6C7</Pieces>
+		<Pieces>AALW_CBS_R6C8</Pieces>
+		<Pieces>AALW_CBS_R6C9</Pieces>
 		<Pieces>AALW_CBS_R7C0</Pieces>
 		<Pieces>AALW_CBS_R7C1</Pieces>
 		<Pieces>AALW_CBS_R7C2</Pieces>
@@ -2484,6 +2919,9 @@
 		<Pieces>AALW_CBS_R7C4</Pieces>
 		<Pieces>AALW_CBS_R7C5</Pieces>
 		<Pieces>AALW_CBS_R7C6</Pieces>
+		<Pieces>AALW_CBS_R7C7</Pieces>
+		<Pieces>AALW_CBS_R7C8</Pieces>
+		<Pieces>AALW_CBS_R7C9</Pieces>
 		<Pieces>AALW_CBS_R8C0</Pieces>
 		<Pieces>AALW_CBS_R8C1</Pieces>
 		<Pieces>AALW_CBS_R8C2</Pieces>
@@ -2491,6 +2929,9 @@
 		<Pieces>AALW_CBS_R8C4</Pieces>
 		<Pieces>AALW_CBS_R8C5</Pieces>
 		<Pieces>AALW_CBS_R8C6</Pieces>
+		<Pieces>AALW_CBS_R8C7</Pieces>
+		<Pieces>AALW_CBS_R8C8</Pieces>
+		<Pieces>AALW_CBS_R8C9</Pieces>
 		<Pieces>AALW_CBS_R9C0</Pieces>
 		<Pieces>AALW_CBS_R9C1</Pieces>
 		<Pieces>AALW_CBS_R9C2</Pieces>
@@ -2498,6 +2939,9 @@
 		<Pieces>AALW_CBS_R9C4</Pieces>
 		<Pieces>AALW_CBS_R9C5</Pieces>
 		<Pieces>AALW_CBS_R9C6</Pieces>
+		<Pieces>AALW_CBS_R9C7</Pieces>
+		<Pieces>AALW_CBS_R9C8</Pieces>
+		<Pieces>AALW_CBS_R9C9</Pieces>
 		<Pieces>AALW_CBS_R10C0</Pieces>
 		<Pieces>AALW_CBS_R10C1</Pieces>
 		<Pieces>AALW_CBS_R10C2</Pieces>
@@ -2505,6 +2949,9 @@
 		<Pieces>AALW_CBS_R10C4</Pieces>
 		<Pieces>AALW_CBS_R10C5</Pieces>
 		<Pieces>AALW_CBS_R10C6</Pieces>
+		<Pieces>AALW_CBS_R10C7</Pieces>
+		<Pieces>AALW_CBS_R10C8</Pieces>
+		<Pieces>AALW_CBS_R10C9</Pieces>
 		<Pieces>AALW_CBS_R11C0</Pieces>
 		<Pieces>AALW_CBS_R11C1</Pieces>
 		<Pieces>AALW_CBS_R11C2</Pieces>
@@ -2512,6 +2959,9 @@
 		<Pieces>AALW_CBS_R11C4</Pieces>
 		<Pieces>AALW_CBS_R11C5</Pieces>
 		<Pieces>AALW_CBS_R11C6</Pieces>
+		<Pieces>AALW_CBS_R11C7</Pieces>
+		<Pieces>AALW_CBS_R11C8</Pieces>
+		<Pieces>AALW_CBS_R11C9</Pieces>
 		<Pieces>AALW_CBS_R12C0</Pieces>
 		<Pieces>AALW_CBS_R12C1</Pieces>
 		<Pieces>AALW_CBS_R12C2</Pieces>
@@ -2519,6 +2969,9 @@
 		<Pieces>AALW_CBS_R12C4</Pieces>
 		<Pieces>AALW_CBS_R12C5</Pieces>
 		<Pieces>AALW_CBS_R12C6</Pieces>
+		<Pieces>AALW_CBS_R12C7</Pieces>
+		<Pieces>AALW_CBS_R12C8</Pieces>
+		<Pieces>AALW_CBS_R12C9</Pieces>
 		<Pieces>AALW_CBS_R13C0</Pieces>
 		<Pieces>AALW_CBS_R13C1</Pieces>
 		<Pieces>AALW_CBS_R13C2</Pieces>
@@ -2526,6 +2979,9 @@
 		<Pieces>AALW_CBS_R13C4</Pieces>
 		<Pieces>AALW_CBS_R13C5</Pieces>
 		<Pieces>AALW_CBS_R13C6</Pieces>
+		<Pieces>AALW_CBS_R13C7</Pieces>
+		<Pieces>AALW_CBS_R13C8</Pieces>
+		<Pieces>AALW_CBS_R13C9</Pieces>
 	</Screen>
 
 	<Label item="AALR_SummaryLabel">
