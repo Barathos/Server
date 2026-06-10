@@ -19,3 +19,4 @@ display failure point.
 - `client_files/native_autoloot/eq-core-dll`: feature-owned DLL project for the client hook and overlay.
 - `client_files/native_autoloot/ui/EQUI_NativeHpFixWnd.xml`: corrected HP overlay window.
 - `features/hpfix/sql/001_hpfix_test_items.sql`: high-HP validation equipment.
+- `features/hpfix/sql/002_hpfix_live_test_items.sql`: live-range high-HP validation equipment.

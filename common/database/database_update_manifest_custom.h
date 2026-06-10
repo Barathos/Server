@@ -2885,6 +2885,25 @@ REPLACE INTO `items` (
 )",
 		.content_schema_update = true,
 	},
+	ManifestEntry{
+		.version = 24,
+		.description = "2026_06_09_hpfix_live_test_items",
+		.check = "SELECT IF((SELECT COUNT(*) FROM `items` WHERE `id` IN (199990, 199991, 199992)) = 3 AND (SELECT COALESCE(SUM(`hp`), 0) FROM `items` WHERE `id` IN (199990, 199991, 199992)) = 87000000, 'ok', 'missing')",
+		.condition = "missing",
+		.match = "ok",
+		.sql = R"(
+REPLACE INTO `items` (
+  `id`, `minstatus`, `Name`, `lore`, `comment`, `itemclass`, `itemtype`, `classes`, `races`,
+  `norent`, `nodrop`, `size`, `weight`, `magic`, `loregroup`, `maxcharges`, `price`, `sellrate`,
+  `questitemflag`, `updated`, `icon`, `idfile`, `stackable`, `stacksize`, `slots`,
+  `hp`, `mana`, `endur`, `ac`
+) VALUES
+(199990, 0, 'HPFIX Live 12M Charm', 'HPFIX Live 12M Charm', 'Seeded by HPFIX live item validation SQL', 0, 52, 65535, 65535, 255, 0, 1, 1, 1, 0, -1, 0, 1, 1, NOW(), 1123, 'IT63', 0, 1, 1, 12000000, 0, 0, 25),
+(199991, 0, 'HPFIX Live 25M Breastplate', 'HPFIX Live 25M Breastplate', 'Seeded by HPFIX live item validation SQL', 0, 10, 65535, 65535, 255, 0, 1, 1, 1, 0, -1, 0, 1, 1, NOW(), 538, 'IT63', 0, 1, 131072, 25000000, 0, 0, 100),
+(199992, 0, 'HPFIX Live 50M Girdle', 'HPFIX Live 50M Girdle', 'Seeded by HPFIX live item validation SQL', 0, 10, 65535, 65535, 255, 0, 1, 1, 1, 0, -1, 0, 1, 1, NOW(), 549, 'IT63', 0, 1, 1048576, 50000000, 0, 0, 50);
+)",
+		.content_schema_update = true,
+	},
 };
 
 // see struct definitions for what each field does

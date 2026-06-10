@@ -32,4 +32,5 @@ Native XML `EQUI_NativeHpFixWnd.xml` is installed into the prepared client and i
 - Native-ready clients receive `HPFIX|self|current=<current>|max=<max>|percent=<percent>` whenever self HP updates.
 - The client suppresses that transport line and updates `NativeHpFixWnd`.
 - `#hpfix items` summons 12M, 25M, and 50M HP test items for GM accounts after the SQL file has been applied.
+- `#liveitem summon 199990`, `#liveitem summon 199991`, and `#liveitem summon 199992` summon the matching live-range HPFIX test items.
 - `#hpfix refresh` forces the side-channel payload for quick testing after equipping or healing.

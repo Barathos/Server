@@ -14,8 +14,12 @@ GM test flow:
 
 ```text
 #hpfix items
+#liveitem summon 199990
+#liveitem summon 199991
+#liveitem summon 199992
 #hpfix refresh
 #hpfix status
 ```
 
 `features/hpfix/sql/001_hpfix_test_items.sql` adds 12M, 25M, and 50M HP equipment for validation.
+`features/hpfix/sql/002_hpfix_live_test_items.sql` adds matching 12M, 25M, and 50M live-range equipment for validation without an item shared-memory rebuild.
