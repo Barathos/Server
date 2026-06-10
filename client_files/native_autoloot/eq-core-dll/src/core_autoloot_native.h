@@ -1375,7 +1375,7 @@ public:
 		}
 	}
 
-	void RefreshRows()
+	void PulseTick()
 	{
 		__try {
 			if (PlayerList && ((DWORD*)PlayerList)[0x21C / 4] != 30) {
@@ -1387,6 +1387,11 @@ public:
 		__except (EXCEPTION_EXECUTE_HANDLER) {
 		}
 
+		UpdateSummary();
+	}
+
+	void UpdateSummary()
+	{
 		char summary[256];
 		if (gNativeAutoLootManageEntryId > 0) {
 			sprintf_s(
@@ -1403,9 +1408,23 @@ public:
 			sprintf_s(summary, "Select a shared loot row to manage.");
 		}
 		SetLabel(SummaryLabel, summary);
+	}
+
+	// Rebuilds the player list. Only event-driven updates may call this:
+	// the per-frame pulse uses PulseTick instead, because DeleteAll here
+	// would wipe the user's selection before Give/Set ML could read it.
+	void RefreshRows()
+	{
+		UpdateSummary();
 
 		if (!PlayerList) {
 			return;
+		}
+
+		int selected_character_id = 0;
+		const int selected = PlayerList->GetCurSel();
+		if (selected >= 0) {
+			selected_character_id = (int)PlayerList->GetItemData(selected);
 		}
 
 		PlayerList->DeleteAll();
@@ -1428,6 +1447,10 @@ public:
 			PlayerList->SetItemText(row, 1, &vote);
 			PlayerList->SetItemText(row, 2, &master);
 			PlayerList->SetItemText(row, 3, &eligible);
+
+			if (selected_character_id > 0 && player.character_id == selected_character_id) {
+				PlayerList->SetCurSel(row);
+			}
 		}
 	}
 
@@ -11200,7 +11223,7 @@ static void NativeAutoLootPulse()
 	}
 
 	if (gNativeAutoLootManageWnd) {
-		gNativeAutoLootManageWnd->RefreshRows();
+		gNativeAutoLootManageWnd->PulseTick();
 	}
 
 	if (gNativeSpellForgeWnd) {
