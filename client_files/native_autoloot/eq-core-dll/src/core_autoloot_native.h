@@ -602,11 +602,6 @@ public:
 
 				ActiveList = state.list;
 				state.list->SetCurSel(state.row);
-				if (!state.enabled) {
-					SetStatus("That choice is not available right now.");
-					return 1;
-				}
-
 				HandleListColumnAction(state.list, state.list == SharedList, state.row, state.column);
 				return 1;
 			}
