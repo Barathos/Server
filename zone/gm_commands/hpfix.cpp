@@ -73,6 +73,16 @@ void command_hpfix(Client* c, const Seperator* sep)
 		return;
 	}
 
+	if (
+		arguments >= 2 &&
+		!strcasecmp(sep->arg[1], "native") &&
+		!strcasecmp(sep->arg[2], "refresh")
+	) {
+		c->SetNativeHpFixReady(true);
+		c->SendNativeHpFixUpdate(false);
+		return;
+	}
+
 	if (!arguments || !strcasecmp(sep->arg[1], "help")) {
 		HpFixShowUsage(c);
 		return;

@@ -12,7 +12,6 @@ typedef string(*pEqTypesFunc)();
 
 extern bool NativeHpFixGetEqTypeLabel(DWORD eq_type, const char* control_name, char* out, size_t out_size);
 extern bool NativeHpFixGetClientHpValues(int* current, int* maximum, int* percent_out);
-extern bool NativeHpFixGetGaugeValue(DWORD eq_type, int* out_value);
 
 map<DWORD, pEqTypesFunc> eqTypesMap;
 
@@ -244,22 +243,6 @@ public:
 DETOUR_TRAMPOLINE_EMPTY(int NativeHpFixCharacterHook::CurHP_Trampoline(int, unsigned char));
 DETOUR_TRAMPOLINE_EMPTY(int NativeHpFixCharacterHook::MaxHP_Trampoline(int, int));
 
-int __cdecl GetGaugeValueFromEQ_Trampoline(int eq_type, CXStr* text, bool* valid);
-int __cdecl GetGaugeValueFromEQ_Detour(int eq_type, CXStr* text, bool* valid)
-{
-	int hpfix_value = 0;
-	if (NativeHpFixGetGaugeValue((DWORD)eq_type, &hpfix_value)) {
-		if (valid) {
-			*valid = true;
-		}
-		return hpfix_value;
-	}
-
-	return GetGaugeValueFromEQ_Trampoline(eq_type, text, valid);
-}
-
-DETOUR_TRAMPOLINE_EMPTY(int __cdecl GetGaugeValueFromEQ_Trampoline(int, CXStr*, bool*));
-
 BOOL StealNextGauge=FALSE;
 DWORD NextGauge=0;
 
@@ -288,7 +271,6 @@ PLUGIN_API VOID InitializeMQ2Labels(VOID)
     EzDetour(CSidlManager__CreateLabel,&CSidlManagerHook::CreateLabel_Detour,&CSidlManagerHook::CreateLabel_Trampoline);
     EzDetour(EQ_Character__Cur_HP,&NativeHpFixCharacterHook::CurHP_Detour,&NativeHpFixCharacterHook::CurHP_Trampoline);
     EzDetour(EQ_Character__Max_HP,&NativeHpFixCharacterHook::MaxHP_Detour,&NativeHpFixCharacterHook::MaxHP_Trampoline);
-    EzDetour(__GetGaugeValueFromEQ,GetGaugeValueFromEQ_Detour,GetGaugeValueFromEQ_Trampoline);
 
 
     // currently in testing:
@@ -306,6 +288,5 @@ PLUGIN_API VOID ShutdownLabelsPlugin(VOID)
     RemoveDetour(EQ_Character__Cur_HP);
     RemoveDetour(EQ_Character__Max_HP);
     //RemoveDetour(CGaugeWnd__Draw);
-    RemoveDetour(__GetGaugeValueFromEQ);
 }
 

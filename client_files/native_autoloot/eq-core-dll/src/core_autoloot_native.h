@@ -916,6 +916,8 @@ static int gNativeAutoLootNeverCount = 0;
 static int gNativeAutoLootAutoRollCount = 0;
 static bool gNativeLiveSpellSentReady = false;
 static bool gNativeHpFixSentReady = false;
+static int gNativeHpFixReadyRetryPulses = 0;
+static int gNativeHpFixRefreshPulses = 0;
 static bool gNativeAutoLootPulseFaulted = false;
 
 struct NativeAutoLootRuleRow
@@ -6742,7 +6744,6 @@ bool NativeHpFixGetGaugeValue(DWORD eq_type, int* out_value)
 
 	switch (eq_type) {
 		case 1:  // Player HP gauge
-		case 11: // Group window self/first HP gauge
 			break;
 		default:
 			return false;
@@ -6991,6 +6992,9 @@ static bool NativeHpFixApplyPayload(const std::string& payload)
 		NativeGetPairValue(payload, "percent"),
 		maximum > 0 ? static_cast<float>((static_cast<double>(current) * 100.0) / static_cast<double>(maximum)) : 0.0f
 	);
+	gNativeHpFixSentReady = true;
+	gNativeHpFixReadyRetryPulses = 0;
+	gNativeHpFixRefreshPulses = 0;
 
 	NativeHpFixMaintainNormalUi();
 	if (gNativeHpFixWnd) {
@@ -7005,6 +7009,25 @@ static bool NativeHpFixApplyPayload(const std::string& payload)
 		gNativeHpFixState.percent
 	);
 	return true;
+}
+
+static void NativeHpFixPulseSync()
+{
+	if (!gNativeHpFixState.has_payload) {
+		gNativeHpFixRefreshPulses = 0;
+		if (++gNativeHpFixReadyRetryPulses >= 30) {
+			gNativeHpFixReadyRetryPulses = 0;
+			gNativeHpFixSentReady = true;
+			NativeAutoLootSendCommand("/say #hpfix native ready");
+		}
+		return;
+	}
+
+	gNativeHpFixReadyRetryPulses = 0;
+	if (++gNativeHpFixRefreshPulses >= 60) {
+		gNativeHpFixRefreshPulses = 0;
+		NativeAutoLootSendCommand("/say #hpfix native refresh");
+	}
 }
 
 static bool NativeUIShowcaseClientFilesReady()
@@ -11344,6 +11367,8 @@ static void NativeAutoLootResetSessionRequests()
 	gNativeAutoLootAutoRollCount = 0;
 	gNativeLiveSpellSentReady = false;
 	gNativeHpFixSentReady = false;
+	gNativeHpFixReadyRetryPulses = 0;
+	gNativeHpFixRefreshPulses = 0;
 	gNativeHpFixState = NativeHpFixState();
 	gNativeItemPowerById.clear();
 	gNativeItemRarityById.clear();
@@ -11397,6 +11422,8 @@ static void NativeAutoLootResetClientUiSession(const char* reason)
 	gNativeAutoLootAutoRollCount = 0;
 	gNativeLiveSpellSentReady = false;
 	gNativeHpFixSentReady = false;
+	gNativeHpFixReadyRetryPulses = 0;
+	gNativeHpFixRefreshPulses = 0;
 	gNativeHpFixState = NativeHpFixState();
 	gNativeItemPowerById.clear();
 	gNativeItemRarityById.clear();
@@ -11518,6 +11545,7 @@ static void NativeAutoLootPulse()
 		gNativeHpFixWnd->Refresh();
 	}
 
+	NativeHpFixPulseSync();
 	NativeHpFixMaintainNormalUi();
 
 	if (gNativeMulticlassWnd) {
@@ -11764,6 +11792,8 @@ static void ShutdownAutoLootNative()
 	gNativeAutoLootRequestedInitialStatus = false;
 	gNativeLiveSpellSentReady = false;
 	gNativeHpFixSentReady = false;
+	gNativeHpFixReadyRetryPulses = 0;
+	gNativeHpFixRefreshPulses = 0;
 	gNativeHpFixState = NativeHpFixState();
 	gNativeItemPowerById.clear();
 	gNativeItemRarityById.clear();
