@@ -259,6 +259,56 @@ struct NativeAutoLootInlineCellSpec
 
 static std::vector<NativeAutoLootInlineCellSpec> gNativeAutoLootInlineCellSpecs;
 
+// Diagnostic counters for the inline-cell work, surfaced via the status label
+// and native_autoloot.log. Remove once the inline UI is confirmed in-game.
+static unsigned int gNativeAutoLootDiagPulseCount = 0;
+static unsigned int gNativeAutoLootDiagPostDrawCount = 0;
+static unsigned int gNativeAutoLootDiagOnProcessFrameCount = 0;
+static DWORD gNativeAutoLootDiagLastReportTick = 0;
+static int gNativeAutoLootDiagReportBudget = 300;
+
+// Inline checkbox pool: real XML-declared checkbox controls positioned over
+// the list cells every pulse. Uses only primitives proven to work in this
+// client (GetChildItem, GetItemRect, Show, direct Location/Checked struct
+// writes). The FindAnimation, DrawColoredRect, and CreateXWndFromTemplate
+// paths all fault in this client per the 2026-06-09 diagnostic log.
+static const int kAALPoolPersonalRows = 8;
+static const int kAALPoolPersonalCols = 5;
+static const int kAALPoolSharedRows = 14;
+static const int kAALPoolSharedCols = 7;
+
+static const int kAALPoolPersonalColumns[kAALPoolPersonalCols] = {
+	kAALPersonalLoot, kAALPersonalLeave, kAALPersonalAlwaysNeed, kAALPersonalAlwaysGreed, kAALPersonalNever
+};
+
+static const int kAALPoolSharedColumns[kAALPoolSharedCols] = {
+	kAALSharedAutoRoll, kAALSharedNeed, kAALSharedGreed, kAALSharedNo, kAALSharedAlwaysNeed, kAALSharedAlwaysGreed, kAALSharedNever
+};
+
+static int NativeAutoLootPoolSlotForColumn(bool shared, int column)
+{
+	const int* columns = shared ? kAALPoolSharedColumns : kAALPoolPersonalColumns;
+	const int count = shared ? kAALPoolSharedCols : kAALPoolPersonalCols;
+	for (int i = 0; i < count; ++i) {
+		if (columns[i] == column) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+struct NativeAutoLootPoolCellState
+{
+	CButtonWnd* button;
+	CListWnd* list;
+	int row;
+	int column;
+	bool enabled;
+	int intended_left;
+	int intended_top;
+};
+
 static void NativeAutoLootSetSquareCell(CListWnd* list, int row, int column, bool active, bool enabled, bool negative)
 {
 	if (!list) {
@@ -422,6 +472,28 @@ public:
 		ApplyFiltersCheck = (CButtonWnd*)GetChildItem("AALW_ApplyFiltersCheck");
 		GroupedByNpcCheck = (CButtonWnd*)GetChildItem("AALW_GroupedByNpcCheck");
 
+		for (int pool_row = 0; pool_row < kAALPoolPersonalRows; ++pool_row) {
+			for (int slot = 0; slot < kAALPoolPersonalCols; ++slot) {
+				char name[48];
+				sprintf_s(name, "AALW_CBP_R%dC%d", pool_row, slot);
+				PersonalPool[pool_row][slot] = (CButtonWnd*)GetChildItem(name);
+				if (PersonalPool[pool_row][slot]) {
+					((CXWnd*)PersonalPool[pool_row][slot])->Show(0, 1);
+				}
+			}
+		}
+
+		for (int pool_row = 0; pool_row < kAALPoolSharedRows; ++pool_row) {
+			for (int slot = 0; slot < kAALPoolSharedCols; ++slot) {
+				char name[48];
+				sprintf_s(name, "AALW_CBS_R%dC%d", pool_row, slot);
+				SharedPool[pool_row][slot] = (CButtonWnd*)GetChildItem(name);
+				if (SharedPool[pool_row][slot]) {
+					((CXWnd*)SharedPool[pool_row][slot])->Show(0, 1);
+				}
+			}
+		}
+
 		NativeAutoLootSetColumnJustification(PersonalList, kAALPersonalLoot, kAALPersonalNever, 1);
 		NativeAutoLootSetColumnJustification(SharedList, kAALSharedStatus, kAALSharedNever, 1);
 		Layout();
@@ -431,14 +503,17 @@ public:
 
 	int OnProcessFrame()
 	{
+		++gNativeAutoLootDiagOnProcessFrameCount;
 		return 1;
 	}
 
 	int PostDraw() const
 	{
-		DrawInlineCellMarkers();
+		++gNativeAutoLootDiagPostDrawCount;
 		return 1;
 	}
+
+	void DiagnosticPulse();
 
 	int WndNotification(CXWnd* pWnd, unsigned int Message, void* unknown)
 	{
@@ -478,6 +553,26 @@ public:
 		}
 
 		if (Message == XWM_LCLICK) {
+			for (const NativeAutoLootPoolCellState& state : PoolStates) {
+				if ((CXWnd*)state.button != pWnd) {
+					continue;
+				}
+
+				if (!state.list) {
+					return 1;
+				}
+
+				ActiveList = state.list;
+				state.list->SetCurSel(state.row);
+				if (!state.enabled) {
+					SetStatus("That choice is not available right now.");
+					return 1;
+				}
+
+				HandleListColumnAction(state.list, state.list == SharedList, state.row, state.column);
+				return 1;
+			}
+
 			if (pWnd == (CXWnd*)PersonalList || pWnd == (CXWnd*)SharedList) {
 				CListWnd* list = (CListWnd*)pWnd;
 				ActiveList = list;
@@ -684,8 +779,7 @@ private:
 	bool SendCorpseAction(const NativeAutoLootRow& row, const char* action, const char* status);
 	bool ToggleAutoRollFilter(const NativeAutoLootRow& row);
 	bool GetInlineCellDrawRect(const NativeAutoLootInlineCellSpec& spec, CXRect* target, CXRect* clip) const;
-	void DrawInlineCellMarker(const NativeAutoLootInlineCellSpec& spec, const CXRect& target, const CXRect& clip) const;
-	void DrawInlineCellMarkers() const;
+	void SyncInlinePool();
 	void SetLabel(CXWnd* label, const char* text);
 
 	CXWnd* PersonalLabel = nullptr;
@@ -719,6 +813,15 @@ private:
 	CButtonWnd* LeaveCorpseButton = nullptr;
 	CButtonWnd* ApplyFiltersCheck = nullptr;
 	CButtonWnd* GroupedByNpcCheck = nullptr;
+	CButtonWnd* PersonalPool[kAALPoolPersonalRows][kAALPoolPersonalCols] = {};
+	CButtonWnd* SharedPool[kAALPoolSharedRows][kAALPoolSharedCols] = {};
+	bool PersonalPoolShown[kAALPoolPersonalRows][kAALPoolPersonalCols] = {};
+	bool SharedPoolShown[kAALPoolSharedRows][kAALPoolSharedCols] = {};
+	std::vector<NativeAutoLootPoolCellState> PoolStates;
+	std::vector<CButtonWnd*> PoolRefresh;
+	bool PoolCalibrated = false;
+	int PoolCorrectionX = 0;
+	int PoolCorrectionY = 0;
 	int LastLayoutWidth = 0;
 	int LastLayoutHeight = 0;
 };
@@ -7322,43 +7425,207 @@ bool NativeAutoLootWnd::GetInlineCellDrawRect(const NativeAutoLootInlineCellSpec
 	}
 }
 
-void NativeAutoLootWnd::DrawInlineCellMarker(const NativeAutoLootInlineCellSpec& spec, const CXRect& target, const CXRect& clip) const
+void NativeAutoLootWnd::SyncInlinePool()
 {
+	// The engine interprets child Location rects relative to an origin that
+	// may differ from the window's outer screen rect (e.g. below the title
+	// bar). Measure where the first placed button actually rendered and
+	// latch the delta as a uniform correction for all pool buttons.
+	if (!PoolCalibrated && !PoolStates.empty()) {
+		const NativeAutoLootPoolCellState& probe = PoolStates.front();
+		__try {
+			CXRect actual = ((CXWnd*)probe.button)->GetScreenRect();
+			const int dx = probe.intended_left - (int)actual.A;
+			const int dy = probe.intended_top - (int)actual.B;
+			if (dx >= -64 && dx <= 64 && dy >= -64 && dy <= 64) {
+				PoolCorrectionX += dx;
+				PoolCorrectionY += dy;
+				PoolCalibrated = true;
+				if (dx || dy) {
+					NativeAutoLootTrace("inline pool calibrated dx=%d dy=%d", dx, dy);
+				}
+			}
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			NativeAutoLootTrace("inline pool calibration faulted");
+			PoolCalibrated = true;
+		}
+	}
+
+	PoolStates.clear();
+
+	bool personal_used[kAALPoolPersonalRows][kAALPoolPersonalCols] = {};
+	bool shared_used[kAALPoolSharedRows][kAALPoolSharedCols] = {};
+	PoolRefresh.clear();
+
+	int window_left = 0;
+	int window_top = 0;
+	bool have_window_rect = false;
 	__try {
-		CTextureAnimation* animation = NativeAutoLootActionCellAnimation(spec.active, spec.negative);
-		if (animation) {
-			animation->Draw(target, clip, spec.enabled ? 0xFFFFFFFF : 0xFF707070, 0xFF);
-			return;
+		CXRect window_rect = ((CXWnd*)this)->GetScreenRect();
+		window_left = (int)window_rect.A;
+		window_top = (int)window_rect.B;
+		have_window_rect = true;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+		NativeAutoLootTrace("inline pool window rect faulted");
+	}
+
+	if (have_window_rect) {
+		CListWnd* current_list = nullptr;
+		int current_src_row = -1;
+		int current_pool_row = -1;
+		int pool_row_cursor = 0;
+
+		for (const NativeAutoLootInlineCellSpec& spec : gNativeAutoLootInlineCellSpecs) {
+			const bool shared = spec.list == SharedList;
+			if (!shared && spec.list != PersonalList) {
+				continue;
+			}
+
+			if (spec.list != current_list) {
+				current_list = spec.list;
+				current_src_row = -1;
+				current_pool_row = -1;
+				pool_row_cursor = 0;
+			}
+
+			CXRect target;
+			CXRect clip;
+			if (!GetInlineCellDrawRect(spec, &target, &clip)) {
+				continue;
+			}
+
+			if ((int)target.B < (int)clip.B || (int)target.D > (int)clip.D) {
+				continue;
+			}
+
+			const int pool_rows = shared ? kAALPoolSharedRows : kAALPoolPersonalRows;
+			if (spec.row != current_src_row) {
+				current_src_row = spec.row;
+				current_pool_row = pool_row_cursor < pool_rows ? pool_row_cursor : -1;
+				++pool_row_cursor;
+			}
+
+			if (current_pool_row < 0) {
+				continue;
+			}
+
+			const int slot = NativeAutoLootPoolSlotForColumn(shared, spec.column);
+			if (slot < 0) {
+				continue;
+			}
+
+			CButtonWnd* button = shared ? SharedPool[current_pool_row][slot] : PersonalPool[current_pool_row][slot];
+			if (!button) {
+				continue;
+			}
+
+			const int new_left = (int)target.A - window_left + PoolCorrectionX;
+			const int new_top = (int)target.B - window_top + PoolCorrectionY;
+			const int new_right = (int)target.C - window_left + PoolCorrectionX;
+			const int new_bottom = (int)target.D - window_top + PoolCorrectionY;
+
+			PCSIDLWND raw = (PCSIDLWND)button;
+			const bool moved =
+				raw->Location.left != new_left ||
+				raw->Location.top != new_top ||
+				raw->Location.right != new_right ||
+				raw->Location.bottom != new_bottom;
+			raw->Location.left = new_left;
+			raw->Location.top = new_top;
+			raw->Location.right = new_right;
+			raw->Location.bottom = new_bottom;
+			button->Checked = spec.active ? 1 : 0;
+
+			if (moved) {
+				PoolRefresh.push_back(button);
+			}
+
+			if (shared) {
+				shared_used[current_pool_row][slot] = true;
+			}
+			else {
+				personal_used[current_pool_row][slot] = true;
+			}
+
+			NativeAutoLootPoolCellState state = { button, spec.list, spec.row, spec.column, spec.enabled, (int)target.A, (int)target.B };
+			PoolStates.push_back(state);
+		}
+	}
+
+	__try {
+		for (int pool_row = 0; pool_row < kAALPoolPersonalRows; ++pool_row) {
+			for (int slot = 0; slot < kAALPoolPersonalCols; ++slot) {
+				CButtonWnd* button = PersonalPool[pool_row][slot];
+				if (button && personal_used[pool_row][slot] != PersonalPoolShown[pool_row][slot]) {
+					((CXWnd*)button)->Show(personal_used[pool_row][slot] ? 1 : 0, 1);
+					PersonalPoolShown[pool_row][slot] = personal_used[pool_row][slot];
+				}
+			}
 		}
 
-		const unsigned long border_color = spec.enabled ? 0xFF8EA8C0 : 0xFF606060;
-		const unsigned long background_color = 0xFF081018;
-		const unsigned long active_color = spec.negative ? 0xFFC04848 : 0xFF4E9F5D;
-		CXWnd::DrawColoredRect(target, border_color, clip);
-		CXRect inner((int)target.A + 2, (int)target.B + 2, (int)target.C - 2, (int)target.D - 2);
-		CXWnd::DrawColoredRect(inner, spec.active ? active_color : background_color, clip);
+		for (int pool_row = 0; pool_row < kAALPoolSharedRows; ++pool_row) {
+			for (int slot = 0; slot < kAALPoolSharedCols; ++slot) {
+				CButtonWnd* button = SharedPool[pool_row][slot];
+				if (button && shared_used[pool_row][slot] != SharedPoolShown[pool_row][slot]) {
+					((CXWnd*)button)->Show(shared_used[pool_row][slot] ? 1 : 0, 1);
+					SharedPoolShown[pool_row][slot] = shared_used[pool_row][slot];
+				}
+			}
+		}
 
-		if (spec.active) {
-			CXRect mark_a((int)target.A + 4, (int)target.B + 7, (int)target.C - 4, (int)target.B + 10);
-			CXRect mark_b((int)target.A + 7, (int)target.B + 4, (int)target.A + 10, (int)target.D - 4);
-			CXWnd::DrawColoredRect(mark_a, 0xFFFFFFFF, clip);
-			CXWnd::DrawColoredRect(mark_b, 0xFFFFFFFF, clip);
+		// The engine caches a control's absolute screen position and only
+		// recomputes it on events like a hide/show transition or a window
+		// move. Toggle visibility within the pulse (between frames) so
+		// Location writes take effect immediately.
+		for (CButtonWnd* button : PoolRefresh) {
+			((CXWnd*)button)->Show(0, 1);
+			((CXWnd*)button)->Show(1, 1);
 		}
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER) {
-		NativeAutoLootTrace("Advanced Loot inline checkbox draw faulted");
+		NativeAutoLootTrace("inline pool show toggle faulted");
 	}
 }
 
-void NativeAutoLootWnd::DrawInlineCellMarkers() const
+void NativeAutoLootWnd::DiagnosticPulse()
 {
-	for (const NativeAutoLootInlineCellSpec& spec : gNativeAutoLootInlineCellSpecs) {
-		CXRect target;
-		CXRect clip;
-		if (GetInlineCellDrawRect(spec, &target, &clip)) {
-			DrawInlineCellMarker(spec, target, clip);
-		}
+	++gNativeAutoLootDiagPulseCount;
+
+	SyncInlinePool();
+
+	const DWORD now = GetTickCount();
+	if (gNativeAutoLootDiagReportBudget <= 0 || (now - gNativeAutoLootDiagLastReportTick) < 2000) {
+		return;
 	}
+
+	gNativeAutoLootDiagLastReportTick = now;
+	--gNativeAutoLootDiagReportBudget;
+
+	char pool_text[96];
+	sprintf_s(pool_text, "pool:%u", (unsigned int)PoolStates.size());
+	if (!PoolStates.empty()) {
+		PCSIDLWND raw = (PCSIDLWND)PoolStates.front().button;
+		sprintf_s(pool_text, "pool:%u first:(%d,%d,%d,%d)",
+			(unsigned int)PoolStates.size(),
+			(int)raw->Location.left, (int)raw->Location.top,
+			(int)raw->Location.right, (int)raw->Location.bottom);
+	}
+
+	char report[256];
+	sprintf_s(report, "DIAG P:%u PD:%u OPF:%u specs:%u %s corr:(%d,%d,%s)",
+		gNativeAutoLootDiagPulseCount,
+		gNativeAutoLootDiagPostDrawCount,
+		gNativeAutoLootDiagOnProcessFrameCount,
+		(unsigned int)gNativeAutoLootInlineCellSpecs.size(),
+		pool_text,
+		PoolCorrectionX,
+		PoolCorrectionY,
+		PoolCalibrated ? "ok" : "pending");
+
+	NativeAutoLootTrace("%s", report);
+	SetStatus(report);
 }
 
 bool NativeAutoLootWnd::HandleListColumnClick(CListWnd* list, bool shared, void* hit_test_point)
@@ -10143,6 +10410,7 @@ static void NativeAutoLootPulse()
 
 	if (gNativeAutoLootWnd) {
 		gNativeAutoLootWnd->Layout();
+		gNativeAutoLootWnd->DiagnosticPulse();
 	}
 
 	if (gNativeAutoLootRulesWnd) {

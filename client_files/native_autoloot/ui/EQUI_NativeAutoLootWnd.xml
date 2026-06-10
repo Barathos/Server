@@ -560,6 +560,1800 @@
 		<NoWrap>true</NoWrap>
 	</Label>
 
+	<Button item="AALW_CBP_R0C0">
+		<ScreenID>AALW_CBP_R0C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R0C1">
+		<ScreenID>AALW_CBP_R0C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R0C2">
+		<ScreenID>AALW_CBP_R0C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R0C3">
+		<ScreenID>AALW_CBP_R0C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R0C4">
+		<ScreenID>AALW_CBP_R0C4</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R1C0">
+		<ScreenID>AALW_CBP_R1C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R1C1">
+		<ScreenID>AALW_CBP_R1C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R1C2">
+		<ScreenID>AALW_CBP_R1C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R1C3">
+		<ScreenID>AALW_CBP_R1C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R1C4">
+		<ScreenID>AALW_CBP_R1C4</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R2C0">
+		<ScreenID>AALW_CBP_R2C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R2C1">
+		<ScreenID>AALW_CBP_R2C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R2C2">
+		<ScreenID>AALW_CBP_R2C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R2C3">
+		<ScreenID>AALW_CBP_R2C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R2C4">
+		<ScreenID>AALW_CBP_R2C4</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R3C0">
+		<ScreenID>AALW_CBP_R3C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R3C1">
+		<ScreenID>AALW_CBP_R3C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R3C2">
+		<ScreenID>AALW_CBP_R3C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R3C3">
+		<ScreenID>AALW_CBP_R3C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R3C4">
+		<ScreenID>AALW_CBP_R3C4</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R4C0">
+		<ScreenID>AALW_CBP_R4C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R4C1">
+		<ScreenID>AALW_CBP_R4C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R4C2">
+		<ScreenID>AALW_CBP_R4C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R4C3">
+		<ScreenID>AALW_CBP_R4C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R4C4">
+		<ScreenID>AALW_CBP_R4C4</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R5C0">
+		<ScreenID>AALW_CBP_R5C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R5C1">
+		<ScreenID>AALW_CBP_R5C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R5C2">
+		<ScreenID>AALW_CBP_R5C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R5C3">
+		<ScreenID>AALW_CBP_R5C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R5C4">
+		<ScreenID>AALW_CBP_R5C4</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R6C0">
+		<ScreenID>AALW_CBP_R6C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R6C1">
+		<ScreenID>AALW_CBP_R6C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R6C2">
+		<ScreenID>AALW_CBP_R6C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R6C3">
+		<ScreenID>AALW_CBP_R6C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R6C4">
+		<ScreenID>AALW_CBP_R6C4</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R7C0">
+		<ScreenID>AALW_CBP_R7C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R7C1">
+		<ScreenID>AALW_CBP_R7C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R7C2">
+		<ScreenID>AALW_CBP_R7C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R7C3">
+		<ScreenID>AALW_CBP_R7C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBP_R7C4">
+		<ScreenID>AALW_CBP_R7C4</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R0C0">
+		<ScreenID>AALW_CBS_R0C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R0C1">
+		<ScreenID>AALW_CBS_R0C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R0C2">
+		<ScreenID>AALW_CBS_R0C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R0C3">
+		<ScreenID>AALW_CBS_R0C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R0C4">
+		<ScreenID>AALW_CBS_R0C4</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R0C5">
+		<ScreenID>AALW_CBS_R0C5</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R0C6">
+		<ScreenID>AALW_CBS_R0C6</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R1C0">
+		<ScreenID>AALW_CBS_R1C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R1C1">
+		<ScreenID>AALW_CBS_R1C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R1C2">
+		<ScreenID>AALW_CBS_R1C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R1C3">
+		<ScreenID>AALW_CBS_R1C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R1C4">
+		<ScreenID>AALW_CBS_R1C4</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R1C5">
+		<ScreenID>AALW_CBS_R1C5</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R1C6">
+		<ScreenID>AALW_CBS_R1C6</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R2C0">
+		<ScreenID>AALW_CBS_R2C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R2C1">
+		<ScreenID>AALW_CBS_R2C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R2C2">
+		<ScreenID>AALW_CBS_R2C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R2C3">
+		<ScreenID>AALW_CBS_R2C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R2C4">
+		<ScreenID>AALW_CBS_R2C4</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R2C5">
+		<ScreenID>AALW_CBS_R2C5</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R2C6">
+		<ScreenID>AALW_CBS_R2C6</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R3C0">
+		<ScreenID>AALW_CBS_R3C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R3C1">
+		<ScreenID>AALW_CBS_R3C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R3C2">
+		<ScreenID>AALW_CBS_R3C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R3C3">
+		<ScreenID>AALW_CBS_R3C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R3C4">
+		<ScreenID>AALW_CBS_R3C4</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R3C5">
+		<ScreenID>AALW_CBS_R3C5</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R3C6">
+		<ScreenID>AALW_CBS_R3C6</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R4C0">
+		<ScreenID>AALW_CBS_R4C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R4C1">
+		<ScreenID>AALW_CBS_R4C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R4C2">
+		<ScreenID>AALW_CBS_R4C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R4C3">
+		<ScreenID>AALW_CBS_R4C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R4C4">
+		<ScreenID>AALW_CBS_R4C4</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R4C5">
+		<ScreenID>AALW_CBS_R4C5</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R4C6">
+		<ScreenID>AALW_CBS_R4C6</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R5C0">
+		<ScreenID>AALW_CBS_R5C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R5C1">
+		<ScreenID>AALW_CBS_R5C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R5C2">
+		<ScreenID>AALW_CBS_R5C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R5C3">
+		<ScreenID>AALW_CBS_R5C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R5C4">
+		<ScreenID>AALW_CBS_R5C4</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R5C5">
+		<ScreenID>AALW_CBS_R5C5</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R5C6">
+		<ScreenID>AALW_CBS_R5C6</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R6C0">
+		<ScreenID>AALW_CBS_R6C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R6C1">
+		<ScreenID>AALW_CBS_R6C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R6C2">
+		<ScreenID>AALW_CBS_R6C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R6C3">
+		<ScreenID>AALW_CBS_R6C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R6C4">
+		<ScreenID>AALW_CBS_R6C4</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R6C5">
+		<ScreenID>AALW_CBS_R6C5</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R6C6">
+		<ScreenID>AALW_CBS_R6C6</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R7C0">
+		<ScreenID>AALW_CBS_R7C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R7C1">
+		<ScreenID>AALW_CBS_R7C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R7C2">
+		<ScreenID>AALW_CBS_R7C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R7C3">
+		<ScreenID>AALW_CBS_R7C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R7C4">
+		<ScreenID>AALW_CBS_R7C4</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R7C5">
+		<ScreenID>AALW_CBS_R7C5</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R7C6">
+		<ScreenID>AALW_CBS_R7C6</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R8C0">
+		<ScreenID>AALW_CBS_R8C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R8C1">
+		<ScreenID>AALW_CBS_R8C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R8C2">
+		<ScreenID>AALW_CBS_R8C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R8C3">
+		<ScreenID>AALW_CBS_R8C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R8C4">
+		<ScreenID>AALW_CBS_R8C4</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R8C5">
+		<ScreenID>AALW_CBS_R8C5</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R8C6">
+		<ScreenID>AALW_CBS_R8C6</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R9C0">
+		<ScreenID>AALW_CBS_R9C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R9C1">
+		<ScreenID>AALW_CBS_R9C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R9C2">
+		<ScreenID>AALW_CBS_R9C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R9C3">
+		<ScreenID>AALW_CBS_R9C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R9C4">
+		<ScreenID>AALW_CBS_R9C4</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R9C5">
+		<ScreenID>AALW_CBS_R9C5</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R9C6">
+		<ScreenID>AALW_CBS_R9C6</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R10C0">
+		<ScreenID>AALW_CBS_R10C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R10C1">
+		<ScreenID>AALW_CBS_R10C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R10C2">
+		<ScreenID>AALW_CBS_R10C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R10C3">
+		<ScreenID>AALW_CBS_R10C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R10C4">
+		<ScreenID>AALW_CBS_R10C4</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R10C5">
+		<ScreenID>AALW_CBS_R10C5</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R10C6">
+		<ScreenID>AALW_CBS_R10C6</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R11C0">
+		<ScreenID>AALW_CBS_R11C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R11C1">
+		<ScreenID>AALW_CBS_R11C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R11C2">
+		<ScreenID>AALW_CBS_R11C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R11C3">
+		<ScreenID>AALW_CBS_R11C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R11C4">
+		<ScreenID>AALW_CBS_R11C4</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R11C5">
+		<ScreenID>AALW_CBS_R11C5</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R11C6">
+		<ScreenID>AALW_CBS_R11C6</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R12C0">
+		<ScreenID>AALW_CBS_R12C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R12C1">
+		<ScreenID>AALW_CBS_R12C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R12C2">
+		<ScreenID>AALW_CBS_R12C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R12C3">
+		<ScreenID>AALW_CBS_R12C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R12C4">
+		<ScreenID>AALW_CBS_R12C4</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R12C5">
+		<ScreenID>AALW_CBS_R12C5</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R12C6">
+		<ScreenID>AALW_CBS_R12C6</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R13C0">
+		<ScreenID>AALW_CBS_R13C0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R13C1">
+		<ScreenID>AALW_CBS_R13C1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R13C2">
+		<ScreenID>AALW_CBS_R13C2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R13C3">
+		<ScreenID>AALW_CBS_R13C3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R13C4">
+		<ScreenID>AALW_CBS_R13C4</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R13C5">
+		<ScreenID>AALW_CBS_R13C5</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_CBS_R13C6">
+		<ScreenID>AALW_CBS_R13C6</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>16</CX><CY>16</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>true</Style_Transparent>
+		<Style_Checkbox>true</Style_Checkbox>
+		<Template>BDT_CheckboxWithText</Template>
+		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
+	</Button>
+
 	<Screen item="NativeAutoLootWnd">
 		<ScreenID>NativeAutoLootWnd</ScreenID>
 		<RelativePosition>false</RelativePosition>
@@ -594,6 +2388,144 @@
 		<Pieces>AALW_ApplyFiltersCheck</Pieces>
 		<Pieces>AALW_GroupedByNpcCheck</Pieces>
 		<Pieces>AALW_StatusLabel</Pieces>
+		<Pieces>AALW_CBP_R0C0</Pieces>
+		<Pieces>AALW_CBP_R0C1</Pieces>
+		<Pieces>AALW_CBP_R0C2</Pieces>
+		<Pieces>AALW_CBP_R0C3</Pieces>
+		<Pieces>AALW_CBP_R0C4</Pieces>
+		<Pieces>AALW_CBP_R1C0</Pieces>
+		<Pieces>AALW_CBP_R1C1</Pieces>
+		<Pieces>AALW_CBP_R1C2</Pieces>
+		<Pieces>AALW_CBP_R1C3</Pieces>
+		<Pieces>AALW_CBP_R1C4</Pieces>
+		<Pieces>AALW_CBP_R2C0</Pieces>
+		<Pieces>AALW_CBP_R2C1</Pieces>
+		<Pieces>AALW_CBP_R2C2</Pieces>
+		<Pieces>AALW_CBP_R2C3</Pieces>
+		<Pieces>AALW_CBP_R2C4</Pieces>
+		<Pieces>AALW_CBP_R3C0</Pieces>
+		<Pieces>AALW_CBP_R3C1</Pieces>
+		<Pieces>AALW_CBP_R3C2</Pieces>
+		<Pieces>AALW_CBP_R3C3</Pieces>
+		<Pieces>AALW_CBP_R3C4</Pieces>
+		<Pieces>AALW_CBP_R4C0</Pieces>
+		<Pieces>AALW_CBP_R4C1</Pieces>
+		<Pieces>AALW_CBP_R4C2</Pieces>
+		<Pieces>AALW_CBP_R4C3</Pieces>
+		<Pieces>AALW_CBP_R4C4</Pieces>
+		<Pieces>AALW_CBP_R5C0</Pieces>
+		<Pieces>AALW_CBP_R5C1</Pieces>
+		<Pieces>AALW_CBP_R5C2</Pieces>
+		<Pieces>AALW_CBP_R5C3</Pieces>
+		<Pieces>AALW_CBP_R5C4</Pieces>
+		<Pieces>AALW_CBP_R6C0</Pieces>
+		<Pieces>AALW_CBP_R6C1</Pieces>
+		<Pieces>AALW_CBP_R6C2</Pieces>
+		<Pieces>AALW_CBP_R6C3</Pieces>
+		<Pieces>AALW_CBP_R6C4</Pieces>
+		<Pieces>AALW_CBP_R7C0</Pieces>
+		<Pieces>AALW_CBP_R7C1</Pieces>
+		<Pieces>AALW_CBP_R7C2</Pieces>
+		<Pieces>AALW_CBP_R7C3</Pieces>
+		<Pieces>AALW_CBP_R7C4</Pieces>
+		<Pieces>AALW_CBS_R0C0</Pieces>
+		<Pieces>AALW_CBS_R0C1</Pieces>
+		<Pieces>AALW_CBS_R0C2</Pieces>
+		<Pieces>AALW_CBS_R0C3</Pieces>
+		<Pieces>AALW_CBS_R0C4</Pieces>
+		<Pieces>AALW_CBS_R0C5</Pieces>
+		<Pieces>AALW_CBS_R0C6</Pieces>
+		<Pieces>AALW_CBS_R1C0</Pieces>
+		<Pieces>AALW_CBS_R1C1</Pieces>
+		<Pieces>AALW_CBS_R1C2</Pieces>
+		<Pieces>AALW_CBS_R1C3</Pieces>
+		<Pieces>AALW_CBS_R1C4</Pieces>
+		<Pieces>AALW_CBS_R1C5</Pieces>
+		<Pieces>AALW_CBS_R1C6</Pieces>
+		<Pieces>AALW_CBS_R2C0</Pieces>
+		<Pieces>AALW_CBS_R2C1</Pieces>
+		<Pieces>AALW_CBS_R2C2</Pieces>
+		<Pieces>AALW_CBS_R2C3</Pieces>
+		<Pieces>AALW_CBS_R2C4</Pieces>
+		<Pieces>AALW_CBS_R2C5</Pieces>
+		<Pieces>AALW_CBS_R2C6</Pieces>
+		<Pieces>AALW_CBS_R3C0</Pieces>
+		<Pieces>AALW_CBS_R3C1</Pieces>
+		<Pieces>AALW_CBS_R3C2</Pieces>
+		<Pieces>AALW_CBS_R3C3</Pieces>
+		<Pieces>AALW_CBS_R3C4</Pieces>
+		<Pieces>AALW_CBS_R3C5</Pieces>
+		<Pieces>AALW_CBS_R3C6</Pieces>
+		<Pieces>AALW_CBS_R4C0</Pieces>
+		<Pieces>AALW_CBS_R4C1</Pieces>
+		<Pieces>AALW_CBS_R4C2</Pieces>
+		<Pieces>AALW_CBS_R4C3</Pieces>
+		<Pieces>AALW_CBS_R4C4</Pieces>
+		<Pieces>AALW_CBS_R4C5</Pieces>
+		<Pieces>AALW_CBS_R4C6</Pieces>
+		<Pieces>AALW_CBS_R5C0</Pieces>
+		<Pieces>AALW_CBS_R5C1</Pieces>
+		<Pieces>AALW_CBS_R5C2</Pieces>
+		<Pieces>AALW_CBS_R5C3</Pieces>
+		<Pieces>AALW_CBS_R5C4</Pieces>
+		<Pieces>AALW_CBS_R5C5</Pieces>
+		<Pieces>AALW_CBS_R5C6</Pieces>
+		<Pieces>AALW_CBS_R6C0</Pieces>
+		<Pieces>AALW_CBS_R6C1</Pieces>
+		<Pieces>AALW_CBS_R6C2</Pieces>
+		<Pieces>AALW_CBS_R6C3</Pieces>
+		<Pieces>AALW_CBS_R6C4</Pieces>
+		<Pieces>AALW_CBS_R6C5</Pieces>
+		<Pieces>AALW_CBS_R6C6</Pieces>
+		<Pieces>AALW_CBS_R7C0</Pieces>
+		<Pieces>AALW_CBS_R7C1</Pieces>
+		<Pieces>AALW_CBS_R7C2</Pieces>
+		<Pieces>AALW_CBS_R7C3</Pieces>
+		<Pieces>AALW_CBS_R7C4</Pieces>
+		<Pieces>AALW_CBS_R7C5</Pieces>
+		<Pieces>AALW_CBS_R7C6</Pieces>
+		<Pieces>AALW_CBS_R8C0</Pieces>
+		<Pieces>AALW_CBS_R8C1</Pieces>
+		<Pieces>AALW_CBS_R8C2</Pieces>
+		<Pieces>AALW_CBS_R8C3</Pieces>
+		<Pieces>AALW_CBS_R8C4</Pieces>
+		<Pieces>AALW_CBS_R8C5</Pieces>
+		<Pieces>AALW_CBS_R8C6</Pieces>
+		<Pieces>AALW_CBS_R9C0</Pieces>
+		<Pieces>AALW_CBS_R9C1</Pieces>
+		<Pieces>AALW_CBS_R9C2</Pieces>
+		<Pieces>AALW_CBS_R9C3</Pieces>
+		<Pieces>AALW_CBS_R9C4</Pieces>
+		<Pieces>AALW_CBS_R9C5</Pieces>
+		<Pieces>AALW_CBS_R9C6</Pieces>
+		<Pieces>AALW_CBS_R10C0</Pieces>
+		<Pieces>AALW_CBS_R10C1</Pieces>
+		<Pieces>AALW_CBS_R10C2</Pieces>
+		<Pieces>AALW_CBS_R10C3</Pieces>
+		<Pieces>AALW_CBS_R10C4</Pieces>
+		<Pieces>AALW_CBS_R10C5</Pieces>
+		<Pieces>AALW_CBS_R10C6</Pieces>
+		<Pieces>AALW_CBS_R11C0</Pieces>
+		<Pieces>AALW_CBS_R11C1</Pieces>
+		<Pieces>AALW_CBS_R11C2</Pieces>
+		<Pieces>AALW_CBS_R11C3</Pieces>
+		<Pieces>AALW_CBS_R11C4</Pieces>
+		<Pieces>AALW_CBS_R11C5</Pieces>
+		<Pieces>AALW_CBS_R11C6</Pieces>
+		<Pieces>AALW_CBS_R12C0</Pieces>
+		<Pieces>AALW_CBS_R12C1</Pieces>
+		<Pieces>AALW_CBS_R12C2</Pieces>
+		<Pieces>AALW_CBS_R12C3</Pieces>
+		<Pieces>AALW_CBS_R12C4</Pieces>
+		<Pieces>AALW_CBS_R12C5</Pieces>
+		<Pieces>AALW_CBS_R12C6</Pieces>
+		<Pieces>AALW_CBS_R13C0</Pieces>
+		<Pieces>AALW_CBS_R13C1</Pieces>
+		<Pieces>AALW_CBS_R13C2</Pieces>
+		<Pieces>AALW_CBS_R13C3</Pieces>
+		<Pieces>AALW_CBS_R13C4</Pieces>
+		<Pieces>AALW_CBS_R13C5</Pieces>
+		<Pieces>AALW_CBS_R13C6</Pieces>
 	</Screen>
 
 	<Label item="AALR_SummaryLabel">
