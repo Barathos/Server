@@ -722,6 +722,44 @@ public:
 				return 1;
 			}
 
+			// Fallback: route clicks on pool buttons that were missing from
+			// PoolStates (e.g. a stale frame between data refresh and sync)
+			// by button identity, and log them so dead clicks are visible
+			// in native_autoloot.log.
+			for (int pool_row = 0; pool_row < kAALPoolPersonalRows; ++pool_row) {
+				for (int slot = 0; slot < kAALPoolPersonalCols; ++slot) {
+					if (pWnd != (CXWnd*)PersonalPool[pool_row][slot] || !PersonalPool[pool_row][slot]) {
+						continue;
+					}
+
+					const int list_row = PersonalPoolListRow[pool_row];
+					NativeAutoLootTrace("DIAG pool fallback personal r=%d slot=%d listrow=%d", pool_row, slot, list_row);
+					if (list_row >= 0 && PersonalList) {
+						ActiveList = PersonalList;
+						PersonalList->SetCurSel(list_row);
+						HandleListColumnAction(PersonalList, false, list_row, kAALPoolPersonalColumns[slot]);
+					}
+					return 1;
+				}
+			}
+
+			for (int pool_row = 0; pool_row < kAALPoolSharedRows; ++pool_row) {
+				for (int slot = 0; slot < kAALPoolSharedCols; ++slot) {
+					if (pWnd != (CXWnd*)SharedPool[pool_row][slot] || !SharedPool[pool_row][slot]) {
+						continue;
+					}
+
+					const int list_row = SharedPoolListRow[pool_row];
+					NativeAutoLootTrace("DIAG pool fallback shared r=%d slot=%d listrow=%d", pool_row, slot, list_row);
+					if (list_row >= 0 && SharedList) {
+						ActiveList = SharedList;
+						SharedList->SetCurSel(list_row);
+						HandleListColumnAction(SharedList, true, list_row, kAALPoolSharedColumns[slot]);
+					}
+					return 1;
+				}
+			}
+
 			if (pWnd == (CXWnd*)PersonalList || pWnd == (CXWnd*)SharedList) {
 				CListWnd* list = (CListWnd*)pWnd;
 				ActiveList = list;
@@ -853,6 +891,8 @@ private:
 	bool SharedIconShown[kAALPoolSharedRows] = {};
 	int PersonalIconCell[kAALPoolPersonalRows] = {};
 	int SharedIconCell[kAALPoolSharedRows] = {};
+	int PersonalPoolListRow[kAALPoolPersonalRows] = {};
+	int SharedPoolListRow[kAALPoolSharedRows] = {};
 	CButtonWnd* PersonalPool[kAALPoolPersonalRows][kAALPoolPersonalCols] = {};
 	CButtonWnd* SharedPool[kAALPoolSharedRows][kAALPoolSharedCols] = {};
 	bool PersonalPoolShown[kAALPoolPersonalRows][kAALPoolPersonalCols] = {};
@@ -941,6 +981,7 @@ public:
 		StatusLabel = GetChildItem("AALR_StatusLabel");
 		RuleList = (CListWnd*)GetChildItem("AALR_RuleList");
 		RefreshButton = (CButtonWnd*)GetChildItem("AALR_RefreshButton");
+		ShareButton = (CButtonWnd*)GetChildItem("AALR_ShareButton");
 		TglEnabled = (CButtonWnd*)GetChildItem("AALR_TglEnabled");
 		TglSplit = (CButtonWnd*)GetChildItem("AALR_TglSplit");
 		TglConfirm = (CButtonWnd*)GetChildItem("AALR_TglConfirm");
@@ -987,6 +1028,12 @@ public:
 			if (pWnd == (CXWnd*)RefreshButton) {
 				NativeAutoLootSendCommand("/say #advloot filter native list");
 				SetStatus("Refreshing filters...");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)ShareButton) {
+				NativeAutoLootSendCommand("/say #advloot filter share");
+				SetStatus("Offering your filters to your target...");
 				return 1;
 			}
 
@@ -1073,6 +1120,7 @@ private:
 	CXWnd* StatusLabel = nullptr;
 	CListWnd* RuleList = nullptr;
 	CButtonWnd* RefreshButton = nullptr;
+	CButtonWnd* ShareButton = nullptr;
 	CButtonWnd* TglEnabled = nullptr;
 	CButtonWnd* TglSplit = nullptr;
 	CButtonWnd* TglConfirm = nullptr;
@@ -8465,6 +8513,12 @@ void NativeAutoLootWnd::SyncInlinePool()
 	bool shared_used[kAALPoolSharedRows][kAALPoolSharedCols] = {};
 	bool personal_icon_used[kAALPoolPersonalRows] = {};
 	bool shared_icon_used[kAALPoolSharedRows] = {};
+	for (int pool_row = 0; pool_row < kAALPoolPersonalRows; ++pool_row) {
+		PersonalPoolListRow[pool_row] = -1;
+	}
+	for (int pool_row = 0; pool_row < kAALPoolSharedRows; ++pool_row) {
+		SharedPoolListRow[pool_row] = -1;
+	}
 	PoolRefresh.clear();
 
 	int window_left = 0;
@@ -8516,6 +8570,12 @@ void NativeAutoLootWnd::SyncInlinePool()
 				++pool_row_cursor;
 
 				if (current_pool_row >= 0) {
+					if (shared) {
+						SharedPoolListRow[current_pool_row] = spec.row;
+					}
+					else {
+						PersonalPoolListRow[current_pool_row] = spec.row;
+					}
 					CButtonWnd* icon_button = shared ? SharedIconPool[current_pool_row] : PersonalIconPool[current_pool_row];
 					CXRect icon_target;
 					CXRect icon_clip;
@@ -8823,8 +8883,20 @@ bool NativeAutoLootWnd::HandleListColumnAction(CListWnd* list, bool shared, int 
 
 void NativeAutoLootWnd::Layout()
 {
-	NativeAutoLootFitListColumns(PersonalList, false);
-	NativeAutoLootFitListColumns(SharedList, true);
+	// Only refit columns when the list width actually changes: re-applying
+	// widths every pulse can oscillate cell rects when the scrollbar
+	// appears/disappears, which thrashes the overlay buttons.
+	const int personal_width = NativeAutoLootGetListWidth(PersonalList);
+	if (personal_width > 0 && personal_width != LastLayoutWidth) {
+		LastLayoutWidth = personal_width;
+		NativeAutoLootFitListColumns(PersonalList, false);
+	}
+
+	const int shared_width = NativeAutoLootGetListWidth(SharedList);
+	if (shared_width > 0 && shared_width != LastLayoutHeight) {
+		LastLayoutHeight = shared_width;
+		NativeAutoLootFitListColumns(SharedList, true);
+	}
 }
 
 void NativeAutoLootWnd::RefreshList(CListWnd* list, bool shared)

@@ -4098,6 +4098,20 @@
 		<DecalSize><CX>26</CX><CY>26</CY></DecalSize>
 	</Button>
 
+	<Button item="AALR_ShareButton">
+		<ScreenID>AALR_ShareButton</ScreenID>
+		<Font>5</Font>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>116</X><Y>132</Y></Location>
+		<Size><CX>96</CX><CY>26</CY></Size>
+		<Text>Share</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<TooltipReference>Offer your saved filters to your targeted player. They accept with: #advloot filter accept merge</TooltipReference>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_Normal</Template>
+	</Button>
+
 	<Screen item="NativeAutoLootRulesWnd">
 		<ScreenID>NativeAutoLootRulesWnd</ScreenID>
 		<RelativePosition>false</RelativePosition>
@@ -4113,6 +4127,7 @@
 		<Style_Transparent>false</Style_Transparent>
 		<Pieces>AALR_SummaryLabel</Pieces>
 		<Pieces>AALR_RefreshButton</Pieces>
+		<Pieces>AALR_ShareButton</Pieces>
 		<Pieces>AALR_RuleList</Pieces>
 		<Pieces>AALR_StatusLabel</Pieces>
 		<Pieces>AALR_TglEnabled</Pieces>
