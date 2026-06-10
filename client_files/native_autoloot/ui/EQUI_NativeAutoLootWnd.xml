@@ -2561,6 +2561,248 @@
 		<DecalSize><CX>16</CX><CY>16</CY></DecalSize>
 	</Button>
 
+	<Button item="AALW_IBP_R0">
+		<ScreenID>AALW_IBP_R0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>18</CX><CY>18</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Item_R0</Template>
+		<DecalSize><CX>18</CX><CY>18</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_IBP_R1">
+		<ScreenID>AALW_IBP_R1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>18</CX><CY>18</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Item_R1</Template>
+		<DecalSize><CX>18</CX><CY>18</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_IBP_R2">
+		<ScreenID>AALW_IBP_R2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>18</CX><CY>18</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Item_R2</Template>
+		<DecalSize><CX>18</CX><CY>18</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_IBP_R3">
+		<ScreenID>AALW_IBP_R3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>18</CX><CY>18</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Item_R3</Template>
+		<DecalSize><CX>18</CX><CY>18</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_IBP_R4">
+		<ScreenID>AALW_IBP_R4</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>18</CX><CY>18</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Item_R4</Template>
+		<DecalSize><CX>18</CX><CY>18</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_IBP_R5">
+		<ScreenID>AALW_IBP_R5</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>18</CX><CY>18</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Item_R5</Template>
+		<DecalSize><CX>18</CX><CY>18</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_IBP_R6">
+		<ScreenID>AALW_IBP_R6</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>18</CX><CY>18</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Item_R6</Template>
+		<DecalSize><CX>18</CX><CY>18</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_IBP_R7">
+		<ScreenID>AALW_IBP_R7</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>18</CX><CY>18</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Item_R7</Template>
+		<DecalSize><CX>18</CX><CY>18</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_IBS_R0">
+		<ScreenID>AALW_IBS_R0</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>18</CX><CY>18</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Item_R8</Template>
+		<DecalSize><CX>18</CX><CY>18</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_IBS_R1">
+		<ScreenID>AALW_IBS_R1</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>18</CX><CY>18</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Item_R9</Template>
+		<DecalSize><CX>18</CX><CY>18</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_IBS_R2">
+		<ScreenID>AALW_IBS_R2</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>18</CX><CY>18</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Item_R10</Template>
+		<DecalSize><CX>18</CX><CY>18</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_IBS_R3">
+		<ScreenID>AALW_IBS_R3</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>18</CX><CY>18</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Item_R11</Template>
+		<DecalSize><CX>18</CX><CY>18</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_IBS_R4">
+		<ScreenID>AALW_IBS_R4</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>18</CX><CY>18</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Item_R12</Template>
+		<DecalSize><CX>18</CX><CY>18</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_IBS_R5">
+		<ScreenID>AALW_IBS_R5</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>18</CX><CY>18</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Item_R13</Template>
+		<DecalSize><CX>18</CX><CY>18</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_IBS_R6">
+		<ScreenID>AALW_IBS_R6</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>18</CX><CY>18</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Item_R14</Template>
+		<DecalSize><CX>18</CX><CY>18</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_IBS_R7">
+		<ScreenID>AALW_IBS_R7</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>18</CX><CY>18</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Item_R15</Template>
+		<DecalSize><CX>18</CX><CY>18</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_IBS_R8">
+		<ScreenID>AALW_IBS_R8</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>18</CX><CY>18</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Item_R16</Template>
+		<DecalSize><CX>18</CX><CY>18</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_IBS_R9">
+		<ScreenID>AALW_IBS_R9</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>18</CX><CY>18</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Item_R17</Template>
+		<DecalSize><CX>18</CX><CY>18</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_IBS_R10">
+		<ScreenID>AALW_IBS_R10</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>18</CX><CY>18</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Item_R18</Template>
+		<DecalSize><CX>18</CX><CY>18</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_IBS_R11">
+		<ScreenID>AALW_IBS_R11</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>18</CX><CY>18</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Item_R19</Template>
+		<DecalSize><CX>18</CX><CY>18</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_IBS_R12">
+		<ScreenID>AALW_IBS_R12</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>18</CX><CY>18</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Item_R20</Template>
+		<DecalSize><CX>18</CX><CY>18</CY></DecalSize>
+	</Button>
+
+	<Button item="AALW_IBS_R13">
+		<ScreenID>AALW_IBS_R13</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>0</X><Y>0</Y></Location>
+		<Size><CX>18</CX><CY>18</CY></Size>
+		<Text></Text>
+		<Style_Transparent>true</Style_Transparent>
+		<Template>NAL_BDT_Item_R21</Template>
+		<DecalSize><CX>18</CX><CY>18</CY></DecalSize>
+	</Button>
+
 	<Screen item="NativeAutoLootWnd">
 		<ScreenID>NativeAutoLootWnd</ScreenID>
 		<RelativePosition>false</RelativePosition>
@@ -2595,6 +2837,28 @@
 		<Pieces>AALW_ApplyFiltersCheck</Pieces>
 		<Pieces>AALW_GroupedByNpcCheck</Pieces>
 		<Pieces>AALW_StatusLabel</Pieces>
+		<Pieces>AALW_IBP_R0</Pieces>
+		<Pieces>AALW_IBP_R1</Pieces>
+		<Pieces>AALW_IBP_R2</Pieces>
+		<Pieces>AALW_IBP_R3</Pieces>
+		<Pieces>AALW_IBP_R4</Pieces>
+		<Pieces>AALW_IBP_R5</Pieces>
+		<Pieces>AALW_IBP_R6</Pieces>
+		<Pieces>AALW_IBP_R7</Pieces>
+		<Pieces>AALW_IBS_R0</Pieces>
+		<Pieces>AALW_IBS_R1</Pieces>
+		<Pieces>AALW_IBS_R2</Pieces>
+		<Pieces>AALW_IBS_R3</Pieces>
+		<Pieces>AALW_IBS_R4</Pieces>
+		<Pieces>AALW_IBS_R5</Pieces>
+		<Pieces>AALW_IBS_R6</Pieces>
+		<Pieces>AALW_IBS_R7</Pieces>
+		<Pieces>AALW_IBS_R8</Pieces>
+		<Pieces>AALW_IBS_R9</Pieces>
+		<Pieces>AALW_IBS_R10</Pieces>
+		<Pieces>AALW_IBS_R11</Pieces>
+		<Pieces>AALW_IBS_R12</Pieces>
+		<Pieces>AALW_IBS_R13</Pieces>
 		<Pieces>AALW_CBP_R0C0</Pieces>
 		<Pieces>AALW_CBP_R0C1</Pieces>
 		<Pieces>AALW_CBP_R0C2</Pieces>

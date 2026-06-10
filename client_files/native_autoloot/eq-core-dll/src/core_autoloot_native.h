@@ -270,6 +270,39 @@ static unsigned int gNativeAutoLootDiagOnProcessFrameCount = 0;
 static DWORD gNativeAutoLootDiagLastReportTick = 0;
 static int gNativeAutoLootDiagReportBudget = 300;
 static int gNativeAutoLootDiagNotifyBudget = 120;
+static int gNativeAutoLootDiagStructDumpBudget = 1;
+
+// CButtonWnd keeps its NormalDecal animation instance at +0x240 (verified
+// via the 2026-06-09 struct dumps: decal-less templates read null there,
+// decal templates read a heap animation pointer).
+static const int kAALButtonNormalDecalOffset = 0x240;
+static bool gNativeAutoLootIconCellFaulted = false;
+
+// One-shot struct dump for the item-icon investigation: locate the decal
+// animation pointer inside CButtonWnd by comparing differently-templated
+// buttons. Read-only and SEH-guarded.
+static void NativeAutoLootDiagDumpButton(const char* tag, CButtonWnd* button)
+{
+	if (!button) {
+		NativeAutoLootTrace("DIAG dump %s: null", tag);
+		return;
+	}
+
+	DWORD* raw = (DWORD*)button;
+	__try {
+		for (int base = 0x1C0; base < 0x2C0; base += 0x20) {
+			char line[256];
+			sprintf_s(line, "DIAG dump %s +%03X: %08X %08X %08X %08X %08X %08X %08X %08X",
+				tag, base,
+				raw[base / 4 + 0], raw[base / 4 + 1], raw[base / 4 + 2], raw[base / 4 + 3],
+				raw[base / 4 + 4], raw[base / 4 + 5], raw[base / 4 + 6], raw[base / 4 + 7]);
+			NativeAutoLootTrace("%s", line);
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+		NativeAutoLootTrace("DIAG dump %s faulted", tag);
+	}
+}
 
 // Inline checkbox pool: real XML-declared checkbox controls positioned over
 // the list cells every pulse. Uses only primitives proven to work in this
@@ -489,6 +522,24 @@ public:
 		PersonalSetCombo = (CComboWnd*)GetChildItem("AALW_PersonalSetCombo");
 		SharedSetCombo = (CComboWnd*)GetChildItem("AALW_SharedSetCombo");
 		SharedLeaveAllButton = (CButtonWnd*)GetChildItem("AALW_SharedLeaveAllButton");
+
+		for (int pool_row = 0; pool_row < kAALPoolPersonalRows; ++pool_row) {
+			char name[48];
+			sprintf_s(name, "AALW_IBP_R%d", pool_row);
+			PersonalIconPool[pool_row] = (CButtonWnd*)GetChildItem(name);
+			if (PersonalIconPool[pool_row]) {
+				((CXWnd*)PersonalIconPool[pool_row])->Show(0, 1);
+			}
+		}
+
+		for (int pool_row = 0; pool_row < kAALPoolSharedRows; ++pool_row) {
+			char name[48];
+			sprintf_s(name, "AALW_IBS_R%d", pool_row);
+			SharedIconPool[pool_row] = (CButtonWnd*)GetChildItem(name);
+			if (SharedIconPool[pool_row]) {
+				((CXWnd*)SharedIconPool[pool_row])->Show(0, 1);
+			}
+		}
 		NativeAutoLootTrace("DIAG ptrs plist=%p slist=%p pcombo=%p scombo=%p sleave=%p",
 			PersonalList, SharedList, PersonalSetCombo, SharedSetCombo, SharedLeaveAllButton);
 
@@ -692,6 +743,8 @@ private:
 	bool SendCorpseAction(const NativeAutoLootRow& row, const char* action, const char* status);
 	bool ToggleAutoRollFilter(const NativeAutoLootRow& row);
 	bool GetInlineCellDrawRect(const NativeAutoLootInlineCellSpec& spec, CXRect* target, CXRect* clip) const;
+	bool GetIconCellDrawRect(CListWnd* list, int row, CXRect* target, CXRect* clip) const;
+	void SetIconButtonCell(CButtonWnd* button, int* last_cell, int icon_id);
 	void SyncInlinePool();
 	void ApplySetAll(bool shared, int choice);
 	int ResolveComboChoice(CComboWnd* combo, int hint);
@@ -731,6 +784,12 @@ private:
 	CComboWnd* PersonalSetCombo = nullptr;
 	CComboWnd* SharedSetCombo = nullptr;
 	CButtonWnd* SharedLeaveAllButton = nullptr;
+	CButtonWnd* PersonalIconPool[kAALPoolPersonalRows] = {};
+	CButtonWnd* SharedIconPool[kAALPoolSharedRows] = {};
+	bool PersonalIconShown[kAALPoolPersonalRows] = {};
+	bool SharedIconShown[kAALPoolSharedRows] = {};
+	int PersonalIconCell[kAALPoolPersonalRows] = {};
+	int SharedIconCell[kAALPoolSharedRows] = {};
 	CButtonWnd* PersonalPool[kAALPoolPersonalRows][kAALPoolPersonalCols] = {};
 	CButtonWnd* SharedPool[kAALPoolSharedRows][kAALPoolSharedCols] = {};
 	bool PersonalPoolShown[kAALPoolPersonalRows][kAALPoolPersonalCols] = {};
@@ -746,6 +805,21 @@ private:
 
 static NativeAutoLootWnd* gNativeAutoLootWnd = nullptr;
 static std::vector<NativeAutoLootRow> gNativeAutoLootRows;
+
+static int NativeAutoLootIconIdForEntry(int entry_id)
+{
+	if (entry_id <= 0) {
+		return 0;
+	}
+
+	for (const NativeAutoLootRow& row : gNativeAutoLootRows) {
+		if (row.entry_id == entry_id) {
+			return row.icon_id;
+		}
+	}
+
+	return 0;
+}
 static bool gNativeAutoLootHooksInstalled = false;
 static bool gNativeAutoLootChatHookInstalled = false;
 static bool gNativeAutoLootCommandHookInstalled = false;
@@ -7568,6 +7642,85 @@ bool NativeAutoLootWnd::GetInlineCellDrawRect(const NativeAutoLootInlineCellSpec
 	}
 }
 
+bool NativeAutoLootWnd::GetIconCellDrawRect(CListWnd* list, int row, CXRect* target, CXRect* clip) const
+{
+	if (!target || !clip || !list) {
+		return false;
+	}
+
+	__try {
+		CXRect cell_rect = list->GetItemRect(row, 0);
+		CXRect list_rect = ((CXWnd*)list)->GetScreenRect();
+		CXRect list_clip = ((CXWnd*)list)->GetScreenClipRect();
+
+		int left = (int)cell_rect.A;
+		int top = (int)cell_rect.B;
+		int right = (int)cell_rect.C;
+		int bottom = (int)cell_rect.D;
+
+		if (left < (int)list_rect.A - 4 || top < (int)list_rect.B - 4) {
+			left += (int)list_rect.A;
+			right += (int)list_rect.A;
+			top += (int)list_rect.B;
+			bottom += (int)list_rect.B;
+		}
+
+		if (right <= left || bottom <= top ||
+			right <= (int)list_clip.A || left >= (int)list_clip.C ||
+			bottom <= (int)list_clip.B || top >= (int)list_clip.D) {
+			return false;
+		}
+
+		const int control_size = 18;
+		int vertical_inset = (bottom - top - control_size) / 2;
+		if (vertical_inset < 0) {
+			vertical_inset = 0;
+		}
+
+		target->A = left + 1;
+		target->B = top + vertical_inset;
+		target->C = left + 1 + control_size;
+		target->D = top + vertical_inset + control_size;
+		clip->A = list_clip.A;
+		clip->B = list_clip.B;
+		clip->C = list_clip.C;
+		clip->D = list_clip.D;
+		return true;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+		NativeAutoLootTrace("icon cell rect faulted");
+		return false;
+	}
+}
+
+void NativeAutoLootWnd::SetIconButtonCell(CButtonWnd* button, int* last_cell, int icon_id)
+{
+	if (!button || !last_cell || gNativeAutoLootIconCellFaulted) {
+		return;
+	}
+
+	const int cell = NativeAutoLootIconCell(icon_id);
+	if (*last_cell == cell) {
+		return;
+	}
+
+	DWORD* raw = (DWORD*)button;
+	CTextureAnimation* decal = (CTextureAnimation*)raw[kAALButtonNormalDecalOffset / 4];
+	if (!decal) {
+		return;
+	}
+
+	__try {
+		decal->SetCurCell(cell);
+		*last_cell = cell;
+		PoolRefresh.push_back(button);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+		gNativeAutoLootIconCellFaulted = true;
+		NativeAutoLootTrace("icon SetCurCell faulted; icon cells disabled");
+	}
+}
+
 void NativeAutoLootWnd::SyncInlinePool()
 {
 	// The engine interprets child Location rects relative to an origin that
@@ -7599,6 +7752,8 @@ void NativeAutoLootWnd::SyncInlinePool()
 
 	bool personal_used[kAALPoolPersonalRows][kAALPoolPersonalCols] = {};
 	bool shared_used[kAALPoolSharedRows][kAALPoolSharedCols] = {};
+	bool personal_icon_used[kAALPoolPersonalRows] = {};
+	bool shared_icon_used[kAALPoolSharedRows] = {};
 	PoolRefresh.clear();
 
 	int window_left = 0;
@@ -7648,6 +7803,44 @@ void NativeAutoLootWnd::SyncInlinePool()
 				current_src_row = spec.row;
 				current_pool_row = pool_row_cursor < pool_rows ? pool_row_cursor : -1;
 				++pool_row_cursor;
+
+				if (current_pool_row >= 0) {
+					CButtonWnd* icon_button = shared ? SharedIconPool[current_pool_row] : PersonalIconPool[current_pool_row];
+					CXRect icon_target;
+					CXRect icon_clip;
+					if (icon_button &&
+						GetIconCellDrawRect(spec.list, spec.row, &icon_target, &icon_clip) &&
+						(int)icon_target.B >= (int)icon_clip.B && (int)icon_target.D <= (int)icon_clip.D) {
+						const int icon_left = (int)icon_target.A - window_left + PoolCorrectionX;
+						const int icon_top = (int)icon_target.B - window_top + PoolCorrectionY;
+						const int icon_right = (int)icon_target.C - window_left + PoolCorrectionX;
+						const int icon_bottom = (int)icon_target.D - window_top + PoolCorrectionY;
+
+						PCSIDLWND icon_raw = (PCSIDLWND)icon_button;
+						const bool icon_moved =
+							icon_raw->Location.left != icon_left ||
+							icon_raw->Location.top != icon_top ||
+							icon_raw->Location.right != icon_right ||
+							icon_raw->Location.bottom != icon_bottom;
+						icon_raw->Location.left = icon_left;
+						icon_raw->Location.top = icon_top;
+						icon_raw->Location.right = icon_right;
+						icon_raw->Location.bottom = icon_bottom;
+						if (icon_moved) {
+							PoolRefresh.push_back(icon_button);
+						}
+
+						int* last_cell = shared ? &SharedIconCell[current_pool_row] : &PersonalIconCell[current_pool_row];
+						SetIconButtonCell(icon_button, last_cell, NativeAutoLootIconIdForEntry((int)spec.list->GetItemData(spec.row)));
+
+						if (shared) {
+							shared_icon_used[current_pool_row] = true;
+						}
+						else {
+							personal_icon_used[current_pool_row] = true;
+						}
+					}
+				}
 			}
 
 			if (current_pool_row < 0) {
@@ -7718,6 +7911,22 @@ void NativeAutoLootWnd::SyncInlinePool()
 			}
 		}
 
+		for (int pool_row = 0; pool_row < kAALPoolPersonalRows; ++pool_row) {
+			CButtonWnd* button = PersonalIconPool[pool_row];
+			if (button && personal_icon_used[pool_row] != PersonalIconShown[pool_row]) {
+				((CXWnd*)button)->Show(personal_icon_used[pool_row] ? 1 : 0, 1);
+				PersonalIconShown[pool_row] = personal_icon_used[pool_row];
+			}
+		}
+
+		for (int pool_row = 0; pool_row < kAALPoolSharedRows; ++pool_row) {
+			CButtonWnd* button = SharedIconPool[pool_row];
+			if (button && shared_icon_used[pool_row] != SharedIconShown[pool_row]) {
+				((CXWnd*)button)->Show(shared_icon_used[pool_row] ? 1 : 0, 1);
+				SharedIconShown[pool_row] = shared_icon_used[pool_row];
+			}
+		}
+
 		// The engine caches a control's absolute screen position and only
 		// recomputes it on events like a hide/show transition or a window
 		// move. Toggle visibility within the pulse (between frames) so
@@ -7737,6 +7946,20 @@ void NativeAutoLootWnd::DiagnosticPulse()
 	++gNativeAutoLootDiagPulseCount;
 
 	SyncInlinePool();
+
+	if (gNativeAutoLootDiagStructDumpBudget > 0) {
+		--gNativeAutoLootDiagStructDumpBudget;
+		__try {
+			for (int pool_row = 0; pool_row < 3; ++pool_row) {
+				CButtonWnd* button = PersonalIconPool[pool_row];
+				DWORD decal = button ? ((DWORD*)button)[kAALButtonNormalDecalOffset / 4] : 0;
+				NativeAutoLootTrace("DIAG icon pool R%d button=%p decal=%08X", pool_row, button, decal);
+			}
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			NativeAutoLootTrace("DIAG icon pool dump faulted");
+		}
+	}
 
 	const DWORD now = GetTickCount();
 	if (gNativeAutoLootDiagReportBudget <= 0 || (now - gNativeAutoLootDiagLastReportTick) < 2000) {
@@ -7941,7 +8164,9 @@ void NativeAutoLootWnd::RefreshList(CListWnd* list, bool shared)
 		const NativeAutoLootRow& entry = *entry_ptr;
 		++visible;
 		const COLORREF row_color = entry.locked ? 0xFFFF8080 : 0xFFFFFFFF;
-		CXStr item(entry.item.c_str());
+		char display_name[160];
+		sprintf_s(display_name, "      %s", entry.item.c_str());
+		CXStr item(display_name);
 		const int row = list->AddString(
 			item,
 			row_color,
