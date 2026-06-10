@@ -21,6 +21,7 @@
 class Client;
 class Corpse;
 class Group;
+class Raid;
 class Mob;
 class Seperator;
 
@@ -66,7 +67,8 @@ private:
 		uint32 quantity = 0;
 		uint32 owner_character_id = 0;
 		uint32 master_looter_character_id = 0;
-		uint32 group_id = 0;
+		uint32 group_id = 0; // group id, or raid id when raid_party is set
+		bool raid_party = false;
 		bool shared = false;
 		bool no_drop = false;
 		bool dynamic_instance = false;
@@ -102,8 +104,11 @@ private:
 	Client *ResolveLootClient(Mob *killer);
 	Client *FindAutoLootClient(Client *resolved_client, Corpse *corpse);
 	Client *DetermineMasterLooter(Group *group, Corpse *corpse, Client *fallback);
+	Client *DetermineRaidMasterLooter(Raid *raid, Corpse *corpse, Client *fallback);
 	std::vector<Client *> GetGroupClients(Group *group);
 	std::vector<Client *> GetGroupClientsByID(uint32 group_id);
+	std::vector<Client *> GetRaidClients(Raid *raid);
+	std::vector<Client *> GetPartyClientsByEntry(const LootEntry &entry);
 
 	bool ProcessCorpse(Corpse *corpse, Client *resolved_client, const LootSource *source = nullptr);
 	bool QueueCorpseEntries(Corpse *corpse, Client *resolved_client, const LootSource *source = nullptr);
@@ -144,6 +149,7 @@ private:
 
 	std::map<uint32, LootEntry> m_loot_entries;
 	std::map<uint32, uint32> m_group_master_looters;
+	std::map<uint32, uint32> m_raid_master_looters;
 	std::map<uint32, std::map<uint32, time_t>> m_pending_filter_removals;
 	uint32 m_next_loot_entry_id = 1;
 	time_t m_last_process = 0;

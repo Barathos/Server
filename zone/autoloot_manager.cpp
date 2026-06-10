@@ -20,6 +20,7 @@
 #include "zone/bot.h"
 #include "zone/client.h"
 #include "zone/corpse.h"
+#include "zone/raids.h"
 #include "zone/entity.h"
 #include "zone/groups.h"
 #include "zone/merc.h"
@@ -612,6 +613,46 @@ std::vector<Client *> AutoLootManager::GetGroupClientsByID(uint32 group_id)
 	return clients;
 }
 
+std::vector<Client *> AutoLootManager::GetRaidClients(Raid *raid)
+{
+	std::vector<Client *> clients;
+	if (!raid) {
+		return clients;
+	}
+
+	for (const auto &member : raid->GetMembers()) {
+		if (member.member && !member.is_bot) {
+			clients.push_back(member.member);
+		}
+	}
+
+	return clients;
+}
+
+std::vector<Client *> AutoLootManager::GetPartyClientsByEntry(const LootEntry &entry)
+{
+	if (!entry.group_id) {
+		return {};
+	}
+
+	if (!entry.raid_party) {
+		return GetGroupClientsByID(entry.group_id);
+	}
+
+	for (auto &[client_id, candidate] : entity_list.GetClientList()) {
+		if (!candidate) {
+			continue;
+		}
+
+		auto raid = candidate->GetRaid();
+		if (raid && raid->GetID() == entry.group_id) {
+			return GetRaidClients(raid);
+		}
+	}
+
+	return {};
+}
+
 Client *AutoLootManager::FindAutoLootClient(Client *resolved_client, Corpse *corpse)
 {
 	if (!resolved_client || !corpse || !corpse->CanPlayerLoot(resolved_client->CharacterID())) {
@@ -667,6 +708,61 @@ Client *AutoLootManager::DetermineMasterLooter(Group *group, Corpse *corpse, Cli
 	}
 
 	for (auto member : GetGroupClients(group)) {
+		if (is_candidate(member, true)) {
+			return member;
+		}
+	}
+
+	return is_candidate(fallback, false) ? fallback : nullptr;
+}
+
+Client *AutoLootManager::DetermineRaidMasterLooter(Raid *raid, Corpse *corpse, Client *fallback)
+{
+	if (!raid) {
+		return fallback;
+	}
+
+	auto is_candidate = [this, corpse](Client *client, bool require_master_candidate) {
+		if (!client) {
+			return false;
+		}
+
+		if (corpse && !corpse->CanPlayerLoot(client->CharacterID())) {
+			return false;
+		}
+
+		const auto settings = GetCharacterSettings(client->CharacterID(), true);
+		if (!settings.use_advanced_looting) {
+			return false;
+		}
+
+		return !require_master_candidate || settings.master_looter_candidate;
+	};
+
+	auto designated = m_raid_master_looters.find(raid->GetID());
+	if (designated != m_raid_master_looters.end()) {
+		for (auto member : GetRaidClients(raid)) {
+			if (member && member->CharacterID() == designated->second && is_candidate(member, false)) {
+				return member;
+			}
+		}
+
+		m_raid_master_looters.erase(designated);
+	}
+
+	auto leader = raid->GetLeader();
+	if (leader && is_candidate(leader, true)) {
+		return leader;
+	}
+
+	// Prefer members the raid leader flagged as looters.
+	for (const auto &member : raid->GetMembers()) {
+		if (member.member && !member.is_bot && member.is_looter && is_candidate(member.member, true)) {
+			return member.member;
+		}
+	}
+
+	for (auto member : GetRaidClients(raid)) {
 		if (is_candidate(member, true)) {
 			return member;
 		}
@@ -776,9 +872,15 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 	}
 
 	auto group = autoloot_client->GetGroup();
-	const auto group_clients = GetGroupClients(group);
+	auto raid = autoloot_client->GetRaid();
+	const bool raid_party = raid != nullptr;
+	const auto group_clients = raid_party ? GetRaidClients(raid) : GetGroupClients(group);
 	const bool shared_loot = group_clients.size() > 1;
-	auto master_looter = shared_loot ? DetermineMasterLooter(group, corpse, autoloot_client) : nullptr;
+	auto master_looter = shared_loot
+		? (raid_party
+			? DetermineRaidMasterLooter(raid, corpse, autoloot_client)
+			: DetermineMasterLooter(group, corpse, autoloot_client))
+		: nullptr;
 	if (shared_loot && !master_looter) {
 		send_drop_debug();
 		DebugMessage(autoloot_client, settings, fmt::format("{} was not queued because no master looter could be calculated.", corpse->GetCleanName()));
@@ -916,7 +1018,8 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 		entry.quantity = quantity;
 		entry.owner_character_id = recipient->CharacterID();
 		entry.master_looter_character_id = master_looter ? master_looter->CharacterID() : 0;
-		entry.group_id = group ? group->GetID() : 0;
+		entry.group_id = raid_party ? raid->GetID() : (group ? group->GetID() : 0);
+		entry.raid_party = raid_party && shared_loot;
 		entry.shared = shared_loot;
 		entry.no_drop = item->NoDrop == 0;
 		entry.dynamic_instance = dynamic_instance;
@@ -934,7 +1037,7 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 			entry.state = entry.auto_roll ? "ask" : "waiting";
 			entry.vote_started_at = entry.auto_roll ? std::time(nullptr) : 0;
 
-			for (auto member : GetGroupClients(group)) {
+			for (auto member : group_clients) {
 				if (!member || !corpse->CanPlayerLoot(member->CharacterID())) {
 					continue;
 				}
@@ -1025,7 +1128,7 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 		};
 
 		if (queued && shared_loot) {
-			auto clients = GetGroupClients(group);
+			auto clients = group_clients;
 			clients.erase(
 				std::remove_if(
 					clients.begin(),
@@ -1154,6 +1257,11 @@ bool AutoLootManager::IsEntryVisibleToClient(const LootEntry &entry, Client *cli
 
 	if (!entry.shared) {
 		return entry.owner_character_id == client->CharacterID();
+	}
+
+	if (entry.raid_party) {
+		auto raid = client->GetRaid();
+		return raid && raid->GetID() == entry.group_id;
 	}
 
 	auto group = client->GetGroup();
@@ -1675,8 +1783,8 @@ void AutoLootManager::HandleSharedLootAction(Client *client, uint32 entry_id, co
 		}
 
 		auto recipient = entity_list.GetClientByName(sep->arg[4]);
-		if (!recipient || !recipient->GetGroup() || recipient->GetGroup()->GetID() != entry.group_id) {
-			client->Message(Chat::Red, "That player is not in this group and zone.");
+		if (!recipient || !IsEntryVisibleToClient(entry, recipient)) {
+			client->Message(Chat::Red, entry.raid_party ? "That player is not in this raid and zone." : "That player is not in this group and zone.");
 			return;
 		}
 
@@ -1953,21 +2061,7 @@ std::vector<Client *> AutoLootManager::GetEligibleSharedLootClients(const LootEn
 		return clients;
 	}
 
-	Group *group = nullptr;
-	for (auto &[client_id, candidate] : entity_list.GetClientList()) {
-		if (!candidate || !candidate->GetGroup() || candidate->GetGroup()->GetID() != entry.group_id) {
-			continue;
-		}
-
-		group = candidate->GetGroup();
-		break;
-	}
-
-	if (!group) {
-		return clients;
-	}
-
-	clients = GetGroupClients(group);
+	clients = GetPartyClientsByEntry(entry);
 	clients.erase(
 		std::remove_if(
 			clients.begin(),
@@ -2233,7 +2327,7 @@ void AutoLootManager::LootEntryForClient(Client *client, uint32 entry_id)
 
 		if (entry.assigned_from_shared && entry.group_id) {
 			const auto message = fmt::format("{} has looted {}.", recipient->GetCleanName(), entry.item_name);
-			for (auto member : GetGroupClientsByID(entry.group_id)) {
+			for (auto member : GetPartyClientsByEntry(entry)) {
 				if (member) {
 					member->Message(Chat::Yellow, message.c_str());
 				}
@@ -2367,9 +2461,16 @@ bool AutoLootManager::LootCoin(Corpse *corpse, Client *client)
 	}
 
 	const auto settings = GetCharacterSettings(client->CharacterID(), true);
+	auto raid = client->GetRaid();
 	auto group = client->GetGroup();
-	const bool split_coin = settings.auto_split_coin && group && group->GroupCount() > 1;
-	if (split_coin) {
+	const uint32 raid_group_id = raid ? raid->GetGroup(client->GetName()) : RAID_GROUPLESS;
+	const bool split_coin_raid = settings.auto_split_coin && raid && raid_group_id != RAID_GROUPLESS;
+	const bool split_coin_group = !raid && settings.auto_split_coin && group && group->GroupCount() > 1;
+	const bool split_coin = split_coin_raid || split_coin_group;
+	if (split_coin_raid) {
+		raid->SplitMoney(raid_group_id, copper, silver, gold, platinum, client);
+	}
+	else if (split_coin_group) {
 		group->SplitMoney(copper, silver, gold, platinum, client, true);
 	}
 	else {
@@ -2667,29 +2768,36 @@ void AutoLootManager::HandleAdvancedLootCommand(Client *client, const Seperator 
 
 	if (!strcasecmp(sep->arg[1], "master")) {
 		auto group = client->GetGroup();
-		if (!group) {
-			client->Message(Chat::Red, "You are not in a group.");
+		auto raid = client->GetRaid();
+		if (!group && !raid) {
+			client->Message(Chat::Red, "You are not in a group or raid.");
 			return;
 		}
 
-		const auto group_id = group->GetID();
+		const bool raid_party = raid != nullptr;
+		auto &master_looters = raid_party ? m_raid_master_looters : m_group_master_looters;
+		const auto party_id = raid_party ? raid->GetID() : group->GetID();
+		const auto party_clients = raid_party ? GetRaidClients(raid) : GetGroupClients(group);
+		const bool is_party_leader = raid_party ? raid->IsLeader(client) : group->IsLeader(client);
+		const char *party_label = raid_party ? "raid" : "group";
+
 		const bool can_manage_master =
-			group->IsLeader(client) ||
+			is_party_leader ||
 			client->Admin() >= AccountStatus::GMAdmin ||
-			(m_group_master_looters.count(group_id) && m_group_master_looters[group_id] == client->CharacterID());
+			(master_looters.count(party_id) && master_looters[party_id] == client->CharacterID());
 		if (!can_manage_master) {
-			client->Message(Chat::Red, "Only the group leader or current Master Looter can change the Advanced Loot Master Looter.");
+			client->Message(Chat::Red, fmt::format("Only the {} leader or current Master Looter can change the Advanced Loot Master Looter.", party_label).c_str());
 			return;
 		}
 
 		if (arguments >= 2 && !strcasecmp(sep->arg[2], "clear")) {
-			m_group_master_looters.erase(group_id);
-			for (auto member : GetGroupClients(group)) {
+			master_looters.erase(party_id);
+			for (auto member : party_clients) {
 				if (member) {
 					member->Message(Chat::Yellow, fmt::format("{} cleared the Advanced Loot Master Looter.", client->GetCleanName()).c_str());
 				}
 			}
-			SendSharedLootUpdate(GetGroupClients(group));
+			SendSharedLootUpdate(party_clients);
 			return;
 		}
 
@@ -2699,18 +2807,23 @@ void AutoLootManager::HandleAdvancedLootCommand(Client *client, const Seperator 
 				target = entity_list.GetClientByName(sep->arg[3]);
 			}
 
-			if (!target || !target->GetGroup() || target->GetGroup()->GetID() != group_id) {
-				client->Message(Chat::Red, "That player is not in this group and zone.");
+			const bool target_in_party =
+				target &&
+				(raid_party
+					? (target->GetRaid() && target->GetRaid()->GetID() == party_id)
+					: (target->GetGroup() && target->GetGroup()->GetID() == party_id));
+			if (!target_in_party) {
+				client->Message(Chat::Red, fmt::format("That player is not in this {} and zone.", party_label).c_str());
 				return;
 			}
 
-			m_group_master_looters[group_id] = target->CharacterID();
-			for (auto member : GetGroupClients(group)) {
+			master_looters[party_id] = target->CharacterID();
+			for (auto member : party_clients) {
 				if (member) {
 					member->Message(Chat::Yellow, fmt::format("{} set {} as Advanced Loot Master Looter.", client->GetCleanName(), target->GetCleanName()).c_str());
 				}
 			}
-			SendSharedLootUpdate(GetGroupClients(group));
+			SendSharedLootUpdate(party_clients);
 			return;
 		}
 
@@ -2972,8 +3085,15 @@ void AutoLootManager::SendNativeStatus(Client *client)
 	bool leader = false;
 	uint32 master_character_id = 0;
 
+	auto raid = client->GetRaid();
 	auto group = client->GetGroup();
-	if (group) {
+	if (raid) {
+		grouped = true;
+		leader = raid->IsLeader(client) || client->Admin() >= AccountStatus::GMAdmin;
+		auto master = DetermineRaidMasterLooter(raid, nullptr, nullptr);
+		master_character_id = master ? master->CharacterID() : 0;
+	}
+	else if (group) {
 		grouped = true;
 		leader = group->IsLeader(client) || client->Admin() >= AccountStatus::GMAdmin;
 		auto master = DetermineMasterLooter(group, nullptr, nullptr);
