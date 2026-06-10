@@ -353,6 +353,7 @@ function Write-WorkspaceDeleteList {
         [Parameter(Mandatory = $true)] [string]$PayloadPath,
         [Parameter(Mandatory = $true)] [string[]]$ManagedDestinations,
         [Parameter(Mandatory = $true)] [AllowEmptyCollection()] [object[]]$CopiedFiles,
+        [AllowEmptyCollection()] [object[]]$ExtraDeletes = @(),
         [switch]$DryRun
     )
 
@@ -373,6 +374,15 @@ function Write-WorkspaceDeleteList {
 
         if (-not $deletes.Contains($normalized)) {
             [void]$deletes.Add($normalized)
+        }
+    }
+
+    # Project-declared deletes from patcher.yml pass through verbatim so
+    # wildcard patterns (expanded by the patcher client) survive.
+    foreach ($extra in $ExtraDeletes) {
+        $trimmed = ([string]$extra).Trim()
+        if (-not [string]::IsNullOrWhiteSpace($trimmed) -and -not $deletes.Contains($trimmed)) {
+            [void]$deletes.Add($trimmed)
         }
     }
 
@@ -781,7 +791,11 @@ function Invoke-PatcherBuild {
 
         Push-Location -LiteralPath $BuildRoot
         try {
-            $buildOutput = & cmd.exe /c build.bat 2>&1
+            # Change directory inside cmd itself and invoke with an explicit
+            # relative path: child processes may not inherit this shell's
+            # location, and NoDefaultCurrentDirectoryInExePath environments
+            # refuse bare batch-file names.
+            $buildOutput = & cmd.exe /d /s /c "cd /d ""$BuildRoot"" && .\build.bat" 2>&1
             $exitCode = $LASTEXITCODE
             $buildOutput | ForEach-Object { Write-Host $_ }
             if ($exitCode -ne 0) {
@@ -1121,10 +1135,12 @@ foreach ($deployment in $deployments) {
         -DryRun:$DryRun
 
     if (-not $DryRun) {
+        $projectDeletes = @(Get-FeatureProperty -Object $patcherConfig -Name "deletes" -Default @())
         Write-WorkspaceDeleteList `
             -PayloadPath $projectPayload `
             -ManagedDestinations $managedClientDestinations `
-            -CopiedFiles $payload.Copied
+            -CopiedFiles $payload.Copied `
+            -ExtraDeletes $projectDeletes
 
         Write-ProjectMetadata `
             -Install $install `

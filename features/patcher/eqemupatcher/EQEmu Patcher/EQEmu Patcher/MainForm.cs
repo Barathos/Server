@@ -1048,16 +1048,19 @@ namespace EQEmu_Patcher
                     continue;
                 }
 
-                var path = Path.Combine(basePath, entry.name.Replace("/", "\\"));
-                if (!UtilityLibrary.IsPathChild(path))
+                foreach (var target in ExpandDeleteNames(filelist, entry.name))
                 {
-                    continue;
-                }
+                    var path = Path.Combine(basePath, target.Replace("/", "\\"));
+                    if (!UtilityLibrary.IsPathChild(path))
+                    {
+                        continue;
+                    }
 
-                if (File.Exists(path))
-                {
-                    reason = $"{entry.name} should be removed.";
-                    return false;
+                    if (File.Exists(path))
+                    {
+                        reason = $"{target} should be removed.";
+                        return false;
+                    }
                 }
             }
 
@@ -1069,6 +1072,77 @@ namespace EQEmu_Patcher
             }
 
             return true;
+        }
+
+        // Expands a delete entry that may contain a single "/*/" wildcard
+        // directory segment (e.g. uifiles/*/EQUI_Animations.xml) into concrete
+        // relative paths. Paths managed by the patcher (present in downloads)
+        // are never returned, so wildcard deletes cannot remove patched files.
+        private static List<string> ExpandDeleteNames(FileList filelist, string name)
+        {
+            var results = new List<string>();
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return results;
+            }
+
+            var normalized = name.Replace("\\", "/");
+            var starIndex = normalized.IndexOf("/*/", StringComparison.Ordinal);
+            if (starIndex < 0)
+            {
+                if (!normalized.Contains("*"))
+                {
+                    results.Add(normalized);
+                }
+                return results;
+            }
+
+            var prefix = normalized.Substring(0, starIndex);
+            var suffix = normalized.Substring(starIndex + 3);
+            if (string.IsNullOrWhiteSpace(prefix) || string.IsNullOrWhiteSpace(suffix) ||
+                prefix.Contains("*") || suffix.Contains("*"))
+            {
+                return results;
+            }
+
+            var managed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (filelist != null && filelist.downloads != null)
+            {
+                foreach (var download in filelist.downloads)
+                {
+                    if (download != null && !string.IsNullOrWhiteSpace(download.name))
+                    {
+                        managed.Add(download.name.Replace("\\", "/"));
+                    }
+                }
+            }
+
+            try
+            {
+                var basePath = Path.GetDirectoryName(Application.ExecutablePath);
+                var root = Path.Combine(basePath, prefix.Replace("/", "\\"));
+                if (!Directory.Exists(root))
+                {
+                    return results;
+                }
+
+                foreach (var dir in Directory.GetDirectories(root))
+                {
+                    var candidate = prefix + "/" + Path.GetFileName(dir) + "/" + suffix;
+                    if (managed.Contains(candidate))
+                    {
+                        continue;
+                    }
+
+                    results.Add(candidate);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to expand delete entry {name}: {ex.Message}");
+            }
+
+            return results;
         }
 
         private void SetPrimaryActionChecking()
@@ -1643,22 +1717,30 @@ namespace EQEmu_Patcher
             {
                 foreach (var entry in filelist.deletes)
                 {
-                    var path = Path.GetDirectoryName(Application.ExecutablePath) + "\\" + entry.name.Replace("/", "\\");
-                    if (isPatchCancelled)
+                    if (entry == null || string.IsNullOrWhiteSpace(entry.name))
                     {
-                        Console.WriteLine("cancellled while deleting");
-                        StatusLibrary.Log("Patching cancelled.");
-                        return false;
-                    }
-                    if (!UtilityLibrary.IsPathChild(path))
-                    {
-                        StatusLibrary.Log("Path " + entry.name + " might be outside your Everquest directory. Skipping deletion of this file.");
                         continue;
                     }
-                    if (File.Exists(path))
+
+                    foreach (var target in ExpandDeleteNames(filelist, entry.name))
                     {
-                        StatusLibrary.Log("Deleting " + entry.name + "...");
-                        File.Delete(path);
+                        var path = Path.GetDirectoryName(Application.ExecutablePath) + "\\" + target.Replace("/", "\\");
+                        if (isPatchCancelled)
+                        {
+                            Console.WriteLine("cancellled while deleting");
+                            StatusLibrary.Log("Patching cancelled.");
+                            return false;
+                        }
+                        if (!UtilityLibrary.IsPathChild(path))
+                        {
+                            StatusLibrary.Log("Path " + target + " might be outside your Everquest directory. Skipping deletion of this file.");
+                            continue;
+                        }
+                        if (File.Exists(path))
+                        {
+                            StatusLibrary.Log("Deleting " + target + "...");
+                            File.Delete(path);
+                        }
                     }
                 }
             }

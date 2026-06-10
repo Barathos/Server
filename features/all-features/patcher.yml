@@ -1,7 +1,7 @@
 version: 1
 id: all-features
 label: All Features
-patchVersion: 'Build 70'
+patchVersion: 'Build 71'
 autoIncrementPatchVersion: true
 client: rof
 files:
@@ -205,3 +205,7 @@ generated:
     - EQUI_NativeDynamicQuestsWnd.xml
     - EQUI_NativeFactionWnd.xml
     - EQUI_NativeDpsWnd.xml
+deletes:
+  - uifiles/*/EQUI.xml
+  - uifiles/*/EQUI_Animations.xml
+  - uifiles/*/EQUI_Templates.xml
