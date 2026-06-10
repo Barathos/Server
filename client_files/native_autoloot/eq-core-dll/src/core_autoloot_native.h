@@ -361,6 +361,21 @@ struct NativeAutoLootPoolCellState
 // Shared cell-rect computation for overlay controls: returns the screen-space
 // rect for a control of the given size inside the cell, fully clipped to the
 // list's visible area.
+// CListWnd::GetItemRect returns list-relative rects in this client. The old
+// per-cell guess (cell left/top < list origin - 4) misread right-hand columns
+// of lower rows (large relative X/Y) as absolute, scattering pool controls
+// when the list scrolled or the window sat high on screen. Column 0's left
+// edge is ~0 in relative mode regardless of scroll position, so probe that.
+static bool NativeAutoLootListRectIsRelative(CListWnd* list, int row, int column, const CXRect& cell_rect, const CXRect& list_rect)
+{
+	if (column == 0) {
+		return (int)cell_rect.A < (int)list_rect.A - 4;
+	}
+
+	CXRect probe = list->GetItemRect(row, 0);
+	return (int)probe.A < (int)list_rect.A - 4;
+}
+
 static bool NativeAutoLootCellControlRect(CListWnd* list, int row, int column, int control_size, bool left_align, CXRect* target, CXRect* clip)
 {
 	if (!list || !target || !clip) {
@@ -377,7 +392,7 @@ static bool NativeAutoLootCellControlRect(CListWnd* list, int row, int column, i
 		int right = (int)cell_rect.C;
 		int bottom = (int)cell_rect.D;
 
-		if (left < (int)list_rect.A - 4 || top < (int)list_rect.B - 4) {
+		if (NativeAutoLootListRectIsRelative(list, row, column, cell_rect, list_rect)) {
 			left += (int)list_rect.A;
 			right += (int)list_rect.A;
 			top += (int)list_rect.B;
@@ -695,7 +710,7 @@ public:
 			CXRect list_rect = ((CXWnd*)list)->GetScreenRect();
 			int anchor_x = (int)cell_rect.A;
 			int anchor_y = (int)cell_rect.D;
-			if (anchor_x < (int)list_rect.A - 4 || anchor_y < (int)list_rect.B - 4) {
+			if (NativeAutoLootListRectIsRelative(list, selected, column >= 0 ? column : 0, cell_rect, list_rect)) {
 				anchor_x += (int)list_rect.A;
 				anchor_y += (int)list_rect.B;
 			}
@@ -8360,7 +8375,7 @@ bool NativeAutoLootWnd::GetInlineCellDrawRect(const NativeAutoLootInlineCellSpec
 		int right = (int)cell_rect.C;
 		int bottom = (int)cell_rect.D;
 
-		if (left < (int)list_rect.A - 4 || top < (int)list_rect.B - 4) {
+		if (NativeAutoLootListRectIsRelative(spec.list, spec.row, spec.column, cell_rect, list_rect)) {
 			left += (int)list_rect.A;
 			right += (int)list_rect.A;
 			top += (int)list_rect.B;
@@ -8417,7 +8432,7 @@ bool NativeAutoLootWnd::GetIconCellDrawRect(CListWnd* list, int row, CXRect* tar
 		int right = (int)cell_rect.C;
 		int bottom = (int)cell_rect.D;
 
-		if (left < (int)list_rect.A - 4 || top < (int)list_rect.B - 4) {
+		if (NativeAutoLootListRectIsRelative(list, row, 0, cell_rect, list_rect)) {
 			left += (int)list_rect.A;
 			right += (int)list_rect.A;
 			top += (int)list_rect.B;

@@ -184,6 +184,25 @@ go-ahead.**
    the button "did something weird". Consider mapping non-master Leave All
    to a Pass vote or disabling the button for non-masters.
 
+4. **Scrolling the filters window scattered the pooled checkboxes
+   diagonally** (tester screenshot, same morning; "scroll back fixes it").
+   Root cause: `CListWnd::GetItemRect` returns LIST-RELATIVE rects in this
+   client, and every rect helper guessed relative-vs-absolute per cell with
+   `cell.left/top < list origin - 4`. Right-hand columns (AN..Del start at
+   relative X 324–508) of lower rows (relative Y > ~400) fail BOTH
+   conditions, get misread as absolute, and land at garbage positions
+   inside the list — also stealing pool slots since the bogus rect passes
+   the clip test. Worse when scrolled (rows below the viewport flip modes)
+   or when the window sits high on screen (small list-origin Y) — the
+   latter is very likely the real mechanism behind the old "bottom-row
+   dead clicks" mystery in the MAIN window, which shares the same helper
+   pattern. FIX: `NativeAutoLootListRectIsRelative` decides the mode from
+   COLUMN 0's left edge (relative mode reads ~0 there regardless of scroll
+   position or column); applied to `NativeAutoLootCellControlRect`,
+   `GetInlineCellDrawRect`, `GetIconCellDrawRect`, and the right-click
+   menu anchor. Known residual: mode detection misreads if the window is
+   dragged almost fully off the LEFT screen edge (list origin X < 4).
+
 ## Open Items
 
 1. **Deploy the 2026-06-10 fixes**: server apply + restart (zone binary)
@@ -196,10 +215,13 @@ go-ahead.**
    (scrollbar-flicker oscillation theory) + identity-fallback click routing
    (`PoolListRow` maps) + logging — a recurrence writes
    `DIAG pool fallback ...` lines to native_autoloot.log naming what the
-   click hit. Check the log before theorizing. NOTE: pool exhaustion is a
-   suspect — the personal list has only `kAALPoolPersonalRows = 8` pooled
-   rows (shared has 14); a tall-resized window showing more rows than the
-   pool leaves bare/dead rows, same mechanism as the filters window bug.
+   click hit. Check the log before theorizing. NOTE: two strong suspects
+   now: (a) the GetItemRect relative/absolute misread fixed in finding 4
+   above (lower rows flip modes when the window sits high on screen) —
+   likely RESOLVED by that fix, retest before more theorizing; (b) pool
+   exhaustion — the personal list has only `kAALPoolPersonalRows = 8`
+   pooled rows (shared has 14); a tall-resized window showing more rows
+   than the pool leaves bare/dead rows.
 3. **Raid mode needs an in-game test** (two-box `/raidinvite`).
 4. **Branch not pushed** to the `barathos` remote.
 5. Client status line shows raids as "grouped" (cosmetic).
