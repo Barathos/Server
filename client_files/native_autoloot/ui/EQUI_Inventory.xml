@@ -2436,11 +2436,11 @@
 		<EQType>17</EQType>
 		<RelativePosition>true</RelativePosition>
 		<Location>
-			<X>60</X>
+			<X>45</X>
 			<Y>0</Y>
 		</Location>
 		<Size>
-			<CX>55</CX>
+			<CX>80</CX>
 			<CY>14</CY>
 		</Size>
 		<Text>0</Text>
@@ -2457,7 +2457,7 @@
 	<Label item="IWS_HPDivider">
 		<RelativePosition>true</RelativePosition>
 		<Location>
-			<X>115</X>
+			<X>127</X>
 			<Y>0</Y>
 		</Location>
 		<Size>
@@ -2478,11 +2478,11 @@
 		<EQType>18</EQType>
 		<RelativePosition>true</RelativePosition>
 		<Location>
-			<X>120</X>
+			<X>135</X>
 			<Y>0</Y>
 		</Location>
 		<Size>
-			<CX>55</CX>
+			<CX>80</CX>
 			<CY>14</CY>
 		</Size>
 		<Text>0</Text>
@@ -2499,7 +2499,7 @@
 	<Screen item="IWS_HPScreen">
 		<RelativePosition>true</RelativePosition>
 		<Size>
-			<CX>175</CX>
+			<CX>220</CX>
 			<CY>14</CY>
 		</Size>
 		<Style_VScroll>false</Style_VScroll>

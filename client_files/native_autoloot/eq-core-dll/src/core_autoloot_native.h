@@ -6548,11 +6548,91 @@ static std::string NativeHpFixFormatInteger(long long value)
 	return text;
 }
 
+static std::string NativeHpFixFormatCompact(long long value)
+{
+	const bool negative = value < 0;
+	const long long abs_value = negative ? -value : value;
+	const char* suffix = "";
+	double scaled = static_cast<double>(abs_value);
+
+	if (abs_value >= 1000000000LL) {
+		suffix = "B";
+		scaled = static_cast<double>(abs_value) / 1000000000.0;
+	}
+	else if (abs_value >= 1000000LL) {
+		suffix = "M";
+		scaled = static_cast<double>(abs_value) / 1000000.0;
+	}
+	else if (abs_value >= 1000LL) {
+		return NativeHpFixFormatInteger(value);
+	}
+	else {
+		return NativeHpFixFormatInteger(value);
+	}
+
+	char text[64];
+	sprintf_s(
+		text,
+		scaled >= 100.0 ? "%s%.0f%s" : "%s%.1f%s",
+		negative ? "-" : "",
+		scaled,
+		suffix
+	);
+	return text;
+}
+
+static long long NativeHpFixClampHp(long long value)
+{
+	if (value < 0) {
+		return 0;
+	}
+
+	if (value > 2147483647LL) {
+		return 2147483647LL;
+	}
+
+	return value;
+}
+
+static DWORD NativeHpFixToDwordHp(long long value)
+{
+	return static_cast<DWORD>(NativeHpFixClampHp(value));
+}
+
+static LONG NativeHpFixToLongHp(long long value)
+{
+	return static_cast<LONG>(NativeHpFixClampHp(value));
+}
+
 static void NativeHpFixSetLabel(CXWnd* label, const char* text)
 {
 	if (label) {
 		CXStr value(text ? text : "");
 		label->SetWindowTextA(value);
+	}
+}
+
+static void NativeHpFixSetChildLabel(CXWnd* parent, const char* child_name, const char* text, bool show)
+{
+	if (!parent || !child_name || !child_name[0]) {
+		return;
+	}
+
+	CXWnd* child = nullptr;
+	__try {
+		child = parent->GetChildItem((char*)child_name);
+	}
+	__except(EXCEPTION_EXECUTE_HANDLER) {
+		child = nullptr;
+	}
+
+	if (!child) {
+		return;
+	}
+
+	NativeHpFixSetLabel(child, text);
+	if (show) {
+		child->Show(1, 1);
 	}
 }
 
@@ -6609,7 +6689,7 @@ public:
 		NativeHpFixSetLabel(CurrentLabel, current.c_str());
 		NativeHpFixSetLabel(MaxLabel, maximum.c_str());
 		NativeHpFixSetLabel(PercentLabel, percent);
-		NativeHpFixSetLabel(DetailLabel, "Overlay uses server-authoritative HP and leaves OP_HPUpdate unchanged.");
+		NativeHpFixSetLabel(DetailLabel, "Normal player and inventory windows are patched from server-authoritative HP.");
 	}
 
 	void SetStatus(const char* text)
@@ -6686,32 +6766,86 @@ static void NativeHpFixEnsureWindow(bool show)
 	}
 }
 
-static void NativeHpFixTryUpdatePlayerWindowLabel()
+static void NativeHpFixPatchSpawnData(PSPAWNINFO spawn)
 {
-	if (!ppPlayerWnd || !pPlayerWnd || !gNativeHpFixState.has_payload) {
+	if (!spawn || !gNativeHpFixState.has_payload) {
 		return;
 	}
 
-	CXWnd* hp_label = nullptr;
+	spawn->HPMax = NativeHpFixToDwordHp(gNativeHpFixState.maximum);
+	spawn->HPCurrent = NativeHpFixToLongHp(gNativeHpFixState.current);
+}
+
+static void NativeHpFixPatchPlayerData(EQPlayer* player)
+{
+	if (!player || !gNativeHpFixState.has_payload) {
+		return;
+	}
+
+	player->Data.HPMax = NativeHpFixToDwordHp(gNativeHpFixState.maximum);
+	player->Data.HPCurrent = NativeHpFixToLongHp(gNativeHpFixState.current);
+}
+
+static void NativeHpFixPatchLocalState()
+{
+	if (!gNativeHpFixState.has_payload) {
+		return;
+	}
+
 	__try {
-		hp_label = ((CXWnd*)pPlayerWnd)->GetChildItem("Player_HPLabel");
-	} __except(EXCEPTION_EXECUTE_HANDLER) {
-		NativeAutoLootTrace("HPFIX could not query Player_HPLabel");
-		hp_label = nullptr;
-	}
+		if (ppLocalPlayer && pLocalPlayer) {
+			NativeHpFixPatchPlayerData(pLocalPlayer);
+		}
 
-	if (!hp_label) {
+		if (ppCharSpawn && pCharSpawn && (!ppLocalPlayer || pCharSpawn != pLocalPlayer)) {
+			NativeHpFixPatchPlayerData(pCharSpawn);
+		}
+
+		PCHARINFO char_info = GetCharInfo();
+		if (char_info && char_info->pSpawn) {
+			NativeHpFixPatchSpawnData(char_info->pSpawn);
+		}
+	}
+	__except(EXCEPTION_EXECUTE_HANDLER) {
+		NativeAutoLootTrace("HPFIX could not patch local spawn HP state");
+	}
+}
+
+static void NativeHpFixMaintainNormalUi()
+{
+	if (!gNativeHpFixState.has_payload) {
 		return;
 	}
 
-	char text[128];
-	sprintf_s(
-		text,
-		"%s / %s",
-		NativeHpFixFormatInteger(gNativeHpFixState.current).c_str(),
-		NativeHpFixFormatInteger(gNativeHpFixState.maximum).c_str()
-	);
-	NativeHpFixSetLabel(hp_label, text);
+	NativeHpFixPatchLocalState();
+
+	int percent = static_cast<int>(gNativeHpFixState.percent + 0.5f);
+	if (percent < 0) {
+		percent = 0;
+	}
+	else if (percent > 100) {
+		percent = 100;
+	}
+
+	char percent_text[32];
+	sprintf_s(percent_text, "%d", percent);
+
+	const std::string current_exact = NativeHpFixFormatInteger(gNativeHpFixState.current);
+	const std::string maximum_exact = NativeHpFixFormatInteger(gNativeHpFixState.maximum);
+	const std::string current_compact = NativeHpFixFormatCompact(gNativeHpFixState.current);
+	const std::string maximum_compact = NativeHpFixFormatCompact(gNativeHpFixState.maximum);
+
+	if (ppPlayerWnd && pPlayerWnd) {
+		NativeHpFixSetChildLabel((CXWnd*)pPlayerWnd, "Player_HPLabel", percent_text, true);
+		NativeHpFixSetChildLabel((CXWnd*)pPlayerWnd, "Player_HPPercLabel", "%", true);
+	}
+
+	if (ppInventoryWnd && pInventoryWnd) {
+		NativeHpFixSetChildLabel((CXWnd*)pInventoryWnd, "IW_CurrentHP", current_compact.c_str(), true);
+		NativeHpFixSetChildLabel((CXWnd*)pInventoryWnd, "IW_MaxHP", maximum_compact.c_str(), true);
+		NativeHpFixSetChildLabel((CXWnd*)pInventoryWnd, "IWS_CurrentHP", current_exact.c_str(), true);
+		NativeHpFixSetChildLabel((CXWnd*)pInventoryWnd, "IWS_MaxHP", maximum_exact.c_str(), true);
+	}
 }
 
 static bool NativeHpFixApplyPayload(const std::string& payload)
@@ -6731,13 +6865,12 @@ static bool NativeHpFixApplyPayload(const std::string& payload)
 		maximum > 0 ? static_cast<float>((static_cast<double>(current) * 100.0) / static_cast<double>(maximum)) : 0.0f
 	);
 
-	NativeHpFixEnsureWindow(true);
+	NativeHpFixMaintainNormalUi();
 	if (gNativeHpFixWnd) {
 		gNativeHpFixWnd->SetStatus("Authoritative HP received.");
 		gNativeHpFixWnd->Refresh();
 	}
 
-	NativeHpFixTryUpdatePlayerWindowLabel();
 	NativeAutoLootTrace(
 		"HPFIX update current=%lld maximum=%lld percent=%.2f",
 		gNativeHpFixState.current,
@@ -11257,6 +11390,8 @@ static void NativeAutoLootPulse()
 	if (gNativeHpFixWnd) {
 		gNativeHpFixWnd->Refresh();
 	}
+
+	NativeHpFixMaintainNormalUi();
 
 	if (gNativeMulticlassWnd) {
 		gNativeMulticlassWnd->Layout();

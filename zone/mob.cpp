@@ -1570,9 +1570,19 @@ void Mob::SendHPUpdate(bool force_update_all)
 
 			static EQApplicationPacket p(OP_HPUpdate, sizeof(SpawnHPUpdate_Struct));
 			auto b = (SpawnHPUpdate_Struct*) p.pBuffer;
-			b->cur_hp   = static_cast<uint32>(CastToClient()->GetHP() - itembonuses.HP);
+			const bool use_native_hp =
+				RuleB(CustomFeatures, HpFixEnabled) &&
+				CastToClient()->IsNativeHpFixReady();
+			const int64 packet_current_hp = use_native_hp ?
+				CastToClient()->GetHP() :
+				(CastToClient()->GetHP() - itembonuses.HP);
+			const int64 packet_max_hp = use_native_hp ?
+				CastToClient()->GetMaxHP() :
+				(CastToClient()->GetMaxHP() - itembonuses.HP);
+
+			b->cur_hp = static_cast<uint32>(std::clamp<int64>(packet_current_hp, 0, UINT_MAX));
 			b->spawn_id = GetID();
-			b->max_hp   = CastToClient()->GetMaxHP() - itembonuses.HP;
+			b->max_hp = static_cast<int32>(std::clamp<int64>(packet_max_hp, 0, INT_MAX));
 			CastToClient()->QueuePacket(&p);
 			CastToClient()->SendNativeHpFixUpdate(force_update_all);
 

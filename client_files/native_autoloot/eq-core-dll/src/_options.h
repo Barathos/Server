@@ -30,7 +30,7 @@ bool isHeroicDisabled = false;
 
 // isMaxHPFixEnabled if set to true allows hp beyond 10 million, this is a rare situation for custom servers
 // It also applies fixes where hp/mana/endurance state is more believed from server than client, this can cause strange status bar reports if client is out of sync
-bool isMaxHPFixEnabled = false;
+bool isMaxHPFixEnabled = true;
 
 // isPatchmeDisabled if set to true will let you double click eqgame.exe and not get the "Please run EverQuest" message, will start properly
 bool isPatchmeDisabled = false;
