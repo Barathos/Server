@@ -1073,7 +1073,7 @@ bool AutoLootManager::HasQueuedEntry(uint16 corpse_id, uint16 loot_slot) const
 	return false;
 }
 
-bool AutoLootManager::IsManualLootLocked(Corpse *corpse, uint16 loot_slot, std::string *reason) const
+bool AutoLootManager::IsManualLootLocked(Corpse *corpse, uint16 loot_slot, Client *looter, std::string *reason) const
 {
 	if (!AutoLootEnabled() || !corpse || !corpse->IsNPCCorpse()) {
 		return false;
@@ -1084,25 +1084,66 @@ bool AutoLootManager::IsManualLootLocked(Corpse *corpse, uint16 loot_slot, std::
 		return false;
 	}
 
+	// Match by slot first; fall back to the item id alone when exactly one
+	// managed entry exists for it on this corpse, so loot-slot renumbering
+	// cannot silently open a hole in the lock.
 	const auto corpse_id = corpse->GetID();
+	const LootEntry *match = nullptr;
+	const LootEntry *item_match = nullptr;
+	int item_match_count = 0;
 	for (const auto &[entry_id, entry] : m_loot_entries) {
-		if (!entry.shared || entry.corpse_id != corpse_id || entry.loot_slot != item_data->lootslot || entry.item_id != item_data->item_id) {
+		if (entry.corpse_id != corpse_id || entry.item_id != item_data->item_id) {
 			continue;
 		}
 
+		++item_match_count;
+		item_match = &entry;
+		if (entry.loot_slot == item_data->lootslot) {
+			match = &entry;
+			break;
+		}
+	}
+
+	if (!match && item_match_count == 1) {
+		match = item_match;
+	}
+
+	if (!match) {
+		return false;
+	}
+
+	const uint32 looter_character_id = looter ? looter->CharacterID() : 0;
+
+	if (!match->shared) {
+		// Personal entries belong to one character; nobody else may take
+		// them off the corpse directly.
+		if (looter_character_id && match->owner_character_id == looter_character_id) {
+			return false;
+		}
+
 		if (reason) {
-			if (entry.state == "rolling" || !entry.votes.empty()) {
-				*reason = fmt::format("{} is locked by Advanced Loot while a roll is active.", entry.item_name);
-			}
-			else {
-				*reason = fmt::format("{} is reserved by Advanced Loot.", entry.item_name);
-			}
+			*reason = fmt::format("{} is reserved by Advanced Loot.", match->item_name);
 		}
 
 		return true;
 	}
 
-	return false;
+	// Shared entries on Free Grab are open to any group member who can see
+	// the entry; everything else stays locked until the master distributes.
+	if (match->free_grab && looter && IsEntryVisibleToClient(*match, looter)) {
+		return false;
+	}
+
+	if (reason) {
+		if (match->state == "rolling" || !match->votes.empty()) {
+			*reason = fmt::format("{} is locked by Advanced Loot while a roll is active.", match->item_name);
+		}
+		else {
+			*reason = fmt::format("{} is reserved by Advanced Loot.", match->item_name);
+		}
+	}
+
+	return true;
 }
 
 bool AutoLootManager::IsEntryVisibleToClient(const LootEntry &entry, Client *client) const

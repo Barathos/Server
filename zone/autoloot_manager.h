@@ -34,7 +34,7 @@ public:
 	void ShowWindow(Client *client);
 
 	void HandleAdvancedLootCommand(Client *client, const Seperator *sep);
-	bool IsManualLootLocked(Corpse *corpse, uint16 loot_slot, std::string *reason = nullptr) const;
+	bool IsManualLootLocked(Corpse *corpse, uint16 loot_slot, Client *looter, std::string *reason = nullptr) const;
 
 private:
 	struct CharacterSettings {

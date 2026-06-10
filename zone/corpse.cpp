@@ -1816,7 +1816,7 @@ void Corpse::LootCorpseItem(Client *c, const EQApplicationPacket *app)
 
 	if (item_data && c->Admin() < AccountStatus::GMAdmin) {
 		std::string lock_reason;
-		if (auto_loot_manager.IsManualLootLocked(this, item_data->lootslot, &lock_reason)) {
+		if (auto_loot_manager.IsManualLootLocked(this, item_data->lootslot, c, &lock_reason)) {
 			c->Message(
 				Chat::Red,
 				fmt::format(
