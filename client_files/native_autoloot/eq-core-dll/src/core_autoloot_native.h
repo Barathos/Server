@@ -6604,6 +6604,19 @@ static LONG NativeHpFixToLongHp(long long value)
 	return static_cast<LONG>(NativeHpFixClampHp(value));
 }
 
+static int NativeHpFixToClientIntHp(long long value)
+{
+	if (value < 0) {
+		return 0;
+	}
+
+	if (value > 0x7fffffffLL) {
+		return 0x7fffffff;
+	}
+
+	return static_cast<int>(value);
+}
+
 static void NativeHpFixSetLabel(CXWnd* label, const char* text)
 {
 	if (label) {
@@ -6612,10 +6625,10 @@ static void NativeHpFixSetLabel(CXWnd* label, const char* text)
 	}
 }
 
-static void NativeHpFixSetChildLabel(CXWnd* parent, const char* child_name, const char* text, bool show)
+static CXWnd* NativeHpFixFindChild(CXWnd* parent, const char* child_name)
 {
 	if (!parent || !child_name || !child_name[0]) {
-		return;
+		return nullptr;
 	}
 
 	CXWnd* child = nullptr;
@@ -6626,6 +6639,16 @@ static void NativeHpFixSetChildLabel(CXWnd* parent, const char* child_name, cons
 		child = nullptr;
 	}
 
+	if (!child) {
+		return nullptr;
+	}
+
+	return child;
+}
+
+static void NativeHpFixSetChildLabel(CXWnd* parent, const char* child_name, const char* text, bool show)
+{
+	CXWnd* child = NativeHpFixFindChild(parent, child_name);
 	if (!child) {
 		return;
 	}
@@ -6679,6 +6702,35 @@ bool NativeHpFixGetEqTypeLabel(DWORD eq_type, const char* control_name, char* ou
 	}
 
 	strncpy_s(out, out_size, text.c_str(), _TRUNCATE);
+	return true;
+}
+
+bool NativeHpFixGetClientHpValues(int* current, int* maximum, int* percent_out)
+{
+	if (!gNativeHpFixState.has_payload) {
+		return false;
+	}
+
+	if (current) {
+		*current = NativeHpFixToClientIntHp(gNativeHpFixState.current);
+	}
+
+	if (maximum) {
+		*maximum = NativeHpFixToClientIntHp(gNativeHpFixState.maximum);
+	}
+
+	if (percent_out) {
+		int percent = static_cast<int>(gNativeHpFixState.percent + 0.5f);
+		if (percent < 0) {
+			percent = 0;
+		}
+		else if (percent > 100) {
+			percent = 100;
+		}
+
+		*percent_out = percent;
+	}
+
 	return true;
 }
 
@@ -6909,11 +6961,14 @@ static void NativeHpFixMaintainNormalUi()
 
 	if (ppPlayerWnd && pPlayerWnd) {
 		NativeHpFixSetChildLabel((CXWnd*)pPlayerWnd, "Player_HPLabel", percent_text, true);
+		NativeHpFixSetChildLabel((CXWnd*)pPlayerWnd, "HPLabel", percent_text, true);
 		NativeHpFixSetChildLabel((CXWnd*)pPlayerWnd, "Player_HPPercLabel", "%", true);
+		NativeHpFixSetChildLabel((CXWnd*)pPlayerWnd, "HPPerLabel", "%", true);
 	}
 
 	if (ppInventoryWnd && pInventoryWnd) {
 		NativeHpFixSetChildLabel((CXWnd*)pInventoryWnd, "IW_CurrentHP", current_compact.c_str(), true);
+		NativeHpFixSetChildLabel((CXWnd*)pInventoryWnd, "HPNumberLabel", current_compact.c_str(), true);
 		NativeHpFixSetChildLabel((CXWnd*)pInventoryWnd, "IW_MaxHP", maximum_compact.c_str(), true);
 		NativeHpFixSetChildLabel((CXWnd*)pInventoryWnd, "IWS_CurrentHP", current_exact.c_str(), true);
 		NativeHpFixSetChildLabel((CXWnd*)pInventoryWnd, "IWS_MaxHP", maximum_exact.c_str(), true);

@@ -11,6 +11,7 @@
 typedef string(*pEqTypesFunc)();
 
 extern bool NativeHpFixGetEqTypeLabel(DWORD eq_type, const char* control_name, char* out, size_t out_size);
+extern bool NativeHpFixGetClientHpValues(int* current, int* maximum, int* percent_out);
 extern bool NativeHpFixGetGaugeValue(DWORD eq_type, int* out_value);
 
 map<DWORD, pEqTypesFunc> eqTypesMap;
@@ -34,6 +35,12 @@ bool gNativeServerAuthStatsSeen[NativeMaxServerAuthStat] = {false};
 bool NativeHasServerAuthStat(DWORD stat_key)
 {
 	return stat_key < NativeMaxServerAuthStat && gNativeServerAuthStatsSeen[stat_key];
+}
+
+bool NativeHpFixIsLocalCharacterObject(EQ_Character1* character)
+{
+	PCHARINFO char_info = GetCharInfo();
+	return char_info && character == (EQ_Character1*)&char_info->vtable2;
 }
 
 ULONGLONG NativeGetServerAuthStat(DWORD stat_key)
@@ -207,6 +214,36 @@ public:
 
 DETOUR_TRAMPOLINE_EMPTY(VOID CLabelHook::Draw_Trampoline(VOID));
 
+class NativeHpFixCharacterHook {
+public:
+	int CurHP_Trampoline(int unknown, unsigned char include_bonuses);
+	int CurHP_Detour(int unknown, unsigned char include_bonuses)
+	{
+		int current = 0;
+		if (NativeHpFixIsLocalCharacterObject((EQ_Character1*)this) &&
+			NativeHpFixGetClientHpValues(&current, nullptr, nullptr)) {
+			return current;
+		}
+
+		return CurHP_Trampoline(unknown, include_bonuses);
+	}
+
+	int MaxHP_Trampoline(int unknown, int include_bonuses);
+	int MaxHP_Detour(int unknown, int include_bonuses)
+	{
+		int maximum = 0;
+		if (NativeHpFixIsLocalCharacterObject((EQ_Character1*)this) &&
+			NativeHpFixGetClientHpValues(nullptr, &maximum, nullptr)) {
+			return maximum;
+		}
+
+		return MaxHP_Trampoline(unknown, include_bonuses);
+	}
+};
+
+DETOUR_TRAMPOLINE_EMPTY(int NativeHpFixCharacterHook::CurHP_Trampoline(int, unsigned char));
+DETOUR_TRAMPOLINE_EMPTY(int NativeHpFixCharacterHook::MaxHP_Trampoline(int, int));
+
 int __cdecl GetGaugeValueFromEQ_Trampoline(int eq_type, CXStr* text, bool* valid);
 int __cdecl GetGaugeValueFromEQ_Detour(int eq_type, CXStr* text, bool* valid)
 {
@@ -249,6 +286,8 @@ PLUGIN_API VOID InitializeMQ2Labels(VOID)
     //EasyClassDetour(CLabel__Draw,CLabelHook,Draw_Detour,VOID,(VOID),Draw_Trampoline);
     EzDetour(CLabel__Draw,&CLabelHook::Draw_Detour,&CLabelHook::Draw_Trampoline);
     EzDetour(CSidlManager__CreateLabel,&CSidlManagerHook::CreateLabel_Detour,&CSidlManagerHook::CreateLabel_Trampoline);
+    EzDetour(EQ_Character__Cur_HP,&NativeHpFixCharacterHook::CurHP_Detour,&NativeHpFixCharacterHook::CurHP_Trampoline);
+    EzDetour(EQ_Character__Max_HP,&NativeHpFixCharacterHook::MaxHP_Detour,&NativeHpFixCharacterHook::MaxHP_Trampoline);
     EzDetour(__GetGaugeValueFromEQ,GetGaugeValueFromEQ_Detour,GetGaugeValueFromEQ_Trampoline);
 
 
@@ -264,6 +303,8 @@ PLUGIN_API VOID ShutdownLabelsPlugin(VOID)
     // Remove commands, macro parameters, hooks, etc.
     RemoveDetour(CSidlManager__CreateLabel);
     RemoveDetour(CLabel__Draw);
+    RemoveDetour(EQ_Character__Cur_HP);
+    RemoveDetour(EQ_Character__Max_HP);
     //RemoveDetour(CGaugeWnd__Draw);
     RemoveDetour(__GetGaugeValueFromEQ);
 }
