@@ -1814,7 +1814,7 @@ void Corpse::LootCorpseItem(Client *c, const EQApplicationPacket *app)
 		item = database.GetItem(item_data->item_id);
 	}
 
-	if (item_data && c->Admin() < AccountStatus::GMAdmin) {
+	if (item_data) {
 		std::string lock_reason;
 		if (auto_loot_manager.IsManualLootLocked(this, item_data->lootslot, c, &lock_reason)) {
 			c->Message(
