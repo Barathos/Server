@@ -172,12 +172,14 @@ go-ahead.**
    `NativeAutoLootRulesWnd::Layout` now assigns the 12 pool rows to VISIBLE
    list rows (scroll-aware cursor, same idea as `SyncInlinePool`) with a
    `RulePoolListRow[]` click-routing map used by `HandleRuleCell`;
-   `RefreshRows` no longer caps per-row state at 12. Residual: a window
-   stretched tall enough to show >12 rows at once will leave controls off
-   the rows beyond the 12th visible; adding pool rows means new
-   `NAL_BDT_ItemF_R*` templates + per-row `NAL_DragItem_F*` animation
-   copies (~2.8k lines each in EQUI_Animations.xml) — punt until someone
-   actually hits it.
+   `RefreshRows` no longer caps per-row state at 12. The tester promptly
+   hit the residual (window resized to show 15 rows > 12 pools), so the
+   pool was expanded 12 → 24 rows (Build 82): `kAALRulePoolRows = 24`,
+   generated `AALR_CB/RM/IB_R12..R23` buttons + Pieces in the window XML,
+   `NAL_BDT_ItemF_R12..R23` templates, and `NAL_DragItem_F12..F23`
+   animation copies (~2.8k lines each; EQUI_Animations.xml grew 2.0 →
+   2.6 MB). 24 rows covers a ~864px-tall list (roughly fullscreen 1080p);
+   beyond that rows go bare again.
 
    Also noted for later: shared-section "Leave All" is master-gated per row
    (`leave` action) — non-masters get a red error per row, which reads like

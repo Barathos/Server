@@ -3081,4 +3081,52 @@
 		<Normal>A_RecessedBox</Normal>
 		<NormalDecal>NAL_DragItem_F11</NormalDecal>
 	</ButtonDrawTemplate>
+	<ButtonDrawTemplate item="NAL_BDT_ItemF_R12">
+		<Normal>A_RecessedBox</Normal>
+		<NormalDecal>NAL_DragItem_F12</NormalDecal>
+	</ButtonDrawTemplate>
+	<ButtonDrawTemplate item="NAL_BDT_ItemF_R13">
+		<Normal>A_RecessedBox</Normal>
+		<NormalDecal>NAL_DragItem_F13</NormalDecal>
+	</ButtonDrawTemplate>
+	<ButtonDrawTemplate item="NAL_BDT_ItemF_R14">
+		<Normal>A_RecessedBox</Normal>
+		<NormalDecal>NAL_DragItem_F14</NormalDecal>
+	</ButtonDrawTemplate>
+	<ButtonDrawTemplate item="NAL_BDT_ItemF_R15">
+		<Normal>A_RecessedBox</Normal>
+		<NormalDecal>NAL_DragItem_F15</NormalDecal>
+	</ButtonDrawTemplate>
+	<ButtonDrawTemplate item="NAL_BDT_ItemF_R16">
+		<Normal>A_RecessedBox</Normal>
+		<NormalDecal>NAL_DragItem_F16</NormalDecal>
+	</ButtonDrawTemplate>
+	<ButtonDrawTemplate item="NAL_BDT_ItemF_R17">
+		<Normal>A_RecessedBox</Normal>
+		<NormalDecal>NAL_DragItem_F17</NormalDecal>
+	</ButtonDrawTemplate>
+	<ButtonDrawTemplate item="NAL_BDT_ItemF_R18">
+		<Normal>A_RecessedBox</Normal>
+		<NormalDecal>NAL_DragItem_F18</NormalDecal>
+	</ButtonDrawTemplate>
+	<ButtonDrawTemplate item="NAL_BDT_ItemF_R19">
+		<Normal>A_RecessedBox</Normal>
+		<NormalDecal>NAL_DragItem_F19</NormalDecal>
+	</ButtonDrawTemplate>
+	<ButtonDrawTemplate item="NAL_BDT_ItemF_R20">
+		<Normal>A_RecessedBox</Normal>
+		<NormalDecal>NAL_DragItem_F20</NormalDecal>
+	</ButtonDrawTemplate>
+	<ButtonDrawTemplate item="NAL_BDT_ItemF_R21">
+		<Normal>A_RecessedBox</Normal>
+		<NormalDecal>NAL_DragItem_F21</NormalDecal>
+	</ButtonDrawTemplate>
+	<ButtonDrawTemplate item="NAL_BDT_ItemF_R22">
+		<Normal>A_RecessedBox</Normal>
+		<NormalDecal>NAL_DragItem_F22</NormalDecal>
+	</ButtonDrawTemplate>
+	<ButtonDrawTemplate item="NAL_BDT_ItemF_R23">
+		<Normal>A_RecessedBox</Normal>
+		<NormalDecal>NAL_DragItem_F23</NormalDecal>
+	</ButtonDrawTemplate>
 </XML>

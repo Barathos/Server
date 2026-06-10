@@ -313,7 +313,7 @@ static const int kAALPoolPersonalRows = 8;
 static const int kAALPoolPersonalCols = 5;
 static const int kAALPoolSharedRows = 14;
 static const int kAALPoolSharedCols = 10;
-static const int kAALRulePoolRows = 12;
+static const int kAALRulePoolRows = 24;
 
 static const int kAALPoolPersonalColumns[kAALPoolPersonalCols] = {
 	kAALPersonalLoot, kAALPersonalLeave, kAALPersonalAlwaysNeed, kAALPersonalAlwaysGreed, kAALPersonalNever
