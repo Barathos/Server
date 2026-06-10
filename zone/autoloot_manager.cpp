@@ -2209,6 +2209,12 @@ void AutoLootManager::LootEntryForClient(Client *client, uint32 entry_id)
 		if (result.code == CorpseAutoLootResultCode::PartialStacked && result.remaining_count > 0) {
 			update_iter->second.quantity = result.remaining_count;
 			update_iter->second.state = "inventory_full";
+			if (recipient) {
+				recipient->Message(
+					Chat::Red,
+					fmt::format("You could not loot all of {}: your inventory is full. {} remain on the corpse.", entry.item_name, result.remaining_count).c_str()
+				);
+			}
 			DebugMessage(
 				recipient,
 				recipient_settings,
@@ -2220,6 +2226,30 @@ void AutoLootManager::LootEntryForClient(Client *client, uint32 entry_id)
 			if (result.code == CorpseAutoLootResultCode::LoreConflict) {
 				update_iter->second.state = "lore";
 			}
+
+			if (recipient) {
+				std::string failure_reason;
+				switch (result.code) {
+				case CorpseAutoLootResultCode::InventoryFull:
+					failure_reason = "your inventory is full";
+					break;
+				case CorpseAutoLootResultCode::LoreConflict:
+					failure_reason = "you already have this lore item";
+					break;
+				case CorpseAutoLootResultCode::DynamicZoneDenied:
+					failure_reason = "this instance does not allow it";
+					break;
+				default:
+					failure_reason = "the item cannot be looted right now";
+					break;
+				}
+
+				recipient->Message(
+					Chat::Red,
+					fmt::format("You cannot loot {}: {}.", entry.item_name, failure_reason).c_str()
+				);
+			}
+
 			DebugMessage(
 				recipient,
 				recipient_settings,
