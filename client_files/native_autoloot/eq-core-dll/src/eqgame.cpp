@@ -872,29 +872,60 @@ void InitHooks()
 	//PatchA((DWORD*)var, "\x90\x90\x90\x90",
 		// 4); // Fix tradeskill containers
 
-	//DWORD varArray = (((DWORD)0x009BFF6D - 0x400000) + baseAddress);
-	//var = (((DWORD)0x004ED062 - 0x400000) + baseAddress);
-	//PatchA((DWORD*)var, "\x08", 1); // Link stuff
+	if (isThjClientEnabled) {
+		// THJ's server emits 77-char / 8-hex saylink + item-link bodies
+		// (common SAY_LINK_BODY_SIZE = 77). The stock RoF2 client formats and
+		// parses 5-hex fields, so THJ links render with leading-zero leakage in
+		// chat. Widen the client's item-link format to 8-hex. Offsets recovered
+		// from the original THJ dinput8.dll "Link stuff" patch and verified against
+		// this RoF2 eqgame.exe (5-hex width bytes 0x05; body-length constants
+		// 0x37/55 and 0x3A/58; format-string operands -> "%5X"/"%05X"). The four
+		// format operands are repointed at our own "%08X" string instead of
+		// reusing client BSS at 0x009BFF6D. Fail closed if any signature differs.
+		static const char kThj8HexFormat[] = "%08X";
+		DWORD thjFmtPtr = (DWORD)(&kThj8HexFormat[0]);
 
-	//var = (((DWORD)0x004ED083 - 0x400000) + baseAddress);
-	//PatchA((DWORD*)var, "\x08", 1); // Link stuff
+		const DWORD thjWidthVa[2] = { 0x004ED062, 0x004ED083 };            // 5 -> 8 hex digits
+		const DWORD thjLenVa[2]   = { 0x004ED03B, 0x00A1ACE0 };            // link body length constants
+		const BYTE  thjLenOld[2]  = { 0x37, 0x3A };                        // 55, 58
+		const BYTE  thjLenNew[2]  = { 0x4C, 0x4F };                        // 76 (=77-1), 79 (=77+2)
+		const DWORD thjFmtVa[4]    = { 0x004ED051, 0x004ED072, 0x007BBC9A, 0x007BBD77 };
+		const DWORD thjFmtOldVa[4] = { 0x009CE548, 0x009CE548, 0x00A023B0, 0x00A023B0 };
 
-	//var = (((DWORD)0x004ED03B - 0x400000) + baseAddress);
-	//PatchA((DWORD*)var, "\x4C", 1); // Link stuff
-	//var = (((DWORD)0x004ED051 - 0x400000) + baseAddress);
-	//PatchA((DWORD*)var, (DWORD*)&varArray, 4); // Link stuff
-	//var = (((DWORD)0x004ED072 - 0x400000) + baseAddress);
-	//PatchA((DWORD*)var, (DWORD*)&varArray, 4); // Link stuff
-	//var = (((DWORD)0x007BBC9A - 0x400000) + baseAddress);
-	//PatchA((DWORD*)var, (DWORD*)&varArray, 4); // Link stuff
-	//var = (((DWORD)0x007BBD77 - 0x400000) + baseAddress);
-	//PatchA((DWORD*)var, (DWORD*)&varArray, 4); // Link stuff
+		bool thjLinkOk = true;
+		for (int i = 0; i < 2; ++i) {
+			BYTE* p = (BYTE*)((thjWidthVa[i] - 0x400000) + baseAddress);
+			if (*p != 0x05) thjLinkOk = false;
+		}
+		for (int i = 0; i < 2; ++i) {
+			BYTE* p = (BYTE*)((thjLenVa[i] - 0x400000) + baseAddress);
+			if (*p != thjLenOld[i]) thjLinkOk = false;
+		}
+		for (int i = 0; i < 4; ++i) {
+			DWORD* p = (DWORD*)((thjFmtVa[i] - 0x400000) + baseAddress);
+			if (*p != ((thjFmtOldVa[i] - 0x400000) + baseAddress)) thjLinkOk = false;
+		}
 
-	//var = (((DWORD)0x009BFF6D - 0x400000) + baseAddress);
-	//PatchA((DWORD*)var, "\x25\x30\x38\x58", 4); // Link stuff
-
-	//var = (((DWORD)0x00A1ACE0 - 0x400000) + baseAddress);
-	//PatchA((DWORD*)var, "\x4F", 1); // Link stuff
+		if (thjLinkOk) {
+			BYTE eight = 0x08;
+			for (int i = 0; i < 2; ++i) {
+				var = (thjWidthVa[i] - 0x400000) + baseAddress;
+				PatchA((DWORD*)var, &eight, 1);
+			}
+			for (int i = 0; i < 2; ++i) {
+				var = (thjLenVa[i] - 0x400000) + baseAddress;
+				PatchA((DWORD*)var, &thjLenNew[i], 1);
+			}
+			for (int i = 0; i < 4; ++i) {
+				var = (thjFmtVa[i] - 0x400000) + baseAddress;
+				PatchA((DWORD*)var, &thjFmtPtr, 4);
+			}
+			DebugSpew("THJ 8-hex item-link patch applied");
+		}
+		else {
+			DebugSpew("THJ 8-hex item-link patch skipped: eqgame signature mismatch");
+		}
+	}
 
 	//var = (((DWORD)0x0063C36F - 0x400000) + baseAddress);
 	//PatchA((DWORD*)var, "\x90\x90\x90\x90", 4); // Bazaar trader anywhere

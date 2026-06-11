@@ -262,47 +262,11 @@ struct NativeAutoLootInlineCellSpec
 
 static std::vector<NativeAutoLootInlineCellSpec> gNativeAutoLootInlineCellSpecs;
 
-// Diagnostic counters for the inline-cell work, surfaced via the status label
-// and native_autoloot.log. Remove once the inline UI is confirmed in-game.
-static unsigned int gNativeAutoLootDiagPulseCount = 0;
-static unsigned int gNativeAutoLootDiagPostDrawCount = 0;
-static unsigned int gNativeAutoLootDiagOnProcessFrameCount = 0;
-static DWORD gNativeAutoLootDiagLastReportTick = 0;
-static int gNativeAutoLootDiagReportBudget = 300;
-static int gNativeAutoLootDiagNotifyBudget = 120;
-static int gNativeAutoLootDiagStructDumpBudget = 1;
-
 // CButtonWnd keeps its NormalDecal animation instance at +0x240 (verified
 // via the 2026-06-09 struct dumps: decal-less templates read null there,
 // decal templates read a heap animation pointer).
 static const int kAALButtonNormalDecalOffset = 0x240;
 static bool gNativeAutoLootIconCellFaulted = false;
-
-// One-shot struct dump for the item-icon investigation: locate the decal
-// animation pointer inside CButtonWnd by comparing differently-templated
-// buttons. Read-only and SEH-guarded.
-static void NativeAutoLootDiagDumpButton(const char* tag, CButtonWnd* button)
-{
-	if (!button) {
-		NativeAutoLootTrace("DIAG dump %s: null", tag);
-		return;
-	}
-
-	DWORD* raw = (DWORD*)button;
-	__try {
-		for (int base = 0x1C0; base < 0x320; base += 0x20) {
-			char line[256];
-			sprintf_s(line, "DIAG dump %s +%03X: %08X %08X %08X %08X %08X %08X %08X %08X",
-				tag, base,
-				raw[base / 4 + 0], raw[base / 4 + 1], raw[base / 4 + 2], raw[base / 4 + 3],
-				raw[base / 4 + 4], raw[base / 4 + 5], raw[base / 4 + 6], raw[base / 4 + 7]);
-			NativeAutoLootTrace("%s", line);
-		}
-	}
-	__except (EXCEPTION_EXECUTE_HANDLER) {
-		NativeAutoLootTrace("DIAG dump %s faulted", tag);
-	}
-}
 
 // Inline checkbox pool: real XML-declared checkbox controls positioned over
 // the list cells every pulse. Uses only primitives proven to work in this
@@ -561,10 +525,6 @@ public:
 	{
 		CloseOnESC = 1;
 		SetWndNotification(NativeAutoLootWnd);
-		int (NativeAutoLootWnd::*pfOnProcessFrame)() = &NativeAutoLootWnd::OnProcessFrame;
-		SetvfTable(49, *(DWORD*)&pfOnProcessFrame);
-		int (NativeAutoLootWnd::*pfPostDraw)() const = &NativeAutoLootWnd::PostDraw;
-		SetvfTable(3, *(DWORD*)&pfPostDraw);
 
 		PersonalLabel = GetChildItem("AALW_PersonalLabel");
 		SetAllLabel = GetChildItem("AALW_SetAllLabel");
@@ -617,8 +577,6 @@ public:
 				((CXWnd*)SharedIconPool[pool_row])->Show(0, 1);
 			}
 		}
-		NativeAutoLootTrace("DIAG ptrs plist=%p slist=%p pcombo=%p scombo=%p sleave=%p",
-			PersonalList, SharedList, PersonalSetCombo, SharedSetCombo, SharedLeaveAllButton);
 
 		for (int pool_row = 0; pool_row < kAALPoolPersonalRows; ++pool_row) {
 			for (int slot = 0; slot < kAALPoolPersonalCols; ++slot) {
@@ -649,29 +607,10 @@ public:
 		RefreshRows();
 	}
 
-	int OnProcessFrame()
-	{
-		++gNativeAutoLootDiagOnProcessFrameCount;
-		return 1;
-	}
-
-	int PostDraw() const
-	{
-		++gNativeAutoLootDiagPostDrawCount;
-		return 1;
-	}
-
-	void DiagnosticPulse();
+	void PulseInlineCells();
 
 	int WndNotification(CXWnd* pWnd, unsigned int Message, void* unknown)
 	{
-		if (gNativeAutoLootDiagNotifyBudget > 0 &&
-			Message != XWM_LCLICK && Message != XWM_RCLICK &&
-			Message != XWM_MOUSEOVER && Message != XWM_CLOSE) {
-			--gNativeAutoLootDiagNotifyBudget;
-			NativeAutoLootTrace("DIAG notify pWnd=%p msg=%u data=%d", pWnd, Message, (int)(intptr_t)unknown);
-		}
-
 		// Combo selection in this client notifies with message 33 (msg 32
 		// fires on dropdown open/close), confirmed via the notify log.
 		if (Message == XWM_NEWVALUE || Message == 33) {
@@ -748,7 +687,6 @@ public:
 					}
 
 					const int list_row = PersonalPoolListRow[pool_row];
-					NativeAutoLootTrace("DIAG pool fallback personal r=%d slot=%d listrow=%d", pool_row, slot, list_row);
 					if (list_row >= 0 && PersonalList) {
 						ActiveList = PersonalList;
 						PersonalList->SetCurSel(list_row);
@@ -765,7 +703,6 @@ public:
 					}
 
 					const int list_row = SharedPoolListRow[pool_row];
-					NativeAutoLootTrace("DIAG pool fallback shared r=%d slot=%d listrow=%d", pool_row, slot, list_row);
 					if (list_row >= 0 && SharedList) {
 						ActiveList = SharedList;
 						SharedList->SetCurSel(list_row);
@@ -8312,8 +8249,6 @@ int NativeAutoLootWnd::ResolveComboChoice(CComboWnd* combo, int hint)
 
 void NativeAutoLootWnd::ApplySetAll(bool shared, int choice)
 {
-	NativeAutoLootTrace("DIAG set-all shared=%d choice=%d", shared ? 1 : 0, choice);
-
 	if (!shared) {
 		if (choice == 0) {
 			NativeAutoLootSendCommand("/say #advloot personal lootall");
@@ -8756,44 +8691,10 @@ void NativeAutoLootWnd::SyncInlinePool()
 	}
 }
 
-void NativeAutoLootWnd::DiagnosticPulse()
+void NativeAutoLootWnd::PulseInlineCells()
 {
-	++gNativeAutoLootDiagPulseCount;
-
 	SyncInlinePool();
-
 	ApplyListRowHeights();
-
-	const DWORD now = GetTickCount();
-	if (gNativeAutoLootDiagReportBudget <= 0 || (now - gNativeAutoLootDiagLastReportTick) < 2000) {
-		return;
-	}
-
-	gNativeAutoLootDiagLastReportTick = now;
-	--gNativeAutoLootDiagReportBudget;
-
-	char pool_text[96];
-	sprintf_s(pool_text, "pool:%u", (unsigned int)PoolStates.size());
-	if (!PoolStates.empty()) {
-		PCSIDLWND raw = (PCSIDLWND)PoolStates.front().button;
-		sprintf_s(pool_text, "pool:%u first:(%d,%d,%d,%d)",
-			(unsigned int)PoolStates.size(),
-			(int)raw->Location.left, (int)raw->Location.top,
-			(int)raw->Location.right, (int)raw->Location.bottom);
-	}
-
-	char report[256];
-	sprintf_s(report, "DIAG P:%u PD:%u OPF:%u specs:%u %s corr:(%d,%d,%s)",
-		gNativeAutoLootDiagPulseCount,
-		gNativeAutoLootDiagPostDrawCount,
-		gNativeAutoLootDiagOnProcessFrameCount,
-		(unsigned int)gNativeAutoLootInlineCellSpecs.size(),
-		pool_text,
-		PoolCorrectionX,
-		PoolCorrectionY,
-		PoolCalibrated ? "ok" : "pending");
-
-	NativeAutoLootTrace("%s", report);
 }
 
 bool NativeAutoLootWnd::HandleListColumnClick(CListWnd* list, bool shared, void* hit_test_point)
@@ -11616,7 +11517,7 @@ static void NativeAutoLootPulse()
 
 	if (gNativeAutoLootWnd) {
 		gNativeAutoLootWnd->Layout();
-		gNativeAutoLootWnd->DiagnosticPulse();
+		gNativeAutoLootWnd->PulseInlineCells();
 	}
 
 	if (gNativeAutoLootRulesWnd) {
