@@ -266,6 +266,54 @@ Still open from this batch:
   territory), or inset our pool-control clip by ~20px (fixes controls but
   engine text still overlaps). Deferred.
 
+## QUEUED PROJECT — UI Size Presets (Small / Medium / Large)
+
+User-approved 2026-06-11. Goal: let players pick a size for the whole
+Advanced Loot interface (fonts + geometry), like the earlier small→large
+font move but selectable.
+
+**Mechanism** (proven primitives only): one XML file can define multiple
+screens, and the DLL creates windows by screen name — so ship `_S` and
+`_L` clones of the five advloot screens alongside the Medium masters and
+have the DLL append the active suffix when creating windows and resolving
+children. Switching size = destroy + recreate the advloot windows (the
+UI-reset path already does this safely). No /loadskin, no file swaps.
+
+**DONE this session**: the generator —
+`client_files/native_autoloot/tools/generate-ui-scales.ps1`. Reads the
+shipped EQUI_NativeAutoLootWnd.xml (Medium = master), clones the 5 screens
++ all referenced pieces, suffixes names (`item`, ScreenID, Pieces),
+scales geometry (Location/Size/anchors/ListHeight/Columns Width/Min sizes;
+S=80%, L=125%), maps fonts (5→4 / 5→6), leaves shared Template/Animation
+refs untouched (safe: only one size variant of a window exists at a time,
+so per-row icon animation instances don't conflict). Verified: 826
+elements, output parses, spot-checks correct. Review artifact at
+`ui/generated/EQUI_NativeAutoLootWnd_scaled.xml` (NOT shipped — inert
+until the DLL can select variants; run with `-Merge` to emit the combined
+shipped file when plumbing lands).
+
+**TODO next session (DLL plumbing)**:
+1. `NativeUiScaleSuffix()` global ("", "_S", "_L") + setting persistence —
+   simplest is a small ini in the EQ client dir read at DLL load
+   (per-install; lets a laptop differ from a desktop). Alternative:
+   server-saved via the advloot settings table (follows the character,
+   needs server change + restart).
+2. Append the suffix in the five `CCustomWnd((char*)"NativeAutoLoot*")`
+   constructors and EVERY `GetChildItem("AAL*...")` in those classes
+   (mechanical; the pool wiring sprintf sites — `AALW_CBP/CBS/IBP/ISP`,
+   `AALR_CB/RM/IB` — just append `%s`). Do NOT touch other windows
+   (faction/forge/multiclass have no variants).
+3. Per-preset DLL constants table: forced row heights (main 36, menu 24,
+   manage 30, rules 36 @ +0x21C) and pooled control sizes (checkbox 24,
+   icon 26) — scale by the same 80/125 percents so XML and DLL agree.
+   `NativeAutoLootPoolControlSize` + the `ApplyListRowHeights` sites.
+4. "UI Size" cycle button in the Loot Settings window (S/M/L) → write
+   setting, destroy advloot windows (existing NATIVE_AUTOLOOT_DESTROY_
+   WINDOW path), let them lazily recreate with the new suffix.
+5. Run the generator with `-Merge`, ship the combined XML, build, publish.
+6. In-game test matrix: 3 sizes × 5 windows — pool calibration, click
+   routing, combo selection, search box, manage window, popup menu.
+
 ## Open Items
 
 1. **Deploy the 2026-06-10 fixes**: server apply + restart (zone binary)

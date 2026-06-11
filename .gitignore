@@ -82,3 +82,5 @@ features/multiclass/TRIO_NAMES.md
 
 # All-features owns its launcher patcher source.
 !features/patcher/eqemupatcher/EQEmu Patcher/EQEmu Patcher.sln
+
+client_files/native_autoloot/ui/generated/
