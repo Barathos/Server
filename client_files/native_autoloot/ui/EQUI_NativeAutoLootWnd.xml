@@ -4952,6 +4952,39 @@
 		<Template>BDT_Normal</Template>
 	</Button>
 
+	<Label item="AALR_SearchLabel">
+		<ScreenID>AALR_SearchLabel</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>226</X><Y>136</Y></Location>
+		<Size><CX>52</CX><CY>20</CY></Size>
+		<Text>Search</Text>
+		<TextColor><R>220</R><G>220</G><B>220</B></TextColor>
+		<NoWrap>true</NoWrap>
+	</Label>
+
+	<Editbox item="AALR_SearchEdit">
+		<ScreenID>AALR_SearchEdit</ScreenID>
+		<DrawTemplate>WDT_Inner</DrawTemplate>
+		<RelativePosition>true</RelativePosition>
+		<Style_Border>true</Style_Border>
+		<Location><X>280</X><Y>133</Y></Location>
+		<Size><CX>226</CX><CY>24</CY></Size>
+		<Text></Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+	</Editbox>
+
+	<Button item="AALR_ClearSearchButton">
+		<ScreenID>AALR_ClearSearchButton</ScreenID>
+		<RelativePosition>true</RelativePosition>
+		<Location><X>512</X><Y>133</Y></Location>
+		<Size><CX>52</CX><CY>24</CY></Size>
+		<Text>Clear</Text>
+		<TextColor><R>255</R><G>255</G><B>255</B></TextColor>
+		<Style_Transparent>false</Style_Transparent>
+		<Style_Checkbox>false</Style_Checkbox>
+		<Template>BDT_BigNormal</Template>
+	</Button>
+
 	<Screen item="NativeAutoLootRulesWnd">
 		<ScreenID>NativeAutoLootRulesWnd</ScreenID>
 		<RelativePosition>false</RelativePosition>
@@ -4968,6 +5001,9 @@
 		<Pieces>AALR_SummaryLabel</Pieces>
 		<Pieces>AALR_RefreshButton</Pieces>
 		<Pieces>AALR_ShareButton</Pieces>
+		<Pieces>AALR_SearchLabel</Pieces>
+		<Pieces>AALR_SearchEdit</Pieces>
+		<Pieces>AALR_ClearSearchButton</Pieces>
 		<Pieces>AALR_RuleList</Pieces>
 		<Pieces>AALR_StatusLabel</Pieces>
 		<Pieces>AALR_TglEnabled</Pieces>

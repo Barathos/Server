@@ -934,6 +934,8 @@ public:
 		RuleList = (CListWnd*)GetChildItem("AALR_RuleList");
 		RefreshButton = (CButtonWnd*)GetChildItem("AALR_RefreshButton");
 		ShareButton = (CButtonWnd*)GetChildItem("AALR_ShareButton");
+		SearchEdit = (CEditWnd*)GetChildItem("AALR_SearchEdit");
+		ClearSearchButton = (CButtonWnd*)GetChildItem("AALR_ClearSearchButton");
 		TglEnabled = (CButtonWnd*)GetChildItem("AALR_TglEnabled");
 		TglSplit = (CButtonWnd*)GetChildItem("AALR_TglSplit");
 		TglConfirm = (CButtonWnd*)GetChildItem("AALR_TglConfirm");
@@ -988,6 +990,11 @@ public:
 			if (pWnd == (CXWnd*)ShareButton) {
 				NativeAutoLootSendCommand("/say #advloot filter share");
 				SetStatus("Offering your filters to your target...");
+				return 1;
+			}
+
+			if (pWnd == (CXWnd*)ClearSearchButton) {
+				ClearSearch();
 				return 1;
 			}
 
@@ -1046,11 +1053,17 @@ public:
 			}
 		}
 
+		if (pWnd == (CXWnd*)SearchEdit && (Message == XWM_NEWVALUE || Message == XWM_HITENTER)) {
+			ApplyRuleSearch(Message == XWM_NEWVALUE);
+			return 1;
+		}
+
 		return CSidlScreenWnd::WndNotification(pWnd, Message, unknown);
 	}
 
 	void Layout();
 	void RefreshRows();
+	void RefreshHeader();
 	void SetStatus(const char* text)
 	{
 		if (StatusLabel) {
@@ -1062,6 +1075,10 @@ public:
 private:
 	NativeAutoLootRuleRow* GetSelectedRule();
 	void HandleRuleCell(int pool_row, int slot);
+	std::string ReadSearch(bool prefer_input_text) const;
+	void SetSearchText(const char* text);
+	void ApplyRuleSearch(bool prefer_input_text);
+	void ClearSearch();
 	void SetLabel(CXWnd* label, const char* text);
 	void SetButtonCheck(CButtonWnd* button, bool checked)
 	{
@@ -1081,6 +1098,10 @@ private:
 	CButtonWnd* TglLore = nullptr;
 	CButtonWnd* TglShow = nullptr;
 	CButtonWnd* TglLootAll = nullptr;
+	CEditWnd* SearchEdit = nullptr;
+	CButtonWnd* ClearSearchButton = nullptr;
+	bool DeferredSearchRefresh = false;
+	bool UpdatingSearchText = false;
 	CButtonWnd* CheckPool[kAALRulePoolRows][4] = {};
 	CButtonWnd* RemovePool[kAALRulePoolRows] = {};
 	CButtonWnd* IconPool[kAALRulePoolRows] = {};
@@ -1089,6 +1110,7 @@ private:
 	bool IconShown[kAALRulePoolRows] = {};
 	int IconCell[kAALRulePoolRows] = {};
 	int RulePoolListRow[kAALRulePoolRows] = {};
+	std::vector<int> DisplayRowIndex;
 	std::vector<int> RowIconIds;
 	std::vector<CButtonWnd*> RulesRefresh;
 	int RowCount = 0;
@@ -1669,6 +1691,8 @@ static void NativeAutoLootHideRowMenu()
 	}
 }
 static std::vector<NativeAutoLootRuleRow> gNativeAutoLootRuleRows;
+static std::vector<NativeAutoLootRuleRow> gNativeAutoLootRuleRowsStaging;
+static std::string gNativeAutoLootRuleSearch;
 
 static const char* NativeAutoLootToggleEnabledCommand()
 {
@@ -7710,6 +7734,13 @@ void NativeAutoLootRulesWnd::Layout()
 		return;
 	}
 
+	// Search edits defer the rebuild to the pulse so the list is not torn
+	// down mid-keystroke (same pattern as the faction window).
+	if (DeferredSearchRefresh) {
+		DeferredSearchRefresh = false;
+		RefreshRows();
+	}
+
 	// Hold the filter list at 36px rows (CListWnd row height lives at +0x21C).
 	__try {
 		if (((DWORD*)RuleList)[0x21C / 4] != 36) {
@@ -7768,11 +7799,16 @@ void NativeAutoLootRulesWnd::Layout()
 	// visibility is probed with its AN cell, and rows outside the clip
 	// region are skipped without consuming a pool slot.
 	const int columns_for_slot[4] = { 2, 3, 4, 5 };
-	const int rule_rows = (int)gNativeAutoLootRuleRows.size();
+	const int display_rows = (int)DisplayRowIndex.size();
 	int pool_cursor = 0;
-	for (int row = 0; row < RowCount && row < rule_rows; ++row) {
+	for (int row = 0; row < RowCount && row < display_rows; ++row) {
 		if (pool_cursor >= kAALRulePoolRows) {
 			break;
+		}
+
+		const int rules_index = DisplayRowIndex[row];
+		if (rules_index < 0 || rules_index >= (int)gNativeAutoLootRuleRows.size()) {
+			continue;
 		}
 
 		CXRect target;
@@ -7783,7 +7819,7 @@ void NativeAutoLootRulesWnd::Layout()
 
 		const int pool_row = pool_cursor++;
 		RulePoolListRow[pool_row] = row;
-		const NativeAutoLootRuleRow& rule = gNativeAutoLootRuleRows[row];
+		const NativeAutoLootRuleRow& rule = gNativeAutoLootRuleRows[rules_index];
 		const bool cell_active[4] = {
 			rule.rule == "always_need",
 			rule.rule == "always_greed",
@@ -7971,16 +8007,8 @@ void NativeAutoLootRulesWnd::HandleRuleCell(int pool_row, int slot)
 	}
 }
 
-void NativeAutoLootRulesWnd::RefreshRows()
+void NativeAutoLootRulesWnd::RefreshHeader()
 {
-	if (!RuleList) {
-		return;
-	}
-
-	RuleList->DeleteAll();
-	RowCount = 0;
-	RowIconIds.clear();
-
 	char summary[128];
 	sprintf_s(
 		summary,
@@ -7998,6 +8026,20 @@ void NativeAutoLootRulesWnd::RefreshRows()
 	SetButtonCheck(TglLore, gNativeAutoLootAutoRemoveLore);
 	SetButtonCheck(TglShow, gNativeAutoLootAutoShow);
 	SetButtonCheck(TglLootAll, gNativeAutoLootAutoLootAll);
+}
+
+void NativeAutoLootRulesWnd::RefreshRows()
+{
+	if (!RuleList) {
+		return;
+	}
+
+	RuleList->DeleteAll();
+	RowCount = 0;
+	RowIconIds.clear();
+	DisplayRowIndex.clear();
+
+	RefreshHeader();
 
 	if (gNativeAutoLootRuleRows.empty()) {
 		CXStr blank("");
@@ -8007,8 +8049,15 @@ void NativeAutoLootRulesWnd::RefreshRows()
 		return;
 	}
 
+	const std::string search_lower = NativeLower(gNativeAutoLootRuleSearch);
 	CXStr spacer(" ");
+	int rules_index = -1;
 	for (const NativeAutoLootRuleRow& entry : gNativeAutoLootRuleRows) {
+		++rules_index;
+		if (!search_lower.empty() && NativeLower(entry.item).find(search_lower) == std::string::npos) {
+			continue;
+		}
+
 		CXStr blank("");
 		const int row = RuleList->AddString(blank, 0xFFFFFFFF, (uint32_t)entry.item_id, nullptr, entry.item.c_str());
 		CXStr item(entry.item.c_str());
@@ -8018,8 +8067,103 @@ void NativeAutoLootRulesWnd::RefreshRows()
 		}
 
 		RowIconIds.push_back(entry.icon_id);
+		DisplayRowIndex.push_back(rules_index);
 		++RowCount;
 	}
+
+	if (!RowCount) {
+		CXStr blank("");
+		const int row = RuleList->AddString(blank, 0xFFB0B0B0, 0, nullptr, nullptr);
+		CXStr empty("No filters match the search.");
+		RuleList->SetItemText(row, 1, &empty);
+	}
+}
+
+std::string NativeAutoLootRulesWnd::ReadSearch(bool prefer_input_text) const
+{
+	char input_text[96] = { 0 };
+	char window_text_buffer[96] = { 0 };
+	bool has_input_text = false;
+	bool has_window_text = false;
+	if (SearchEdit) {
+		if (SearchEdit->InputText) {
+			has_input_text = true;
+			GetCXStr(SearchEdit->InputText, input_text, sizeof(input_text));
+		}
+
+		__try {
+			CXStr window_text = ((CXWnd*)SearchEdit)->GetWindowTextA();
+			if (window_text.Ptr) {
+				has_window_text = true;
+				GetCXStr(window_text.Ptr, window_text_buffer, sizeof(window_text_buffer));
+			}
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			has_window_text = false;
+			window_text_buffer[0] = 0;
+		}
+	}
+
+	const char* text = "";
+	if (prefer_input_text && has_input_text) {
+		text = input_text;
+	}
+	else if (has_window_text) {
+		text = window_text_buffer;
+	}
+	else if (has_input_text) {
+		text = input_text;
+	}
+
+	std::string search(text);
+	while (!search.empty() && std::isspace(static_cast<unsigned char>(search.front()))) {
+		search.erase(search.begin());
+	}
+
+	while (!search.empty() && std::isspace(static_cast<unsigned char>(search.back()))) {
+		search.pop_back();
+	}
+
+	return search;
+}
+
+void NativeAutoLootRulesWnd::SetSearchText(const char* text)
+{
+	if (!SearchEdit) {
+		return;
+	}
+
+	char buffer[96] = { 0 };
+	strncpy_s(buffer, sizeof(buffer), text ? text : "", _TRUNCATE);
+	UpdatingSearchText = true;
+	SetCXStr(&SearchEdit->InputText, buffer);
+	CXStr value(buffer);
+	((CXWnd*)SearchEdit)->SetWindowTextA(value);
+	UpdatingSearchText = false;
+}
+
+void NativeAutoLootRulesWnd::ApplyRuleSearch(bool prefer_input_text)
+{
+	if (UpdatingSearchText) {
+		return;
+	}
+
+	const std::string search = ReadSearch(prefer_input_text);
+	if (search == gNativeAutoLootRuleSearch) {
+		return;
+	}
+
+	gNativeAutoLootRuleSearch = search;
+	DeferredSearchRefresh = true;
+}
+
+void NativeAutoLootRulesWnd::ClearSearch()
+{
+	gNativeAutoLootRuleSearch.clear();
+	DeferredSearchRefresh = false;
+	SetSearchText("");
+	RefreshRows();
+	SetStatus("Search cleared.");
 }
 
 NativeAutoLootRuleRow* NativeAutoLootRulesWnd::GetSelectedRule()
@@ -11115,9 +11259,10 @@ static bool NativeAutoLootParseTransport(const char* message)
 	}
 
 	if (NativeStartsWith(message, "ADVLOOT|filters|begin")) {
-		gNativeAutoLootRuleRows.clear();
+		// Stage incoming rows so the live list (and its scroll position)
+		// stays intact until the full set has arrived.
+		gNativeAutoLootRuleRowsStaging.clear();
 		if (gNativeAutoLootRulesWnd) {
-			gNativeAutoLootRulesWnd->RefreshRows();
 			gNativeAutoLootRulesWnd->SetStatus("Loading filters...");
 		}
 		return true;
@@ -11141,14 +11286,44 @@ static bool NativeAutoLootParseTransport(const char* message)
 		}
 
 		if (row.item_id > 0) {
-			gNativeAutoLootRuleRows.push_back(row);
+			gNativeAutoLootRuleRowsStaging.push_back(row);
 		}
 		return true;
 	}
 
 	if (NativeStartsWith(message, "ADVLOOT|filters|end")) {
+		std::sort(
+			gNativeAutoLootRuleRowsStaging.begin(),
+			gNativeAutoLootRuleRowsStaging.end(),
+			[](const NativeAutoLootRuleRow& a, const NativeAutoLootRuleRow& b) {
+				const std::string a_name = NativeLower(a.item);
+				const std::string b_name = NativeLower(b.item);
+				if (a_name != b_name) {
+					return a_name < b_name;
+				}
+				return a.item_id < b.item_id;
+			}
+		);
+
+		// Same rows in the same order (the common case: a rule or AR toggle)
+		// means the pooled checkboxes pick the new values up from the vector
+		// on the next pulse - skip the list rebuild so the scroll position
+		// and selection survive.
+		bool same_rows = gNativeAutoLootRuleRowsStaging.size() == gNativeAutoLootRuleRows.size();
+		for (size_t i = 0; same_rows && i < gNativeAutoLootRuleRows.size(); ++i) {
+			same_rows = gNativeAutoLootRuleRowsStaging[i].item_id == gNativeAutoLootRuleRows[i].item_id;
+		}
+
+		gNativeAutoLootRuleRows.swap(gNativeAutoLootRuleRowsStaging);
+		gNativeAutoLootRuleRowsStaging.clear();
+
 		if (gNativeAutoLootRulesWnd) {
-			gNativeAutoLootRulesWnd->RefreshRows();
+			if (same_rows) {
+				gNativeAutoLootRulesWnd->RefreshHeader();
+			}
+			else {
+				gNativeAutoLootRulesWnd->RefreshRows();
+			}
 			gNativeAutoLootRulesWnd->SetStatus("Filters refreshed.");
 		}
 		return true;
