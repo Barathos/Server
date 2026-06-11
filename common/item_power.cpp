@@ -20,6 +20,7 @@
 #include "common/database.h"
 #include "common/emu_constants.h"
 #include "common/item_data.h"
+#include "common/item_instance.h"
 #include "common/strings.h"
 
 #include <fmt/format.h>
@@ -101,6 +102,75 @@ namespace {
 		int32 flat_bonus = 0;
 	};
 
+	struct ScoringItem {
+		uint32 ID = 0;
+		std::string Name;
+		uint8 ItemClass = EQ::item::ItemClassCount;
+		uint8 ItemType = 0;
+		uint32 Slots = 0;
+		uint8 ReqLevel = 0;
+		uint8 RecLevel = 0;
+		int32 HP = 0;
+		int32 Mana = 0;
+		int32 Endur = 0;
+		int32 AC = 0;
+		int32 AStr = 0;
+		int32 ASta = 0;
+		int32 AAgi = 0;
+		int32 ADex = 0;
+		int32 ACha = 0;
+		int32 AInt = 0;
+		int32 AWis = 0;
+		int32 CR = 0;
+		int32 DR = 0;
+		int32 PR = 0;
+		int32 MR = 0;
+		int32 FR = 0;
+		int32 SVCorruption = 0;
+		int32 HeroicStr = 0;
+		int32 HeroicSta = 0;
+		int32 HeroicDex = 0;
+		int32 HeroicAgi = 0;
+		int32 HeroicInt = 0;
+		int32 HeroicWis = 0;
+		int32 HeroicCha = 0;
+		int32 HeroicCR = 0;
+		int32 HeroicDR = 0;
+		int32 HeroicPR = 0;
+		int32 HeroicMR = 0;
+		int32 HeroicFR = 0;
+		int32 HeroicSVCorrup = 0;
+		int32 Regen = 0;
+		int32 ManaRegen = 0;
+		int32 EnduranceRegen = 0;
+		int32 DamageShield = 0;
+		int32 Attack = 0;
+		int32 Accuracy = 0;
+		int32 CombatEffects = 0;
+		int32 StrikeThrough = 0;
+		int32 SpellDmg = 0;
+		int32 HealAmt = 0;
+		int32 Clairvoyance = 0;
+		int32 Haste = 0;
+		int32 Avoidance = 0;
+		int32 Shielding = 0;
+		int32 SpellShield = 0;
+		int32 DotShielding = 0;
+		int32 StunResist = 0;
+		int32 DSMitigation = 0;
+		uint32 Damage = 0;
+		uint8 Delay = 0;
+		uint32 ElemDmgAmt = 0;
+		int32 BaneDmgAmt = 0;
+		uint32 BaneDmgRaceAmt = 0;
+		EQ::item::ItemEffect_Struct Click {};
+		EQ::item::ItemEffect_Struct Proc {};
+		EQ::item::ItemEffect_Struct Worn {};
+		EQ::item::ItemEffect_Struct Focus {};
+		EQ::item::ItemEffect_Struct Scroll {};
+		EQ::item::ItemEffect_Struct Bard {};
+	};
+
 	uint32 RoundScore(double value)
 	{
 		if (value <= 0.0) {
@@ -130,12 +200,244 @@ namespace {
 		return soft_cap + ((value - soft_cap) * 0.35);
 	}
 
-	bool IsScorableGear(const EQ::ItemData &item)
+	bool IsType1HWeapon(const ScoringItem &item)
+	{
+		return item.ItemType == EQ::item::ItemType1HBlunt ||
+			item.ItemType == EQ::item::ItemType1HSlash ||
+			item.ItemType == EQ::item::ItemType1HPiercing ||
+			item.ItemType == EQ::item::ItemTypeMartial;
+	}
+
+	bool IsType2HWeapon(const ScoringItem &item)
+	{
+		return item.ItemType == EQ::item::ItemType2HBlunt ||
+			item.ItemType == EQ::item::ItemType2HSlash ||
+			item.ItemType == EQ::item::ItemType2HPiercing;
+	}
+
+	bool IsTypeShield(const ScoringItem &item)
+	{
+		return item.ItemType == EQ::item::ItemTypeShield;
+	}
+
+	ScoringItem BuildScoringItem(const EQ::ItemData &item)
+	{
+		ScoringItem scoring_item;
+		scoring_item.ID = item.ID;
+		scoring_item.Name = item.Name;
+		scoring_item.ItemClass = item.ItemClass;
+		scoring_item.ItemType = item.ItemType;
+		scoring_item.Slots = item.Slots;
+		scoring_item.ReqLevel = item.ReqLevel;
+		scoring_item.RecLevel = item.RecLevel;
+		scoring_item.HP = item.HP;
+		scoring_item.Mana = item.Mana;
+		scoring_item.Endur = item.Endur;
+		scoring_item.AC = item.AC;
+		scoring_item.AStr = item.AStr;
+		scoring_item.ASta = item.ASta;
+		scoring_item.AAgi = item.AAgi;
+		scoring_item.ADex = item.ADex;
+		scoring_item.ACha = item.ACha;
+		scoring_item.AInt = item.AInt;
+		scoring_item.AWis = item.AWis;
+		scoring_item.CR = item.CR;
+		scoring_item.DR = item.DR;
+		scoring_item.PR = item.PR;
+		scoring_item.MR = item.MR;
+		scoring_item.FR = item.FR;
+		scoring_item.SVCorruption = item.SVCorruption;
+		scoring_item.HeroicStr = item.HeroicStr;
+		scoring_item.HeroicSta = item.HeroicSta;
+		scoring_item.HeroicDex = item.HeroicDex;
+		scoring_item.HeroicAgi = item.HeroicAgi;
+		scoring_item.HeroicInt = item.HeroicInt;
+		scoring_item.HeroicWis = item.HeroicWis;
+		scoring_item.HeroicCha = item.HeroicCha;
+		scoring_item.HeroicCR = item.HeroicCR;
+		scoring_item.HeroicDR = item.HeroicDR;
+		scoring_item.HeroicPR = item.HeroicPR;
+		scoring_item.HeroicMR = item.HeroicMR;
+		scoring_item.HeroicFR = item.HeroicFR;
+		scoring_item.HeroicSVCorrup = item.HeroicSVCorrup;
+		scoring_item.Regen = item.Regen;
+		scoring_item.ManaRegen = item.ManaRegen;
+		scoring_item.EnduranceRegen = item.EnduranceRegen;
+		scoring_item.DamageShield = item.DamageShield;
+		scoring_item.Attack = item.Attack;
+		scoring_item.Accuracy = item.Accuracy;
+		scoring_item.CombatEffects = item.CombatEffects;
+		scoring_item.StrikeThrough = item.StrikeThrough;
+		scoring_item.SpellDmg = item.SpellDmg;
+		scoring_item.HealAmt = item.HealAmt;
+		scoring_item.Clairvoyance = item.Clairvoyance;
+		scoring_item.Haste = item.Haste;
+		scoring_item.Avoidance = item.Avoidance;
+		scoring_item.Shielding = item.Shielding;
+		scoring_item.SpellShield = item.SpellShield;
+		scoring_item.DotShielding = item.DotShielding;
+		scoring_item.StunResist = item.StunResist;
+		scoring_item.DSMitigation = item.DSMitigation;
+		scoring_item.Damage = item.Damage;
+		scoring_item.Delay = item.Delay;
+		scoring_item.ElemDmgAmt = item.ElemDmgAmt;
+		scoring_item.BaneDmgAmt = item.BaneDmgAmt;
+		scoring_item.BaneDmgRaceAmt = item.BaneDmgRaceAmt;
+		scoring_item.Click = item.Click;
+		scoring_item.Proc = item.Proc;
+		scoring_item.Worn = item.Worn;
+		scoring_item.Focus = item.Focus;
+		scoring_item.Scroll = item.Scroll;
+		scoring_item.Bard = item.Bard;
+		return scoring_item;
+	}
+
+	template <typename FieldType>
+	int32 SumItemField(const EQ::ItemInstance &inst, FieldType EQ::ItemData::*field)
+	{
+		int64 total = 0;
+		const auto *item = inst.GetItem();
+		if (item) {
+			total += static_cast<int64>(item->*field);
+		}
+
+		for (uint8 slot = EQ::invaug::SOCKET_BEGIN; slot <= EQ::invaug::SOCKET_END; ++slot) {
+			const auto *augment = inst.GetAugment(slot);
+			if (augment) {
+				total += SumItemField(*augment, field);
+			}
+		}
+
+		return static_cast<int32>(total);
+	}
+
+	bool HasEffect(const EQ::ItemInstance &inst, const EQ::item::ItemEffect_Struct EQ::ItemData::*effect)
+	{
+		const auto *item = inst.GetItem();
+		if (item && (item->*effect).Effect > 0) {
+			return true;
+		}
+
+		for (uint8 slot = EQ::invaug::SOCKET_BEGIN; slot <= EQ::invaug::SOCKET_END; ++slot) {
+			const auto *augment = inst.GetAugment(slot);
+			if (augment && HasEffect(*augment, effect)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	ScoringItem BuildScoringItem(const EQ::ItemInstance &inst)
+	{
+		const auto *item = inst.GetItem();
+		if (!item) {
+			return {};
+		}
+
+		auto scoring_item = BuildScoringItem(*item);
+		scoring_item.ReqLevel = static_cast<uint8>(std::clamp(inst.GetItemRequiredLevel(true), 0, 255));
+		scoring_item.RecLevel = static_cast<uint8>(std::clamp(inst.GetItemRecommendedLevel(true), 0, 255));
+		scoring_item.HP = inst.GetItemHP(true);
+		scoring_item.Mana = inst.GetItemMana(true);
+		scoring_item.Endur = inst.GetItemEndur(true);
+		scoring_item.AC = inst.GetItemArmorClass(true);
+		scoring_item.AStr = inst.GetItemStr(true);
+		scoring_item.ASta = inst.GetItemSta(true);
+		scoring_item.AAgi = inst.GetItemAgi(true);
+		scoring_item.ADex = inst.GetItemDex(true);
+		scoring_item.ACha = inst.GetItemCha(true);
+		scoring_item.AInt = inst.GetItemInt(true);
+		scoring_item.AWis = inst.GetItemWis(true);
+		scoring_item.CR = inst.GetItemCR(true);
+		scoring_item.DR = inst.GetItemDR(true);
+		scoring_item.PR = inst.GetItemPR(true);
+		scoring_item.MR = inst.GetItemMR(true);
+		scoring_item.FR = inst.GetItemFR(true);
+		scoring_item.SVCorruption = inst.GetItemCorrup(true);
+		scoring_item.HeroicStr = inst.GetItemHeroicStr(true);
+		scoring_item.HeroicSta = inst.GetItemHeroicSta(true);
+		scoring_item.HeroicDex = inst.GetItemHeroicDex(true);
+		scoring_item.HeroicAgi = inst.GetItemHeroicAgi(true);
+		scoring_item.HeroicInt = inst.GetItemHeroicInt(true);
+		scoring_item.HeroicWis = inst.GetItemHeroicWis(true);
+		scoring_item.HeroicCha = inst.GetItemHeroicCha(true);
+		scoring_item.HeroicCR = inst.GetItemHeroicCR(true);
+		scoring_item.HeroicDR = inst.GetItemHeroicDR(true);
+		scoring_item.HeroicPR = inst.GetItemHeroicPR(true);
+		scoring_item.HeroicMR = inst.GetItemHeroicMR(true);
+		scoring_item.HeroicFR = inst.GetItemHeroicFR(true);
+		scoring_item.HeroicSVCorrup = inst.GetItemHeroicCorrup(true);
+		scoring_item.Regen = inst.GetItemRegen(true);
+		scoring_item.ManaRegen = inst.GetItemManaRegen(true);
+		scoring_item.EnduranceRegen = SumItemField(inst, &EQ::ItemData::EnduranceRegen);
+		scoring_item.DamageShield = inst.GetItemDamageShield(true);
+		scoring_item.Attack = inst.GetItemAttack(true);
+		scoring_item.Accuracy = SumItemField(inst, &EQ::ItemData::Accuracy);
+		scoring_item.CombatEffects = SumItemField(inst, &EQ::ItemData::CombatEffects);
+		scoring_item.StrikeThrough = SumItemField(inst, &EQ::ItemData::StrikeThrough);
+		scoring_item.SpellDmg = inst.GetItemSpellDamage(true);
+		scoring_item.HealAmt = inst.GetItemHealAmt(true);
+		scoring_item.Clairvoyance = inst.GetItemClairvoyance(true);
+		scoring_item.Haste = inst.GetItemHaste(true);
+		scoring_item.Avoidance = SumItemField(inst, &EQ::ItemData::Avoidance);
+		scoring_item.Shielding = SumItemField(inst, &EQ::ItemData::Shielding);
+		scoring_item.SpellShield = SumItemField(inst, &EQ::ItemData::SpellShield);
+		scoring_item.DotShielding = SumItemField(inst, &EQ::ItemData::DotShielding);
+		scoring_item.StunResist = SumItemField(inst, &EQ::ItemData::StunResist);
+		scoring_item.DSMitigation = inst.GetItemDSMitigation(true);
+		scoring_item.Damage = static_cast<uint32>(std::max(0, inst.GetItemWeaponDamage(true)));
+
+		int magic = 0;
+		int fire = 0;
+		int cold = 0;
+		int poison = 0;
+		int disease = 0;
+		int chromatic = 0;
+		int prismatic = 0;
+		int physical = 0;
+		int corruption = 0;
+		scoring_item.ElemDmgAmt = static_cast<uint32>(std::max(
+			0,
+			inst.GetItemElementalDamage(magic, fire, cold, poison, disease, chromatic, prismatic, physical, corruption, true)
+		));
+
+		scoring_item.BaneDmgAmt = SumItemField(inst, &EQ::ItemData::BaneDmgAmt);
+		scoring_item.BaneDmgRaceAmt = static_cast<uint32>(std::max<int32>(
+			0,
+			SumItemField(inst, &EQ::ItemData::BaneDmgRaceAmt)
+		));
+		scoring_item.Click.Effect = HasEffect(inst, &EQ::ItemData::Click) ? 1 : 0;
+		scoring_item.Proc.Effect = HasEffect(inst, &EQ::ItemData::Proc) ? 1 : 0;
+		scoring_item.Worn.Effect = HasEffect(inst, &EQ::ItemData::Worn) ? 1 : 0;
+		scoring_item.Focus.Effect = HasEffect(inst, &EQ::ItemData::Focus) ? 1 : 0;
+		scoring_item.Scroll.Effect = HasEffect(inst, &EQ::ItemData::Scroll) ? 1 : 0;
+		scoring_item.Bard.Effect = HasEffect(inst, &EQ::ItemData::Bard) ? 1 : 0;
+		return scoring_item;
+	}
+
+	bool HasAugments(const EQ::ItemInstance &inst)
+	{
+		for (uint8 slot = EQ::invaug::SOCKET_BEGIN; slot <= EQ::invaug::SOCKET_END; ++slot) {
+			if (inst.GetAugmentItemID(slot)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	bool UsesInstanceScore(const EQ::ItemInstance &inst)
+	{
+		return HasAugments(inst) || inst.HasDynamicItemData() || inst.IsScaling();
+	}
+
+	bool IsScorableGear(const ScoringItem &item)
 	{
 		return item.ItemClass == EQ::item::ItemClassCommon && item.Slots != 0;
 	}
 
-	std::string BuildClearTransportMessage(const EQ::ItemData &item)
+	std::string BuildClearTransportMessage(const ScoringItem &item)
 	{
 		return fmt::format("ITEMPOWER|clear|item_id={}|name={}", item.ID, item.Name);
 	}
@@ -258,17 +560,17 @@ namespace {
 		return weights;
 	}
 
-	SlotBudgetResult GetSlotBudget(const EQ::ItemData &item)
+	SlotBudgetResult GetSlotBudget(const ScoringItem &item)
 	{
 		if (item.ItemType == EQ::item::ItemTypeAugmentation) {
 			return SlotBudgetResult{0.50, "Augment"};
 		}
 
-		if (item.IsType2HWeapon()) {
+		if (IsType2HWeapon(item)) {
 			return SlotBudgetResult{1.90, "Primary 2H"};
 		}
 
-		if (item.IsType1HWeapon()) {
+		if (IsType1HWeapon(item)) {
 			return SlotBudgetResult{1.25, "Primary 1H"};
 		}
 
@@ -276,7 +578,7 @@ namespace {
 			return SlotBudgetResult{0.75, "Range Bow"};
 		}
 
-		if (item.IsTypeShield()) {
+		if (IsTypeShield(item)) {
 			return SlotBudgetResult{1.15, "Shield"};
 		}
 
@@ -321,9 +623,9 @@ namespace {
 		return best;
 	}
 
-	double GetWeaponTypeMultiplier(const EQ::ItemData &item)
+	double GetWeaponTypeMultiplier(const ScoringItem &item)
 	{
-		if (item.IsType2HWeapon()) {
+		if (IsType2HWeapon(item)) {
 			return 1.35;
 		}
 
@@ -331,7 +633,7 @@ namespace {
 			return 0.85;
 		}
 
-		if (item.IsType1HWeapon()) {
+		if (IsType1HWeapon(item)) {
 			return 1.00;
 		}
 
@@ -343,7 +645,7 @@ namespace {
 		return effect.Effect > 0 ? base_score : 0.0;
 	}
 
-	RoleScore CalculateRoleScore(const EQ::ItemData &item, EQ::ItemPower::Role role)
+	RoleScore CalculateRoleScore(const ScoringItem &item, EQ::ItemPower::Role role)
 	{
 		RoleScore score;
 		const RoleWeights weights = GetRoleWeights(role);
@@ -444,6 +746,24 @@ namespace {
 		return std::max<uint16>({computed_level, req_level, rec_floor, 1});
 	}
 
+	uint32 CalculateDisplayScore(uint16 item_level, uint32 raw_role_score, double slot_budget)
+	{
+		if (!item_level) {
+			return 0;
+		}
+
+		const double budget = std::max(slot_budget, 0.25);
+		const auto tier_power = static_cast<uint32>(
+			std::clamp<int>(
+				static_cast<int>(std::lround((static_cast<double>(raw_role_score) / budget) / 5.0)),
+				0,
+				99
+			)
+		);
+
+		return (static_cast<uint32>(item_level) * 100) + tier_power;
+	}
+
 	EQ::ItemPower::Role BestRole(
 		uint32 tank_score,
 		uint32 melee_score,
@@ -542,6 +862,95 @@ namespace {
 				score.effect_score = component_score;
 			}
 		}
+	}
+
+	EQ::ItemPower::ScoreResult CalculateScoringItem(
+		const ScoringItem &item,
+		bool include_breakdown,
+		const std::string &source
+	)
+	{
+		EQ::ItemPower::ScoreResult result;
+		result.item_id = item.ID;
+		result.score_version = EQ::ItemPower::ScoreVersion;
+		result.source = source;
+
+		const auto slot_budget = GetSlotBudget(item);
+		result.slot_budget = slot_budget.budget;
+		result.slot_budget_name = slot_budget.name;
+
+		if (!IsScorableGear(item)) {
+			result.item_level = 0;
+			result.item_score = 0;
+			result.warnings.emplace_back("item power only scores equippable gear");
+			if (include_breakdown) {
+				result.breakdown.push_back(EQ::ItemPower::ScoreComponent{
+					.component = "eligibility",
+					.score = 0,
+					.details = "not equippable gear"
+				});
+			}
+
+			return result;
+		}
+
+		const auto tank = CalculateRoleScore(item, EQ::ItemPower::Role::Tank);
+		const auto melee = CalculateRoleScore(item, EQ::ItemPower::Role::Melee);
+		const auto caster = CalculateRoleScore(item, EQ::ItemPower::Role::Caster);
+		const auto healer = CalculateRoleScore(item, EQ::ItemPower::Role::Healer);
+		const auto hybrid = CalculateRoleScore(item, EQ::ItemPower::Role::Hybrid);
+
+		result.tank_score = tank.total;
+		result.melee_score = melee.total;
+		result.caster_score = caster.total;
+		result.healer_score = healer.total;
+		result.hybrid_score = hybrid.total;
+		result.best_role = BestRole(result.tank_score, result.melee_score, result.caster_score, result.healer_score, result.hybrid_score);
+
+		const auto best_raw_role_score = ScoreForRole(result, result.best_role);
+		result.item_level = CalculateItemLevel(best_raw_role_score, result.slot_budget, item.ReqLevel, item.RecLevel);
+		result.item_score = CalculateDisplayScore(result.item_level, best_raw_role_score, result.slot_budget);
+
+		if (item.ReqLevel == 0 && item.RecLevel == 0 && result.item_level >= 20) {
+			result.warnings.emplace_back("high score with no required or recommended level");
+		}
+
+		if (item.ItemType == EQ::item::ItemTypeCharm) {
+			result.warnings.emplace_back("charm scoring is generic in V2");
+		}
+
+		if (
+			item.Click.Effect > 0 ||
+			item.Proc.Effect > 0 ||
+			item.Worn.Effect > 0 ||
+			item.Focus.Effect > 0 ||
+			item.Scroll.Effect > 0 ||
+			item.Bard.Effect > 0
+		) {
+			result.warnings.emplace_back("effect scoring uses V2 placeholder values");
+		}
+
+		if (include_breakdown) {
+			switch (result.best_role) {
+				case EQ::ItemPower::Role::Tank:
+					FillBreakdown(result, tank);
+					break;
+				case EQ::ItemPower::Role::Melee:
+					FillBreakdown(result, melee);
+					break;
+				case EQ::ItemPower::Role::Caster:
+					FillBreakdown(result, caster);
+					break;
+				case EQ::ItemPower::Role::Healer:
+					FillBreakdown(result, healer);
+					break;
+				case EQ::ItemPower::Role::Hybrid:
+					FillBreakdown(result, hybrid);
+					break;
+			}
+		}
+
+		return result;
 	}
 
 	OverrideData GetOverride(Database &db, uint32 item_id)
@@ -674,83 +1083,12 @@ bool EQ::ItemPower::SchemaReady(Database &db)
 
 EQ::ItemPower::ScoreResult EQ::ItemPower::Calculate(const ItemData &item, bool include_breakdown)
 {
-	ScoreResult result;
-	result.item_id = item.ID;
-	result.score_version = ScoreVersion;
+	return CalculateScoringItem(BuildScoringItem(item), include_breakdown, "computed");
+}
 
-	const auto slot_budget = GetSlotBudget(item);
-	result.slot_budget = slot_budget.budget;
-	result.slot_budget_name = slot_budget.name;
-
-	if (!IsScorableGear(item)) {
-		result.item_level = 0;
-		result.warnings.emplace_back("item power only scores equippable gear");
-		if (include_breakdown) {
-			result.breakdown.push_back(ScoreComponent{
-				.component = "eligibility",
-				.score = 0,
-				.details = "not equippable gear"
-			});
-		}
-
-		return result;
-	}
-
-	const auto tank = CalculateRoleScore(item, Role::Tank);
-	const auto melee = CalculateRoleScore(item, Role::Melee);
-	const auto caster = CalculateRoleScore(item, Role::Caster);
-	const auto healer = CalculateRoleScore(item, Role::Healer);
-	const auto hybrid = CalculateRoleScore(item, Role::Hybrid);
-
-	result.tank_score = tank.total;
-	result.melee_score = melee.total;
-	result.caster_score = caster.total;
-	result.healer_score = healer.total;
-	result.hybrid_score = hybrid.total;
-	result.best_role = BestRole(result.tank_score, result.melee_score, result.caster_score, result.healer_score, result.hybrid_score);
-	result.item_score = ScoreForRole(result, result.best_role);
-	result.item_level = CalculateItemLevel(result.item_score, result.slot_budget, item.ReqLevel, item.RecLevel);
-
-	if (item.ReqLevel == 0 && item.RecLevel == 0 && result.item_level >= 20) {
-		result.warnings.emplace_back("high score with no required or recommended level");
-	}
-
-	if (item.ItemType == EQ::item::ItemTypeCharm) {
-		result.warnings.emplace_back("charm scoring is generic in V0");
-	}
-
-	if (
-		item.Click.Effect > 0 ||
-		item.Proc.Effect > 0 ||
-		item.Worn.Effect > 0 ||
-		item.Focus.Effect > 0 ||
-		item.Scroll.Effect > 0 ||
-		item.Bard.Effect > 0
-	) {
-		result.warnings.emplace_back("effect scoring uses V0 placeholder values");
-	}
-
-	if (include_breakdown) {
-		switch (result.best_role) {
-			case Role::Tank:
-				FillBreakdown(result, tank);
-				break;
-			case Role::Melee:
-				FillBreakdown(result, melee);
-				break;
-			case Role::Caster:
-				FillBreakdown(result, caster);
-				break;
-			case Role::Healer:
-				FillBreakdown(result, healer);
-				break;
-			case Role::Hybrid:
-				FillBreakdown(result, hybrid);
-				break;
-		}
-	}
-
-	return result;
+EQ::ItemPower::ScoreResult EQ::ItemPower::Calculate(const ItemInstance &inst, bool include_breakdown)
+{
+	return CalculateScoringItem(BuildScoringItem(inst), include_breakdown, "instance");
 }
 
 bool EQ::ItemPower::ApplyOverrides(Database &db, ScoreResult &score)
@@ -796,9 +1134,9 @@ bool EQ::ItemPower::ApplyOverrides(Database &db, ScoreResult &score)
 	}
 
 	score.best_role = BestRole(score.tank_score, score.melee_score, score.caster_score, score.healer_score, score.hybrid_score);
-	score.item_score = ScoreForRole(score, score.best_role);
+	const auto best_raw_role_score = ScoreForRole(score, score.best_role);
 	if (!override_data.has_level) {
-		score.item_level = std::max<uint16>(original_item_level, CalculateItemLevel(score.item_score, score.slot_budget, 0, 0));
+		score.item_level = std::max<uint16>(original_item_level, CalculateItemLevel(best_raw_role_score, score.slot_budget, 0, 0));
 	}
 
 	if (override_data.has_level) {
@@ -810,6 +1148,7 @@ bool EQ::ItemPower::ApplyOverrides(Database &db, ScoreResult &score)
 		});
 	}
 
+	score.item_score = CalculateDisplayScore(score.item_level, best_raw_role_score, score.slot_budget);
 	return true;
 }
 
@@ -1091,13 +1430,14 @@ std::string EQ::ItemPower::BuildTransportMessage(const ItemData &item, const Sto
 
 bool EQ::ItemPower::TryBuildTransportMessage(Database &db, const ItemData &item, std::string &message, bool calculate_if_missing)
 {
-	if (!IsScorableGear(item)) {
-		message = BuildClearTransportMessage(item);
+	const auto scoring_item = BuildScoringItem(item);
+	if (!IsScorableGear(scoring_item)) {
+		message = BuildClearTransportMessage(scoring_item);
 		return true;
 	}
 
 	StoredScore score;
-	if (!TryGetStoredScore(db, item.ID, score)) {
+	if (!TryGetStoredScore(db, item.ID, score) || score.score_version != ScoreVersion) {
 		if (!calculate_if_missing) {
 			return false;
 		}
@@ -1121,6 +1461,36 @@ bool EQ::ItemPower::TryBuildTransportMessage(Database &db, const ItemData &item,
 	}
 
 	message = BuildTransportMessage(item, score);
+	return true;
+}
+
+bool EQ::ItemPower::TryBuildTransportMessage(Database &db, const ItemInstance &inst, std::string &message, bool calculate_if_missing)
+{
+	const auto *item = inst.GetItem();
+	if (!item) {
+		return false;
+	}
+
+	const auto scoring_item = BuildScoringItem(inst);
+	if (!IsScorableGear(scoring_item)) {
+		message = BuildClearTransportMessage(scoring_item);
+		return true;
+	}
+
+	if (!UsesInstanceScore(inst)) {
+		return TryBuildTransportMessage(db, *item, message, calculate_if_missing);
+	}
+
+	auto calculated_score = Calculate(inst, false);
+	if (!ApplyOverrides(db, calculated_score)) {
+		return false;
+	}
+
+	if (calculated_score.source != "manual") {
+		calculated_score.source = "instance";
+	}
+
+	message = BuildTransportMessage(*item, calculated_score);
 	return true;
 }
 

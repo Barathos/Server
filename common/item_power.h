@@ -26,11 +26,12 @@ class Database;
 
 namespace EQ
 {
+	class ItemInstance;
 	struct ItemData;
 
 	namespace ItemPower
 	{
-		constexpr uint16 ScoreVersion = 1;
+		constexpr uint16 ScoreVersion = 2;
 
 		enum class Role : uint8 {
 			Tank = 0,
@@ -92,6 +93,7 @@ namespace EQ
 		bool SchemaReady(Database &db);
 
 		ScoreResult Calculate(const ItemData &item, bool include_breakdown = true);
+		ScoreResult Calculate(const ItemInstance &inst, bool include_breakdown = true);
 		bool ApplyOverrides(Database &db, ScoreResult &score);
 		bool SaveScore(
 			Database &db,
@@ -115,6 +117,7 @@ namespace EQ
 		std::string BuildTransportMessage(const ItemData &item, const ScoreResult &score);
 		std::string BuildTransportMessage(const ItemData &item, const StoredScore &score);
 		bool TryBuildTransportMessage(Database &db, const ItemData &item, std::string &message, bool calculate_if_missing);
+		bool TryBuildTransportMessage(Database &db, const ItemInstance &inst, std::string &message, bool calculate_if_missing);
 		bool TryBuildStoredTransportMessage(Database &db, const ItemData &item, std::string &message);
 	}
 }

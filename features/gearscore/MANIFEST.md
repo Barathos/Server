@@ -23,7 +23,9 @@ Gearscore feature.
 - `zone/CMakeLists.txt`: builds `gm_commands/itemscore.cpp`.
 - `zone/command.h` and `zone/command.cpp`: registers `#itemscore`.
 - `zone/inventory.cpp`: emits hidden `ITEMPOWER|set|...` transport on item
-  packet sends and calculates missing scores on demand.
+  packet sends, calculates missing or stale-version static scores on demand,
+  and sends augmented/dynamic/scaling instances as transient `source=instance`
+  scores.
 - `common/database/database_update_manifest_custom.h`: custom DB version `1`
   creates `item_power`, `item_power_override`, and `item_power_breakdown`.
 - `common/version.h`: `CUSTOM_BINARY_DATABASE_VERSION` is `1`.
@@ -32,8 +34,9 @@ Gearscore feature.
 
 - `client_files/native_autoloot/eq-core-dll/bin/dinput8.dll`: Gearscore-local
   native client DLL.
-- `client_files/native_autoloot/eq-core-dll/src/gearscore_native.cpp`:
-  native ItemDisplay/chat hook source.
+- `client_files/native_autoloot/eq-core-dll/src/native_interface.cpp`: native
+  ItemDisplay/chat hook source. Gearscore display only uses cached server
+  `ITEMPOWER|set|...` transport.
 
 ## Commands
 

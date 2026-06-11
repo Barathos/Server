@@ -5,8 +5,9 @@ Design and operator documentation for the standalone `gearscore` feature.
 ## Overview
 
 Gearscore adds deterministic item power scoring to the standalone `gearscore`
-feature checkout. It computes an intrinsic item score, derives an item level,
-stores role-specific scores, and exposes audit/override tools for operators.
+feature checkout. It computes raw role-power scores, derives an item level,
+stores operator-auditable template scores, and exposes a progression-weighted
+Gearscore for player sorting.
 
 The first display path is the normal item display window, not a custom
 Gearscore-only window. When the server sends an item packet, it also emits a
@@ -16,16 +17,25 @@ directly in the existing item display flow.
 
 ## Server Behavior
 
-- `common/item_power.*` calculates V0 item power from `EQ::ItemData`.
-- Role scores are generated for tank, melee, caster, healer, and hybrid.
-- The public `item_level` is derived from the best role score, normalized by
-  slot budget, and clamped against required/recommended level metadata.
+- `common/item_power.*` calculates V2 item power from `EQ::ItemData` templates
+  and live `EQ::ItemInstance` values.
+- Role scores are generated for tank, melee, caster, healer, and hybrid and
+  remain raw role-power values for best-role selection and operator explain
+  output.
+- The public `item_level` is derived from the best raw role score, normalized
+  by slot budget, and clamped against required/recommended level metadata.
+- The displayed Gearscore is `item_level * 100 + tier_power`, where
+  `tier_power` is the best raw role score normalized by slot budget and clamped
+  to `0-99`.
+- Live item display includes current inserted augment stats immediately by
+  scoring the `EQ::ItemInstance`; augmented, dynamic, and scaling items are
+  sent transiently as `source=instance`.
 - Manual overrides can set item level, apply a score multiplier, apply a flat
   score bonus, or attach operator notes.
 - `Client::SendItemPacket` sends hidden transport for item packets so ordinary
   inventory, merchant, and link displays can prime the native client cache.
-- Missing `item_power` rows are calculated and saved on demand before transport
-  is sent.
+- Missing or stale-version static `item_power` rows are calculated and saved on
+  demand before transport is sent.
 
 ## Database
 
@@ -36,6 +46,11 @@ The feature uses compiled custom database update version `1`:
 - `item_power_override`: optional manual level/multiplier/flat bonus/notes.
 - `item_power_breakdown`: component score details for inspected/recalculated
   items.
+
+Augmented instance scores are not persisted as separate `item_power` rows for
+each augment combination. The persisted row remains the static template score;
+the live ItemDisplay path recalculates the current instance when augments,
+dynamic item data, or scaling data are present.
 
 Run `.\run-db-updates.ps1 gearscore` after a successful build. Operators can
 also run `#itemscore init` to create the tables during local testing.
@@ -66,8 +81,10 @@ ITEMPOWER|set|item_id=<id>|ilvl=<level>|score=<score>|role=<role>|version=<versi
 ~~~
 
 The server emits this immediately before the item packet. If no stored
-`item_power` row exists, the score is calculated and saved on demand before the
-transport is emitted.
+`item_power` row exists, or the stored row has an older score version, the
+static template score is calculated and saved on demand before the transport is
+emitted. Augmented, dynamic, and scaling items instead emit a transient
+`source=instance` transport payload.
 
 ## Local Verification
 
@@ -82,8 +99,10 @@ transport is emitted.
 
 - Client patch manifest: `features/gearscore/patcher.yml`
 - Client files include `dinput8.dll` so the Gearscore client can load the
-  ItemDisplay hook locally. No custom UI window is shipped; the text is
-  appended to the normal ItemDisplay output.
+  ItemDisplay hook from
+  `client_files/native_autoloot/eq-core-dll/src/native_interface.cpp`. No
+  custom UI window is shipped; the text is appended to the normal ItemDisplay
+  output only after server `ITEMPOWER|set|...` transport is cached.
 - `-Project` is the workspace install id from `D:\Codex\Apps\EQEmu-feature-workspaces\installs.json`. It usually matches the feature id, but confirm it first.
 - Patcher host commands:
 

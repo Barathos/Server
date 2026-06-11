@@ -1673,7 +1673,7 @@ void Client::SendItemPowerTransport(const EQ::ItemInstance* inst)
 	}
 
 	std::string item_power_transport;
-	if (EQ::ItemPower::TryBuildTransportMessage(database, *inst->GetItem(), item_power_transport, true)) {
+	if (EQ::ItemPower::TryBuildTransportMessage(database, *inst, item_power_transport, true)) {
 		Message(Chat::White, "%s", item_power_transport.c_str());
 	}
 

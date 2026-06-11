@@ -28,8 +28,10 @@ From `D:\Codex\Apps\EQEmu-feature-workspaces`:
 Gearscore ships a Gearscore-local native client DLL for the local Gearscore
 client. The server emits a hidden `ITEMPOWER|set|...` transport line during
 item packet sends so the native ItemDisplay hook can render item level and
-score lines in the normal item display path. Missing `item_power` rows are
-calculated and stored on demand before the transport is sent.
+score lines in the normal item display path. Missing or stale-version static
+`item_power` rows are calculated and stored on demand before the transport is
+sent. Augmented, dynamic, and scaling items are scored from the live
+`EQ::ItemInstance` and sent transiently as `source=instance`.
 
 ## Client Patcher Feed
 
@@ -41,6 +43,8 @@ The patch feed includes `client_files/native_autoloot/eq-core-dll/bin/dinput8.dl
 
 - Core scorer: `common/item_power.*`
 - Admin command: `#itemscore`
+- V2 display score: `item_level * 100 + tier_power`; role scores stay raw for
+  best-role selection and `#itemscore explain`
 - Compiled custom DB update: version `1`, `item_power` tables
 - ItemDisplay bridge: hidden `ITEMPOWER|set|...` message on item packet sends
-- Native hook: `client_files/native_autoloot/eq-core-dll/src/gearscore_native.cpp`
+- Native hook: `client_files/native_autoloot/eq-core-dll/src/native_interface.cpp`

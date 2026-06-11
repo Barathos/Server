@@ -12,6 +12,7 @@
 #include "common/classes.h"
 #include "common/emu_constants.h"
 #include "common/item_data.h"
+#include "common/item_instance.h"
 #include "common/item_power.h"
 #include "common/strings.h"
 #include "cppunit/cpptest.h"
@@ -22,6 +23,8 @@ public:
 	{
 		TEST_ADD(ItemPowerTest::NonEquippableItemsAreNotScored);
 		TEST_ADD(ItemPowerTest::StableRoleFixturesKeepGoldenScores);
+		TEST_ADD(ItemPowerTest::ProgressionWeightedScoreRanksHigherLevelHammerAboveSimpleDagger);
+		TEST_ADD(ItemPowerTest::AugmentedInstanceScoreIncludesAugments);
 		TEST_ADD(ItemPowerTest::BreakdownOnlyBuildsWhenRequested);
 		TEST_ADD(ItemPowerTest::RoleNamesKeysAndTransportAreStable);
 	}
@@ -92,6 +95,63 @@ private:
 		return item;
 	}
 
+	EQ::ItemData BuildSparseDagger() const
+	{
+		auto item = BuildItem(
+			952857,
+			"Dagger +4",
+			EQ::item::ItemType1HPiercing,
+			(1u << EQ::invslot::slotPrimary) | (1u << EQ::invslot::slotSecondary)
+		);
+		item.Damage = 43;
+		item.BackstabDmg = 43;
+		item.Delay = 24;
+		return item;
+	}
+
+	EQ::ItemData BuildTimeweaverHammer() const
+	{
+		auto item = BuildItem(
+			22894,
+			"Hammer of the Timeweaver",
+			EQ::item::ItemType1HBlunt,
+			(1u << EQ::invslot::slotPrimary) | (1u << EQ::invslot::slotSecondary),
+			65
+		);
+		item.Damage = 26;
+		item.Delay = 24;
+		item.AC = 25;
+		item.HP = 220;
+		item.Mana = 200;
+		item.Endur = 200;
+		item.AStr = 25;
+		item.ASta = 20;
+		item.ADex = 20;
+		item.AInt = 15;
+		item.AWis = 15;
+		item.ACha = 15;
+		item.MR = 12;
+		item.FR = 12;
+		item.CR = 12;
+		item.DR = 12;
+		item.PR = 12;
+		item.Proc.Effect = 3649;
+		return item;
+	}
+
+	EQ::ItemData BuildWeaponAugment() const
+	{
+		auto item = BuildItem(910020, "Fixture Weapon Augment", EQ::item::ItemTypeAugmentation, 0);
+		item.AugType = EQ::item::AugTypeWeaponGeneral;
+		item.Damage = 5;
+		item.AC = 15;
+		item.HP = 150;
+		item.AStr = 12;
+		item.ADex = 12;
+		item.Accuracy = 10;
+		return item;
+	}
+
 	void AssertScore(
 		const EQ::ItemPower::ScoreResult &score,
 		EQ::ItemPower::Role role,
@@ -134,10 +194,38 @@ private:
 
 	void StableRoleFixturesKeepGoldenScores()
 	{
-		AssertScore(EQ::ItemPower::Calculate(BuildTankChest(), true), EQ::ItemPower::Role::Tank, 190, 30, 190, 95, 86, 104, 132);
-		AssertScore(EQ::ItemPower::Calculate(BuildMeleeSword(), true), EQ::ItemPower::Role::Melee, 382, 28, 207, 382, 68, 68, 253);
-		AssertScore(EQ::ItemPower::Calculate(BuildCasterEar(), true), EQ::ItemPower::Role::Caster, 128, 35, 61, 39, 128, 99, 79);
-		AssertScore(EQ::ItemPower::Calculate(BuildHealerEar(), true), EQ::ItemPower::Role::Healer, 146, 35, 69, 44, 92, 146, 86);
+		AssertScore(EQ::ItemPower::Calculate(BuildTankChest(), true), EQ::ItemPower::Role::Tank, 3028, 30, 190, 95, 86, 104, 132);
+		AssertScore(EQ::ItemPower::Calculate(BuildMeleeSword(), true), EQ::ItemPower::Role::Melee, 2861, 28, 207, 382, 68, 68, 253);
+		AssertScore(EQ::ItemPower::Calculate(BuildCasterEar(), true), EQ::ItemPower::Role::Caster, 3543, 35, 61, 39, 128, 99, 79);
+		AssertScore(EQ::ItemPower::Calculate(BuildHealerEar(), true), EQ::ItemPower::Role::Healer, 3549, 35, 69, 44, 92, 146, 86);
+	}
+
+	void ProgressionWeightedScoreRanksHigherLevelHammerAboveSimpleDagger()
+	{
+		const auto dagger = EQ::ItemPower::Calculate(BuildSparseDagger(), true);
+		const auto hammer = EQ::ItemPower::Calculate(BuildTimeweaverHammer(), true);
+
+		TEST_ASSERT(hammer.item_level > dagger.item_level);
+		TEST_ASSERT(hammer.item_score > dagger.item_score);
+		TEST_ASSERT(hammer.item_score >= 6500);
+	}
+
+	void AugmentedInstanceScoreIncludesAugments()
+	{
+		auto base = BuildMeleeSword();
+		base.AugSlotType[0] = EQ::item::AugTypeWeaponGeneral;
+
+		const auto augment = BuildWeaponAugment();
+		EQ::ItemInstance base_inst(&base, 1);
+		EQ::ItemInstance augment_inst(&augment, 1);
+		base_inst.PutAugment(0, augment_inst);
+
+		const auto base_score = EQ::ItemPower::Calculate(base, false);
+		const auto augmented_score = EQ::ItemPower::Calculate(base_inst, false);
+
+		TEST_ASSERT(augmented_score.source == "instance");
+		TEST_ASSERT(augmented_score.item_score > base_score.item_score);
+		TEST_ASSERT(augmented_score.melee_score > base_score.melee_score);
 	}
 
 	void BreakdownOnlyBuildsWhenRequested()
@@ -181,6 +269,6 @@ private:
 
 		auto item = BuildMeleeSword();
 		const auto message = EQ::ItemPower::BuildTransportMessage(item, stored);
-		TEST_ASSERT(message == "ITEMPOWER|set|item_id=910002|ilvl=44|score=222|role=melee|version=1|source=manual|name=Fixture Melee Sword");
+		TEST_ASSERT(message == "ITEMPOWER|set|item_id=910002|ilvl=44|score=222|role=melee|version=2|source=manual|name=Fixture Melee Sword");
 	}
 };

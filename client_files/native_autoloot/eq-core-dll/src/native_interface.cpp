@@ -1404,7 +1404,7 @@ std::string ItemPowerRoleDisplayName(const std::string& role) {
 
 bool AppendItemPowerLines(std::string& out, void* item, uint32_t item_id) {
     ItemPowerInfo info{};
-    if (!LookupItemPower(item_id, info) && !CalculateLocalItemPower(item, item_id, info)) {
+    if (!LookupItemPower(item_id, info)) {
         return false;
     }
 
