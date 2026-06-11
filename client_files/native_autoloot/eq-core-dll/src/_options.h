@@ -16,6 +16,17 @@ bool isEQGOverrideEnabled = false;
 // NOT RECOMMENDED. Known to cause memory leaks due to mq2maps strings
 bool isMQInjectsEnabled = false;
 
+// isThjClientEnabled builds this DLL as the The Heroes' Journey (THJ) client wrapper.
+// When true:
+//   - the non-autoloot feature handshakes/pulses that THJ's server does not implement
+//     (live spells, hp fix, multiclass window) are suppressed so they do not spam the
+//     server with unrecognized commands;
+//   - the Advanced Loot (autoloot) feature stays active;
+//   - the THJ custom inventory stat labels (EQTypes 6667-6709 and the 5-23 / 211-286
+//     ranges) are registered, so the THJ Stats window renders from OP_ServerAuthStats.
+// Leave false for the normal all-features build. Set true only for THJ builds.
+bool isThjClientEnabled = false;
+
 // isMapWindowDisabled if set to true will do a soft patch to disable the map in game. If disabled, I suggest isMQInjectsEnabled being false as well, else npc data is still populated
 bool isMapWindowDisabled = false;
 

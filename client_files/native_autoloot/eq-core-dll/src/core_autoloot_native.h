@@ -11564,19 +11564,21 @@ static void NativeAutoLootMaybeSendInitialRequests()
 		NativeAutoLootSendCommand("/say #advloot native status");
 	}
 
-	if (!gNativeLiveSpellSentReady) {
-		gNativeLiveSpellSentReady = true;
-		NativeAutoLootSendCommand("/say #livespell ready");
-	}
+	if (!isThjClientEnabled) {
+		if (!gNativeLiveSpellSentReady) {
+			gNativeLiveSpellSentReady = true;
+			NativeAutoLootSendCommand("/say #livespell ready");
+		}
 
-	if (!gNativeHpFixSentReady) {
-		gNativeHpFixSentReady = true;
-		NativeAutoLootSendCommand("/say #hpfix native ready");
-	}
+		if (!gNativeHpFixSentReady) {
+			gNativeHpFixSentReady = true;
+			NativeAutoLootSendCommand("/say #hpfix native ready");
+		}
 
-	if (!gNativeMulticlassSentStatus) {
-		gNativeMulticlassSentStatus = true;
-		NativeAutoLootSendCommand("/say #mc status");
+		if (!gNativeMulticlassSentStatus) {
+			gNativeMulticlassSentStatus = true;
+			NativeAutoLootSendCommand("/say #mc status");
+		}
 	}
 }
 
@@ -11661,8 +11663,10 @@ static void NativeAutoLootPulse()
 		gNativeHpFixWnd->Refresh();
 	}
 
-	NativeHpFixPulseSync();
-	NativeHpFixMaintainNormalUi();
+	if (!isThjClientEnabled) {
+		NativeHpFixPulseSync();
+		NativeHpFixMaintainNormalUi();
+	}
 
 	if (gNativeMulticlassWnd) {
 		gNativeMulticlassWnd->Layout();
@@ -11680,28 +11684,32 @@ static void NativeAutoLootPulse()
 		gNativeMulticlassDisciplineWnd->Layout();
 	}
 
-	NativeMulticlassMaintainPresentationUI();
-	NativeMulticlassMaintainSpellLevelPatches();
-	NativeAutoFollowPulse();
+	if (!isThjClientEnabled) {
+		NativeMulticlassMaintainPresentationUI();
+		NativeMulticlassMaintainSpellLevelPatches();
+		NativeAutoFollowPulse();
+	}
 
 	if (!gNativeAutoLootRequestedInitialStatus) {
 		gNativeAutoLootRequestedInitialStatus = true;
 		NativeAutoLootSendCommand("/say #advloot native status");
 	}
 
-	if (!gNativeLiveSpellSentReady) {
-		gNativeLiveSpellSentReady = true;
-		NativeAutoLootSendCommand("/say #livespell ready");
-	}
+	if (!isThjClientEnabled) {
+		if (!gNativeLiveSpellSentReady) {
+			gNativeLiveSpellSentReady = true;
+			NativeAutoLootSendCommand("/say #livespell ready");
+		}
 
-	if (!gNativeHpFixSentReady) {
-		gNativeHpFixSentReady = true;
-		NativeAutoLootSendCommand("/say #hpfix native ready");
-	}
+		if (!gNativeHpFixSentReady) {
+			gNativeHpFixSentReady = true;
+			NativeAutoLootSendCommand("/say #hpfix native ready");
+		}
 
-	if (!gNativeMulticlassSentStatus) {
-		gNativeMulticlassSentStatus = true;
-		NativeAutoLootSendCommand("/say #mc status");
+		if (!gNativeMulticlassSentStatus) {
+			gNativeMulticlassSentStatus = true;
+			NativeAutoLootSendCommand("/say #mc status");
+		}
 	}
 }
 
@@ -11771,7 +11779,9 @@ static void InitAutoLootNative()
 	gNativeAutoLootHooksInstalled = true;
 	NativeAutoLootInstallChatHook();
 	NativeAutoLootInstallCommandHook();
-	NativeMulticlassInstallContextMenuHook();
+	if (!isThjClientEnabled) {
+		NativeMulticlassInstallContextMenuHook();
+	}
 	NativeAutoLootInstallUiResetHook();
 
 	if (!gNativeAutoLootPulseHookEnabled) {
