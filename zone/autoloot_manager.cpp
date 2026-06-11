@@ -42,7 +42,7 @@ extern Zone *zone;
 AutoLootManager auto_loot_manager;
 
 namespace {
-	constexpr uint32 kNeedGreedSeconds = 60;
+	constexpr uint32 kNeedGreedSeconds = 180;
 	constexpr uint32 kFilterRemoveConfirmSeconds = 30;
 
 	bool AutoLootEnabled()
@@ -969,7 +969,9 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 			continue;
 		}
 
-		const auto personal_filter = dynamic_instance ? FilterEntry{} : GetFilter(autoloot_client->CharacterID(), item_data->item_id);
+		// Dynamic per-instance items share their TEMPLATE item id, so filters
+		// key on the template - "Always Greed any roll of this base item".
+		const auto personal_filter = GetFilter(autoloot_client->CharacterID(), item_data->item_id);
 		const auto active_personal_decision = settings.apply_filters ? personal_filter.decision : LootFilterDecision::Unset;
 		if (!shared_loot && active_personal_decision == LootFilterDecision::Never) {
 			DebugMessage(
@@ -1030,7 +1032,7 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 		entry.created_at = std::time(nullptr);
 
 		if (entry.shared) {
-			const auto master_filter = dynamic_instance ? FilterEntry{} : GetFilter(master_looter->CharacterID(), item_data->item_id);
+			const auto master_filter = GetFilter(master_looter->CharacterID(), item_data->item_id);
 			const auto active_master_decision = master_settings.apply_filters ? master_filter.decision : LootFilterDecision::Unset;
 			entry.rule = FilterDecisionKey(active_master_decision);
 			entry.auto_roll = master_settings.apply_filters && master_filter.auto_ask_roll;
@@ -1044,7 +1046,7 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 
 				VoteChoice vote = VoteChoice::Unset;
 				const auto member_settings = GetCharacterSettings(member->CharacterID(), true);
-				if (!dynamic_instance && member_settings.apply_filters) {
+				if (member_settings.apply_filters) {
 					const auto member_filter = GetFilter(member->CharacterID(), item_data->item_id);
 					vote = FilterDecisionVoteChoice(member_filter.decision);
 				}
@@ -1316,7 +1318,7 @@ bool AutoLootManager::EntryNeedsDecisionForClient(const LootEntry &entry, Client
 		// members need attention when their saved filters did not already
 		// cover the item, so new shared loot auto-shows for the whole
 		// party, not just the master.
-		if (can_manage || entry.dynamic_instance) {
+		if (can_manage) {
 			return true;
 		}
 
@@ -1326,10 +1328,6 @@ bool AutoLootManager::EntryNeedsDecisionForClient(const LootEntry &entry, Client
 		}
 
 		return GetFilter(client->CharacterID(), entry.item_id).decision == LootFilterDecision::Unset;
-	}
-
-	if (entry.dynamic_instance) {
-		return true;
 	}
 
 	const auto settings = GetCharacterSettings(client->CharacterID(), true);
@@ -1375,12 +1373,19 @@ void AutoLootManager::SendNativeSnapshot(Client *client)
 
 		auto corpse = entity_list.GetCorpseByID(entry.corpse_id);
 		std::string lock_reason;
-		const bool locked = corpse && (corpse->IsLocked() || corpse->IsBeingLooted() || !corpse->CanPlayerLoot(client->CharacterID()));
+		// Shared rows ignore Corpse::IsLocked - the manager gates shared
+		// interactions itself, and treating a roll-locked corpse as "locked"
+		// here disabled the voting UI the moment Ask started.
+		const bool locked = corpse && (
+			corpse->IsBeingLooted() ||
+			!corpse->CanPlayerLoot(client->CharacterID()) ||
+			(!entry.shared && corpse->IsLocked())
+		);
 		if (corpse) {
 			if (corpse->IsBeingLooted()) {
 				lock_reason = "Corpse is being looted";
 			}
-			else if (corpse->IsLocked()) {
+			else if (!entry.shared && corpse->IsLocked()) {
 				lock_reason = "Corpse is locked";
 			}
 			else if (!corpse->CanPlayerLoot(client->CharacterID())) {
@@ -1396,7 +1401,7 @@ void AutoLootManager::SendNativeSnapshot(Client *client)
 		auto vote_state = std::string("-");
 		auto eligible_clients = entry.shared ? GetEligibleSharedLootClients(entry, corpse) : std::vector<Client *>{};
 		const bool eligible = entry.shared ? ClientInList(eligible_clients, client) : entry.owner_character_id == client->CharacterID();
-		const bool master = entry.shared && (entry.master_looter_character_id == client->CharacterID() || client->Admin() >= AccountStatus::GMAdmin);
+		const bool master = entry.shared && entry.master_looter_character_id == client->CharacterID();
 		if (!locked && entry.shared) {
 			auto vote_iter = entry.votes.find(client->CharacterID());
 			if (vote_iter != entry.votes.end()) {
@@ -1456,13 +1461,20 @@ void AutoLootManager::SendNativeSnapshot(Client *client)
 		const auto master_name = ClientNameByCharacterID(entry.master_looter_character_id);
 		const bool roll_active = entry.shared && entry.vote_started_at > 0 && !entry.free_grab;
 		const bool can_loot = !locked && ((!entry.shared && entry.owner_character_id == client->CharacterID()) || (entry.shared && entry.free_grab && eligible));
-		const bool can_vote = !locked && entry.shared && eligible && roll_active;
+		// Members may vote before the master asks - saved filters already
+		// pre-vote this way, and the first manual vote starts the countdown.
+		const bool can_vote = !locked && entry.shared && eligible && !entry.free_grab;
 		const bool can_manage = !locked && master;
 		const bool can_ask = !locked && master && entry.shared && !entry.free_grab && !roll_active;
 		const bool can_roll = !locked && master && roll_active;
 		const bool can_freegrab = !locked && master && entry.shared && !entry.free_grab;
 		const bool can_give = !locked && master && entry.shared;
 		const bool can_leave = !locked && ((!entry.shared && entry.owner_character_id == client->CharacterID()) || (entry.shared && can_manage));
+		// Shared rows show the VIEWER's saved filter, not a per-entry value -
+		// otherwise one member's Always Need/Greed lit up everyone's checkbox.
+		const auto rule_key = entry.shared
+			? FilterDecisionKey(GetFilter(client->CharacterID(), entry.item_id).decision)
+			: entry.rule;
 		client->Message(
 			Chat::White,
 			fmt::format(
@@ -1479,7 +1491,7 @@ void AutoLootManager::SendNativeSnapshot(Client *client)
 				state,
 				status_kind,
 				vote_state,
-				ProtocolValue(entry.rule),
+				ProtocolValue(rule_key),
 				locked ? 1 : 0,
 				entry.no_drop ? 1 : 0,
 				entry.master_looter_character_id,
@@ -1535,11 +1547,6 @@ void AutoLootManager::RefreshQueuedRulesForClient(Client *client)
 			continue;
 		}
 
-		if (entry.dynamic_instance) {
-			entry.rule = "unset";
-			continue;
-		}
-
 		const auto filter = GetFilter(client->CharacterID(), entry.item_id);
 		entry.rule = FilterDecisionKey(settings.apply_filters ? filter.decision : LootFilterDecision::Unset);
 	}
@@ -1563,7 +1570,7 @@ void AutoLootManager::ApplyQueuedPersonalFiltersForClient(Client *client)
 	std::vector<uint32> loot_entries;
 	std::vector<uint32> leave_entries;
 	for (const auto &[entry_id, entry] : m_loot_entries) {
-		if (entry.shared || entry.dynamic_instance || !IsEntryVisibleToClient(entry, client)) {
+		if (entry.shared || !IsEntryVisibleToClient(entry, client)) {
 			continue;
 		}
 
@@ -1624,7 +1631,7 @@ void AutoLootManager::HandleLootAction(Client *client, const Seperator *sep)
 
 	if (action == "loot" || action == "alwaysloot") {
 		if (action == "alwaysloot") {
-			if (iter != m_loot_entries.end() && IsEntryVisibleToClient(iter->second, client) && !iter->second.dynamic_instance) {
+			if (iter != m_loot_entries.end() && IsEntryVisibleToClient(iter->second, client)) {
 				SetFilter(client->CharacterID(), iter->second.item_id, LootFilterDecision::AlwaysNeed, GetFilter(client->CharacterID(), iter->second.item_id).auto_ask_roll);
 			}
 		}
@@ -1641,16 +1648,14 @@ void AutoLootManager::HandleLootAction(Client *client, const Seperator *sep)
 	}
 
 	if (action == "never") {
-		if (!iter->second.dynamic_instance) {
-			SetFilter(client->CharacterID(), iter->second.item_id, LootFilterDecision::Never, false);
-		}
+		SetFilter(client->CharacterID(), iter->second.item_id, LootFilterDecision::Never, false);
 		LeaveEntryForClient(client, entry_id, false);
 		SendNativeFilterUpdate(client);
 		return;
 	}
 
 	if (action == "need" || action == "greed" || action == "alwaysneed" || action == "alwaysgreed") {
-		if ((action == "alwaysneed" || action == "alwaysgreed") && !iter->second.dynamic_instance) {
+		if (action == "alwaysneed" || action == "alwaysgreed") {
 			const auto existing = GetFilter(client->CharacterID(), iter->second.item_id);
 			SetFilter(
 				client->CharacterID(),
@@ -1688,11 +1693,11 @@ void AutoLootManager::HandleSharedLootAction(Client *client, uint32 entry_id, co
 	auto &entry = iter->second;
 	auto corpse = entity_list.GetCorpseByID(entry.corpse_id);
 	auto eligible_clients = GetEligibleSharedLootClients(entry, corpse);
-	const bool master = entry.master_looter_character_id == client->CharacterID() || client->Admin() >= AccountStatus::GMAdmin;
+	const bool master = entry.master_looter_character_id == client->CharacterID();
 
 	if (action == "need" || action == "greed" || action == "no" || action == "pass" || action == "alwaysneed" || action == "alwaysgreed" || action == "never") {
 		bool filter_changed = false;
-		if (!entry.dynamic_instance && (action == "alwaysneed" || action == "alwaysgreed" || action == "never")) {
+		if (action == "alwaysneed" || action == "alwaysgreed" || action == "never") {
 			const auto existing = GetFilter(client->CharacterID(), entry.item_id);
 			const auto decision = action == "alwaysneed" ? LootFilterDecision::AlwaysNeed :
 				action == "alwaysgreed" ? LootFilterDecision::AlwaysGreed :
@@ -1761,9 +1766,9 @@ void AutoLootManager::HandleSharedLootAction(Client *client, uint32 entry_id, co
 			refreshed_votes[eligible->CharacterID()] = vote_iter != entry.votes.end() ? vote_iter->second : VoteChoice::Unset;
 		}
 		entry.votes.swap(refreshed_votes);
-		if (corpse) {
-			corpse->Lock();
-		}
+		// No Corpse::Lock here - IsManualLootLocked already gates the shared
+		// slots, and the corpse lock both disabled the voting UI and stayed
+		// behind forever when a roll ended with no winner.
 		for (auto member : eligible_clients) {
 			if (member) {
 				member->Message(Chat::Yellow, fmt::format("{} is asking Need/Greed for {}.", client->GetCleanName(), entry.item_name).c_str());
@@ -2034,7 +2039,7 @@ void AutoLootManager::SendManageInfo(Client *client, uint32 entry_id)
 
 	auto corpse = entity_list.GetCorpseByID(entry.corpse_id);
 	auto eligible_clients = GetEligibleSharedLootClients(entry, corpse);
-	const bool master = entry.master_looter_character_id == client->CharacterID() || client->Admin() >= AccountStatus::GMAdmin;
+	const bool master = entry.master_looter_character_id == client->CharacterID();
 	const auto now = std::time(nullptr);
 	const int roll_seconds = entry.vote_started_at > 0 ?
 		std::max(0, static_cast<int>(kNeedGreedSeconds) - static_cast<int>(now - entry.vote_started_at)) :
@@ -2159,9 +2164,6 @@ void AutoLootManager::RecordSharedVote(Client *client, uint32 entry_id, VoteChoi
 	entry.votes[client->CharacterID()] = choice;
 	entry.vote_started_at = entry.vote_started_at > 0 ? entry.vote_started_at : std::time(nullptr);
 	entry.state = "ask";
-	if (set_always_rule) {
-		entry.rule = FilterDecisionKey(GetFilter(client->CharacterID(), entry.item_id).decision);
-	}
 
 	const auto choice_label = VoteChoiceLabel(choice);
 	const auto message = fmt::format("{} voted {} on {}.", client->GetCleanName(), choice_label, entry.item_name);
@@ -2439,13 +2441,10 @@ bool AutoLootManager::LeaveEntryForClient(Client *client, uint32 entry_id, bool 
 
 	const auto entry = iter->second;
 	bool filter_changed = false;
-	if (add_never_filter && !entry.dynamic_instance) {
+	if (add_never_filter) {
 		SetFilter(client->CharacterID(), entry.item_id, LootFilterDecision::Never, false);
 		client->Message(Chat::White, fmt::format("Advanced Loot will never select {} for this character.", entry.item_name).c_str());
 		filter_changed = true;
-	}
-	else if (add_never_filter) {
-		client->Message(Chat::White, fmt::format("Advanced Loot left {} on the corpse. Dynamic item filters are not saved by template item.", entry.item_name).c_str());
 	}
 
 	if (auto corpse = entity_list.GetCorpseByID(entry.corpse_id)) {

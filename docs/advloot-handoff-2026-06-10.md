@@ -205,6 +205,67 @@ go-ahead.**
    menu anchor. Known residual: mode detection misreads if the window is
    dragged almost fully off the LEFT screen edge (list origin X < 4).
 
+## 2026-06-10 Tester Report Batch 2 (evening) — Root Causes
+
+Tester confirmed AG/AN rolls now work for group AND raid. New findings, all
+server-side (zone), fixed together in one commit:
+
+1. **Ask disabled the voting it was meant to start.** The `ask` action
+   called `Corpse::Lock()`, and the snapshot computed `locked` from
+   `corpse->IsLocked()` — which zeroes `canvote` for every member, so ND/GD
+   stayed dead after Ask (AN/AG still worked because those buttons are not
+   gated on canvote). Worse, the no-winner/ineligible-winner resolution
+   paths never UnLock, leaving the corpse GM-locked until decay. FIX:
+   removed the `Corpse::Lock()` from ask (`IsManualLootLocked` already
+   gates the shared slots) and shared rows now ignore `IsLocked` in the
+   snapshot's `locked` computation.
+2. **Members could not pre-vote.** `canvote` required `roll_active`, but
+   the server accepts votes any time (first vote starts the countdown) and
+   saved filters already pre-vote. FIX: `canvote` now only needs
+   shared+eligible+!freegrab. Client needs no change ("Need is available
+   once Ask/Roll starts" branch keys off canvote).
+3. **One member's AN/AG lit everyone's checkbox.** The snapshot sent the
+   per-entry `rule` field, which `RecordSharedVote(set_always_rule)`
+   overwrote with the last always-setter's filter. FIX: shared rows now
+   serialize the VIEWER's own saved filter; the entry.rule overwrite was
+   removed (NOT a boxer artifact — tester guess was wrong, real bug).
+4. **Non-master could Ask/Give.** `HandleSharedLootAction`, the snapshot
+   master flag, and SendManageInfo all had `Admin() >= GMAdmin` bypasses —
+   the test characters are GM-flagged, same masking issue as the old
+   corpse-lock GM exemption. FIX: removed all three bypasses.
+5. **Dynamic (live/forged) items could not be filtered.** AG/AN/NV were
+   deliberately skipped for `dynamic_instance` items everywhere. These
+   per-instance rolls share a stable TEMPLATE item id, so filters now key
+   on the template ("Always Greed any roll of this base item") — all
+   dynamic_instance filter gates removed (queueing, vote seeding, action
+   handlers, leave-never, auto-loot/leave, auto-show, rule refresh). The
+   filter list shows the template's base name.
+6. **Roll timeout 60s → 180s** (kNeedGreedSeconds) per tester feedback
+   that 60s is too tight once a roll is underway.
+
+Still open from this batch:
+- **Gearscore lines missing from item displays since the 10:15 deploy**
+  (tester report). The zone binary deployed at 10:15 was built from the
+  working tree, which contained ~1.7k UNCOMMITTED lines of item_power
+  operator-search work (search APIs + migration v25 adding item_power
+  indexes + item_rarity table). Local analysis says the send path
+  (`SendItemPowerTransport` → `TryBuildTransportMessage`) is untouched and
+  the migration is additive — no smoking gun found from code alone.
+  Diagnosis needs either read-only SSH to the testbed box (check world
+  boot log for migration v25 errors + `rule_values`
+  CustomFeatures:GearScoreEnabled + item_power table state) — SSH was
+  DENIED by the permission layer without explicit user approval — or an
+  in-game repro on the local testbed client (loot any item, then read
+  native_autoloot.log for "ItemPower cached" lines).
+- **Cosmetic: scrolling the filters list draws the partially-scrolled top
+  row over the column headers** (engine-drawn row text AND our pooled
+  controls). Likely cause: engine wheel-scroll offsets are not multiples
+  of our forced 36px row height (+0x21C), so the top row renders shifted
+  up into the header band, and CListWnd's clip includes the header area.
+  Options: snap the scroll offset (offset unknown — unproven engine
+  territory), or inset our pool-control clip by ~20px (fixes controls but
+  engine text still overlaps). Deferred.
+
 ## Open Items
 
 1. **Deploy the 2026-06-10 fixes**: server apply + restart (zone binary)
