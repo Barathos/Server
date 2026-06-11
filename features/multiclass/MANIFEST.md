@@ -47,7 +47,7 @@ Multiclass feature slice.
 
 ## Database Objects
 
-Custom migration version 1 creates the THJ-style fixed trio profile schema:
+Custom migration version 1 creates the fixed trio profile schema:
 
 - `custom_multiclass_profiles`
 - `custom_multiclass_profile_audit`

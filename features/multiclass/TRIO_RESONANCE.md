@@ -1,7 +1,7 @@
 # Multiclass Trio Resonance
 
 This file tracks the first implemented pass of trio names and level-gated
-resonance bonuses. The goal is not restraint; it is a THJ-style power fantasy
+resonance bonuses. The goal is not restraint; it is a trio-first power fantasy
 with enough structure that the server can tune it cleanly later.
 
 ## Bonus Cadence

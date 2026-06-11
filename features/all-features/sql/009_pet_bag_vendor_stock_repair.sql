@@ -1,5 +1,5 @@
 -- Repair Syncrosatchel pet bag vendor stock after custom migration 12.
--- Re-seeds the all-features tutorialb test vendor and THJ Merchant Aina stock.
+-- Re-seeds the all-features tutorialb test vendor and shared pet-bag merchant stock.
 
 START TRANSACTION;
 

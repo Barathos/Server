@@ -219,7 +219,7 @@ window frame.
 
 The feature-local client export utility emits `SkillCaps.txt` with the highest
 known skill cap for each skill/level across player classes, following the useful
-THJ client-file pattern while keeping real per-trio skill enforcement and
+generated client-file pattern while keeping real per-trio skill enforcement and
 class-skill behavior on the server.
 
 External/test-client patch syncing is driven by

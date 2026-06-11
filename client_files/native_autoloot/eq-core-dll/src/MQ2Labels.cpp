@@ -12,11 +12,8 @@ typedef string(*pEqTypesFunc)();
 
 extern bool NativeHpFixGetEqTypeLabel(DWORD eq_type, const char* control_name, char* out, size_t out_size);
 extern bool NativeHpFixGetClientHpValues(int* current, int* maximum, int* percent_out);
-extern bool isThjClientEnabled;
 
 map<DWORD, pEqTypesFunc> eqTypesMap;
-map<DWORD, DWORD> gThjStatLabelsMap;
-map<DWORD, pEqTypesFunc> gThjFuncLabelsMap;
 
 namespace {
 
@@ -96,215 +93,6 @@ std::string NativeClassAbbreviationsLabel()
 }
 
 } // namespace
-
-// ---- THJ custom inventory stat labels (active when isThjClientEnabled) ----
-// Ported from the THJ dinput8 reconstruction. THJ sends these values as
-// OP_ServerAuthStats keys (already stored in gNativeServerAuthStats); this maps the
-// THJ inventory EQTypes to those keys plus a few computed labels so the THJ Stats
-// window renders real values instead of "Unknown".
-
-static std::string ThjFormatStat(unsigned int statKey)
-{
-	if (!NativeHasServerAuthStat(statKey)) {
-		return "";
-	}
-	char buffer[64] = {0};
-	_snprintf(buffer, sizeof(buffer), "%I64u", NativeGetServerAuthStat(statKey));
-	buffer[sizeof(buffer) - 1] = 0;
-	return buffer;
-}
-
-static std::string ThjFormatStatDifference(unsigned int positiveStatKey, unsigned int negativeStatKey)
-{
-	if (!NativeHasServerAuthStat(positiveStatKey) || !NativeHasServerAuthStat(negativeStatKey)) {
-		return "";
-	}
-	long long value = (long long)NativeGetServerAuthStat(positiveStatKey) -
-		(long long)NativeGetServerAuthStat(negativeStatKey);
-	char buffer[64] = {0};
-	_snprintf(buffer, sizeof(buffer), "%I64d", value);
-	buffer[sizeof(buffer) - 1] = 0;
-	return buffer;
-}
-
-template <unsigned int PositiveStatKey, unsigned int NegativeStatKey>
-static std::string ThjStatDeltaLabel()
-{
-	return ThjFormatStatDifference(PositiveStatKey, NegativeStatKey);
-}
-
-static std::string ThjItemExpLabel()
-{
-	if (!NativeHasServerAuthStat(69)) {
-		return "";
-	}
-	unsigned long long value = NativeGetServerAuthStat(69);
-	unsigned long long whole = value / 1000;
-	unsigned int fraction = (unsigned int)((value % 1000) / 10);
-	char buffer[64] = {0};
-	_snprintf(buffer, sizeof(buffer), "%I64u.%02u%%", whole, fraction);
-	buffer[sizeof(buffer) - 1] = 0;
-	return buffer;
-}
-
-static bool ThjGetCustomLabel(DWORD eqType, std::string& out)
-{
-	auto funcIt = gThjFuncLabelsMap.find(eqType);
-	if (funcIt != gThjFuncLabelsMap.end()) {
-		if (funcIt->second) {
-			out = (*funcIt->second)();
-		}
-		return true;
-	}
-	auto statIt = gThjStatLabelsMap.find(eqType);
-	if (statIt != gThjStatLabelsMap.end()) {
-		out = ThjFormatStat(statIt->second);
-		return true;
-	}
-	return false;
-}
-
-static void ThjRegisterStatLabel(DWORD eqType, DWORD statKey)
-{
-	gThjStatLabelsMap[eqType] = statKey;
-}
-
-static void ThjRegisterStatLabels()
-{
-	ThjRegisterStatLabel(5, 10);
-	ThjRegisterStatLabel(6, 11);
-	ThjRegisterStatLabel(7, 12);
-	ThjRegisterStatLabel(8, 13);
-	ThjRegisterStatLabel(9, 15);
-	ThjRegisterStatLabel(10, 14);
-	ThjRegisterStatLabel(11, 16);
-	ThjRegisterStatLabel(12, 21);
-	ThjRegisterStatLabel(13, 20);
-	ThjRegisterStatLabel(14, 18);
-	ThjRegisterStatLabel(15, 19);
-	ThjRegisterStatLabel(16, 17);
-	ThjRegisterStatLabel(22, 39);
-	ThjRegisterStatLabel(23, 25);
-	ThjRegisterStatLabel(211, 26);
-	ThjRegisterStatLabel(212, 22);
-	ThjRegisterStatLabel(213, 23);
-	ThjRegisterStatLabel(214, 24);
-	ThjRegisterStatLabel(215, 43);
-	ThjRegisterStatLabel(216, 42);
-	ThjRegisterStatLabel(217, 44);
-	ThjRegisterStatLabel(218, 45);
-	ThjRegisterStatLabel(219, 46);
-	ThjRegisterStatLabel(220, 47);
-	ThjRegisterStatLabel(221, 48);
-	ThjRegisterStatLabel(222, 49);
-	ThjRegisterStatLabel(223, 50);
-	ThjRegisterStatLabel(225, 41);
-	ThjRegisterStatLabel(226, 40);
-	ThjRegisterStatLabel(227, 52);
-	ThjRegisterStatLabel(238, 10);
-	ThjRegisterStatLabel(239, 11);
-	ThjRegisterStatLabel(240, 12);
-	ThjRegisterStatLabel(241, 13);
-	ThjRegisterStatLabel(242, 15);
-	ThjRegisterStatLabel(243, 14);
-	ThjRegisterStatLabel(244, 16);
-	ThjRegisterStatLabel(245, 21);
-	ThjRegisterStatLabel(246, 20);
-	ThjRegisterStatLabel(247, 18);
-	ThjRegisterStatLabel(248, 19);
-	ThjRegisterStatLabel(249, 17);
-	ThjRegisterStatLabel(251, 27);
-	ThjRegisterStatLabel(252, 28);
-	ThjRegisterStatLabel(253, 29);
-	ThjRegisterStatLabel(254, 30);
-	ThjRegisterStatLabel(255, 32);
-	ThjRegisterStatLabel(256, 31);
-	ThjRegisterStatLabel(257, 33);
-	ThjRegisterStatLabel(258, 38);
-	ThjRegisterStatLabel(259, 37);
-	ThjRegisterStatLabel(260, 35);
-	ThjRegisterStatLabel(261, 36);
-	ThjRegisterStatLabel(262, 34);
-	ThjRegisterStatLabel(264, 119);
-	ThjRegisterStatLabel(265, 120);
-	ThjRegisterStatLabel(266, 121);
-	ThjRegisterStatLabel(267, 122);
-	ThjRegisterStatLabel(268, 124);
-	ThjRegisterStatLabel(269, 123);
-	ThjRegisterStatLabel(270, 125);
-	ThjRegisterStatLabel(271, 130);
-	ThjRegisterStatLabel(272, 129);
-	ThjRegisterStatLabel(273, 127);
-	ThjRegisterStatLabel(274, 128);
-	ThjRegisterStatLabel(275, 126);
-	ThjRegisterStatLabel(277, 102);
-	ThjRegisterStatLabel(279, 103);
-	ThjRegisterStatLabel(280, 104);
-	ThjRegisterStatLabel(281, 105);
-	ThjRegisterStatLabel(282, 106);
-	ThjRegisterStatLabel(283, 107);
-	ThjRegisterStatLabel(284, 108);
-	ThjRegisterStatLabel(285, 109);
-	ThjRegisterStatLabel(286, 109);
-	ThjRegisterStatLabel(6667, 9);
-	ThjRegisterStatLabel(6668, 8);
-	ThjRegisterStatLabel(6669, 68);
-	ThjRegisterStatLabel(6670, 69);
-	ThjRegisterStatLabel(6671, 70);
-	ThjRegisterStatLabel(6672, 71);
-	ThjRegisterStatLabel(6673, 72);
-	ThjRegisterStatLabel(6674, 73);
-	ThjRegisterStatLabel(6675, 74);
-	ThjRegisterStatLabel(6676, 75);
-	ThjRegisterStatLabel(6677, 76);
-	ThjRegisterStatLabel(6678, 77);
-	ThjRegisterStatLabel(6679, 78);
-	ThjRegisterStatLabel(6680, 79);
-	ThjRegisterStatLabel(6681, 80);
-	ThjRegisterStatLabel(6682, 81);
-	ThjRegisterStatLabel(6683, 82);
-	ThjRegisterStatLabel(6684, 83);
-	ThjRegisterStatLabel(6685, 84);
-	ThjRegisterStatLabel(6686, 85);
-	ThjRegisterStatLabel(6687, 86);
-	ThjRegisterStatLabel(6688, 87);
-	ThjRegisterStatLabel(6689, 88);
-	ThjRegisterStatLabel(6690, 89);
-	ThjRegisterStatLabel(6691, 90);
-	ThjRegisterStatLabel(6692, 91);
-	ThjRegisterStatLabel(6693, 92);
-	ThjRegisterStatLabel(6694, 93);
-	ThjRegisterStatLabel(6695, 94);
-	ThjRegisterStatLabel(6696, 95);
-	ThjRegisterStatLabel(6697, 96);
-	ThjRegisterStatLabel(6698, 97);
-	ThjRegisterStatLabel(6699, 98);
-	ThjRegisterStatLabel(6700, 99);
-	ThjRegisterStatLabel(6701, 100);
-	ThjRegisterStatLabel(6702, 101);
-	ThjRegisterStatLabel(6703, 115);
-	ThjRegisterStatLabel(6704, 112);
-	ThjRegisterStatLabel(6705, 113);
-	ThjRegisterStatLabel(6706, 114);
-	ThjRegisterStatLabel(6707, 116);
-	ThjRegisterStatLabel(6708, 117);
-	ThjRegisterStatLabel(6709, 118);
-
-	// Computed labels take precedence over the raw stat map for these EQTypes.
-	gThjFuncLabelsMap[6670] = ThjItemExpLabel;
-	gThjFuncLabelsMap[264] = ThjStatDeltaLabel<119, 27>;
-	gThjFuncLabelsMap[265] = ThjStatDeltaLabel<120, 28>;
-	gThjFuncLabelsMap[266] = ThjStatDeltaLabel<121, 29>;
-	gThjFuncLabelsMap[267] = ThjStatDeltaLabel<122, 30>;
-	gThjFuncLabelsMap[268] = ThjStatDeltaLabel<124, 32>;
-	gThjFuncLabelsMap[269] = ThjStatDeltaLabel<123, 31>;
-	gThjFuncLabelsMap[270] = ThjStatDeltaLabel<125, 33>;
-	gThjFuncLabelsMap[271] = ThjStatDeltaLabel<130, 38>;
-	gThjFuncLabelsMap[272] = ThjStatDeltaLabel<129, 37>;
-	gThjFuncLabelsMap[273] = ThjStatDeltaLabel<127, 35>;
-	gThjFuncLabelsMap[274] = ThjStatDeltaLabel<128, 36>;
-	gThjFuncLabelsMap[275] = ThjStatDeltaLabel<126, 34>;
-}
 
 void NativeLabelsHandleWorldMessage(unsigned __int16 opcode, const char* buffer, size_t size)
 {
@@ -406,8 +194,6 @@ public:
 				eqtypesString = (*func)();
 				Found = TRUE;
 			}
-        } else if (isThjClientEnabled && ThjGetCustomLabel((DWORD)pThisLabel->SidlPiece, eqtypesString)) {
-            Found = !eqtypesString.empty();
         } else if ((DWORD)pThisLabel->SidlPiece==9999) {
             if (!pThisLabel->Wnd.XMLToolTip) {
                 strcpy(Buffer,"BadCustom");
@@ -479,10 +265,6 @@ PLUGIN_API VOID InitializeMQ2Labels(VOID)
 	eqTypesMap[3] = NativeClassNamesLabel;
 	eqTypesMap[6666] = NativeClassAbbreviationsLabel;
 
-	if (isThjClientEnabled) {
-		ThjRegisterStatLabels();
-	}
-
     // Add commands, macro parameters, hooks, etc.
     //EasyClassDetour(CLabel__Draw,CLabelHook,Draw_Detour,VOID,(VOID),Draw_Trampoline);
     EzDetour(CLabel__Draw,&CLabelHook::Draw_Detour,&CLabelHook::Draw_Trampoline);
@@ -507,4 +289,3 @@ PLUGIN_API VOID ShutdownLabelsPlugin(VOID)
     RemoveDetour(EQ_Character__Max_HP);
     //RemoveDetour(CGaugeWnd__Draw);
 }
-
