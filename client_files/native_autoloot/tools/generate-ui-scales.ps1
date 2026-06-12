@@ -63,6 +63,20 @@ $doc.PreserveWhitespace = $true
 $doc.Load($MasterPath)
 $root = $doc.DocumentElement
 
+# Strip any previously generated variants (and their separator whitespace)
+# so -Merge is idempotent.
+foreach ($node in @($root.ChildNodes)) {
+    if ($node.NodeType -ne 'Element') { continue }
+    $item = $node.GetAttribute('item')
+    if ($item -and ($item.EndsWith('_S') -or $item.EndsWith('_L'))) {
+        $previous = $node.PreviousSibling
+        if ($previous -and ($previous.NodeType -eq 'Whitespace' -or ($previous.NodeType -eq 'Text' -and $previous.Value.Trim() -eq ''))) {
+            $root.RemoveChild($previous) | Out-Null
+        }
+        $root.RemoveChild($node) | Out-Null
+    }
+}
+
 # Index every top-level element that has an item attribute.
 $elementsByName = @{}
 foreach ($node in @($root.ChildNodes)) {
@@ -103,7 +117,8 @@ function Scale-Int([string]$text, [int]$percent) {
     if (-not [int]::TryParse($text.Trim(), [ref]$value)) {
         return $null
     }
-    return [string][int][math]::Round($value * $percent / 100.0)
+    # round half up to match the DLL's integer math: (v * pct + 50) / 100
+    return [string][int][math]::Floor($value * $percent / 100.0 + 0.5)
 }
 
 function Process-Node([System.Xml.XmlElement]$element, $preset, $renameSet) {

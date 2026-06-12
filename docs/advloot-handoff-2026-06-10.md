@@ -292,27 +292,28 @@ elements, output parses, spot-checks correct. Review artifact at
 until the DLL can select variants; run with `-Merge` to emit the combined
 shipped file when plumbing lands).
 
-**TODO next session (DLL plumbing)**:
-1. `NativeUiScaleSuffix()` global ("", "_S", "_L") + setting persistence —
-   simplest is a small ini in the EQ client dir read at DLL load
-   (per-install; lets a laptop differ from a desktop). Alternative:
-   server-saved via the advloot settings table (follows the character,
-   needs server change + restart).
-2. Append the suffix in the five `CCustomWnd((char*)"NativeAutoLoot*")`
-   constructors and EVERY `GetChildItem("AAL*...")` in those classes
-   (mechanical; the pool wiring sprintf sites — `AALW_CBP/CBS/IBP/ISP`,
-   `AALR_CB/RM/IB` — just append `%s`). Do NOT touch other windows
-   (faction/forge/multiclass have no variants).
-3. Per-preset DLL constants table: forced row heights (main 36, menu 24,
-   manage 30, rules 36 @ +0x21C) and pooled control sizes (checkbox 24,
-   icon 26) — scale by the same 80/125 percents so XML and DLL agree.
-   `NativeAutoLootPoolControlSize` + the `ApplyListRowHeights` sites.
-4. "UI Size" cycle button in the Loot Settings window (S/M/L) → write
-   setting, destroy advloot windows (existing NATIVE_AUTOLOOT_DESTROY_
-   WINDOW path), let them lazily recreate with the new suffix.
-5. Run the generator with `-Merge`, ship the combined XML, build, publish.
-6. In-game test matrix: 3 sizes × 5 windows — pool calibration, click
-   routing, combo selection, search box, manage window, popup menu.
+**IMPLEMENTED + SHIPPED (Build 88, same day)**: all plumbing landed —
+`NativeUiScaleSuffix/NativeUiScaled/NativeUiSized` helpers (top of
+core_autoloot_native.h), setting persisted per install in
+`native_ui_scale.ini` next to eqgame.exe (S/M/L single char; no file =
+Medium = byte-identical legacy behavior); 85 lookup sites wrapped
+(73 literal GetChildItem + 7 pool sprintf sites + 5 screen names);
+runtime geometry scaled (row heights 36/30/24 @ +0x21C, pool control
+sizes 24/26, popup menu 220x156); "UI Size" cycle button in Loot
+Settings (AALS_UiSizeButton) flags `gNativeUiScalePendingRecreate`, the
+PULSE rebuilds (NativeAutoLootDestroyScaleWindows incl. the menu window,
+then reopens settings + whatever was visible) because the click runs
+inside the window being deleted; the shipped XML now CONTAINS the
+generated _S/_L screens (15,886 lines; generator -Merge is idempotent,
+strips + regenerates variants). MAINTENANCE RULE: after ANY hand edit to
+the Medium screens in EQUI_NativeAutoLootWnd.xml, re-run
+`tools/generate-ui-scales.ps1 -Merge` before shipping, or the variants
+go stale.
+
+**Remaining**: in-game test matrix 3 sizes × 5 windows (pool calibration,
+click routing, combos, search box, manage, popup). Medium is untouched
+behavior; S/L are opt-in via the button, so the blast radius of an
+unverified size is whoever presses it.
 
 ## Open Items
 
