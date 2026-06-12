@@ -68,8 +68,13 @@ Edit Filters window pools and the right-click popup menu window.
   `CComboWnd::GetCurChoice`, `CTextureAnimation::SetCurCell`, direct struct
   writes (Location, Checked).
 - `CListWnd` fixed row height lives at **+0x21C** (stock 14; we hold main
-  lists at 36, menu 24, manage 30 — reapplied each pulse). `GetItemHeight()`
-  is NOT the storage (returns 0).
+  lists at 36, menu 24, manage 30 — reapplied each pulse, scaled by UI size
+  preset). `GetItemHeight()` is NOT the storage (returns 0).
+- `CListWnd` column-header band height lives at **+0x208** (stock 18;
+  stride scan + write probe 2026-06-11). It does NOT scale with the list
+  font — hold it at `NativeUiHeaderHeight()` (scaled 18, FLOORED at 18:
+  fonts don't shrink linearly with the geometry percent, so Small/Medium
+  keep the stock band and only Large grows it to 23).
 - `CButtonWnd` NormalDecal animation instance pointer at **+0x240**
   (Normal +0x228, Pressed +0x22C, Flyby +0x230, PressedFlyby +0x238).
   Template animation instances are SHARED between buttons → per-row XML
@@ -325,13 +330,13 @@ overload entry in Engine facts; feed was rolled back as Build 89, fixed
 and reshipped after). Root-caused by ctor breadcrumb traces (kept in the
 DLL) + an XML-vs-DLL bisect on the local testbed.
 
-**Remaining**: user verified Small and Medium look good in-game; LARGE
-has minor overlap (header text crowding list edges — font 6 wants more
-than a flat 125% in spots). Tune the Large layout by editing the Medium
-master positions where needed or special-casing the generator, then
-re-run `-Merge`. Full 3 sizes × 5 windows matrix still worth a tester
-pass (pool calibration, click routing, combos, search box, manage,
-popup).
+**All three presets verified in-game by the user** (header clipping on
+Large fixed via the +0x208 header band fact — see Engine facts). Full
+3 sizes × 5 windows matrix still worth a deeper tester pass (pool
+calibration, click routing, combos, search box, manage, popup).
+DEBUGGING NOTE: locally-copied dev DLLs get reverted whenever the player
+runs the PATCHER (it restores feed hashes) — launch eqgame.exe directly
+during debug loops.
 
 ## Open Items
 
