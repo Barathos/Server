@@ -144,6 +144,16 @@ static int NativeUiScaled(int value)
 	return (value * NativeUiScalePercent() + 50) / 100;
 }
 
+// CListWnd header band height (+0x208, stock 18). Fonts do not shrink
+// linearly with the geometry percent - font 4 still needs the stock band -
+// so the band only ever grows (verified in-game: 14 clips Small, 18 fits
+// Small/Medium, 23 fits Large).
+static DWORD NativeUiHeaderHeight()
+{
+	const int scaled = NativeUiScaled(18);
+	return (DWORD)(scaled < 18 ? 18 : scaled);
+}
+
 // Appends the active size suffix to a screen or child control name.
 // Returns char* on purpose: GetChildItem is overloaded on PCHAR and
 // CXStr const&, and only the PCHAR binding is proven in this client. A
@@ -1544,8 +1554,10 @@ public:
 	{
 		__try {
 			const DWORD manage_row_height = (DWORD)NativeUiScaled(30);
-			if (PlayerList && ((DWORD*)PlayerList)[0x21C / 4] != manage_row_height) {
+			const DWORD manage_header_height = NativeUiHeaderHeight();
+			if (PlayerList && (((DWORD*)PlayerList)[0x21C / 4] != manage_row_height || ((DWORD*)PlayerList)[0x208 / 4] != manage_header_height)) {
 				((DWORD*)PlayerList)[0x21C / 4] = manage_row_height;
+				((DWORD*)PlayerList)[0x208 / 4] = manage_header_height;
 				((CXWnd*)PlayerList)->Show(0, 1);
 				((CXWnd*)PlayerList)->Show(1, 1);
 			}
@@ -7885,8 +7897,19 @@ void NativeAutoLootRulesWnd::Layout()
 	// Hold the filter list row height (CListWnd row height lives at +0x21C).
 	__try {
 		const DWORD rules_row_height = (DWORD)NativeUiScaled(36);
+		// CListWnd header band height lives at +0x208 (stock 18; verified by
+		// stride scan + write probe 2026-06-11).
+		const DWORD rules_header_height = NativeUiHeaderHeight();
+		bool rules_list_changed = false;
 		if (((DWORD*)RuleList)[0x21C / 4] != rules_row_height) {
 			((DWORD*)RuleList)[0x21C / 4] = rules_row_height;
+			rules_list_changed = true;
+		}
+		if (((DWORD*)RuleList)[0x208 / 4] != rules_header_height) {
+			((DWORD*)RuleList)[0x208 / 4] = rules_header_height;
+			rules_list_changed = true;
+		}
+		if (rules_list_changed) {
 			((CXWnd*)RuleList)->Show(0, 1);
 			((CXWnd*)RuleList)->Show(1, 1);
 		}
@@ -8726,22 +8749,28 @@ void NativeAutoLootWnd::ApplyListRowHeights()
 	__try {
 		bool changed = false;
 		const DWORD main_row_height = (DWORD)NativeUiScaled(36);
-		if (PersonalList && ((DWORD*)PersonalList)[0x21C / 4] != main_row_height) {
+		// CListWnd header band height lives at +0x208 (stock 18; verified by
+		// stride scan + write probe 2026-06-11) - it does not scale with the
+		// list font, so hold it scaled or font-6 headers clip.
+		const DWORD main_header_height = NativeUiHeaderHeight();
+		if (PersonalList && (((DWORD*)PersonalList)[0x21C / 4] != main_row_height || ((DWORD*)PersonalList)[0x208 / 4] != main_header_height)) {
 			((DWORD*)PersonalList)[0x21C / 4] = main_row_height;
+			((DWORD*)PersonalList)[0x208 / 4] = main_header_height;
 			((CXWnd*)PersonalList)->Show(0, 1);
 			((CXWnd*)PersonalList)->Show(1, 1);
 			changed = true;
 		}
 
-		if (SharedList && ((DWORD*)SharedList)[0x21C / 4] != main_row_height) {
+		if (SharedList && (((DWORD*)SharedList)[0x21C / 4] != main_row_height || ((DWORD*)SharedList)[0x208 / 4] != main_header_height)) {
 			((DWORD*)SharedList)[0x21C / 4] = main_row_height;
+			((DWORD*)SharedList)[0x208 / 4] = main_header_height;
 			((CXWnd*)SharedList)->Show(0, 1);
 			((CXWnd*)SharedList)->Show(1, 1);
 			changed = true;
 		}
 
 		if (changed) {
-			NativeAutoLootTrace("applied %dpx list row height", (int)main_row_height);
+			NativeAutoLootTrace("applied %dpx rows / %dpx header", (int)main_row_height, (int)main_header_height);
 		}
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER) {
