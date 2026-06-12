@@ -90,6 +90,16 @@ Edit Filters window pools and the right-click popup menu window.
 - Build gotchas: never ASSIGN `CXRect` (operator= declared but unlinkable —
   copy-initialize only); no locals with destructors (std::vector etc.) in
   functions containing `__try` (C2712) — use class members.
+- **GetChildItem overloads (Build 88 incident)**: `GetChildItem` is
+  overloaded on `PCHAR` and `CXStr const&`. Only the PCHAR binding is
+  proven; the CXStr overload FAULTS. String literals bind to PCHAR under
+  MSVC's permissive mode, but a `const char*` variable CANNOT — overload
+  resolution silently switches to the CXStr import and the window
+  constructor dies (latching gNativeAutoLootWindowConstructionFaulted,
+  which then blocks the whole window family — "no windows open" with
+  stray pool checkboxes at the origin is the signature). Any helper that
+  feeds names to GetChildItem must return `char*`, never `const char*`.
+  Same caution applies to every PCHAR engine import.
 
 ### Patcher
 
@@ -310,10 +320,18 @@ the Medium screens in EQUI_NativeAutoLootWnd.xml, re-run
 `tools/generate-ui-scales.ps1 -Merge` before shipping, or the variants
 go stale.
 
-**Remaining**: in-game test matrix 3 sizes × 5 windows (pool calibration,
-click routing, combos, search box, manage, popup). Medium is untouched
-behavior; S/L are opt-in via the button, so the blast radius of an
-unverified size is whoever presses it.
+**Build 88 shipped broken** (construction fault — see the GetChildItem
+overload entry in Engine facts; feed was rolled back as Build 89, fixed
+and reshipped after). Root-caused by ctor breadcrumb traces (kept in the
+DLL) + an XML-vs-DLL bisect on the local testbed.
+
+**Remaining**: user verified Small and Medium look good in-game; LARGE
+has minor overlap (header text crowding list edges — font 6 wants more
+than a flat 125% in spots). Tune the Large layout by editing the Medium
+master positions where needed or special-casing the generator, then
+re-run `-Merge`. Full 3 sizes × 5 windows matrix still worth a tester
+pass (pool calibration, click routing, combos, search box, manage,
+popup).
 
 ## Open Items
 
