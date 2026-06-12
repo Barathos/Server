@@ -145,7 +145,11 @@ static int NativeUiScaled(int value)
 }
 
 // Appends the active size suffix to a screen or child control name.
-static const char* NativeUiSized(const char* base)
+// Returns char* on purpose: GetChildItem is overloaded on PCHAR and
+// CXStr const&, and only the PCHAR binding is proven in this client. A
+// const char* silently selects the CXStr overload, which faults (found
+// the hard way - Build 88 construction fault).
+static char* NativeUiSized(const char* base)
 {
 	static char buffer[96];
 	sprintf_s(buffer, "%s%s", base ? base : "", NativeUiScaleSuffix());
@@ -627,6 +631,7 @@ class NativeAutoLootWnd : public CCustomWnd
 public:
 	NativeAutoLootWnd() : CCustomWnd((char*)NativeUiSized("NativeAutoLootWnd"))
 	{
+		NativeAutoLootTrace("AALW ctor: base done");
 		CloseOnESC = 1;
 		SetWndNotification(NativeAutoLootWnd);
 
@@ -663,6 +668,7 @@ public:
 		PersonalSetCombo = (CComboWnd*)GetChildItem(NativeUiSized("AALW_PersonalSetCombo"));
 		SharedSetCombo = (CComboWnd*)GetChildItem(NativeUiSized("AALW_SharedSetCombo"));
 		SharedLeaveAllButton = (CButtonWnd*)GetChildItem(NativeUiSized("AALW_SharedLeaveAllButton"));
+		NativeAutoLootTrace("AALW ctor: controls wired");
 
 		for (int pool_row = 0; pool_row < kAALPoolPersonalRows; ++pool_row) {
 			char name[48];
@@ -704,11 +710,15 @@ public:
 			}
 		}
 
+		NativeAutoLootTrace("AALW ctor: pools wired");
 		NativeAutoLootSetColumnJustification(PersonalList, kAALPersonalLoot, kAALPersonalNever, 1);
 		NativeAutoLootSetColumnJustification(SharedList, kAALSharedStatus, kAALSharedNever, 1);
+		NativeAutoLootTrace("AALW ctor: columns justified");
 		Layout();
+		NativeAutoLootTrace("AALW ctor: layout done");
 		SetStatus("Waiting for Advanced Loot snapshot...");
 		RefreshRows();
+		NativeAutoLootTrace("AALW ctor: refresh done");
 	}
 
 	void PulseInlineCells();
