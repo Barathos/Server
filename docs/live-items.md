@@ -5,6 +5,25 @@ Live item support has two layers:
 - Database-backed live item IDs: item IDs in the configured range are resolved from the `items` table at runtime, so new rows and changed rows can be used without `#hotfix`, `#reload`, or a restart.
 - Per-instance dynamic item data: item instances can carry custom stat/effect/name overrides in their custom data, so a single player's copy can evolve independently from the base DB row.
 
+## Backend Direction
+
+The current long-term direction is to make Live Items a safe per-instance item
+backend first, then choose the final live-server content loop later. The
+preferred player-facing model uses reusable template item IDs plus frozen
+per-instance `custom_data` for generated names, prefix/suffix identity, rolled
+stats, source metadata, and GM recovery data.
+
+Permanent generated DB rows are still useful for GM/testing and operator
+hot-edit workflows, but they should not be the normal representation for
+thousands of player-owned randomized items.
+
+See `docs/live-items-backend-plan.md` for the current design notes covering
+prefix/suffix support, GM search/restore tooling, registry/audit storage, rolled
+augment duplicate identity, and safe rollout onto an existing server.
+
+For cloud implementation handoff, see
+`docs/live-items-cloud-handoff-2026-06-15.md`.
+
 ## Rules
 
 Defaults are aimed at a test server and reserve `150000-199999` for DB-backed live item rows:
