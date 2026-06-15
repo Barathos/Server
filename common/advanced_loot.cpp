@@ -117,6 +117,59 @@ EQ::AdvancedLoot::VoteChoice EQ::AdvancedLoot::FilterDecisionVoteChoice(LootFilt
 	}
 }
 
+std::string EQ::AdvancedLoot::VoteChoiceKey(VoteChoice choice)
+{
+	switch (choice) {
+	case VoteChoice::Need:
+		return "need";
+	case VoteChoice::Greed:
+		return "greed";
+	case VoteChoice::Pass:
+		return "pass";
+	default:
+		return "off";
+	}
+}
+
+EQ::AdvancedLoot::VoteChoice EQ::AdvancedLoot::ParseSessionDefaultChoice(const std::string &value)
+{
+	if (Strings::EqualFold(value, "need")) {
+		return VoteChoice::Need;
+	}
+
+	if (Strings::EqualFold(value, "greed")) {
+		return VoteChoice::Greed;
+	}
+
+	if (Strings::EqualFold(value, "pass") || Strings::EqualFold(value, "no") || Strings::EqualFold(value, "leave")) {
+		return VoteChoice::Pass;
+	}
+
+	// "off", "unset", and anything unrecognized clear the default.
+	return VoteChoice::Unset;
+}
+
+void EQ::AdvancedLoot::SessionDefaultStore::Set(uint32 character_id, VoteChoice choice)
+{
+	if (choice == VoteChoice::Unset) {
+		entries.erase(character_id);
+		return;
+	}
+
+	entries[character_id] = choice;
+}
+
+EQ::AdvancedLoot::VoteChoice EQ::AdvancedLoot::SessionDefaultStore::Resolve(uint32 character_id) const
+{
+	auto it = entries.find(character_id);
+	return it == entries.end() ? VoteChoice::Unset : it->second;
+}
+
+void EQ::AdvancedLoot::SessionDefaultStore::Clear(uint32 character_id)
+{
+	entries.erase(character_id);
+}
+
 EQ::AdvancedLoot::VoteResolution EQ::AdvancedLoot::ResolveVotes(
 	const std::vector<uint32> &eligible_character_ids,
 	const std::map<uint32, VoteChoice> &votes,

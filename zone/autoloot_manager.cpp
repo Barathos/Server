@@ -1051,6 +1051,12 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 					vote = FilterDecisionVoteChoice(member_filter.decision);
 				}
 
+				// A per-item filter wins; only when it left the vote Unset
+				// does the member's until-logout session default fill it in.
+				if (vote == VoteChoice::Unset) {
+					vote = m_session_defaults.Resolve(member->CharacterID());
+				}
+
 				entry.votes[member->CharacterID()] = vote;
 			}
 
@@ -1075,6 +1081,22 @@ bool AutoLootManager::QueueCorpseEntries(Corpse *corpse, Client *resolved_client
 				if (all_voted && any_roll) {
 					entry.state = "ask";
 					entry.vote_started_at = std::time(nullptr);
+				}
+				else if (all_voted && !any_roll) {
+					// Every eligible member passes this item (e.g. all have a
+					// Never filter), so nobody wants it. Leave it on the corpse
+					// instead of letting it pile up unresolved in the shared list.
+					DebugMessage(
+						autoloot_client,
+						settings,
+						fmt::format(
+							"{}{} from {} left on the corpse - every eligible member passes it.",
+							entry.item_name,
+							QuantitySuffix(entry.quantity),
+							entry.corpse_name
+						)
+					);
+					continue;
 				}
 			}
 		}
@@ -1327,7 +1349,13 @@ bool AutoLootManager::EntryNeedsDecisionForClient(const LootEntry &entry, Client
 			return true;
 		}
 
-		return GetFilter(client->CharacterID(), entry.item_id).decision == LootFilterDecision::Unset;
+		if (GetFilter(client->CharacterID(), entry.item_id).decision != LootFilterDecision::Unset) {
+			return false; // a per-item filter already decided this item
+		}
+
+		// An until-logout session default also counts as "decided", so the
+		// window does not pop even while the entry waits on other members.
+		return m_session_defaults.Resolve(client->CharacterID()) == VoteChoice::Unset;
 	}
 
 	const auto settings = GetCharacterSettings(client->CharacterID(), true);
@@ -2285,16 +2313,12 @@ void AutoLootManager::ResolveSharedVote(uint32 entry_id, bool timeout)
 	}
 
 	SendSharedLootUpdate(eligible_clients);
-	const auto winner_settings = GetCharacterSettings(winner->CharacterID(), true);
-	if (winner_settings.auto_loot_all) {
-		LootEntryForClient(winner, entry_id);
-	}
-	else {
-		SendNativeFilterUpdate(winner);
-		auto update_iter = m_loot_entries.find(entry_id);
-		const bool has_candidate = update_iter != m_loot_entries.end() && IsEntryVisibleToClient(update_iter->second, winner);
-		MaybeAutoShowLootWindow(winner, has_candidate, has_candidate && EntryNeedsDecisionForClient(update_iter->second, winner));
-	}
+	// A shared-roll winner explicitly chose Need/Greed, so loot it straight to
+	// them instead of parking it in their Personal list for a redundant second click.
+	// (Previously this only auto-looted when the winner had Auto-Loot-All enabled.)
+	// LootEntryForClient handles a full inventory gracefully - the item stays on the
+	// corpse with a message rather than vanishing.
+	LootEntryForClient(winner, entry_id);
 }
 
 void AutoLootManager::LootEntryForClient(Client *client, uint32 entry_id)
@@ -2859,12 +2883,58 @@ void AutoLootManager::HandleAdvancedLootCommand(Client *client, const Seperator 
 		return;
 	}
 
+	if (!strcasecmp(sep->arg[1], "sessiondefault")) {
+		HandleSessionDefaultCommand(client, sep);
+		return;
+	}
+
 	if (!strcasecmp(sep->arg[1], "filter")) {
 		HandleAdvancedLootFilterCommand(client, sep);
 		return;
 	}
 
 	SendHelp(client);
+}
+
+void AutoLootManager::HandleSessionDefaultCommand(Client *client, const Seperator *sep)
+{
+	if (!RequireAutoLootEnabled(client)) {
+		return;
+	}
+
+	if (!client || !sep) {
+		return;
+	}
+
+	const std::string value = sep->arg[2][0] ? Strings::ToLower(sep->arg[2]) : "";
+	if (value.empty() || value == "help") {
+		client->Message(Chat::White, "Usage: #advloot sessiondefault [need|greed|pass|off]");
+		return;
+	}
+
+	// "quiet" (used by the client's zone-in re-assert) suppresses the chat
+	// confirm but still emits the ADVLOOT|sessiondefault| transport line.
+	const bool quiet = sep->arg[3][0] && !strcasecmp(sep->arg[3], "quiet");
+	const auto choice = EQ::AdvancedLoot::ParseSessionDefaultChoice(value);
+
+	if (choice == VoteChoice::Unset) {
+		m_session_defaults.Clear(client->CharacterID());
+		if (!quiet) {
+			client->Message(Chat::White, "Session loot default cleared.");
+		}
+		client->Message(Chat::White, "ADVLOOT|sessiondefault|off");
+		return;
+	}
+
+	// Until-logout, per-character: applies to shared group loot whenever the
+	// player is grouped, set or not. No group requirement to arm it.
+	m_session_defaults.Set(client->CharacterID(), choice);
+
+	const char *label = choice == VoteChoice::Need ? "Need" : (choice == VoteChoice::Greed ? "Greed" : "Pass");
+	if (!quiet) {
+		client->Message(Chat::White, fmt::format("Session loot default set to {} - lasts until you log out.", label).c_str());
+	}
+	client->Message(Chat::White, fmt::format("ADVLOOT|sessiondefault|{}", EQ::AdvancedLoot::VoteChoiceKey(choice)).c_str());
 }
 
 void AutoLootManager::HandleAdvancedLootFilterCommand(Client *client, const Seperator *sep)

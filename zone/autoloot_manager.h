@@ -123,6 +123,7 @@ private:
 	void SendNativeFilterUpdate(Client *client);
 	void HandleLootAction(Client *client, const Seperator *sep);
 	void HandleAdvancedLootFilterCommand(Client *client, const Seperator *sep);
+	void HandleSessionDefaultCommand(Client *client, const Seperator *sep);
 	void HandleSharedLootAction(Client *client, uint32 entry_id, const std::string &action, const Seperator *sep);
 	void HandlePersonalLootCommand(Client *client, const Seperator *sep);
 	void InspectEntryForClient(Client *client, uint32 entry_id);
@@ -148,6 +149,7 @@ private:
 	void Audit(uint32 character_id, const std::string &action, uint32 item_id = 0, uint32 quantity = 0, const std::string &detail = "");
 
 	std::map<uint32, LootEntry> m_loot_entries;
+	EQ::AdvancedLoot::SessionDefaultStore m_session_defaults;
 	std::map<uint32, uint32> m_group_master_looters;
 	std::map<uint32, uint32> m_raid_master_looters;
 

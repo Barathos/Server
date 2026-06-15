@@ -48,6 +48,26 @@ namespace EQ::AdvancedLoot
 	bool FilterDecisionAutoLootsPersonal(LootFilterDecision decision);
 	VoteChoice FilterDecisionVoteChoice(LootFilterDecision decision);
 
+	std::string VoteChoiceKey(VoteChoice choice);
+	VoteChoice ParseSessionDefaultChoice(const std::string &value);
+
+	// In-memory, per-character "auto-cast this vote on new shared loot" default
+	// that lasts until the character logs out. Zone-local and never persisted;
+	// the client re-asserts it on zone-in so it follows the player across zones,
+	// and it lapses naturally on logout (the client resets, so it returns Off on
+	// next login).
+	struct SessionDefaultStore {
+		std::map<uint32, VoteChoice> entries;
+
+		// Stores the default; choice==Unset erases the entry.
+		void Set(uint32 character_id, VoteChoice choice);
+
+		// Returns the stored choice, or Unset if none. No side effects.
+		VoteChoice Resolve(uint32 character_id) const;
+
+		void Clear(uint32 character_id);
+	};
+
 	VoteResolution ResolveVotes(
 		const std::vector<uint32> &eligible_character_ids,
 		const std::map<uint32, VoteChoice> &votes,

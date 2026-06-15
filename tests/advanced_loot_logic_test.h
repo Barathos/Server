@@ -27,6 +27,8 @@ public:
 		TEST_ADD(AdvancedLootLogicTest::NonTimeoutVotesWaitForEveryEligiblePlayer);
 		TEST_ADD(AdvancedLootLogicTest::TimeoutVotesIgnoreMissingAndUnsetVotes);
 		TEST_ADD(AdvancedLootLogicTest::NeedPoolBeatsGreedAndPassNeverWins);
+		TEST_ADD(AdvancedLootLogicTest::SessionDefaultChoiceParsesAndKeys);
+		TEST_ADD(AdvancedLootLogicTest::SessionDefaultStorePerCharacter);
 	}
 
 private:
@@ -174,5 +176,48 @@ private:
 		const auto no_votes_timeout = EQ::AdvancedLoot::ResolveVotes(eligible, {}, true);
 		TEST_ASSERT(no_votes_timeout.ready);
 		TEST_ASSERT(no_votes_timeout.winner_pool.empty());
+	}
+
+	void SessionDefaultChoiceParsesAndKeys()
+	{
+		using EQ::AdvancedLoot::ParseSessionDefaultChoice;
+		using EQ::AdvancedLoot::VoteChoiceKey;
+
+		TEST_ASSERT(ParseSessionDefaultChoice("need")  == VoteChoice::Need);
+		TEST_ASSERT(ParseSessionDefaultChoice("greed") == VoteChoice::Greed);
+		TEST_ASSERT(ParseSessionDefaultChoice("pass")  == VoteChoice::Pass);
+		TEST_ASSERT(ParseSessionDefaultChoice("no")    == VoteChoice::Pass);
+		TEST_ASSERT(ParseSessionDefaultChoice("leave") == VoteChoice::Pass);
+		TEST_ASSERT(ParseSessionDefaultChoice("off")   == VoteChoice::Unset);
+		TEST_ASSERT(ParseSessionDefaultChoice("unset") == VoteChoice::Unset);
+		TEST_ASSERT(ParseSessionDefaultChoice("zzz")   == VoteChoice::Unset);
+
+		TEST_ASSERT(VoteChoiceKey(VoteChoice::Need)  == "need");
+		TEST_ASSERT(VoteChoiceKey(VoteChoice::Greed) == "greed");
+		TEST_ASSERT(VoteChoiceKey(VoteChoice::Pass)  == "pass");
+		TEST_ASSERT(VoteChoiceKey(VoteChoice::Unset) == "off");
+	}
+
+	void SessionDefaultStorePerCharacter()
+	{
+		EQ::AdvancedLoot::SessionDefaultStore store;
+
+		// Set resolves to the choice, repeatedly, with no side effects.
+		store.Set(101, VoteChoice::Greed);
+		TEST_ASSERT(store.Resolve(101) == VoteChoice::Greed);
+		TEST_ASSERT(store.Resolve(101) == VoteChoice::Greed);
+
+		// Independent per character; unknown character resolves to Unset.
+		store.Set(102, VoteChoice::Need);
+		TEST_ASSERT(store.Resolve(102) == VoteChoice::Need);
+		TEST_ASSERT(store.Resolve(999) == VoteChoice::Unset);
+
+		// Set(Unset) and Clear both remove an active default.
+		store.Set(101, VoteChoice::Unset);
+		TEST_ASSERT(store.Resolve(101) == VoteChoice::Unset);
+
+		store.Set(103, VoteChoice::Pass);
+		store.Clear(103);
+		TEST_ASSERT(store.Resolve(103) == VoteChoice::Unset);
 	}
 };
