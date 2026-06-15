@@ -19,9 +19,14 @@ codex/features-all
 Current local state when this handoff was written:
 
 ```text
-branch is ahead of barathos/codex/features-all by 29 commits
-worktree was clean before creating this handoff doc
+branch was ahead of the owned all-features remote branch by 29 commits
+repo was clean before creating this handoff doc
 ```
+
+Git note for current maintainers: this repo now uses `origin =
+https://github.com/Barathos/Server.git` and `upstream =
+https://github.com/EQEmu/EQEmu.git`. Older references to a `barathos` remote name
+in handoff notes refer to what is now the `origin` remote in this standalone repo.
 
 Current patcher build:
 

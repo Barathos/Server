@@ -9,7 +9,7 @@ state.
 
 | Thing | Where |
 |---|---|
-| Repo / branch | `D:\Codex\Apps\EQEmu-feature-all`, branch `codex/features-all` (NOT pushed to remote; ~35 local commits ahead) |
+| Repo / branch | `D:\Codex\Apps\EQEmu-feature-all`, branch `codex/features-all` in the standalone all-features repo. Historical ahead/behind counts in this handoff were captured at write time; current tracking target is `origin/codex/features-all`. |
 | Client DLL source | `client_files\native_autoloot\eq-core-dll\src\core_autoloot_native.h` (single header, ~11k lines) |
 | Client UI XML | `client_files\native_autoloot\ui\EQUI_NativeAutoLootWnd.xml` (+ patched `EQUI_Animations.xml`, `EQUI_Templates.xml`, `nal_pieces07/11.tga` in the same folder) |
 | Server autoloot | `zone\autoloot_manager.cpp/.h`, gate in `zone\corpse.cpp` (`IsManualLootLocked` call site) |
@@ -358,7 +358,7 @@ during debug loops.
    pooled rows (shared has 14); a tall-resized window showing more rows
    than the pool leaves bare/dead rows.
 3. **Raid mode needs an in-game test** (two-box `/raidinvite`).
-4. **Branch not pushed** to the `barathos` remote.
+4. **Push branch work to** `origin/codex/features-all` in `https://github.com/Barathos/Server.git`. `EQEmu/EQEmu` is the `upstream` sync source, not the push target.
 5. Client status line shows raids as "grouped" (cosmetic).
 6. Diagnostics still in the DLL (log-only: pulse counters, notify budget,
    set-all traces) — useful for tester reports; strip someday.

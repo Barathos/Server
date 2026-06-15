@@ -8,6 +8,13 @@
 <b>EQEmulator - A Fan-Made Project Honoring a Legendary MMORPG</b>
 </p>
 
+> Maintainer repo note: this all-features checkout is maintained as a standalone git
+> repository at `https://github.com/Barathos/Server.git` on branch
+> `codex/features-all`. In this repo, `origin` is the owned `Barathos/Server`
+> remote and `upstream` is `https://github.com/EQEmu/EQEmu.git`. The EQEmu links
+> and badges below are upstream project references, not the push/pull target for
+> this checkout.
+
 <p align="center">
 <a href="https://github.com/EQEmu/EQEmu/actions/workflows/build.yaml"><img src="https://github.com/EQEmu/EQEmu/actions/workflows/build.yaml/badge.svg"></a>
 <a href="https://github.com/EQEmu/EQEmu/graphs/contributors"><img src="https://img.shields.io/github/contributors/EQEmu/EQEmu" alt="Contributors"></a>
