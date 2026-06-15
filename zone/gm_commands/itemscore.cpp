@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace {
 	constexpr uint32 kRecalcChunkSize = 1000;
@@ -46,6 +47,7 @@ namespace {
 		c->Message(Chat::White, "Usage: #itemscore recalc <item_id|all>");
 		c->Message(Chat::White, "Usage: #itemscore explain <item_id>");
 		c->Message(Chat::White, "Usage: #itemscore audit [limit]");
+		c->Message(Chat::White, "Usage: #itemscore search [score <min-max>] [level <min-max>] [role <role>] [rarity <rarity>] [class <alias>] [slot <alias>] [limit <1-100>]");
 		c->Message(Chat::White, "Usage: #itemscore override <item_id> level <1-127>");
 		c->Message(Chat::White, "Usage: #itemscore override <item_id> multiplier <value>");
 		c->Message(Chat::White, "Usage: #itemscore override <item_id> bonus <points>");
@@ -282,6 +284,47 @@ namespace {
 		}
 	}
 
+	void SearchScores(Client *c, const Seperator *sep)
+	{
+		std::vector<std::string> args;
+		if (sep) {
+			for (uint16 index = 2; index <= sep->GetMaxArgNum(); ++index) {
+				const auto value = GetArg(sep, index);
+				if (!value.empty()) {
+					args.push_back(value);
+				}
+			}
+		}
+
+		EQ::ItemPower::SearchFilters filters;
+		std::string error_message;
+		if (!EQ::ItemPower::ParseSearchFilters(args, filters, &error_message)) {
+			c->Message(Chat::Yellow, "Invalid item power search: {}", error_message);
+			return;
+		}
+
+		std::vector<EQ::ItemPower::SearchResult> results;
+		if (!EQ::ItemPower::FindItemPower(database, filters, results, &error_message)) {
+			c->Message(Chat::Red, "Unable to search item power: {}", error_message);
+			return;
+		}
+
+		c->Message(Chat::White, "Item power search returned [{}] row(s).", results.size());
+		for (const auto &result : results) {
+			c->Message(
+				Chat::White,
+				"[{}] {} score [{}] level [{}] role [{}] rarity [{}] source [{}]",
+				result.item_id,
+				database.CreateItemLink(result.item_id),
+				result.item_score,
+				result.item_level,
+				EQ::ItemPower::RoleKey(result.best_role),
+				result.rarity_name,
+				result.source
+			);
+		}
+	}
+
 	void OverrideScore(Client *c, const Seperator *sep)
 	{
 		uint32 item_id = 0;
@@ -372,6 +415,11 @@ void command_itemscore(Client *c, const Seperator *sep)
 	if (action == "audit") {
 		const auto limit = GetArg(sep, 2).empty() ? 10 : Strings::ToUnsignedInt(GetArg(sep, 2), 10);
 		AuditScores(c, limit);
+		return;
+	}
+
+	if (action == "search") {
+		SearchScores(c, sep);
 		return;
 	}
 

@@ -27,6 +27,9 @@ public:
 		TEST_ADD(ItemPowerTest::AugmentedInstanceScoreIncludesAugments);
 		TEST_ADD(ItemPowerTest::BreakdownOnlyBuildsWhenRequested);
 		TEST_ADD(ItemPowerTest::RoleNamesKeysAndTransportAreStable);
+		TEST_ADD(ItemPowerTest::SearchFilterParsingSupportsOperatorRanges);
+		TEST_ADD(ItemPowerTest::ClassAndSlotAliasesBuildExpectedMasks);
+		TEST_ADD(ItemPowerTest::RarityRoleSortAndLimitFiltersAreStable);
 	}
 
 private:
@@ -270,5 +273,98 @@ private:
 		auto item = BuildMeleeSword();
 		const auto message = EQ::ItemPower::BuildTransportMessage(item, stored);
 		TEST_ASSERT(message == "ITEMPOWER|set|item_id=910002|ilvl=44|score=222|role=melee|version=2|source=manual|name=Fixture Melee Sword");
+	}
+
+	void SearchFilterParsingSupportsOperatorRanges()
+	{
+		EQ::ItemPower::SearchFilters filters;
+		std::string error_message;
+
+		const bool parsed = EQ::ItemPower::ParseSearchFilters(
+			{
+				"score", "1-100",
+				"level", "1", "10",
+				"itemtype", "10",
+				"itemclass", "0",
+				"nodrop", "true",
+				"norent", "false"
+			},
+			filters,
+			&error_message
+		);
+
+		TEST_ASSERT_MSG(parsed, error_message.c_str());
+		TEST_ASSERT(filters.has_min_score);
+		TEST_ASSERT(filters.has_max_score);
+		TEST_ASSERT_EQUALS(static_cast<uint32>(1), filters.min_score);
+		TEST_ASSERT_EQUALS(static_cast<uint32>(100), filters.max_score);
+		TEST_ASSERT(filters.has_min_level);
+		TEST_ASSERT(filters.has_max_level);
+		TEST_ASSERT_EQUALS(static_cast<uint16>(1), filters.min_level);
+		TEST_ASSERT_EQUALS(static_cast<uint16>(10), filters.max_level);
+		TEST_ASSERT_EQUALS(static_cast<int16>(10), filters.item_type);
+		TEST_ASSERT_EQUALS(static_cast<int16>(0), filters.item_class);
+		TEST_ASSERT_EQUALS(static_cast<int16>(1), filters.nodrop);
+		TEST_ASSERT_EQUALS(static_cast<int16>(0), filters.norent);
+	}
+
+	void ClassAndSlotAliasesBuildExpectedMasks()
+	{
+		uint32 class_mask = 0;
+		TEST_ASSERT(EQ::ItemPower::ParseClassMask("war,cleric,wiz", class_mask));
+		TEST_ASSERT_EQUALS(
+			static_cast<uint32>((1u << (Class::Warrior - 1)) | (1u << (Class::Cleric - 1)) | (1u << (Class::Wizard - 1))),
+			class_mask
+		);
+
+		uint32 slot_mask = 0;
+		TEST_ASSERT(EQ::ItemPower::ParseSlotMask("primary,secondary,ring", slot_mask));
+		TEST_ASSERT_EQUALS(
+			static_cast<uint32>(
+				(1u << EQ::invslot::slotPrimary) |
+				(1u << EQ::invslot::slotSecondary) |
+				(1u << EQ::invslot::slotFinger1) |
+				(1u << EQ::invslot::slotFinger2)
+			),
+			slot_mask
+		);
+	}
+
+	void RarityRoleSortAndLimitFiltersAreStable()
+	{
+		EQ::ItemPower::SearchFilters filters;
+		std::string error_message;
+
+		const bool parsed = EQ::ItemPower::ParseSearchFilters(
+			{
+				"role", "caster_dps",
+				"minrarity", "rare",
+				"class", "mag+enc",
+				"slot", "ear",
+				"limit", "250",
+				"sort", "name"
+			},
+			filters,
+			&error_message
+		);
+
+		TEST_ASSERT_MSG(parsed, error_message.c_str());
+		TEST_ASSERT(filters.has_role);
+		TEST_ASSERT(filters.role == EQ::ItemPower::Role::Caster);
+		TEST_ASSERT(filters.rarity_mode == EQ::ItemPower::RarityFilterMode::Minimum);
+		TEST_ASSERT_EQUALS(static_cast<uint8>(2), filters.rarity);
+		TEST_ASSERT(filters.has_class_mask);
+		TEST_ASSERT(filters.class_mask & (1u << (Class::Magician - 1)));
+		TEST_ASSERT(filters.class_mask & (1u << (Class::Enchanter - 1)));
+		TEST_ASSERT(filters.has_slot_mask);
+		TEST_ASSERT(filters.slot_mask & (1u << EQ::invslot::slotEar1));
+		TEST_ASSERT(filters.slot_mask & (1u << EQ::invslot::slotEar2));
+		TEST_ASSERT_EQUALS(static_cast<uint32>(100), filters.limit);
+		TEST_ASSERT(filters.sort == EQ::ItemPower::SearchSort::Name);
+
+		EQ::ItemPower::SearchFilters untagged;
+		TEST_ASSERT(EQ::ItemPower::ParseSearchFilters({"rarity", "untagged", "limit", "0"}, untagged, &error_message));
+		TEST_ASSERT(untagged.rarity_mode == EQ::ItemPower::RarityFilterMode::Untagged);
+		TEST_ASSERT_EQUALS(static_cast<uint32>(25), untagged.limit);
 	}
 };

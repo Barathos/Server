@@ -35,6 +35,8 @@ namespace {
 	constexpr const char *kItemPowerTable = "item_power";
 	constexpr const char *kItemPowerOverrideTable = "item_power_override";
 	constexpr const char *kItemPowerBreakdownTable = "item_power_breakdown";
+	constexpr const char *kItemPowerSearchView = "item_power_search";
+	constexpr const char *kItemRarityTable = "item_rarity";
 
 	int schema_ready = -1;
 
@@ -1016,6 +1018,368 @@ namespace {
 
 		return results.Success();
 	}
+
+	uint32 ClampSearchLimit(uint32 limit)
+	{
+		return std::clamp<uint32>(limit == 0 ? 25 : limit, 1, 100);
+	}
+
+	std::string NormalizeToken(std::string value)
+	{
+		Strings::Trim(value);
+		return Strings::ToLower(value);
+	}
+
+	void SetParseError(std::string *error_message, const std::string &message)
+	{
+		if (error_message) {
+			*error_message = message;
+		}
+	}
+
+	bool ParseUnsignedValue(const std::string &value, uint32 &parsed)
+	{
+		if (!Strings::IsNumber(value)) {
+			return false;
+		}
+
+		parsed = Strings::ToUnsignedInt(value);
+		return true;
+	}
+
+	bool ParseBoolValue(const std::string &value, int16 &parsed)
+	{
+		const auto lowered = NormalizeToken(value);
+		if (lowered == "1" || lowered == "true" || lowered == "yes" || lowered == "on") {
+			parsed = 1;
+			return true;
+		}
+
+		if (lowered == "0" || lowered == "false" || lowered == "no" || lowered == "off") {
+			parsed = 0;
+			return true;
+		}
+
+		return false;
+	}
+
+	bool ParseRangeArguments(
+		const std::vector<std::string> &args,
+		size_t &index,
+		uint32 &min_value,
+		uint32 &max_value,
+		bool &has_min,
+		bool &has_max,
+		const char *field_name,
+		std::string *error_message
+	)
+	{
+		if (index >= args.size()) {
+			SetParseError(error_message, fmt::format("{} requires a value or min/max pair", field_name));
+			return false;
+		}
+
+		const auto value = NormalizeToken(args[index++]);
+		const auto parts = Strings::Split(value, '-');
+		if (parts.size() == 2 && !parts[0].empty() && !parts[1].empty()) {
+			uint32 parsed_min = 0;
+			uint32 parsed_max = 0;
+			if (!ParseUnsignedValue(parts[0], parsed_min) || !ParseUnsignedValue(parts[1], parsed_max)) {
+				SetParseError(error_message, fmt::format("{} range must be numeric", field_name));
+				return false;
+			}
+
+			min_value = std::min(parsed_min, parsed_max);
+			max_value = std::max(parsed_min, parsed_max);
+			has_min = true;
+			has_max = true;
+			return true;
+		}
+
+		uint32 parsed = 0;
+		if (!ParseUnsignedValue(value, parsed)) {
+			SetParseError(error_message, fmt::format("{} must be numeric", field_name));
+			return false;
+		}
+
+		if (index < args.size() && Strings::IsNumber(args[index])) {
+			uint32 parsed_max = Strings::ToUnsignedInt(args[index++]);
+			min_value = std::min(parsed, parsed_max);
+			max_value = std::max(parsed, parsed_max);
+			has_min = true;
+			has_max = true;
+			return true;
+		}
+
+		min_value = parsed;
+		max_value = parsed;
+		has_min = true;
+		has_max = true;
+		return true;
+	}
+
+	std::vector<std::string> SplitAliasList(std::string value)
+	{
+		for (auto &ch : value) {
+			if (ch == '+' || ch == '|' || ch == ';' || ch == '/') {
+				ch = ',';
+			}
+		}
+
+		auto parts = Strings::Split(value, ',');
+		for (auto &part : parts) {
+			part = NormalizeToken(part);
+		}
+
+		return parts;
+	}
+
+	uint32 ClassMaskForAlias(const std::string &alias)
+	{
+		if (Strings::IsNumber(alias)) {
+			return Strings::ToUnsignedInt(alias);
+		}
+
+		const std::pair<const char *, uint8> classes[] = {
+			{"war", 1}, {"warrior", 1},
+			{"clr", 2}, {"cleric", 2},
+			{"pal", 3}, {"paladin", 3},
+			{"rng", 4}, {"ranger", 4},
+			{"shd", 5}, {"sk", 5}, {"shadowknight", 5}, {"shadow_knight", 5}, {"shadow knight", 5},
+			{"dru", 6}, {"druid", 6},
+			{"mnk", 7}, {"monk", 7},
+			{"brd", 8}, {"bard", 8},
+			{"rog", 9}, {"rogue", 9},
+			{"shm", 10}, {"shaman", 10},
+			{"nec", 11}, {"necromancer", 11},
+			{"wiz", 12}, {"wizard", 12},
+			{"mag", 13}, {"mage", 13}, {"magician", 13},
+			{"enc", 14}, {"enchanter", 14},
+			{"bst", 15}, {"beastlord", 15},
+			{"ber", 16}, {"zer", 16}, {"berserker", 16}
+		};
+
+		for (const auto &[key, class_id] : classes) {
+			if (alias == key) {
+				return 1u << (class_id - 1);
+			}
+		}
+
+		return 0;
+	}
+
+	uint32 SlotMaskForAlias(const std::string &alias)
+	{
+		if (Strings::IsNumber(alias)) {
+			return Strings::ToUnsignedInt(alias);
+		}
+
+		const auto slot_bit = [](uint8 slot) {
+			return 1u << slot;
+		};
+
+		if (alias == "charm") {
+			return slot_bit(EQ::invslot::slotCharm);
+		}
+		if (alias == "ear" || alias == "ears" || alias == "earring") {
+			return slot_bit(EQ::invslot::slotEar1) | slot_bit(EQ::invslot::slotEar2);
+		}
+		if (alias == "head" || alias == "helm") {
+			return slot_bit(EQ::invslot::slotHead);
+		}
+		if (alias == "face") {
+			return slot_bit(EQ::invslot::slotFace);
+		}
+		if (alias == "neck") {
+			return slot_bit(EQ::invslot::slotNeck);
+		}
+		if (alias == "shoulder" || alias == "shoulders") {
+			return slot_bit(EQ::invslot::slotShoulders);
+		}
+		if (alias == "arms") {
+			return slot_bit(EQ::invslot::slotArms);
+		}
+		if (alias == "back" || alias == "cloak") {
+			return slot_bit(EQ::invslot::slotBack);
+		}
+		if (alias == "wrist" || alias == "wrists" || alias == "bracer") {
+			return slot_bit(EQ::invslot::slotWrist1) | slot_bit(EQ::invslot::slotWrist2);
+		}
+		if (alias == "range" || alias == "ranged") {
+			return slot_bit(EQ::invslot::slotRange);
+		}
+		if (alias == "hands" || alias == "gloves") {
+			return slot_bit(EQ::invslot::slotHands);
+		}
+		if (alias == "primary" || alias == "mainhand" || alias == "main_hand") {
+			return slot_bit(EQ::invslot::slotPrimary);
+		}
+		if (alias == "secondary" || alias == "offhand" || alias == "off_hand") {
+			return slot_bit(EQ::invslot::slotSecondary);
+		}
+		if (alias == "finger" || alias == "fingers" || alias == "ring") {
+			return slot_bit(EQ::invslot::slotFinger1) | slot_bit(EQ::invslot::slotFinger2);
+		}
+		if (alias == "chest" || alias == "bp" || alias == "breastplate") {
+			return slot_bit(EQ::invslot::slotChest);
+		}
+		if (alias == "legs" || alias == "pants") {
+			return slot_bit(EQ::invslot::slotLegs);
+		}
+		if (alias == "feet" || alias == "boots") {
+			return slot_bit(EQ::invslot::slotFeet);
+		}
+		if (alias == "waist" || alias == "belt") {
+			return slot_bit(EQ::invslot::slotWaist);
+		}
+		if (alias == "powersource" || alias == "power_source") {
+			return slot_bit(EQ::invslot::slotPowerSource);
+		}
+		if (alias == "ammo") {
+			return slot_bit(EQ::invslot::slotAmmo);
+		}
+		if (alias == "weapon" || alias == "weapons") {
+			return slot_bit(EQ::invslot::slotPrimary) | slot_bit(EQ::invslot::slotSecondary) | slot_bit(EQ::invslot::slotRange);
+		}
+
+		return 0;
+	}
+
+	bool EnsureItemRaritySchema(Database &db)
+	{
+		const auto results = db.QueryDatabase(
+			"CREATE TABLE IF NOT EXISTS `item_rarity` ("
+			"`item_id` INT UNSIGNED NOT NULL,"
+			"`rarity` TINYINT UNSIGNED NOT NULL DEFAULT 0,"
+			"`updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
+			"PRIMARY KEY (`item_id`),"
+			"INDEX `idx_item_rarity_rarity` (`rarity`),"
+			"CONSTRAINT `item_rarity_rarity_chk` CHECK (`rarity` BETWEEN 0 AND 4)"
+			") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
+		);
+
+		return results.Success();
+	}
+
+	bool EnsureSearchView(Database &db)
+	{
+		const auto results = db.QueryDatabase(
+			fmt::format(
+				"CREATE OR REPLACE VIEW `{}` AS "
+				"SELECT "
+				"p.`item_id`, "
+				"i.`Name` AS `name`, "
+				"p.`item_level`, "
+				"p.`item_score`, "
+				"CASE "
+				"WHEN p.`tank_score` >= p.`melee_score` AND p.`tank_score` >= p.`caster_score` AND p.`tank_score` >= p.`healer_score` AND p.`tank_score` >= p.`hybrid_score` THEN 'tank' "
+				"WHEN p.`melee_score` > p.`tank_score` AND p.`melee_score` >= p.`caster_score` AND p.`melee_score` >= p.`healer_score` AND p.`melee_score` >= p.`hybrid_score` THEN 'melee' "
+				"WHEN p.`caster_score` > p.`tank_score` AND p.`caster_score` > p.`melee_score` AND p.`caster_score` >= p.`healer_score` AND p.`caster_score` >= p.`hybrid_score` THEN 'caster' "
+				"WHEN p.`healer_score` > p.`tank_score` AND p.`healer_score` > p.`melee_score` AND p.`healer_score` > p.`caster_score` AND p.`healer_score` >= p.`hybrid_score` THEN 'healer' "
+				"ELSE 'hybrid' END AS `best_role`, "
+				"p.`tank_score`, p.`melee_score`, p.`caster_score`, p.`healer_score`, p.`hybrid_score`, "
+				"p.`score_version`, p.`source`, "
+				"i.`reqlevel`, i.`reclevel`, i.`classes`, i.`slots`, i.`itemtype`, i.`itemclass`, i.`nodrop`, i.`norent`, i.`loregroup`, "
+				"COALESCE(r.`rarity`, 0) AS `rarity`, "
+				"CASE COALESCE(r.`rarity`, 0) "
+				"WHEN 1 THEN 'Uncommon' "
+				"WHEN 2 THEN 'Rare' "
+				"WHEN 3 THEN 'Legendary' "
+				"WHEN 4 THEN 'Unique' "
+				"ELSE 'Common' END AS `rarity_name`, "
+				"CASE WHEN r.`item_id` IS NULL THEN 0 ELSE 1 END AS `rarity_tagged` "
+				"FROM `{}` p "
+				"INNER JOIN `items` i ON i.`id` = p.`item_id` "
+				"LEFT JOIN `{}` r ON r.`item_id` = p.`item_id` "
+				"WHERE p.`score_version` = {}",
+				kItemPowerSearchView,
+				kItemPowerTable,
+				kItemRarityTable,
+				EQ::ItemPower::ScoreVersion
+			)
+		);
+
+		return results.Success();
+	}
+
+	bool EnsureSearchSchema(Database &db, std::string *error_message = nullptr)
+	{
+		if (!EQ::ItemPower::EnsureSchema(db)) {
+			SetParseError(error_message, "item_power schema is not ready");
+			return false;
+		}
+
+		if (!EnsureItemRaritySchema(db)) {
+			SetParseError(error_message, "item_rarity schema is not ready");
+			return false;
+		}
+
+		if (!EnsureSearchView(db)) {
+			SetParseError(error_message, "item_power_search view is not ready");
+			return false;
+		}
+
+		return true;
+	}
+
+	const char *SearchSelectColumns()
+	{
+		return "`item_id`, `name`, `item_level`, `item_score`, `best_role`, "
+			"`tank_score`, `melee_score`, `caster_score`, `healer_score`, `hybrid_score`, "
+			"`score_version`, `source`, `reqlevel`, `reclevel`, `classes`, `slots`, "
+			"`itemtype`, `itemclass`, `nodrop`, `norent`, `loregroup`, `rarity`, `rarity_name`, `rarity_tagged`";
+	}
+
+	EQ::ItemPower::SearchResult SearchResultFromRow(MySQLRequestRow &row)
+	{
+		EQ::ItemPower::SearchResult result;
+		result.item_id = row[0] ? Strings::ToUnsignedInt(row[0]) : 0;
+		result.name = row[1] ? row[1] : "";
+		result.item_level = row[2] ? static_cast<uint16>(Strings::ToUnsignedInt(row[2])) : 0;
+		result.item_score = row[3] ? Strings::ToUnsignedInt(row[3]) : 0;
+
+		EQ::ItemPower::Role role = EQ::ItemPower::Role::Tank;
+		if (row[4] && EQ::ItemPower::ParseRole(row[4], role)) {
+			result.best_role = role;
+		}
+
+		result.tank_score = row[5] ? Strings::ToUnsignedInt(row[5]) : 0;
+		result.melee_score = row[6] ? Strings::ToUnsignedInt(row[6]) : 0;
+		result.caster_score = row[7] ? Strings::ToUnsignedInt(row[7]) : 0;
+		result.healer_score = row[8] ? Strings::ToUnsignedInt(row[8]) : 0;
+		result.hybrid_score = row[9] ? Strings::ToUnsignedInt(row[9]) : 0;
+		result.score_version = row[10] ? static_cast<uint16>(Strings::ToUnsignedInt(row[10])) : EQ::ItemPower::ScoreVersion;
+		result.source = row[11] ? row[11] : "";
+		result.reqlevel = row[12] ? static_cast<uint8>(Strings::ToUnsignedInt(row[12])) : 0;
+		result.reclevel = row[13] ? static_cast<uint8>(Strings::ToUnsignedInt(row[13])) : 0;
+		result.classes = row[14] ? Strings::ToUnsignedInt(row[14]) : 0;
+		result.slots = row[15] ? Strings::ToUnsignedInt(row[15]) : 0;
+		result.itemtype = row[16] ? static_cast<uint8>(Strings::ToUnsignedInt(row[16])) : 0;
+		result.itemclass = row[17] ? static_cast<uint8>(Strings::ToUnsignedInt(row[17])) : 0;
+		result.nodrop = row[18] ? static_cast<uint8>(Strings::ToUnsignedInt(row[18])) : 0;
+		result.norent = row[19] ? static_cast<uint8>(Strings::ToUnsignedInt(row[19])) : 0;
+		result.loregroup = row[20] ? Strings::ToInt(row[20]) : 0;
+		result.rarity = row[21] ? static_cast<uint8>(Strings::ToUnsignedInt(row[21])) : 0;
+		result.rarity_name = row[22] ? row[22] : "Common";
+		result.rarity_tagged = row[23] && Strings::ToInt(row[23]) != 0;
+		return result;
+	}
+
+	std::string SearchOrderBy(EQ::ItemPower::SearchSort sort)
+	{
+		switch (sort) {
+			case EQ::ItemPower::SearchSort::Level:
+				return "`item_level` ASC, `item_score` ASC, `item_id` ASC";
+			case EQ::ItemPower::SearchSort::Name:
+				return "`name` ASC, `item_id` ASC";
+			case EQ::ItemPower::SearchSort::Random:
+				return "RAND()";
+			case EQ::ItemPower::SearchSort::Score:
+				break;
+		}
+
+		return "`item_score` ASC, `item_level` ASC, `item_id` ASC";
+	}
 }
 
 bool EQ::ItemPower::EnsureSchema(Database &db)
@@ -1035,7 +1399,11 @@ bool EQ::ItemPower::EnsureSchema(Database &db)
 		"`updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
 		"PRIMARY KEY (`item_id`),"
 		"INDEX `idx_item_power_level` (`item_level`),"
-		"INDEX `idx_item_power_score_version` (`score_version`)"
+		"INDEX `idx_item_power_score` (`item_score`),"
+		"INDEX `idx_item_power_level_score` (`item_level`, `item_score`),"
+		"INDEX `idx_item_power_score_version` (`score_version`),"
+		"INDEX `idx_item_power_version_score` (`score_version`, `item_score`),"
+		"INDEX `idx_item_power_version_role` (`score_version`, `tank_score`, `melee_score`, `caster_score`, `healer_score`, `hybrid_score`)"
 		") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
 	);
 
@@ -1063,6 +1431,10 @@ bool EQ::ItemPower::EnsureSchema(Database &db)
 	);
 
 	const bool ready = item_power.Success() && override.Success() && breakdown.Success();
+	if (ready && EnsureItemRaritySchema(db)) {
+		EnsureSearchView(db);
+	}
+
 	SetSchemaReady(ready);
 	return ready;
 }
@@ -1395,9 +1767,498 @@ const char *EQ::ItemPower::RoleKey(Role role)
 	return "unknown";
 }
 
+bool EQ::ItemPower::ParseRole(const std::string &value, Role &role)
+{
+	const auto lowered = NormalizeToken(value);
+	if (lowered == "tank") {
+		role = Role::Tank;
+		return true;
+	}
+
+	if (lowered == "melee" || lowered == "melee_dps" || lowered == "meleedps") {
+		role = Role::Melee;
+		return true;
+	}
+
+	if (lowered == "caster" || lowered == "caster_dps" || lowered == "casterdps" || lowered == "int") {
+		role = Role::Caster;
+		return true;
+	}
+
+	if (lowered == "healer" || lowered == "heal" || lowered == "wis") {
+		role = Role::Healer;
+		return true;
+	}
+
+	if (lowered == "hybrid") {
+		role = Role::Hybrid;
+		return true;
+	}
+
+	return false;
+}
+
+bool EQ::ItemPower::ParseRarity(const std::string &value, uint8 &rarity, bool *untagged)
+{
+	if (untagged) {
+		*untagged = false;
+	}
+
+	const auto lowered = NormalizeToken(value);
+	if (lowered == "untagged" || lowered == "unrated" || lowered == "none") {
+		if (untagged) {
+			*untagged = true;
+		}
+		rarity = 0;
+		return true;
+	}
+
+	if (Strings::IsNumber(lowered)) {
+		const auto parsed = Strings::ToUnsignedInt(lowered);
+		if (parsed <= 4) {
+			rarity = static_cast<uint8>(parsed);
+			return true;
+		}
+
+		return false;
+	}
+
+	if (lowered == "common") {
+		rarity = 0;
+		return true;
+	}
+
+	if (lowered == "uncommon") {
+		rarity = 1;
+		return true;
+	}
+
+	if (lowered == "rare") {
+		rarity = 2;
+		return true;
+	}
+
+	if (lowered == "legendary") {
+		rarity = 3;
+		return true;
+	}
+
+	if (lowered == "unique") {
+		rarity = 4;
+		return true;
+	}
+
+	return false;
+}
+
+bool EQ::ItemPower::ParseClassMask(const std::string &value, uint32 &class_mask)
+{
+	const auto lowered = NormalizeToken(value);
+	if (lowered == "any" || lowered == "all") {
+		class_mask = 0;
+		return true;
+	}
+
+	uint32 mask = 0;
+	for (const auto &part : SplitAliasList(value)) {
+		if (part.empty()) {
+			continue;
+		}
+
+		const auto alias_mask = ClassMaskForAlias(part);
+		if (!alias_mask) {
+			return false;
+		}
+
+		mask |= alias_mask;
+	}
+
+	class_mask = mask;
+	return mask != 0;
+}
+
+bool EQ::ItemPower::ParseSlotMask(const std::string &value, uint32 &slot_mask)
+{
+	const auto lowered = NormalizeToken(value);
+	if (lowered == "any" || lowered == "all") {
+		slot_mask = 0;
+		return true;
+	}
+
+	uint32 mask = 0;
+	for (const auto &part : SplitAliasList(value)) {
+		if (part.empty()) {
+			continue;
+		}
+
+		const auto alias_mask = SlotMaskForAlias(part);
+		if (!alias_mask) {
+			return false;
+		}
+
+		mask |= alias_mask;
+	}
+
+	slot_mask = mask;
+	return mask != 0;
+}
+
+bool EQ::ItemPower::ParseSearchFilters(const std::vector<std::string> &args, SearchFilters &filters, std::string *error_message)
+{
+	filters.limit = ClampSearchLimit(filters.limit);
+
+	for (size_t index = 0; index < args.size();) {
+		const auto key = NormalizeToken(args[index++]);
+		if (key.empty()) {
+			continue;
+		}
+
+		if (key == "score" || key == "scores" || key == "item_score") {
+			if (!ParseRangeArguments(args, index, filters.min_score, filters.max_score, filters.has_min_score, filters.has_max_score, "score", error_message)) {
+				return false;
+			}
+		}
+		else if (key == "minscore" || key == "min_score") {
+			if (index >= args.size() || !Strings::IsNumber(args[index])) {
+				SetParseError(error_message, "minscore requires a numeric value");
+				return false;
+			}
+			filters.min_score = Strings::ToUnsignedInt(args[index++]);
+			filters.has_min_score = true;
+		}
+		else if (key == "maxscore" || key == "max_score") {
+			if (index >= args.size() || !Strings::IsNumber(args[index])) {
+				SetParseError(error_message, "maxscore requires a numeric value");
+				return false;
+			}
+			filters.max_score = Strings::ToUnsignedInt(args[index++]);
+			filters.has_max_score = true;
+		}
+		else if (key == "level" || key == "levels" || key == "item_level") {
+			uint32 min_level = filters.min_level;
+			uint32 max_level = filters.max_level;
+			if (!ParseRangeArguments(args, index, min_level, max_level, filters.has_min_level, filters.has_max_level, "level", error_message)) {
+				return false;
+			}
+			filters.min_level = static_cast<uint16>(std::clamp<uint32>(min_level, 0, 255));
+			filters.max_level = static_cast<uint16>(std::clamp<uint32>(max_level, 0, 255));
+		}
+		else if (key == "minlevel" || key == "min_level") {
+			if (index >= args.size() || !Strings::IsNumber(args[index])) {
+				SetParseError(error_message, "minlevel requires a numeric value");
+				return false;
+			}
+			filters.min_level = static_cast<uint16>(std::clamp<uint32>(Strings::ToUnsignedInt(args[index++]), 0, 255));
+			filters.has_min_level = true;
+		}
+		else if (key == "maxlevel" || key == "max_level") {
+			if (index >= args.size() || !Strings::IsNumber(args[index])) {
+				SetParseError(error_message, "maxlevel requires a numeric value");
+				return false;
+			}
+			filters.max_level = static_cast<uint16>(std::clamp<uint32>(Strings::ToUnsignedInt(args[index++]), 0, 255));
+			filters.has_max_level = true;
+		}
+		else if (key == "role" || key == "best_role") {
+			if (index >= args.size()) {
+				SetParseError(error_message, "role requires a value");
+				return false;
+			}
+
+			const auto value = NormalizeToken(args[index++]);
+			if (value == "any" || value == "all") {
+				filters.has_role = false;
+				continue;
+			}
+
+			Role role = Role::Tank;
+			if (!ParseRole(value, role)) {
+				SetParseError(error_message, fmt::format("unknown role [{}]", value));
+				return false;
+			}
+
+			filters.role = role;
+			filters.has_role = true;
+		}
+		else if (key == "rarity") {
+			if (index >= args.size()) {
+				SetParseError(error_message, "rarity requires a value");
+				return false;
+			}
+
+			const auto value = NormalizeToken(args[index++]);
+			if (value == "any" || value == "all") {
+				filters.rarity_mode = RarityFilterMode::Any;
+				continue;
+			}
+
+			bool untagged = false;
+			uint8 rarity = 0;
+			if (!ParseRarity(value, rarity, &untagged)) {
+				SetParseError(error_message, fmt::format("unknown rarity [{}]", value));
+				return false;
+			}
+
+			filters.rarity = rarity;
+			filters.rarity_mode = untagged ? RarityFilterMode::Untagged : RarityFilterMode::Exact;
+		}
+		else if (key == "minrarity" || key == "min_rarity") {
+			if (index >= args.size()) {
+				SetParseError(error_message, "minrarity requires a value");
+				return false;
+			}
+
+			bool untagged = false;
+			uint8 rarity = 0;
+			const auto value = NormalizeToken(args[index++]);
+			if (!ParseRarity(value, rarity, &untagged) || untagged) {
+				SetParseError(error_message, fmt::format("unknown minimum rarity [{}]", value));
+				return false;
+			}
+
+			filters.rarity = rarity;
+			filters.rarity_mode = RarityFilterMode::Minimum;
+		}
+		else if (key == "class" || key == "classes" || key == "classmask" || key == "class_mask") {
+			if (index >= args.size()) {
+				SetParseError(error_message, "class requires a value");
+				return false;
+			}
+
+			uint32 mask = 0;
+			const auto value = args[index++];
+			if (!ParseClassMask(value, mask)) {
+				SetParseError(error_message, fmt::format("unknown class alias [{}]", value));
+				return false;
+			}
+
+			filters.class_mask = mask;
+			filters.has_class_mask = mask != 0;
+		}
+		else if (key == "slot" || key == "slots" || key == "slotmask" || key == "slot_mask") {
+			if (index >= args.size()) {
+				SetParseError(error_message, "slot requires a value");
+				return false;
+			}
+
+			uint32 mask = 0;
+			const auto value = args[index++];
+			if (!ParseSlotMask(value, mask)) {
+				SetParseError(error_message, fmt::format("unknown slot alias [{}]", value));
+				return false;
+			}
+
+			filters.slot_mask = mask;
+			filters.has_slot_mask = mask != 0;
+		}
+		else if (key == "itemtype" || key == "item_type") {
+			if (index >= args.size() || !Strings::IsNumber(args[index])) {
+				SetParseError(error_message, "itemtype requires a numeric value");
+				return false;
+			}
+			filters.item_type = static_cast<int16>(std::clamp<uint32>(Strings::ToUnsignedInt(args[index++]), 0, 255));
+		}
+		else if (key == "itemclass" || key == "item_class") {
+			if (index >= args.size() || !Strings::IsNumber(args[index])) {
+				SetParseError(error_message, "itemclass requires a numeric value");
+				return false;
+			}
+			filters.item_class = static_cast<int16>(std::clamp<uint32>(Strings::ToUnsignedInt(args[index++]), 0, 255));
+		}
+		else if (key == "nodrop" || key == "no_drop") {
+			if (index >= args.size() || !ParseBoolValue(args[index++], filters.nodrop)) {
+				SetParseError(error_message, "nodrop requires true/false or 1/0");
+				return false;
+			}
+		}
+		else if (key == "norent" || key == "no_rent") {
+			if (index >= args.size() || !ParseBoolValue(args[index++], filters.norent)) {
+				SetParseError(error_message, "norent requires true/false or 1/0");
+				return false;
+			}
+		}
+		else if (key == "limit") {
+			if (index >= args.size() || !Strings::IsNumber(args[index])) {
+				SetParseError(error_message, "limit requires a numeric value");
+				return false;
+			}
+			filters.limit = ClampSearchLimit(Strings::ToUnsignedInt(args[index++]));
+		}
+		else if (key == "sort" || key == "order") {
+			if (index >= args.size()) {
+				SetParseError(error_message, "sort requires a value");
+				return false;
+			}
+
+			const auto value = NormalizeToken(args[index++]);
+			if (value == "score" || value == "item_score") {
+				filters.sort = SearchSort::Score;
+			}
+			else if (value == "level" || value == "item_level") {
+				filters.sort = SearchSort::Level;
+			}
+			else if (value == "name") {
+				filters.sort = SearchSort::Name;
+			}
+			else if (value == "random" || value == "rand") {
+				filters.sort = SearchSort::Random;
+			}
+			else {
+				SetParseError(error_message, fmt::format("unknown sort [{}]", value));
+				return false;
+			}
+		}
+		else {
+			SetParseError(error_message, fmt::format("unknown item power search filter [{}]", key));
+			return false;
+		}
+	}
+
+	filters.limit = ClampSearchLimit(filters.limit);
+	return true;
+}
+
 EQ::ItemPower::Role EQ::ItemPower::BestRoleFromScores(const StoredScore &score)
 {
 	return BestRole(score.tank_score, score.melee_score, score.caster_score, score.healer_score, score.hybrid_score);
+}
+
+bool EQ::ItemPower::GetItemPower(Database &db, uint32 item_id, SearchResult &result, std::string *error_message)
+{
+	if (!item_id) {
+		SetParseError(error_message, "item id is required");
+		return false;
+	}
+
+	if (!EnsureSearchSchema(db, error_message)) {
+		return false;
+	}
+
+	const auto query = fmt::format(
+		"SELECT {} FROM `{}` WHERE `item_id` = {} LIMIT 1",
+		SearchSelectColumns(),
+		kItemPowerSearchView,
+		item_id
+	);
+
+	auto results = db.QueryDatabase(query);
+	if (!results.Success()) {
+		SetParseError(error_message, results.ErrorMessage());
+		return false;
+	}
+
+	if (!results.RowCount()) {
+		return false;
+	}
+
+	result = SearchResultFromRow(results.begin());
+	return result.item_id != 0;
+}
+
+bool EQ::ItemPower::FindItemPower(Database &db, const SearchFilters &filters, std::vector<SearchResult> &results, std::string *error_message)
+{
+	results.clear();
+
+	if (!EnsureSearchSchema(db, error_message)) {
+		return false;
+	}
+
+	std::vector<std::string> where;
+	where.emplace_back("`item_score` > 0");
+
+	if (filters.has_min_score) {
+		where.push_back(fmt::format("`item_score` >= {}", filters.min_score));
+	}
+
+	if (filters.has_max_score) {
+		where.push_back(fmt::format("`item_score` <= {}", filters.max_score));
+	}
+
+	if (filters.has_min_level) {
+		where.push_back(fmt::format("`item_level` >= {}", filters.min_level));
+	}
+
+	if (filters.has_max_level) {
+		where.push_back(fmt::format("`item_level` <= {}", filters.max_level));
+	}
+
+	if (filters.has_role) {
+		where.push_back(fmt::format("`best_role` = '{}'", RoleKey(filters.role)));
+	}
+
+	switch (filters.rarity_mode) {
+		case RarityFilterMode::Exact:
+			where.push_back(fmt::format("`rarity` = {}", filters.rarity));
+			break;
+		case RarityFilterMode::Minimum:
+			where.push_back(fmt::format("`rarity` >= {}", filters.rarity));
+			break;
+		case RarityFilterMode::Untagged:
+			where.emplace_back("`rarity_tagged` = 0");
+			break;
+		case RarityFilterMode::Any:
+			break;
+	}
+
+	if (filters.has_class_mask) {
+		where.push_back(fmt::format("(`classes` & {}) <> 0", filters.class_mask));
+	}
+
+	if (filters.has_slot_mask) {
+		where.push_back(fmt::format("(`slots` & {}) <> 0", filters.slot_mask));
+	}
+
+	if (filters.item_type >= 0) {
+		where.push_back(fmt::format("`itemtype` = {}", filters.item_type));
+	}
+
+	if (filters.item_class >= 0) {
+		where.push_back(fmt::format("`itemclass` = {}", filters.item_class));
+	}
+
+	if (filters.nodrop >= 0) {
+		where.push_back(fmt::format("`nodrop` = {}", filters.nodrop));
+	}
+
+	if (filters.norent >= 0) {
+		where.push_back(fmt::format("`norent` = {}", filters.norent));
+	}
+
+	const auto query = fmt::format(
+		"SELECT {} FROM `{}` WHERE {} ORDER BY {} LIMIT {}",
+		SearchSelectColumns(),
+		kItemPowerSearchView,
+		Strings::Join(where, " AND "),
+		SearchOrderBy(filters.sort),
+		ClampSearchLimit(filters.limit)
+	);
+
+	auto db_results = db.QueryDatabase(query);
+	if (!db_results.Success()) {
+		SetParseError(error_message, db_results.ErrorMessage());
+		return false;
+	}
+
+	results.reserve(db_results.RowCount());
+	for (auto row = db_results.begin(); row != db_results.end(); ++row) {
+		results.push_back(SearchResultFromRow(row));
+	}
+
+	return true;
+}
+
+uint32 EQ::ItemPower::RandomItemPower(Database &db, const SearchFilters &filters, std::string *error_message)
+{
+	SearchFilters random_filters = filters;
+	random_filters.sort = SearchSort::Random;
+	random_filters.limit = 1;
+
+	std::vector<SearchResult> results;
+	if (!FindItemPower(db, random_filters, results, error_message) || results.empty()) {
+		return 0;
+	}
+
+	return results.front().item_id;
 }
 
 std::string EQ::ItemPower::BuildTransportMessage(const ItemData &item, const ScoreResult &score)

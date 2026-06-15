@@ -41,6 +41,20 @@ namespace EQ
 			Hybrid
 		};
 
+		enum class SearchSort : uint8 {
+			Score = 0,
+			Level,
+			Name,
+			Random
+		};
+
+		enum class RarityFilterMode : uint8 {
+			Any = 0,
+			Exact,
+			Minimum,
+			Untagged
+		};
+
 		struct ScoreComponent {
 			std::string component;
 			int32       score = 0;
@@ -89,6 +103,65 @@ namespace EQ
 			std::string updated_at;
 		};
 
+		struct SearchFilters {
+			bool has_min_score = false;
+			bool has_max_score = false;
+			uint32 min_score = 0;
+			uint32 max_score = 0;
+
+			bool has_min_level = false;
+			bool has_max_level = false;
+			uint16 min_level = 0;
+			uint16 max_level = 0;
+
+			bool has_role = false;
+			Role role = Role::Tank;
+
+			RarityFilterMode rarity_mode = RarityFilterMode::Any;
+			uint8 rarity = 0;
+
+			bool has_class_mask = false;
+			uint32 class_mask = 0;
+
+			bool has_slot_mask = false;
+			uint32 slot_mask = 0;
+
+			int16 item_type = -1;
+			int16 item_class = -1;
+			int16 nodrop = -1;
+			int16 norent = -1;
+
+			uint32 limit = 25;
+			SearchSort sort = SearchSort::Score;
+		};
+
+		struct SearchResult {
+			uint32 item_id = 0;
+			std::string name;
+			uint16 item_level = 0;
+			uint32 item_score = 0;
+			Role best_role = Role::Tank;
+			uint32 tank_score = 0;
+			uint32 melee_score = 0;
+			uint32 caster_score = 0;
+			uint32 healer_score = 0;
+			uint32 hybrid_score = 0;
+			uint16 score_version = ScoreVersion;
+			std::string source;
+			uint8 reqlevel = 0;
+			uint8 reclevel = 0;
+			uint32 classes = 0;
+			uint32 slots = 0;
+			uint8 itemtype = 0;
+			uint8 itemclass = 0;
+			uint8 nodrop = 0;
+			uint8 norent = 0;
+			int32 loregroup = 0;
+			uint8 rarity = 0;
+			std::string rarity_name;
+			bool rarity_tagged = false;
+		};
+
 		bool EnsureSchema(Database &db);
 		bool SchemaReady(Database &db);
 
@@ -112,7 +185,15 @@ namespace EQ
 
 		const char *RoleName(Role role);
 		const char *RoleKey(Role role);
+		bool ParseRole(const std::string &value, Role &role);
+		bool ParseRarity(const std::string &value, uint8 &rarity, bool *untagged = nullptr);
+		bool ParseClassMask(const std::string &value, uint32 &class_mask);
+		bool ParseSlotMask(const std::string &value, uint32 &slot_mask);
+		bool ParseSearchFilters(const std::vector<std::string> &args, SearchFilters &filters, std::string *error_message = nullptr);
 		Role BestRoleFromScores(const StoredScore &score);
+		bool GetItemPower(Database &db, uint32 item_id, SearchResult &result, std::string *error_message = nullptr);
+		bool FindItemPower(Database &db, const SearchFilters &filters, std::vector<SearchResult> &results, std::string *error_message = nullptr);
+		uint32 RandomItemPower(Database &db, const SearchFilters &filters, std::string *error_message = nullptr);
 
 		std::string BuildTransportMessage(const ItemData &item, const ScoreResult &score);
 		std::string BuildTransportMessage(const ItemData &item, const StoredScore &score);

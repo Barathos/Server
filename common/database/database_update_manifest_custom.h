@@ -2904,6 +2904,116 @@ REPLACE INTO `items` (
 )",
 		.content_schema_update = true,
 	},
+	ManifestEntry{
+		.version = 25,
+		.description = "2026_06_11_item_power_operator_search",
+		.check = "SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'item_power' AND INDEX_NAME = 'idx_item_power_version_score'",
+		.condition = "missing",
+		.match = "1",
+		.sql = R"(
+CREATE TABLE IF NOT EXISTS `item_power` (
+  `item_id` INT UNSIGNED NOT NULL,
+  `item_level` SMALLINT UNSIGNED NOT NULL,
+  `item_score` INT UNSIGNED NOT NULL,
+  `tank_score` INT UNSIGNED NOT NULL DEFAULT 0,
+  `melee_score` INT UNSIGNED NOT NULL DEFAULT 0,
+  `caster_score` INT UNSIGNED NOT NULL DEFAULT 0,
+  `healer_score` INT UNSIGNED NOT NULL DEFAULT 0,
+  `hybrid_score` INT UNSIGNED NOT NULL DEFAULT 0,
+  `score_version` SMALLINT UNSIGNED NOT NULL,
+  `source` ENUM('computed', 'manual', 'generated') NOT NULL DEFAULT 'computed',
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`item_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `item_rarity` (
+  `item_id` INT UNSIGNED NOT NULL,
+  `rarity` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`item_id`),
+  CONSTRAINT `item_rarity_rarity_chk` CHECK (`rarity` BETWEEN 0 AND 4)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+SET @idx := (
+  SELECT COUNT(*) FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'item_power' AND INDEX_NAME = 'idx_item_power_score'
+);
+SET @sql := IF(@idx = 0, 'ALTER TABLE `item_power` ADD INDEX `idx_item_power_score` (`item_score`)', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx := (
+  SELECT COUNT(*) FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'item_power' AND INDEX_NAME = 'idx_item_power_level_score'
+);
+SET @sql := IF(@idx = 0, 'ALTER TABLE `item_power` ADD INDEX `idx_item_power_level_score` (`item_level`, `item_score`)', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx := (
+  SELECT COUNT(*) FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'item_power' AND INDEX_NAME = 'idx_item_power_version_score'
+);
+SET @sql := IF(@idx = 0, 'ALTER TABLE `item_power` ADD INDEX `idx_item_power_version_score` (`score_version`, `item_score`)', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx := (
+  SELECT COUNT(*) FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'item_power' AND INDEX_NAME = 'idx_item_power_version_role'
+);
+SET @sql := IF(@idx = 0, 'ALTER TABLE `item_power` ADD INDEX `idx_item_power_version_role` (`score_version`, `tank_score`, `melee_score`, `caster_score`, `healer_score`, `hybrid_score`)', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx := (
+  SELECT COUNT(*) FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'item_rarity' AND INDEX_NAME = 'idx_item_rarity_rarity'
+);
+SET @sql := IF(@idx = 0, 'ALTER TABLE `item_rarity` ADD INDEX `idx_item_rarity_rarity` (`rarity`)', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+CREATE OR REPLACE VIEW `item_power_search` AS
+SELECT
+  p.`item_id`,
+  i.`Name` AS `name`,
+  p.`item_level`,
+  p.`item_score`,
+  CASE
+    WHEN p.`tank_score` >= p.`melee_score` AND p.`tank_score` >= p.`caster_score` AND p.`tank_score` >= p.`healer_score` AND p.`tank_score` >= p.`hybrid_score` THEN 'tank'
+    WHEN p.`melee_score` > p.`tank_score` AND p.`melee_score` >= p.`caster_score` AND p.`melee_score` >= p.`healer_score` AND p.`melee_score` >= p.`hybrid_score` THEN 'melee'
+    WHEN p.`caster_score` > p.`tank_score` AND p.`caster_score` > p.`melee_score` AND p.`caster_score` >= p.`healer_score` AND p.`caster_score` >= p.`hybrid_score` THEN 'caster'
+    WHEN p.`healer_score` > p.`tank_score` AND p.`healer_score` > p.`melee_score` AND p.`healer_score` > p.`caster_score` AND p.`healer_score` >= p.`hybrid_score` THEN 'healer'
+    ELSE 'hybrid'
+  END AS `best_role`,
+  p.`tank_score`,
+  p.`melee_score`,
+  p.`caster_score`,
+  p.`healer_score`,
+  p.`hybrid_score`,
+  p.`score_version`,
+  p.`source`,
+  i.`reqlevel`,
+  i.`reclevel`,
+  i.`classes`,
+  i.`slots`,
+  i.`itemtype`,
+  i.`itemclass`,
+  i.`nodrop`,
+  i.`norent`,
+  i.`loregroup`,
+  COALESCE(r.`rarity`, 0) AS `rarity`,
+  CASE COALESCE(r.`rarity`, 0)
+    WHEN 1 THEN 'Uncommon'
+    WHEN 2 THEN 'Rare'
+    WHEN 3 THEN 'Legendary'
+    WHEN 4 THEN 'Unique'
+    ELSE 'Common'
+  END AS `rarity_name`,
+  CASE WHEN r.`item_id` IS NULL THEN 0 ELSE 1 END AS `rarity_tagged`
+FROM `item_power` p
+INNER JOIN `items` i ON i.`id` = p.`item_id`
+LEFT JOIN `item_rarity` r ON r.`item_id` = p.`item_id`
+WHERE p.`score_version` = 2;
+)",
+		.content_schema_update = false,
+	},
 };
 
 // see struct definitions for what each field does

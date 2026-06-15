@@ -22,6 +22,7 @@
 #include "common/data_bucket.h"
 #include "common/events/player_event_logs.h"
 #include "common/features.h"
+#include "common/item_power.h"
 #include "common/misc_functions.h"
 #include "common/zone_store.h"
 #include "zone/dialogue_window.h"
@@ -1480,6 +1481,216 @@ std::string Perl__getitemlore(uint32 item_id)
 std::string Perl__getitemname(uint32 item_id)
 {
 	return quest_manager.getitemname(item_id);
+}
+
+perl::hash PerlItemPowerResultToHash(const EQ::ItemPower::SearchResult &result)
+{
+	perl::hash table;
+	table["item_id"] = result.item_id;
+	table["name"] = result.name;
+	table["item_level"] = static_cast<uint32>(result.item_level);
+	table["item_score"] = result.item_score;
+	table["best_role"] = std::string(EQ::ItemPower::RoleKey(result.best_role));
+	table["tank_score"] = result.tank_score;
+	table["melee_score"] = result.melee_score;
+	table["caster_score"] = result.caster_score;
+	table["healer_score"] = result.healer_score;
+	table["hybrid_score"] = result.hybrid_score;
+	table["score_version"] = static_cast<uint32>(result.score_version);
+	table["source"] = result.source;
+	table["reqlevel"] = static_cast<uint32>(result.reqlevel);
+	table["reclevel"] = static_cast<uint32>(result.reclevel);
+	table["classes"] = result.classes;
+	table["slots"] = result.slots;
+	table["itemtype"] = static_cast<uint32>(result.itemtype);
+	table["itemclass"] = static_cast<uint32>(result.itemclass);
+	table["nodrop"] = static_cast<uint32>(result.nodrop);
+	table["norent"] = static_cast<uint32>(result.norent);
+	table["loregroup"] = result.loregroup;
+	table["rarity"] = static_cast<uint32>(result.rarity);
+	table["rarity_name"] = result.rarity_name;
+	table["rarity_tagged"] = result.rarity_tagged ? 1 : 0;
+	return table;
+}
+
+bool PerlItemPowerParseBool(perl::hash &table, const char *key, int16 &value)
+{
+	if (!table.exists(key)) {
+		return true;
+	}
+
+	const std::string raw = table[key];
+	const auto lowered = Strings::ToLower(raw);
+	if (lowered == "1" || lowered == "true" || lowered == "yes" || lowered == "on") {
+		value = 1;
+		return true;
+	}
+
+	if (lowered == "0" || lowered == "false" || lowered == "no" || lowered == "off") {
+		value = 0;
+		return true;
+	}
+
+	return false;
+}
+
+bool PerlItemPowerFiltersFromHash(perl::hash &table, EQ::ItemPower::SearchFilters &filters)
+{
+	if (table.exists("min_score")) {
+		filters.min_score = static_cast<uint32>(table["min_score"]);
+		filters.has_min_score = true;
+	}
+	if (table.exists("max_score")) {
+		filters.max_score = static_cast<uint32>(table["max_score"]);
+		filters.has_max_score = true;
+	}
+	if (table.exists("min_level")) {
+		filters.min_level = static_cast<uint16>(table["min_level"]);
+		filters.has_min_level = true;
+	}
+	if (table.exists("max_level")) {
+		filters.max_level = static_cast<uint16>(table["max_level"]);
+		filters.has_max_level = true;
+	}
+	if (table.exists("role")) {
+		EQ::ItemPower::Role role = EQ::ItemPower::Role::Tank;
+		const std::string raw = table["role"];
+		const auto lowered = Strings::ToLower(raw);
+		if (lowered == "any" || lowered == "all") {
+			filters.has_role = false;
+		}
+		else if (!EQ::ItemPower::ParseRole(raw, role)) {
+			return false;
+		}
+		else {
+			filters.role = role;
+			filters.has_role = true;
+		}
+	}
+	if (table.exists("rarity")) {
+		uint8 rarity = 0;
+		bool untagged = false;
+		const std::string raw = table["rarity"];
+		const auto lowered = Strings::ToLower(raw);
+		if (lowered == "any" || lowered == "all") {
+			filters.rarity_mode = EQ::ItemPower::RarityFilterMode::Any;
+		}
+		else if (!EQ::ItemPower::ParseRarity(raw, rarity, &untagged)) {
+			return false;
+		}
+		else {
+			filters.rarity = rarity;
+			filters.rarity_mode = untagged ? EQ::ItemPower::RarityFilterMode::Untagged : EQ::ItemPower::RarityFilterMode::Exact;
+		}
+	}
+	if (table.exists("min_rarity")) {
+		uint8 rarity = 0;
+		bool untagged = false;
+		const std::string raw = table["min_rarity"];
+		if (!EQ::ItemPower::ParseRarity(raw, rarity, &untagged) || untagged) {
+			return false;
+		}
+		filters.rarity = rarity;
+		filters.rarity_mode = EQ::ItemPower::RarityFilterMode::Minimum;
+	}
+	if (table.exists("class_mask")) {
+		filters.class_mask = static_cast<uint32>(table["class_mask"]);
+		filters.has_class_mask = filters.class_mask != 0;
+	}
+	if (table.exists("class")) {
+		uint32 mask = 0;
+		const std::string raw = table["class"];
+		if (!EQ::ItemPower::ParseClassMask(raw, mask)) {
+			return false;
+		}
+		filters.class_mask = mask;
+		filters.has_class_mask = mask != 0;
+	}
+	if (table.exists("slot_mask")) {
+		filters.slot_mask = static_cast<uint32>(table["slot_mask"]);
+		filters.has_slot_mask = filters.slot_mask != 0;
+	}
+	if (table.exists("slot")) {
+		uint32 mask = 0;
+		const std::string raw = table["slot"];
+		if (!EQ::ItemPower::ParseSlotMask(raw, mask)) {
+			return false;
+		}
+		filters.slot_mask = mask;
+		filters.has_slot_mask = mask != 0;
+	}
+	if (table.exists("itemtype")) {
+		filters.item_type = static_cast<int16>(table["itemtype"]);
+	}
+	if (table.exists("item_type")) {
+		filters.item_type = static_cast<int16>(table["item_type"]);
+	}
+	if (table.exists("itemclass")) {
+		filters.item_class = static_cast<int16>(table["itemclass"]);
+	}
+	if (table.exists("item_class")) {
+		filters.item_class = static_cast<int16>(table["item_class"]);
+	}
+	if (!PerlItemPowerParseBool(table, "nodrop", filters.nodrop) || !PerlItemPowerParseBool(table, "norent", filters.norent)) {
+		return false;
+	}
+	if (table.exists("limit")) {
+		filters.limit = static_cast<uint32>(table["limit"]);
+	}
+	if (table.exists("sort")) {
+		const std::string sort = table["sort"];
+		std::vector<std::string> args = {"sort", sort};
+		std::string error_message;
+		if (!EQ::ItemPower::ParseSearchFilters(args, filters, &error_message)) {
+			return false;
+		}
+	}
+
+	std::string error_message;
+	return EQ::ItemPower::ParseSearchFilters({}, filters, &error_message);
+}
+
+perl::reference Perl__getitempower(uint32 item_id)
+{
+	EQ::ItemPower::SearchResult result;
+	if (!EQ::ItemPower::GetItemPower(database, item_id, result)) {
+		return perl::reference();
+	}
+
+	return perl::reference(PerlItemPowerResultToHash(result));
+}
+
+perl::reference Perl__finditempower(perl::reference filters_ref)
+{
+	perl::hash table = filters_ref;
+	EQ::ItemPower::SearchFilters filters;
+	if (!PerlItemPowerFiltersFromHash(table, filters)) {
+		return perl::reference(perl::array());
+	}
+
+	std::vector<EQ::ItemPower::SearchResult> results;
+	if (!EQ::ItemPower::FindItemPower(database, filters, results)) {
+		return perl::reference(perl::array());
+	}
+
+	perl::array rows;
+	rows.reserve(results.size());
+	for (const auto &result : results) {
+		rows.push_back(perl::reference(PerlItemPowerResultToHash(result)));
+	}
+
+	return perl::reference(rows);
+}
+
+uint32 Perl__randomitempower(perl::reference filters_ref)
+{
+	perl::hash table = filters_ref;
+	EQ::ItemPower::SearchFilters filters;
+	if (!PerlItemPowerFiltersFromHash(table, filters)) {
+		return 0;
+	}
+
+	return EQ::ItemPower::RandomItemPower(database, filters);
 }
 
 std::string Perl__getnpcnamebyid(uint32 npc_id)
@@ -6718,6 +6929,9 @@ void perl_register_quest()
 	package.add("getitemcomment", &Perl__getitemcomment);
 	package.add("getitemlore", &Perl__getitemlore);
 	package.add("getitemname", &Perl__getitemname);
+	package.add("getitempower", &Perl__getitempower);
+	package.add("finditempower", &Perl__finditempower);
+	package.add("randomitempower", &Perl__randomitempower);
 	package.add("getitemstat", &Perl__getitemstat);
 	package.add("getlanguagename", &Perl__getlanguagename);
 	package.add("getldonthemename", &Perl__getldonthemename);

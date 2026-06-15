@@ -23,6 +23,7 @@
 #include "common/content/world_content_service.h"
 #include "common/data_bucket.h"
 #include "common/events/player_event_logs.h"
+#include "common/item_power.h"
 #include "common/rulesys.h"
 #include "common/timer.h"
 #include "zone/dialogue_window.h"
@@ -926,6 +927,228 @@ std::string lua_get_item_lore(uint32 item_id) {
 
 std::string lua_get_item_name(uint32 item_id) {
 	return quest_manager.getitemname(item_id);
+}
+
+luabind::object LuaItemPowerResultToTable(lua_State *L, const EQ::ItemPower::SearchResult &result) {
+	auto table = luabind::newtable(L);
+	table["item_id"] = result.item_id;
+	table["name"] = result.name;
+	table["item_level"] = static_cast<uint32>(result.item_level);
+	table["item_score"] = result.item_score;
+	table["best_role"] = std::string(EQ::ItemPower::RoleKey(result.best_role));
+	table["tank_score"] = result.tank_score;
+	table["melee_score"] = result.melee_score;
+	table["caster_score"] = result.caster_score;
+	table["healer_score"] = result.healer_score;
+	table["hybrid_score"] = result.hybrid_score;
+	table["score_version"] = static_cast<uint32>(result.score_version);
+	table["source"] = result.source;
+	table["reqlevel"] = static_cast<uint32>(result.reqlevel);
+	table["reclevel"] = static_cast<uint32>(result.reclevel);
+	table["classes"] = result.classes;
+	table["slots"] = result.slots;
+	table["itemtype"] = static_cast<uint32>(result.itemtype);
+	table["itemclass"] = static_cast<uint32>(result.itemclass);
+	table["nodrop"] = static_cast<uint32>(result.nodrop);
+	table["norent"] = static_cast<uint32>(result.norent);
+	table["loregroup"] = result.loregroup;
+	table["rarity"] = static_cast<uint32>(result.rarity);
+	table["rarity_name"] = result.rarity_name;
+	table["rarity_tagged"] = result.rarity_tagged;
+	return table;
+}
+
+bool LuaTableHas(const luabind::object &table, const char *key) {
+	return luabind::type(table) == LUA_TTABLE && luabind::type(table[key]) != LUA_TNIL;
+}
+
+std::string LuaTableString(const luabind::object &table, const char *key) {
+	const auto value = table[key];
+	if (luabind::type(value) == LUA_TNUMBER) {
+		return fmt::format("{}", luabind::object_cast<uint32>(value));
+	}
+	if (luabind::type(value) == LUA_TBOOLEAN) {
+		return luabind::object_cast<bool>(value) ? "1" : "0";
+	}
+
+	return luabind::object_cast<std::string>(value);
+}
+
+bool LuaTableBool(const luabind::object &table, const char *key, int16 &value) {
+	if (!LuaTableHas(table, key)) {
+		return true;
+	}
+
+	const auto raw = LuaTableString(table, key);
+	const auto lowered = Strings::ToLower(raw);
+	if (lowered == "1" || lowered == "true" || lowered == "yes" || lowered == "on") {
+		value = 1;
+		return true;
+	}
+
+	if (lowered == "0" || lowered == "false" || lowered == "no" || lowered == "off") {
+		value = 0;
+		return true;
+	}
+
+	return false;
+}
+
+bool LuaItemPowerFiltersFromTable(const luabind::object &table, EQ::ItemPower::SearchFilters &filters) {
+	if (luabind::type(table) != LUA_TTABLE) {
+		std::string error_message;
+		return EQ::ItemPower::ParseSearchFilters({}, filters, &error_message);
+	}
+
+	if (LuaTableHas(table, "min_score")) {
+		filters.min_score = luabind::object_cast<uint32>(table["min_score"]);
+		filters.has_min_score = true;
+	}
+	if (LuaTableHas(table, "max_score")) {
+		filters.max_score = luabind::object_cast<uint32>(table["max_score"]);
+		filters.has_max_score = true;
+	}
+	if (LuaTableHas(table, "min_level")) {
+		filters.min_level = static_cast<uint16>(luabind::object_cast<uint32>(table["min_level"]));
+		filters.has_min_level = true;
+	}
+	if (LuaTableHas(table, "max_level")) {
+		filters.max_level = static_cast<uint16>(luabind::object_cast<uint32>(table["max_level"]));
+		filters.has_max_level = true;
+	}
+	if (LuaTableHas(table, "role")) {
+		EQ::ItemPower::Role role = EQ::ItemPower::Role::Tank;
+		const auto raw = LuaTableString(table, "role");
+		const auto lowered = Strings::ToLower(raw);
+		if (lowered == "any" || lowered == "all") {
+			filters.has_role = false;
+		}
+		else if (!EQ::ItemPower::ParseRole(raw, role)) {
+			return false;
+		}
+		else {
+			filters.role = role;
+			filters.has_role = true;
+		}
+	}
+	if (LuaTableHas(table, "rarity")) {
+		uint8 rarity = 0;
+		bool untagged = false;
+		const auto raw = LuaTableString(table, "rarity");
+		const auto lowered = Strings::ToLower(raw);
+		if (lowered == "any" || lowered == "all") {
+			filters.rarity_mode = EQ::ItemPower::RarityFilterMode::Any;
+		}
+		else if (!EQ::ItemPower::ParseRarity(raw, rarity, &untagged)) {
+			return false;
+		}
+		else {
+			filters.rarity = rarity;
+			filters.rarity_mode = untagged ? EQ::ItemPower::RarityFilterMode::Untagged : EQ::ItemPower::RarityFilterMode::Exact;
+		}
+	}
+	if (LuaTableHas(table, "min_rarity")) {
+		uint8 rarity = 0;
+		bool untagged = false;
+		const auto raw = LuaTableString(table, "min_rarity");
+		if (!EQ::ItemPower::ParseRarity(raw, rarity, &untagged) || untagged) {
+			return false;
+		}
+		filters.rarity = rarity;
+		filters.rarity_mode = EQ::ItemPower::RarityFilterMode::Minimum;
+	}
+	if (LuaTableHas(table, "class_mask")) {
+		filters.class_mask = luabind::object_cast<uint32>(table["class_mask"]);
+		filters.has_class_mask = filters.class_mask != 0;
+	}
+	if (LuaTableHas(table, "class")) {
+		uint32 mask = 0;
+		const auto raw = LuaTableString(table, "class");
+		if (!EQ::ItemPower::ParseClassMask(raw, mask)) {
+			return false;
+		}
+		filters.class_mask = mask;
+		filters.has_class_mask = mask != 0;
+	}
+	if (LuaTableHas(table, "slot_mask")) {
+		filters.slot_mask = luabind::object_cast<uint32>(table["slot_mask"]);
+		filters.has_slot_mask = filters.slot_mask != 0;
+	}
+	if (LuaTableHas(table, "slot")) {
+		uint32 mask = 0;
+		const auto raw = LuaTableString(table, "slot");
+		if (!EQ::ItemPower::ParseSlotMask(raw, mask)) {
+			return false;
+		}
+		filters.slot_mask = mask;
+		filters.has_slot_mask = mask != 0;
+	}
+	if (LuaTableHas(table, "itemtype")) {
+		filters.item_type = static_cast<int16>(luabind::object_cast<uint32>(table["itemtype"]));
+	}
+	if (LuaTableHas(table, "item_type")) {
+		filters.item_type = static_cast<int16>(luabind::object_cast<uint32>(table["item_type"]));
+	}
+	if (LuaTableHas(table, "itemclass")) {
+		filters.item_class = static_cast<int16>(luabind::object_cast<uint32>(table["itemclass"]));
+	}
+	if (LuaTableHas(table, "item_class")) {
+		filters.item_class = static_cast<int16>(luabind::object_cast<uint32>(table["item_class"]));
+	}
+	if (!LuaTableBool(table, "nodrop", filters.nodrop) || !LuaTableBool(table, "norent", filters.norent)) {
+		return false;
+	}
+	if (LuaTableHas(table, "limit")) {
+		filters.limit = luabind::object_cast<uint32>(table["limit"]);
+	}
+	if (LuaTableHas(table, "sort")) {
+		std::vector<std::string> args = {"sort", LuaTableString(table, "sort")};
+		std::string error_message;
+		if (!EQ::ItemPower::ParseSearchFilters(args, filters, &error_message)) {
+			return false;
+		}
+	}
+
+	std::string error_message;
+	return EQ::ItemPower::ParseSearchFilters({}, filters, &error_message);
+}
+
+luabind::object lua_get_item_power(lua_State *L, uint32 item_id) {
+	EQ::ItemPower::SearchResult result;
+	if (!EQ::ItemPower::GetItemPower(database, item_id, result)) {
+		return luabind::object();
+	}
+
+	return LuaItemPowerResultToTable(L, result);
+}
+
+luabind::object lua_find_item_power(lua_State *L, luabind::object filters_table) {
+	EQ::ItemPower::SearchFilters filters;
+	if (!LuaItemPowerFiltersFromTable(filters_table, filters)) {
+		return luabind::newtable(L);
+	}
+
+	std::vector<EQ::ItemPower::SearchResult> results;
+	if (!EQ::ItemPower::FindItemPower(database, filters, results)) {
+		return luabind::newtable(L);
+	}
+
+	auto rows = luabind::newtable(L);
+	int index = 1;
+	for (const auto &result : results) {
+		rows[index++] = LuaItemPowerResultToTable(L, result);
+	}
+
+	return rows;
+}
+
+uint32 lua_random_item_power(luabind::object filters_table) {
+	EQ::ItemPower::SearchFilters filters;
+	if (!LuaItemPowerFiltersFromTable(filters_table, filters)) {
+		return 0;
+	}
+
+	return EQ::ItemPower::RandomItemPower(database, filters);
 }
 
 std::string lua_say_link(std::string  text) {
@@ -6252,6 +6475,9 @@ luabind::scope lua_register_general() {
 		luabind::def("get_item_comment", (std::string(*)(uint32))&lua_get_item_comment),
 		luabind::def("get_item_lore", (std::string(*)(uint32))&lua_get_item_lore),
 		luabind::def("get_item_name", (std::string(*)(uint32))&lua_get_item_name),
+		luabind::def("get_item_power", &lua_get_item_power),
+		luabind::def("find_item_power", &lua_find_item_power),
+		luabind::def("random_item_power", &lua_random_item_power),
 		luabind::def("say_link", (std::string(*)(std::string))&lua_say_link),
 		luabind::def("say_link", (std::string(*)(std::string,bool))&lua_say_link),
 		luabind::def("say_link", (std::string(*)(std::string,bool,std::string))&lua_say_link),

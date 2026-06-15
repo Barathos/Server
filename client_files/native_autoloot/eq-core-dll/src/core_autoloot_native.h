@@ -2034,6 +2034,55 @@ static bool NativeItemRarityParseTransport(const char* message)
 	return true;
 }
 
+// Bridge for the native_interface chat-link color hooks (different translation
+// unit). Maps a tagged item name to its rarity link color (ARGB 0xAARRGGBB), or
+// 0 if the item has no rarity tag cached. extern "C" for namespace-independent
+// linkage across translation units.
+extern "C" unsigned long NativeItemRarityArgbForName(const char* name)
+{
+	if (!name || !name[0]) {
+		return 0;
+	}
+	for (const auto& entry : gNativeItemRarityById) {
+		if (entry.second.name == name) {
+			switch (entry.second.rarity) {
+				case 0:  return 0xFFF0F0F0; // Common    - white
+				case 1:  return 0xFF66FF66; // Uncommon  - green
+				case 2:  return 0xFF00FFFF; // Rare      - cyan
+				case 3:  return 0xFFFFD15C; // Legendary - gold
+				case 4:  return 0xFFC080FF; // Unique    - purple
+				default: return 0;
+			}
+		}
+	}
+	return 0;
+}
+
+// Finds the first cached rarity item name that appears as a substring of `text`
+// (used by the item-inspect-window recolor), returning its name and link color.
+extern "C" bool NativeItemRarityMatchInText(const char* text, char* out_name, int out_size, unsigned long* out_argb)
+{
+	if (!text || !out_name || out_size <= 0 || !out_argb) {
+		return false;
+	}
+	for (const auto& entry : gNativeItemRarityById) {
+		const std::string& nm = entry.second.name;
+		if (nm.size() < 3) {
+			continue;
+		}
+		if (strstr(text, nm.c_str()) != nullptr) {
+			const unsigned long argb = NativeItemRarityArgbForName(nm.c_str());
+			if (argb == 0) {
+				continue;
+			}
+			strncpy_s(out_name, out_size, nm.c_str(), _TRUNCATE);
+			*out_argb = argb;
+			return true;
+		}
+	}
+	return false;
+}
+
 template <size_t Size>
 static void NativeCopyText(char (&destination)[Size], const std::string& source)
 {

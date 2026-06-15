@@ -4,6 +4,7 @@
 
 #include <windows.h>
 #include <dinput.h>
+#include <intrin.h>
 
 #include <algorithm>
 #include <cctype>
@@ -49,6 +50,7 @@ constexpr uintptr_t kCEverQuestInterpretCmd = 0x51FCE0;
 constexpr uintptr_t kEQCharacterGetConLevel = 0x577CB0;
 constexpr uintptr_t kCItemDisplayWndUpdateStrings = 0x69AE30;
 constexpr uintptr_t kCStmlWndAppendSTML = 0x886720;
+constexpr uintptr_t kCStmlWndSetSTMLText = 0x883E10;
 constexpr uintptr_t kCStmlWndForceParseNow = 0x887070;
 constexpr uintptr_t kCXStrCtorCString = 0x805C20;
 constexpr uintptr_t kCXStrDtor = 0x465AE0;
@@ -3924,6 +3926,346 @@ void InstallCommandHook() {
     }
 }
 
+// --- Item Rarity: chat item-link color hook (Phase 1 PoC) ---
+// Normal (un-hovered) item-name links resolve their color through GetColor() at
+// 0x761c00, called with color index 0x146 (EQ user-defined color slot #70) which
+// is the stock magenta. (The 0xFF8AA3FF immediates at 0x8817df/0x88183a are only
+// the hover-highlight color, gated by the hovered/active link id -- patching them
+// changed nothing on screen.) Hooking GetColor lets us recolor every item link.
+// The PoC returns pure green (0xFF00FF00 reads identically as ARGB or ABGR, so the
+// result is unambiguous regardless of the piece-color byte order). Phase 2 will
+// hook the STML resolver instead, where link id -> item id is known, to color per
+// rarity. VAs assume preferred base 0x400000; Rebase() adjusts to the live module.
+constexpr uintptr_t kGetColorFn = 0x761c00;
+constexpr int kItemLinkColorIndexA = 0x146;        // user color slot #70 (type 6/0xC links)
+constexpr int kItemLinkColorIndexB = 0x15b;        // user color slot #91 (type 0xB links)
+constexpr uint32_t kItemLinkPocColor = 0xFF00FF00; // pure green PoC (format-invariant)
+
+using GetColorProc = int(__cdecl*)(int);
+InlineHook g_get_color_hook{};
+
+// Set per-piece by the color-resolver probe just before the link's GetColor call;
+// consumed (and cleared) here so each link gets its own color. 0 = no override.
+volatile uint32_t g_pending_link_argb = 0;
+
+int __cdecl GetColorDetour(int index) {
+    if (index == kItemLinkColorIndexA || index == kItemLinkColorIndexB) {
+        const uint32_t pending = g_pending_link_argb;
+        g_pending_link_argb = 0;
+        if (pending != 0) {
+            return static_cast<int>(pending);
+        }
+        // No match for this piece -> fall through to the stock link color.
+    }
+    return reinterpret_cast<GetColorProc>(g_get_color_hook.gateway)(index);
+}
+
+void InstallItemLinkColorHook() {
+    void* target = reinterpret_cast<void*>(Rebase(kGetColorFn));
+    // Steal 9 bytes (mov eax,[esp+4]; cmp eax,0xff) -- both whole, no rel operands.
+    if (InstallInlineHook(g_get_color_hook, target, reinterpret_cast<void*>(&GetColorDetour), 9)) {
+        Log("ItemLinkColor: GetColor hook installed at %p (idx 0x%X/0x%X -> 0x%08X)",
+            target, kItemLinkColorIndexA, kItemLinkColorIndexB, kItemLinkPocColor);
+    } else {
+        Log("ItemLinkColor: GetColor hook FAILED at %p", target);
+    }
+}
+
+// --- Phase 2a: color-resolver probe (READ-ONLY layout discovery, no recolor) ---
+// CStmlWnd's per-piece color resolver loop reaches 0x881868 for normal (non-hovered)
+// pieces. There ebp -> { count@0, pieceBase@4 } and edi = current piece byte offset,
+// so piece = [ebp+4]+edi; piece+0x14 = text rep ptr (the resolver does `lock inc` on
+// it), piece+0x18 = link id. The RoF2 CXStrRep layout for this client is unknown, so
+// this logs candidate printable strings from several rep offsets (each guarded by
+// IsReadableMemory) to pin the Text offset before we wire any coloring.
+constexpr uintptr_t kColorResolverSite = 0x881868;  // normal-link color branch
+void* g_color_resolver_gateway = nullptr;
+InlineHook g_color_resolver_hook{};
+int g_color_probe_count = 0;
+
+static bool ProbePrintable(const char* p, char* out, size_t out_size) {
+    if (!IsReadableMemory(p, 4)) {
+        return false;
+    }
+    size_t n = 0;
+    for (; n < out_size - 1 && n < 48; ++n) {
+        if (!IsReadableMemory(p + n, 1)) {
+            return false;
+        }
+        char c = p[n];
+        if (c == 0) {
+            break;
+        }
+        if (c < 0x20 || c > 0x7e) {
+            return false;
+        }
+    }
+    if (n < 2) {
+        return false;
+    }
+    memcpy(out, p, n);
+    out[n] = 0;
+    return true;
+}
+
+static void HexDump(const char* tag, void* p, int n) {
+    char line[800];
+    int o = 0;
+    o += sprintf_s(line + o, sizeof(line) - o, "%s %p:", tag, p);
+    if (p && IsReadableMemory(p, n)) {
+        const unsigned char* b = reinterpret_cast<const unsigned char*>(p);
+        for (int i = 0; i < n; ++i) {
+            o += sprintf_s(line + o, sizeof(line) - o, " %02X", b[i]);
+        }
+        o += sprintf_s(line + o, sizeof(line) - o, "  '");
+        for (int i = 0; i < n; ++i) {
+            char c = static_cast<char>(b[i]);
+            o += sprintf_s(line + o, sizeof(line) - o, "%c", (c >= 0x20 && c <= 0x7e) ? c : '.');
+        }
+        o += sprintf_s(line + o, sizeof(line) - o, "'");
+    } else {
+        o += sprintf_s(line + o, sizeof(line) - o, " <unreadable>");
+    }
+    Log("%s", line);
+}
+
+// RoF2 CXStrRep layout (confirmed via probe): refcount@0x00, length@0x08,
+// encoding@0x0C (0=ASCII, 1=UTF-16), text@0x14.
+static bool DecodeRepText(void* rep, char* out, size_t out_size) {
+    if (!rep || !IsReadableMemory(rep, 0x18)) {
+        return false;
+    }
+    const unsigned char* r = reinterpret_cast<const unsigned char*>(rep);
+    const uint32_t length = *reinterpret_cast<const uint32_t*>(r + 0x08);
+    const uint32_t encoding = *reinterpret_cast<const uint32_t*>(r + 0x0C);
+    if (length == 0 || length > 250) {
+        return false;
+    }
+    const char* text = reinterpret_cast<const char*>(r + 0x14);
+    size_t n = 0;
+    if (encoding == 1) {  // UTF-16
+        if (!IsReadableMemory(text, length * 2)) {
+            return false;
+        }
+        const wchar_t* w = reinterpret_cast<const wchar_t*>(text);
+        for (; n < length && n < out_size - 1; ++n) {
+            wchar_t c = w[n];
+            if (c == 0) {
+                break;
+            }
+            out[n] = (c >= 0x20 && c < 0x7f) ? static_cast<char>(c) : '?';
+        }
+    } else {  // ASCII
+        if (!IsReadableMemory(text, length)) {
+            return false;
+        }
+        for (; n < length && n < out_size - 1; ++n) {
+            char c = text[n];
+            if (c == 0) {
+                break;
+            }
+            out[n] = c;
+        }
+    }
+    out[n] = 0;
+    return n > 0;
+}
+
+// Defined in core_autoloot_native.h (compiled into eqgame.cpp); resolves a tagged
+// item name to its rarity link color (ARGB), or 0 if the item is untagged.
+extern "C" unsigned long NativeItemRarityArgbForName(const char* name);
+
+void OnColorPiece(void* piece, void* rep, int link_id) {
+    (void)piece;
+    (void)link_id;
+    g_pending_link_argb = 0;
+
+    char name[128];
+    if (!DecodeRepText(rep, name, sizeof(name))) {
+        return;
+    }
+
+    const unsigned long argb = NativeItemRarityArgbForName(name);
+    if (argb != 0) {
+        g_pending_link_argb = static_cast<uint32_t>(argb);
+        if (g_color_probe_count < 24) {
+            ++g_color_probe_count;
+            Log("RarityLink '%s' -> 0x%08lX", name, argb);
+        }
+    }
+}
+
+__declspec(naked) void ColorResolverProbe() {
+    __asm {
+        pushfd
+        pushad
+        mov eax, [ebp+4]        // piece array base
+        add eax, edi            // + current piece offset = piece
+        mov ecx, [eax+0x18]     // link id
+        mov edx, [eax+0x14]     // text rep ptr
+        push ecx                // link_id  (3rd arg)
+        push edx                // rep      (2nd arg)
+        push eax                // piece    (1st arg)
+        call OnColorPiece       // __cdecl(piece, rep, link_id)
+        add esp, 12
+        popad
+        popfd
+        jmp [g_color_resolver_gateway]   // run stolen bytes + return
+    }
+}
+
+void InstallColorResolverProbe() {
+    void* target = reinterpret_cast<void*>(Rebase(kColorResolverSite));
+    // Steal 6 bytes: mov ecx,[esi+0x218] (whole instruction, no rel operands).
+    if (InstallInlineHook(g_color_resolver_hook, target, reinterpret_cast<void*>(&ColorResolverProbe), 6)) {
+        g_color_resolver_gateway = g_color_resolver_hook.gateway;
+        Log("ColorProbe: resolver probe installed at %p", target);
+    } else {
+        Log("ColorProbe: resolver probe FAILED at %p", target);
+    }
+}
+
+// --- Phase 3: item-inspect-window name recolor ---
+// The item-display name is plain <c>-colored STML text (not a link), so it never
+// hits GetColor. CItemDisplayWnd::UpdateStrings (0x69AE30) sets the body via
+// CStmlWnd::SetSTMLText (confirmed by static analysis -- 3 call sites, no
+// AppendSTML), so we hook SetSTMLText: when an item-display body (contains
+// "Class:" and "Race:") carries a tagged item name, rewrite that name's color tag
+// to its rarity color. This overrides EQ's stock "can / cannot use" name color.
+extern "C" bool NativeItemRarityMatchInText(const char* text, char* out_name, int out_size,
+                                            unsigned long* out_argb);
+
+using SetSTMLTextProc = void(__thiscall*)(void*, CXStr, bool, void*);
+InlineHook g_set_stml_hook{};
+int g_inspect_recolor_log = 0;
+int g_setstml_diag_log = 0;
+
+// Reads a CXStrRep (layout: length@0x08, encoding@0x0C, text@0x14) into a string,
+// up to a generous cap for a full item-display body.
+static bool ReadCXStrFull(void* rep, std::string& out) {
+    out.clear();
+    if (!rep || !IsReadableMemory(rep, 0x18)) {
+        return false;
+    }
+    const unsigned char* r = reinterpret_cast<const unsigned char*>(rep);
+    const uint32_t length = *reinterpret_cast<const uint32_t*>(r + 0x08);
+    const uint32_t encoding = *reinterpret_cast<const uint32_t*>(r + 0x0C);
+    if (length == 0 || length > 8192) {
+        return false;
+    }
+    const char* text = reinterpret_cast<const char*>(r + 0x14);
+    if (encoding == 1) {  // UTF-16
+        if (!IsReadableMemory(text, length * 2)) {
+            return false;
+        }
+        const wchar_t* w = reinterpret_cast<const wchar_t*>(text);
+        for (uint32_t i = 0; i < length; ++i) {
+            wchar_t c = w[i];
+            if (c == 0) {
+                break;
+            }
+            out += (c >= 0x20 && c < 0x7f) ? static_cast<char>(c) : '?';
+        }
+    } else {  // ASCII
+        if (!IsReadableMemory(text, length)) {
+            return false;
+        }
+        for (uint32_t i = 0; i < length; ++i) {
+            char c = text[i];
+            if (c == 0) {
+                break;
+            }
+            out += c;
+        }
+    }
+    return !out.empty();
+}
+
+// Rewrites the color of the first occurrence of `name` in `body` to `hex`
+// (e.g. "#FFD15C"): adjusts the opening <c ...> tag right before the name if
+// present, otherwise wraps the name in its own color span.
+static std::string ColorizeItemName(const std::string& body, const std::string& name,
+                                    const std::string& hex) {
+    const auto name_pos = body.find(name);
+    if (name_pos == std::string::npos) {
+        return std::string();
+    }
+    const auto tag_start = body.rfind("<c ", name_pos);
+    if (tag_start != std::string::npos) {
+        const auto tag_end = body.find('>', tag_start);
+        const auto close_before = body.rfind("</c>", name_pos);
+        if (tag_end != std::string::npos && tag_end < name_pos &&
+            (close_before == std::string::npos || close_before < tag_start)) {
+            std::string result = body.substr(0, tag_start);
+            result += "<c \"" + hex + "\">";
+            result += body.substr(tag_end + 1);
+            return result;
+        }
+    }
+    std::string result = body.substr(0, name_pos);
+    result += "<c \"" + hex + "\">" + name + "</c>";
+    result += body.substr(name_pos + name.length());
+    return result;
+}
+
+void __fastcall SetSTMLTextDetour(void* self, void*, CXStr value, bool add_to_history, void* link_info) {
+    SetSTMLTextProc original = reinterpret_cast<SetSTMLTextProc>(g_set_stml_hook.gateway);
+
+    std::string body;
+    const bool read_ok = value.text && ReadCXStrFull(value.text, body);
+
+    // Unconditional diagnostic: capture what actually flows through SetSTMLText so
+    // the item-display body + its name/color format is visible even if the
+    // Class:/Race: guard below is wrong for this client.
+    if (read_ok && g_setstml_diag_log < 14) {
+        ++g_setstml_diag_log;
+        const bool has_cr = body.find("Class:") != std::string::npos &&
+                            body.find("Race:") != std::string::npos;
+        Log("SetSTML#%d len=%u cr=%d '%.80s'", g_setstml_diag_log,
+            static_cast<unsigned>(body.size()), has_cr ? 1 : 0, body.c_str());
+    }
+
+    if (read_ok &&
+        body.find("Class:") != std::string::npos && body.find("Race:") != std::string::npos) {
+        char matched[128];
+        unsigned long argb = 0;
+        const bool found = NativeItemRarityMatchInText(body.c_str(), matched, sizeof(matched), &argb);
+        if (g_inspect_recolor_log < 16 && !found) {
+            Log("InspectBody noMatch '%.70s'", body.c_str());
+        }
+        if (found) {
+            char hex[16];
+            sprintf_s(hex, "#%06lX", argb & 0xFFFFFF);
+            std::string colorized = ColorizeItemName(body, matched, hex);
+            if (!colorized.empty() && colorized != body) {
+                auto ctor = reinterpret_cast<CXStrCtorCStringProc>(Rebase(kCXStrCtorCString));
+                auto dtor = reinterpret_cast<CXStrDtorProc>(Rebase(kCXStrDtor));
+                CXStr replacement{};
+                ctor(&replacement, colorized.c_str());
+                original(self, replacement, add_to_history, link_info);
+                dtor(&value);  // release the original body we are replacing
+                if (g_inspect_recolor_log < 16) {
+                    ++g_inspect_recolor_log;
+                    Log("InspectRecolor '%s' -> %s", matched, hex);
+                }
+                return;
+            }
+        }
+    }
+
+    original(self, value, add_to_history, link_info);
+}
+
+void InstallSetStmlHook() {
+    void* target = reinterpret_cast<void*>(Rebase(kCStmlWndSetSTMLText));
+    // Steal 6 bytes: mov eax,fs:[0] (SEH prologue, no rel operands).
+    if (InstallInlineHook(g_set_stml_hook, target, reinterpret_cast<void*>(&SetSTMLTextDetour), 6)) {
+        Log("InspectRecolor: SetSTMLText hook installed at %p", target);
+    } else {
+        Log("InspectRecolor: SetSTMLText hook FAILED at %p", target);
+    }
+}
+
 HMODULE LoadRealDInput() {
     if (g_real_dinput) {
         return g_real_dinput;
@@ -3955,6 +4297,9 @@ DWORD WINAPI WorkerThread(LPVOID) {
         g_config.map_enabled ? 1 : 0, g_config.inspect_items ? 1 : 0, g_config.inspect_spells ? 1 : 0);
 
     InstallItemHook();
+    InstallItemLinkColorHook();
+    InstallColorResolverProbe();
+    InstallSetStmlHook();
 
     DWORD last_config_reload = GetTickCount();
     while (!g_shutdown) {
