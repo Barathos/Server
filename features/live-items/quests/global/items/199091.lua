@@ -124,6 +124,7 @@ end
 
 local function create_random_item_from_template(template)
 	local tier = roll_tier()
+	local roll_seed = tostring(os.time()) .. "-" .. tostring(math.random(1000000))
 	local stats = roll_stats(tier)
 	local name = tier.name .. " " .. template.name .. " " .. suffixes[math.random(#suffixes)]
 	local summary = summarize(stats)
@@ -160,6 +161,14 @@ local function create_random_item_from_template(template)
 		data = data,
 		modifiers = modifiers,
 		custom_data = {
+			["live_items.instance_id"] = "cache-" .. roll_seed,
+			["live_items.template_id"] = tostring(template.id),
+			["live_items.roll_seed"] = roll_seed,
+			["live_items.source"] = "gm-test-cache",
+			["live_items.rarity"] = tier.name,
+			["live_items.suffix_id"] = name:match("(of .+)$") or "",
+			["live_items.affix_summary"] = summary,
+			["live_items.version"] = "1",
 			live_items_test_roll = "tutorialb-cache",
 			live_items_tier = tier.name,
 			live_items_summary = summary,

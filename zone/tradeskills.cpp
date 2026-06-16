@@ -234,7 +234,7 @@ void Object::HandleAugmentation(Client* user, const AugmentItem_Struct* in_augme
 
 	if (
 		!RuleB(Inventory, AllowMultipleOfSameAugment) &&
-		tobe_auged->ContainsAugmentByID(auged_with->GetID())
+		tobe_auged->ContainsEquivalentAugment(*auged_with)
 	) {
 		user->Message(Chat::Red, "Error: Cannot put multiple of the same augment in an item.");
 		return;

@@ -16,6 +16,7 @@
 	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 #include "common/repositories/items_repository.h"
+#include "common/eq_constants.h"
 #include "common/data_bucket.h"
 #include "common/item_data.h"
 #include "common/ipc_mutex.h"
@@ -23,6 +24,7 @@
 #include "common/rulesys.h"
 #include "common/strings.h"
 #include "zone/client.h"
+#include "zone/entity.h"
 
 #include <algorithm>
 #include <array>
@@ -58,7 +60,119 @@ namespace {
 		c->Message(Chat::White, "Usage: #liveitem clone [new_item_id] [source_item_id]");
 		c->Message(Chat::White, "Usage: #liveitem summon [item_id] [charges]");
 		c->Message(Chat::White, "Usage: #liveitem bump [item_id] [hp] [mana] [damage]");
+		c->Message(Chat::White, "Usage: #liveitem instance inspect|explain cursor");
+		c->Message(Chat::White, "Usage: #liveitem instance search name|char|base|affix|guid [value]");
+		c->Message(Chat::White, "Usage: #liveitem instance restore [instance_id] [online_character]");
+		c->Message(Chat::White, "Usage: #liveitem instance clone cursor [online_character]");
 	}
+
+	EQ::ItemInstance *GetCursorLiveItem(Client *c)
+	{
+		return c ? c->GetInv().GetItem(EQ::invslot::slotCursor) : nullptr;
+	}
+
+	std::string EnsureLiveItemInstanceID(EQ::ItemInstance *inst)
+	{
+		if (!inst) {
+			return "";
+		}
+
+		auto instance_id = inst->GetLiveItemInstanceID();
+		if (!instance_id.empty()) {
+			return instance_id;
+		}
+
+		instance_id = fmt::format("li-{}-{}", inst->GetSerialNumber(), std::time(nullptr));
+		inst->StampLiveItemMetadata(instance_id, "gm-command", inst->GetID());
+		return instance_id;
+	}
+
+	void UpsertLiveItemInstanceRegistry(Client *c, EQ::ItemInstance *inst, const char *location)
+	{
+		if (!c || !inst) {
+			return;
+		}
+
+		const auto instance_id = EnsureLiveItemInstanceID(inst);
+		const auto *item = inst->GetItem();
+		const auto display_name = item ? item->Name : "";
+		database.QueryDatabase(fmt::format(
+			"INSERT INTO custom_live_item_instances "
+			"(instance_id, base_item_id, current_character_id, current_account_id, current_location, current_slot, display_name, rarity, prefix_id, suffix_id, roll_seed, source, custom_data_snapshot, created_at, updated_at) "
+			"VALUES ('{}', {}, {}, {}, '{}', {}, '{}', '{}', '{}', '{}', '{}', '{}', '{}', UNIX_TIMESTAMP(), UNIX_TIMESTAMP()) "
+			"ON DUPLICATE KEY UPDATE base_item_id=VALUES(base_item_id), current_character_id=VALUES(current_character_id), current_account_id=VALUES(current_account_id), "
+			"current_location=VALUES(current_location), current_slot=VALUES(current_slot), display_name=VALUES(display_name), rarity=VALUES(rarity), prefix_id=VALUES(prefix_id), "
+			"suffix_id=VALUES(suffix_id), roll_seed=VALUES(roll_seed), source=VALUES(source), custom_data_snapshot=VALUES(custom_data_snapshot), updated_at=UNIX_TIMESTAMP(), deleted_at=0, lost_at=0",
+			Strings::Escape(instance_id), inst->GetID(), c->CharacterID(), c->AccountID(), Strings::Escape(location ? location : "unknown"), inst->GetCurrentSlot(),
+			Strings::Escape(display_name), Strings::Escape(inst->GetCustomData("live_items.rarity")), Strings::Escape(inst->GetCustomData("live_items.prefix_id")),
+			Strings::Escape(inst->GetCustomData("live_items.suffix_id")), Strings::Escape(inst->GetCustomData("live_items.roll_seed")),
+			Strings::Escape(inst->GetCustomData("live_items.source")), Strings::Escape(inst->GetCustomDataString())
+		));
+	}
+
+	void InspectCursorLiveItem(Client *c, bool explain)
+	{
+		auto *inst = GetCursorLiveItem(c);
+		if (!inst) {
+			c->Message(Chat::White, "Place a generated item on your cursor first.");
+			return;
+		}
+
+		UpsertLiveItemInstanceRegistry(c, inst, "cursor");
+		const auto *item = inst->GetItem();
+		c->Message(Chat::White, fmt::format("Live Item Instance [{}] base [{}] name [{}] source [{}] rarity [{}] affixes [{} / {}]", inst->GetLiveItemInstanceID(), inst->GetID(), item ? item->Name : "unknown", inst->GetCustomData("live_items.source"), inst->GetCustomData("live_items.rarity"), inst->GetCustomData("live_items.prefix_id"), inst->GetCustomData("live_items.suffix_id")).c_str());
+		if (explain && item) {
+			c->Message(Chat::White, fmt::format("Stats: HP [{}] Mana [{}] AC [{}] Damage [{}] Haste [{}] Proc [{}] CustomData [{}]", item->HP, item->Mana, item->AC, item->Damage, item->Haste, item->Proc.Effect, inst->GetCustomDataString()).c_str());
+		}
+	}
+
+
+	void CloneCursorLiveItem(Client *c, const std::string &character_name)
+	{
+		auto *source = GetCursorLiveItem(c);
+		if (!source) { c->Message(Chat::White, "Place a generated item on your cursor first."); return; }
+		auto target = entity_list.GetClientByName(character_name.c_str());
+		if (!target) { c->Message(Chat::White, "Clone target must be online for this milestone."); return; }
+		EnsureLiveItemInstanceID(source);
+		EQ::ItemInstance copy(*source);
+		copy.SetCustomData("live_items.instance_id", fmt::format("{}-clone-{}", source->GetLiveItemInstanceID(), std::time(nullptr)));
+		copy.SetCustomData("live_items.source", "gm-clone");
+		target->PushItemOnCursor(copy);
+		UpsertLiveItemInstanceRegistry(target, &copy, "cloned_cursor");
+		c->Message(Chat::White, fmt::format("Cloned live item instance {} to {} cursor as {}.", source->GetLiveItemInstanceID(), character_name, copy.GetLiveItemInstanceID()).c_str());
+	}
+
+	void SearchLiveItemInstances(Client *c, const std::string &field, const std::string &value)
+	{
+		std::string where;
+		if (field == "name") where = fmt::format("display_name LIKE '%{}%'", Strings::Escape(value));
+		else if (field == "base" && Strings::IsNumber(value)) where = fmt::format("base_item_id = {}", Strings::ToUnsignedInt(value));
+		else if (field == "affix") where = fmt::format("(prefix_id = '{}' OR suffix_id = '{}' OR custom_data_snapshot LIKE '%{}%')", Strings::Escape(value), Strings::Escape(value), Strings::Escape(value));
+		else if (field == "guid") where = fmt::format("instance_id = '{}'", Strings::Escape(value));
+		else if (field == "char") where = fmt::format("current_character_id = {}", database.GetCharacterID(value));
+		else { c->Message(Chat::White, "Unknown instance search mode."); return; }
+		auto results = database.QueryDatabase(fmt::format("SELECT instance_id, base_item_id, current_character_id, current_location, display_name, rarity, source FROM custom_live_item_instances WHERE {} ORDER BY updated_at DESC LIMIT 20", where));
+		for (auto row = results.begin(); row != results.end(); ++row) {
+			c->Message(Chat::White, fmt::format("{} base {} char {} loc {} name [{}] rarity [{}] source [{}]", row[0] ? row[0] : "", row[1] ? row[1] : "0", row[2] ? row[2] : "0", row[3] ? row[3] : "", row[4] ? row[4] : "", row[5] ? row[5] : "", row[6] ? row[6] : "").c_str());
+		}
+	}
+
+	void RestoreLiveItemInstance(Client *c, const std::string &instance_id, const std::string &character_name)
+	{
+		auto target = entity_list.GetClientByName(character_name.c_str());
+		if (!target) { c->Message(Chat::White, "Restore target must be online for this milestone."); return; }
+		auto results = database.QueryDatabase(fmt::format("SELECT base_item_id, custom_data_snapshot FROM custom_live_item_instances WHERE instance_id = '{}' LIMIT 1", Strings::Escape(instance_id)));
+		if (!results.Success() || results.RowCount() == 0) { c->Message(Chat::White, "Live item instance not found."); return; }
+		auto row = results.begin();
+		auto *inst = database.CreateItem(Strings::ToUnsignedInt(row[0] ? row[0] : "0"), 1);
+		if (!inst) { c->Message(Chat::White, "Could not recreate base item."); return; }
+		inst->SetCustomDataString(row[1] ? row[1] : "");
+		target->PushItemOnCursor(*inst);
+		UpsertLiveItemInstanceRegistry(target, inst, "restored_cursor");
+		safe_delete(inst);
+		c->Message(Chat::White, fmt::format("Restored live item instance {} to {} cursor.", instance_id, character_name).c_str());
+	}
+
 
 	bool IsValidLiveItemID(Client *c, const uint32 item_id)
 	{
@@ -819,8 +933,31 @@ void command_liveitem(Client *c, const Seperator *sep)
 	const bool is_clone  = !strcasecmp(sep->arg[1], "clone");
 	const bool is_summon = !strcasecmp(sep->arg[1], "summon");
 	const bool is_bump   = !strcasecmp(sep->arg[1], "bump");
+	const bool is_instance = !strcasecmp(sep->arg[1], "instance");
 
-	if (!is_status && !is_clear && !is_clone && !is_summon && !is_bump) {
+	if (!is_status && !is_clear && !is_clone && !is_summon && !is_bump && !is_instance) {
+		SendLiveItemUsage(c);
+		return;
+	}
+
+
+	if (is_instance) {
+		if (arguments >= 3 && (!strcasecmp(sep->arg[2], "inspect") || !strcasecmp(sep->arg[2], "explain")) && !strcasecmp(sep->arg[3], "cursor")) {
+			InspectCursorLiveItem(c, !strcasecmp(sep->arg[2], "explain"));
+			return;
+		}
+		if (arguments >= 5 && !strcasecmp(sep->arg[2], "search")) {
+			SearchLiveItemInstances(c, Strings::ToLower(sep->arg[3]), sep->arg[4]);
+			return;
+		}
+		if (arguments >= 4 && !strcasecmp(sep->arg[2], "restore")) {
+			RestoreLiveItemInstance(c, sep->arg[3], sep->arg[4]);
+			return;
+		}
+		if (arguments >= 4 && !strcasecmp(sep->arg[2], "clone") && !strcasecmp(sep->arg[3], "cursor")) {
+			CloneCursorLiveItem(c, sep->arg[4]);
+			return;
+		}
 		SendLiveItemUsage(c);
 		return;
 	}

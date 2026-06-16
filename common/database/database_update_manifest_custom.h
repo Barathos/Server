@@ -3014,6 +3014,41 @@ WHERE p.`score_version` = 2;
 )",
 		.content_schema_update = false,
 	},
+
+	ManifestEntry{
+		.version = 25,
+		.description = "2026_06_15_live_item_instance_registry",
+		.check = "SHOW TABLES LIKE 'custom_live_item_instances'",
+		.condition = "empty",
+		.match = "",
+		.sql = R"(
+CREATE TABLE IF NOT EXISTS `custom_live_item_instances` (
+  `instance_id` VARCHAR(64) NOT NULL,
+  `base_item_id` INT UNSIGNED NOT NULL DEFAULT 0,
+  `current_character_id` INT UNSIGNED NOT NULL DEFAULT 0,
+  `current_account_id` INT UNSIGNED NOT NULL DEFAULT 0,
+  `current_location` VARCHAR(64) NOT NULL DEFAULT '',
+  `current_slot` INT NOT NULL DEFAULT 0,
+  `display_name` VARCHAR(255) NOT NULL DEFAULT '',
+  `rarity` VARCHAR(64) NOT NULL DEFAULT '',
+  `prefix_id` VARCHAR(64) NOT NULL DEFAULT '',
+  `suffix_id` VARCHAR(64) NOT NULL DEFAULT '',
+  `roll_seed` VARCHAR(64) NOT NULL DEFAULT '',
+  `source` VARCHAR(128) NOT NULL DEFAULT '',
+  `custom_data_snapshot` TEXT NULL,
+  `created_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  `updated_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  `deleted_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  `lost_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`instance_id`),
+  INDEX `idx_custom_live_item_instances_base` (`base_item_id`),
+  INDEX `idx_custom_live_item_instances_character` (`current_character_id`),
+  INDEX `idx_custom_live_item_instances_name` (`display_name`),
+  INDEX `idx_custom_live_item_instances_affix` (`prefix_id`, `suffix_id`)
+);
+)",
+		.content_schema_update = false,
+	},
 };
 
 // see struct definitions for what each field does

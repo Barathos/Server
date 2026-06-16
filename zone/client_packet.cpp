@@ -3270,7 +3270,7 @@ void Client::Handle_OP_AugmentItem(const EQApplicationPacket *app)
 					Message(Chat::Red, "Error: No augment found on cursor for inserting.");
 					break;
 				} else {
-					if (!RuleB(Inventory, AllowMultipleOfSameAugment) && tobe_auged->ContainsAugmentByID(new_aug->GetID())) {
+					if (!RuleB(Inventory, AllowMultipleOfSameAugment) && tobe_auged->ContainsEquivalentAugment(*new_aug)) {
 						Message(Chat::Red, "Error: Cannot put multiple of the same augment in an item.");
 						break;
 					}

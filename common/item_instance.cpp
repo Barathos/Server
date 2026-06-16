@@ -1151,6 +1151,23 @@ bool EQ::ItemInstance::ContainsAugmentByID(uint32 item_id)
 	return false;
 }
 
+bool EQ::ItemInstance::ContainsEquivalentAugment(const ItemInstance &augment) const
+{
+	if (!m_item || !m_item->IsClassCommon() || !augment.GetID()) {
+		return false;
+	}
+
+	const auto candidate_key = augment.GetLiveItemAugmentDuplicateKey();
+	for (uint8 augment_slot = invaug::SOCKET_BEGIN; augment_slot <= invaug::SOCKET_END; ++augment_slot) {
+		auto *existing = GetAugment(augment_slot);
+		if (existing && existing->GetLiveItemAugmentDuplicateKey() == candidate_key) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 int EQ::ItemInstance::CountAugmentByID(uint32 item_id)
 {
 	int quantity = 0;
@@ -1298,6 +1315,44 @@ std::string EQ::ItemInstance::GetCustomDataString() const {
 	return ret_val;
 }
 
+
+std::string EQ::ItemInstance::GetLiveItemInstanceID() const
+{
+	return GetCustomData("live_items.instance_id");
+}
+
+std::string EQ::ItemInstance::GetLiveItemAugmentDuplicateKey() const
+{
+	const auto policy = Strings::ToLower(GetCustomData("live_items.augment_duplicate_policy"));
+	if (policy == "instance") {
+		const auto instance_id = GetLiveItemInstanceID();
+		if (!instance_id.empty()) {
+			return "instance:" + instance_id;
+		}
+	}
+
+	if (policy == "exclusive_key") {
+		const auto exclusive_key = GetCustomData("live_items.augment_exclusive_key");
+		if (!exclusive_key.empty()) {
+			return "exclusive:" + exclusive_key;
+		}
+	}
+
+	return "template:" + std::to_string(GetID());
+}
+
+void EQ::ItemInstance::StampLiveItemMetadata(const std::string &instance_id, const std::string &source, uint32 template_id)
+{
+	if (!template_id) {
+		template_id = GetID();
+	}
+
+	SetCustomData("live_items.instance_id", instance_id);
+	SetCustomData("live_items.template_id", static_cast<int>(template_id));
+	SetCustomData("live_items.source", source);
+	SetCustomData("live_items.version", 1);
+}
+
 void EQ::ItemInstance::SetCustomDataString(const std::string& str)
 {
 	std::map<uint8, std::string> augment_custom_data;
@@ -1362,7 +1417,7 @@ void EQ::ItemInstance::SetCustomDataString(const std::string& str)
 	RebuildDynamicItemData();
 }
 
-std::string EQ::ItemInstance::GetCustomData(const std::string& identifier) {
+std::string EQ::ItemInstance::GetCustomData(const std::string& identifier) const {
 	std::map<std::string, std::string>::const_iterator iter = m_custom_data.find(identifier);
 	if (iter != m_custom_data.end()) {
 		return iter->second;
@@ -1380,6 +1435,11 @@ void EQ::ItemInstance::SetCustomData(const std::string& identifier, const std::s
 		RebuildDynamicItemData();
 		AssignNewSerialNumber();
 	}
+}
+
+void EQ::ItemInstance::SetCustomData(const std::string &identifier, const char *value)
+{
+	SetCustomData(identifier, std::string(value ? value : ""));
 }
 
 void EQ::ItemInstance::SetCustomData(const std::string& identifier, int value) {

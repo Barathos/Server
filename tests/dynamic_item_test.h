@@ -31,6 +31,9 @@ public:
 		TEST_ADD(DynamicItemTest::DynamicDataChangesSerialNumber);
 		TEST_ADD(DynamicItemTest::DynamicDataRebuildsAfterBaseRefresh);
 		TEST_ADD(DynamicItemTest::DynamicItemsUseInstanceClientItemIDs);
+		TEST_ADD(DynamicItemTest::LiveItemMetadataPersistsThroughCustomData);
+		TEST_ADD(DynamicItemTest::LiveItemRestoreSnapshotPreservesMetadataAndDynamicData);
+		TEST_ADD(DynamicItemTest::LiveItemAugmentDuplicatePolicyUsesInstanceOrExclusiveKey);
 	}
 
 private:
@@ -52,6 +55,18 @@ private:
 		strn0cpy(item.Name, "Training Sword", sizeof(item.Name));
 		strn0cpy(item.Lore, "A plain blade", sizeof(item.Lore));
 		strn0cpy(item.IDFile, "IT10", sizeof(item.IDFile));
+		return item;
+	}
+
+
+	EQ::ItemData BuildAugment() const
+	{
+		auto item = BuildSword();
+		item.ID = 900010;
+		item.ItemType = EQ::item::ItemTypeAugmentation;
+		item.AugType = EQ::item::AugTypeWeaponGeneral;
+		item.Damage = 1;
+		strn0cpy(item.Name, "Training Shard", sizeof(item.Name));
 		return item;
 	}
 
@@ -197,4 +212,77 @@ private:
 		TEST_ASSERT_EQUALS(first.GetID(), base.ID);
 		TEST_ASSERT_EQUALS(second.GetID(), base.ID);
 	}
+
+	void LiveItemMetadataPersistsThroughCustomData()
+	{
+		auto base = BuildSword();
+		EQ::ItemInstance inst(&base, 1);
+		inst.StampLiveItemMetadata("li-test-001", "unit-test", base.ID);
+		inst.SetCustomData("live_items.roll_seed", "12345");
+		inst.SetCustomData("live_items.rarity", "rare");
+		inst.SetDynamicItemData("name", "Rare Training Sword");
+		inst.SetDynamicItemData("hp", 42);
+
+		EQ::ItemInstance loaded(&base, 1);
+		loaded.SetCustomDataString(inst.GetCustomDataString());
+
+		TEST_ASSERT_EQUALS(std::string("li-test-001"), loaded.GetLiveItemInstanceID());
+		TEST_ASSERT_EQUALS(std::string("900001"), loaded.GetCustomData("live_items.template_id"));
+		TEST_ASSERT_EQUALS(std::string("unit-test"), loaded.GetCustomData("live_items.source"));
+		TEST_ASSERT_EQUALS(std::string("12345"), loaded.GetCustomData("live_items.roll_seed"));
+		TEST_ASSERT_EQUALS(std::string("rare"), loaded.GetCustomData("live_items.rarity"));
+		TEST_ASSERT(std::string(loaded.GetItem()->Name) == "Rare Training Sword");
+		TEST_ASSERT_EQUALS(loaded.GetItem()->HP, 42);
+	}
+
+	void LiveItemRestoreSnapshotPreservesMetadataAndDynamicData()
+	{
+		auto base = BuildSword();
+		EQ::ItemInstance original(&base, 1);
+		original.StampLiveItemMetadata("li-restore-001", "restore-test", base.ID);
+		original.SetCustomData("live_items.affix_summary", "Glinting / of Tests");
+		original.SetDynamicItemData("name", "Glinting Training Sword of Tests");
+		original.SetDynamicItemData("damage", 25);
+		const auto snapshot = original.GetCustomDataString();
+
+		EQ::ItemInstance restored(&base, 1);
+		restored.SetCustomDataString(snapshot);
+
+		TEST_ASSERT_EQUALS(original.GetLiveItemInstanceID(), restored.GetLiveItemInstanceID());
+		TEST_ASSERT_EQUALS(original.GetCustomData("live_items.affix_summary"), restored.GetCustomData("live_items.affix_summary"));
+		TEST_ASSERT(std::string(restored.GetItem()->Name) == "Glinting Training Sword of Tests");
+		TEST_ASSERT_EQUALS(restored.GetItem()->Damage, static_cast<uint32>(25));
+	}
+
+	void LiveItemAugmentDuplicatePolicyUsesInstanceOrExclusiveKey()
+	{
+		auto base = BuildSword();
+		base.AugSlotType[0] = EQ::item::AugTypeWeaponGeneral;
+		base.AugSlotType[1] = EQ::item::AugTypeWeaponGeneral;
+		auto aug_base = BuildAugment();
+
+		EQ::ItemInstance item(&base, 1);
+		EQ::ItemInstance first(&aug_base, 1);
+		EQ::ItemInstance second(&aug_base, 1);
+		first.StampLiveItemMetadata("roll-a", "unit-test", aug_base.ID);
+		second.StampLiveItemMetadata("roll-b", "unit-test", aug_base.ID);
+		first.SetCustomData("live_items.augment_duplicate_policy", "instance");
+		second.SetCustomData("live_items.augment_duplicate_policy", "instance");
+
+		item.PutAugment(0, first);
+		TEST_ASSERT(!item.ContainsEquivalentAugment(second));
+
+		second.SetCustomData("live_items.instance_id", "roll-a");
+		TEST_ASSERT(item.ContainsEquivalentAugment(second));
+
+		second.SetCustomData("live_items.instance_id", "roll-b");
+		auto *installed = item.GetAugment(0);
+		TEST_ASSERT(installed != nullptr);
+		installed->SetCustomData("live_items.augment_duplicate_policy", "exclusive_key");
+		second.SetCustomData("live_items.augment_duplicate_policy", "exclusive_key");
+		installed->SetCustomData("live_items.augment_exclusive_key", "firecore");
+		second.SetCustomData("live_items.augment_exclusive_key", "firecore");
+		TEST_ASSERT(item.ContainsEquivalentAugment(second));
+	}
+
 };

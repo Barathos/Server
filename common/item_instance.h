@@ -141,6 +141,7 @@ namespace EQ
 		ItemInstance* RemoveAugment(uint8 index);
 		bool IsAugmented();
 		bool ContainsAugmentByID(uint32 item_id);
+		bool ContainsEquivalentAugment(const ItemInstance &augment) const;
 		int CountAugmentByID(uint32 item_id);
 		bool IsOrnamentationAugment(EQ::ItemInstance* augment) const;
 		ItemInstance* GetOrnamentationAugment() const;
@@ -185,9 +186,13 @@ namespace EQ
 		void SetAttuned(bool flag)				{ m_attuned = flag; }
 
 		std::string GetCustomDataString() const;
-		std::string GetCustomData(const std::string &identifier);
+		std::string GetCustomData(const std::string &identifier) const;
+		std::string GetLiveItemInstanceID() const;
+		std::string GetLiveItemAugmentDuplicateKey() const;
+		void StampLiveItemMetadata(const std::string &instance_id, const std::string &source, uint32 template_id = 0);
 		void SetCustomDataString(const std::string& str);
 		void SetCustomData(const std::string &identifier, const std::string& value);
+		void SetCustomData(const std::string &identifier, const char *value);
 		void SetCustomData(const std::string &identifier, int value);
 		void SetCustomData(const std::string &identifier, float value);
 		void SetCustomData(const std::string &identifier, bool value);
