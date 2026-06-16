@@ -49,11 +49,11 @@ Client patch syncing is owned by `features/achievements/patcher.yml`.
 
 The patcher manifest maps repo files to paths inside the EverQuest client folder. The current client-facing file is:
 
-- `client_files/native_autoloot/ui/EQUI_NativeAchievementWnd.xml` -> `uifiles/default/EQUI_NativeAchievementWnd.xml`
+- `client_files/native_achievements/ui/EQUI_NativeAchievementWnd.xml` -> `uifiles/default/EQUI_NativeAchievementWnd.xml`
 
 The manifest also requests generated `eqhost`, generated `EQUI.xml`, and an include for `EQUI_NativeAchievementWnd.xml`.
 
-The XML uses the Live EQ achievement window as its visual reference and ships the matching `Achievement_*.tga` art files through the feature patcher manifest. This checkout also owns the Achievements native `dinput8.dll` source and build output at `client_files/native_autoloot/eq-core-dll/`; it should deploy only to the matching Achievements client folder.
+The XML uses the Live EQ achievement window as its visual reference and ships the matching `Achievement_*.tga` art files through the feature patcher manifest. This checkout also owns the Achievements native `dinput8.dll` source and build output at `client_files/native_achievements/eq-core-dll/`; it should deploy only to the matching Achievements client folder.
 
 If this feature adds a `dinput8.dll`, config file, patch notes, zone asset, or other external/test-client file, add it to `features/achievements/patcher.yml`. Missing files in the manifest are release blockers for real external syncs; use `-AllowMissingClientFiles` only for partial local testing.
 

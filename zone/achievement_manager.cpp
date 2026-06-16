@@ -1313,7 +1313,7 @@ void AchievementManager::QueueAchievementRewards(Client *client, uint32 achievem
 			"ON ca.`achievement_id` = r.`achievement_id` AND ca.`character_id` = {} "
 			"WHERE r.`achievement_id` = {} AND r.`enabled` = 1 "
 			"AND (r.`chance` >= 10000 OR FLOOR(RAND() * 10000) < r.`chance`) "
-			"ON DUPLICATE KEY UPDATE `id` = `id`",
+			"ON DUPLICATE KEY UPDATE `reward_definition_id` = `reward_definition_id`",
 			character_id,
 			RewardStatusPending,
 			character_id,
@@ -1367,7 +1367,7 @@ void AchievementManager::QueueLegacyAchievementRewards(Client *client, uint32 ac
 				"(`character_id`, `achievement_id`, `reward_definition_id`, `reward_type`, `reward_id`, "
 				"`amount`, `auto_claim`, `tier`, `preview_text`, `data_text`, `status`, `completion_count`, `created_at`) "
 				"VALUES ({}, {}, 0, {}, {}, {}, {}, 'legacy', {}, '', {}, {}, UNIX_TIMESTAMP()) "
-				"ON DUPLICATE KEY UPDATE `id` = `id`",
+				"ON DUPLICATE KEY UPDATE `reward_definition_id` = `reward_definition_id`",
 				client->CharacterID(),
 				achievement_id,
 				SqlString(type),

@@ -3,39 +3,39 @@ id: achievements
 label: Achievements
 client: rof
 files:
-  - source: client_files/native_autoloot/eq-core-dll/bin/dinput8.dll
+  - source: client_files/native_achievements/eq-core-dll/bin/dinput8.dll
     destination: dinput8.dll
-  - source: client_files/native_autoloot/ui/EQUI_NativeAchievementWnd.xml
+  - source: client_files/native_achievements/ui/EQUI_NativeAchievementWnd.xml
     destination: uifiles/default/EQUI_NativeAchievementWnd.xml
-  - source: client_files/native_autoloot/ui/Achievement_account_unlock_color.tga
+  - source: client_files/native_achievements/ui/Achievement_account_unlock_color.tga
     destination: uifiles/default/Achievement_account_unlock_color.tga
-  - source: client_files/native_autoloot/ui/Achievement_achieved_color.tga
+  - source: client_files/native_achievements/ui/Achievement_achieved_color.tga
     destination: uifiles/default/Achievement_achieved_color.tga
-  - source: client_files/native_autoloot/ui/Achievement_hunter_collect_base.tga
+  - source: client_files/native_achievements/ui/Achievement_hunter_collect_base.tga
     destination: uifiles/default/Achievement_hunter_collect_base.tga
-  - source: client_files/native_autoloot/ui/Achievement_hunter_collect_mouseover.tga
+  - source: client_files/native_achievements/ui/Achievement_hunter_collect_mouseover.tga
     destination: uifiles/default/Achievement_hunter_collect_mouseover.tga
-  - source: client_files/native_autoloot/ui/Achievement_hunter_collect_selected.tga
+  - source: client_files/native_achievements/ui/Achievement_hunter_collect_selected.tga
     destination: uifiles/default/Achievement_hunter_collect_selected.tga
-  - source: client_files/native_autoloot/ui/Achievement_lock_color.tga
+  - source: client_files/native_achievements/ui/Achievement_lock_color.tga
     destination: uifiles/default/Achievement_lock_color.tga
-  - source: client_files/native_autoloot/ui/Achievement_subcat_base.tga
+  - source: client_files/native_achievements/ui/Achievement_subcat_base.tga
     destination: uifiles/default/Achievement_subcat_base.tga
-  - source: client_files/native_autoloot/ui/Achievement_subcat_base01.tga
+  - source: client_files/native_achievements/ui/Achievement_subcat_base01.tga
     destination: uifiles/default/Achievement_subcat_base01.tga
-  - source: client_files/native_autoloot/ui/Achievement_subcat_mouseover.tga
+  - source: client_files/native_achievements/ui/Achievement_subcat_mouseover.tga
     destination: uifiles/default/Achievement_subcat_mouseover.tga
-  - source: client_files/native_autoloot/ui/Achievement_subcat_mouseover01.tga
+  - source: client_files/native_achievements/ui/Achievement_subcat_mouseover01.tga
     destination: uifiles/default/Achievement_subcat_mouseover01.tga
-  - source: client_files/native_autoloot/ui/Achievement_subcat_selected.tga
+  - source: client_files/native_achievements/ui/Achievement_subcat_selected.tga
     destination: uifiles/default/Achievement_subcat_selected.tga
-  - source: client_files/native_autoloot/ui/Achievement_subcat_selected01.tga
+  - source: client_files/native_achievements/ui/Achievement_subcat_selected01.tga
     destination: uifiles/default/Achievement_subcat_selected01.tga
-  - source: client_files/native_autoloot/ui/Achievement_Titlebar.tga
+  - source: client_files/native_achievements/ui/Achievement_Titlebar.tga
     destination: uifiles/default/Achievement_Titlebar.tga
-  - source: client_files/native_autoloot/ui/Achievement_TitleBorders.tga
+  - source: client_files/native_achievements/ui/Achievement_TitleBorders.tga
     destination: uifiles/default/Achievement_TitleBorders.tga
-  - source: client_files/native_autoloot/ui/Achievement_unlock_color.tga
+  - source: client_files/native_achievements/ui/Achievement_unlock_color.tga
     destination: uifiles/default/Achievement_unlock_color.tga
 generated:
   eqhost: true

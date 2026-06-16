@@ -15,10 +15,7 @@ This pack describes the custom Achievement system: database-backed achievement c
 
 ## What This Feature Does Not Require
 
-- AutoLoot.
-- Live Items or Item Forge.
-- Live Spells or Spell Forge.
-- MacroQuest, Lua, ImGui, or overlay UI code.
+Achievements is standalone. It does not require any other custom feature pack, scripting layer, overlay UI, or client plugin framework.
 
 ## Dependencies
 
@@ -43,7 +40,7 @@ This pack describes the custom Achievement system: database-backed achievement c
 3. Zone once and confirm zone visit objectives can update.
 4. Complete a task or use a known seeded objective trigger.
 5. Open `#ach window` and confirm the native client receives `ACH|...` lines.
-6. Complete level or tradeskill milestones and confirm title/coin rewards auto-claim while Live Item requests enter `custom_achievement_live_item_requests`.
+6. Complete level or tradeskill milestones and confirm title/coin rewards auto-claim while item-request rewards enter `custom_achievement_live_item_requests`.
 
 ## Native Runtime Boundary
 
