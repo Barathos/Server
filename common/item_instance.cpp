@@ -896,11 +896,14 @@ bool EQ::ItemInstance::UpdateOrnamentationInfo()
 		}
 	}
 
-	SetOrnamentIcon(0);
-	SetOrnamentHeroModel(0);
-	SetOrnamentationIDFile(0);
+       if (!(m_ornamenticon || m_ornamentidfile || m_ornament_hero_model)) {
+               SetOrnamentIcon(0);
+               SetOrnamentHeroModel(0);
+               SetOrnamentationIDFile(0);
+               return false;
+       }
 
-	return false;
+       return true;
 }
 
 bool EQ::ItemInstance::CanTransform(const ItemData *ItemToTry, const ItemData *Container, bool AllowAll) {
