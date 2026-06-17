@@ -314,7 +314,7 @@ void Client::SendSpellTypePrompts(bool commanded_types, bool client_only_types) 
 					fmt::format("^spelltypeids client"), "ID"
 				),
 				Saylink::Silent(
-					fmt::format("^spelltypenames client"), "Shortname"
+                                    fmt::format("^spelltype_shortnames client"), "Shortname"
 				)
 			).c_str()
 		);
@@ -334,13 +334,13 @@ void Client::SendSpellTypePrompts(bool commanded_types, bool client_only_types) 
 					fmt::format("^spelltypeids 40+"), "40+"
 				),
 				Saylink::Silent(
-					fmt::format("^spelltypenames 0-19"), "Shortname 0-19"
+                                    fmt::format("^spelltype_shortnames 0-19"), "Shortname 0-19"
 				),
 				Saylink::Silent(
-					fmt::format("^spelltypenames 20-39"), "20-39"
+                                    fmt::format("^spelltype_shortnames 20-39"), "20-39"
 				),
 				Saylink::Silent(
-					fmt::format("^spelltypenames 40+"), "40+"
+                                    fmt::format("^spelltype_shortnames 40+"), "40+"
 				)
 			).c_str()
 		);
@@ -355,7 +355,7 @@ void Client::SendSpellTypePrompts(bool commanded_types, bool client_only_types) 
 					fmt::format("^spelltypeids commanded"), "ID"
 				),
 				Saylink::Silent(
-					fmt::format("^spelltypenames commanded"), "Shortname"
+                                    fmt::format("^spelltype_shortnames commanded"), "Shortname"
 				)
 			).c_str()
 		);
