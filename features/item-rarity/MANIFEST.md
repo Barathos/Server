@@ -23,6 +23,7 @@ the standalone item rarity checkout.
 - `client_files/item_rarity/eq-core-dll/src/item_rarity_native.cpp`
 - `client_files/item_rarity/eq-core-dll/src/dinput8.def`
 - `features/item-rarity/sql/001_item_rarity.sql`
+- `features/item-rarity/patcher.yml`
 - `docs/item-rarity.md`
 - `features/item-rarity/README.md`
 
@@ -35,6 +36,8 @@ The testable slice is server plus item-rarity-owned native client support:
 - Adds a rarity-colored chat line when a tagged item is looted.
 - Sends `ITEMRARITY|...` transport lines so this feature's `dinput8.dll` can
   color tagged item names in item inspect/link windows.
+- Publishes client-facing files through `features/item-rarity/patcher.yml` for
+  external and test-client patcher syncs.
 
 The native DLL is feature-owned and must deploy only to
 `D:\EQClients\EQClient-Item-Rarity`.

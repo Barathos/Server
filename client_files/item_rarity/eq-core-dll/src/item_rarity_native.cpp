@@ -16,12 +16,17 @@
 namespace {
 	constexpr std::uintptr_t kEqImageBase = 0x400000;
 	constexpr std::uintptr_t kCEverQuestDspChat = 0x51F1A0;
+	constexpr std::uintptr_t kChatManagerAddText = 0x650F90;
+	constexpr std::uintptr_t kChatQueueCopyText = 0x809B30;
 	constexpr std::uintptr_t kCItemDisplayWndUpdateStrings = 0x69AE30;
 	constexpr std::uintptr_t kCLabelDraw = 0x6B4D40;
+	constexpr std::uintptr_t kConvertSayLinks = 0x4ED110;
 	constexpr std::uintptr_t kCStmlWndAppendSTML = 0x886720;
 	constexpr std::uintptr_t kCStmlWndSetSTMLText = 0x883E10;
 	constexpr std::uintptr_t kCStmlWndForceParseNow = 0x887070;
+	constexpr std::uintptr_t kCTextureFontDrawLow = 0x85FD30;
 	constexpr std::uintptr_t kCTextureFontDrawWrappedText = 0x889B70;
+	constexpr std::uintptr_t kCTextureFontDrawWrappedTextEx = 0x889BC0;
 	constexpr std::uintptr_t kCXStrCtorCString = 0x805C20;
 	constexpr std::uintptr_t kCXStrDtor = 0x465AE0;
 
@@ -66,12 +71,29 @@ namespace {
 	};
 
 	InlineHook g_chat_hook;
+	InlineHook g_chat_manager_hook;
+	InlineHook g_chat_queue_copy_hook;
 	InlineHook g_item_display_hook;
 	InlineHook g_label_draw_hook;
+	InlineHook g_saylink_convert_hook;
+	InlineHook g_stml_append_hook;
 	InlineHook g_stml_set_hook;
+	InlineHook g_draw_low_hook;
 	InlineHook g_draw_text_hook;
+	InlineHook g_draw_text_ex_hook;
 	bool g_logged_label_recolor = false;
+	bool g_logged_append_recolor = false;
+	bool g_logged_draw_low_recolor = false;
 	bool g_logged_draw_recolor = false;
+	bool g_logged_draw_ex_recolor = false;
+	int g_append_observe_count = 0;
+	int g_dsp_observe_count = 0;
+	int g_saylink_observe_count = 0;
+	int g_chat_manager_observe_count = 0;
+	int g_chat_queue_observe_count = 0;
+	int g_draw_probe_count = 0;
+	volatile LONG g_chat_draw_probe_budget = 0;
+	volatile LONG g_chat_queue_copy_budget = 0;
 
 	void Trace(const char *format, ...)
 	{
@@ -282,6 +304,24 @@ namespace {
 		return true;
 	}
 
+	bool ParseHexUInt(const char *text, std::size_t length, std::uint32_t &value)
+	{
+		if (!text || !length || length >= 16) {
+			return false;
+		}
+
+		char buffer[16] {};
+		memcpy(buffer, text, length);
+		char *end = nullptr;
+		const auto parsed = strtoul(buffer, &end, 16);
+		if (end == buffer) {
+			return false;
+		}
+
+		value = static_cast<std::uint32_t>(parsed);
+		return true;
+	}
+
 #pragma pack(push, 1)
 	struct CXStr {
 		void *ptr;
@@ -391,6 +431,49 @@ namespace {
 		return rep->text;
 	}
 
+	bool IsReadableMemory(const void *address, std::size_t size)
+	{
+		if (!address || !size) {
+			return false;
+		}
+
+		MEMORY_BASIC_INFORMATION info {};
+		if (!VirtualQuery(address, &info, sizeof(info))) {
+			return false;
+		}
+
+		if (info.State != MEM_COMMIT || (info.Protect & (PAGE_NOACCESS | PAGE_GUARD))) {
+			return false;
+		}
+
+		const auto begin = reinterpret_cast<std::uintptr_t>(address);
+		const auto end = begin + size;
+		const auto region_end = reinterpret_cast<std::uintptr_t>(info.BaseAddress) + info.RegionSize;
+		return end > begin && end <= region_end;
+	}
+
+	const char *GetCXStrTextSafe(const CXStr *value)
+	{
+		if (!IsReadableMemory(value, sizeof(CXStr))) {
+			return nullptr;
+		}
+
+		if (!IsReadableMemory(value->ptr, offsetof(CXStrRep, text) + 1)) {
+			return nullptr;
+		}
+
+		auto *rep = static_cast<CXStrRep *>(value->ptr);
+		if (rep->encoding || rep->length > 2048 || rep->max_length > 4096) {
+			return nullptr;
+		}
+
+		if (!IsReadableMemory(rep->text, rep->length + 1)) {
+			return nullptr;
+		}
+
+		return rep->text[0] ? rep->text : nullptr;
+	}
+
 	const char *GetWindowText(void *window)
 	{
 		if (!window) {
@@ -473,6 +556,27 @@ namespace {
 		return false;
 	}
 
+	bool ColorizeCachedRenderedItemName(const char *stml, std::string &colorized, std::string &matched_name, RarityInfo &rarity)
+	{
+		if (!stml || !stml[0] || !g_rarity_lock_ready) {
+			return false;
+		}
+
+		EnterCriticalSection(&g_rarity_lock);
+		for (const auto &entry : g_rarity_by_name) {
+			colorized = ColorizeFirstItemName(stml, entry.first.c_str(), entry.second);
+			if (!colorized.empty()) {
+				matched_name = entry.first;
+				rarity = entry.second;
+				LeaveCriticalSection(&g_rarity_lock);
+				return true;
+			}
+		}
+		LeaveCriticalSection(&g_rarity_lock);
+
+		return false;
+	}
+
 	bool LookupRarityForRenderedText(const char *rendered_text, std::string &matched_name, RarityInfo &rarity)
 	{
 		if (!rendered_text || !rendered_text[0] || !g_rarity_lock_ready) {
@@ -513,6 +617,90 @@ namespace {
 		return count;
 	}
 
+	bool TextMentionsCachedName(const char *text)
+	{
+		if (!text || !text[0] || !g_rarity_lock_ready) {
+			return false;
+		}
+
+		bool found = false;
+		EnterCriticalSection(&g_rarity_lock);
+		for (const auto &entry : g_rarity_by_name) {
+			if (!entry.first.empty() && strstr(text, entry.first.c_str())) {
+				found = true;
+				break;
+			}
+		}
+		LeaveCriticalSection(&g_rarity_lock);
+
+		return found;
+	}
+
+	bool ShouldObserveText(const char *text)
+	{
+		return text && (strchr(text, '\x12') || strstr(text, "[Legendary]") || TextMentionsCachedName(text));
+	}
+
+	bool ColorizeRawItemLinks(const char *message, std::string &colorized)
+	{
+		if (!message || !message[0] || !g_rarity_lock_ready) {
+			return false;
+		}
+
+		constexpr char kLinkMarker = '\x12';
+		constexpr std::size_t kSayLinkBodyLength = 56;
+
+		const std::string text(message);
+		std::size_t cursor = 0;
+		std::ptrdiff_t offset = 0;
+		bool changed = false;
+		while (cursor < text.length()) {
+			const auto link_start = text.find(kLinkMarker, cursor);
+			if (link_start == std::string::npos) {
+				break;
+			}
+
+			const auto link_end = text.find(kLinkMarker, link_start + 1);
+			if (link_end == std::string::npos) {
+				break;
+			}
+
+			if (link_end > link_start + 1 + kSayLinkBodyLength) {
+				const auto body_start = link_start + 1;
+				const auto display_start = body_start + kSayLinkBodyLength;
+				std::uint32_t item_id = 0;
+				RarityInfo rarity;
+				if (ParseHexUInt(text.c_str() + body_start + 1, 5, item_id) && LookupRarity(item_id, rarity)) {
+					const std::string display = text.substr(display_start, link_end - display_start);
+					if (display.find("<c ") == std::string::npos) {
+						if (colorized.empty()) {
+							colorized = text;
+						}
+
+						std::string replacement;
+						replacement.reserve(display.length() + 32);
+						replacement += "<c \"";
+						replacement += rarity.hex;
+						replacement += "\">";
+						replacement += display;
+						replacement += "</c>";
+
+						const auto adjusted_display_start = static_cast<std::size_t>(static_cast<std::ptrdiff_t>(display_start) + offset);
+						colorized.replace(adjusted_display_start, display.length(), replacement);
+						offset += static_cast<std::ptrdiff_t>(replacement.length()) - static_cast<std::ptrdiff_t>(display.length());
+						cursor = link_end + 1;
+						changed = true;
+						continue;
+					}
+				}
+			}
+
+			cursor = link_end + 1;
+		}
+
+		return changed;
+	}
+
 	DWORD RarityARGB(const RarityInfo &rarity)
 	{
 		if (!rarity.hex || rarity.hex[0] != '#') {
@@ -523,14 +711,19 @@ namespace {
 	}
 
 	using DspChatProc = void(__thiscall *)(void *, const char *, DWORD, bool, bool);
+	using ChatManagerAddTextProc = void(__thiscall *)(void *, DWORD, CXStr);
+	using ChatQueueCopyTextProc = void(__cdecl *)(char *, const char *, std::size_t);
 	using ItemDisplayUpdateProc = void(__thiscall *)(void *);
 	using LabelDrawProc = int(__thiscall *)(void *);
-	using AppendSTMLProc = void(__thiscall *)(void *, CXStr);
+	using SayLinkConvertProc = void(__cdecl *)(CXStr *, bool);
+	using AppendSTMLProc = void *(__thiscall *)(void *, void *, CXStr);
 	using SetSTMLTextProc = void(__thiscall *)(void *, CXStr, bool, void *);
 	using ForceParseNowProc = void(__thiscall *)(void *);
 	using CXStrCtorCStringProc = CXStr *(__thiscall *)(CXStr *, const char *);
 	using CXStrDtorProc = void(__thiscall *)(CXStr *);
+	using DrawTextLowProc = int(__cdecl *)(void *, CXStr *, void *, void *, DWORD, DWORD, DWORD);
 	using DrawWrappedTextProc = int(__thiscall *)(void *, CXStr *, int, int, int, void *, DWORD, unsigned short, int);
+	using DrawWrappedTextExProc = int(__thiscall *)(void *, void *, CXStr *, int, int, int, void *, DWORD, unsigned short, int);
 
 	bool ApplyRarityToLabel(void *label, const char *source)
 	{
@@ -588,9 +781,41 @@ namespace {
 		const auto force_parse = reinterpret_cast<ForceParseNowProc>(Rebase(kCStmlWndForceParseNow));
 
 		ctor(&value, text);
-		append_stml(stml_wnd, value);
+		BYTE size_result[8] {};
+		append_stml(stml_wnd, size_result, value);
 		force_parse(stml_wnd);
 		return true;
+	}
+
+	void *__fastcall AppendSTMLDetour(void *self, void *, void *size_result, CXStr value)
+	{
+		const char *text = GetCXStrText(value.ptr);
+		if (g_append_observe_count < 12 && (TextMentionsCachedName(text) || (text && strstr(text, "[Legendary]")))) {
+			++g_append_observe_count;
+			Trace("append observed text=%s", text ? text : "<null>");
+		}
+
+		std::string colorized;
+		std::string item_name;
+		RarityInfo rarity;
+		if (ColorizeCachedRenderedItemName(text, colorized, item_name, rarity)) {
+			CXStr replacement {};
+			const auto ctor = reinterpret_cast<CXStrCtorCStringProc>(Rebase(kCXStrCtorCString));
+			const auto dtor = reinterpret_cast<CXStrDtorProc>(Rebase(kCXStrDtor));
+
+			ctor(&replacement, colorized.c_str());
+			void *result = reinterpret_cast<AppendSTMLProc>(g_stml_append_hook.gateway)(self, size_result, replacement);
+			dtor(&replacement);
+
+			if (!g_logged_append_recolor) {
+				g_logged_append_recolor = true;
+				Trace("stml append recolored item name=%s tier=%d", item_name.c_str(), rarity.tier);
+			}
+
+			return result;
+		}
+
+		return reinterpret_cast<AppendSTMLProc>(g_stml_append_hook.gateway)(self, size_result, value);
 	}
 
 	bool SetSTMLText(void *stml_wnd, const char *text)
@@ -643,7 +868,106 @@ namespace {
 			return;
 		}
 
+		if (g_dsp_observe_count < 12 && (TextMentionsCachedName(message) || (message && strstr(message, "[Legendary]")))) {
+			++g_dsp_observe_count;
+			Trace("dsp observed color=%lu message=%s", static_cast<unsigned long>(color), message ? message : "<null>");
+		}
+		if (message && strchr(message, '\x12') && (TextMentionsCachedName(message) || strstr(message, "[Legendary]"))) {
+			InterlockedExchange(&g_chat_draw_probe_budget, 160);
+			InterlockedExchange(&g_chat_queue_copy_budget, 8);
+		}
+
 		reinterpret_cast<DspChatProc>(g_chat_hook.gateway)(self, message, color, eq_log, do_percent_subst);
+	}
+
+	void __cdecl SayLinkConvertDetour(CXStr *text, bool enable_links)
+	{
+		const char *before = GetCXStrTextSafe(text);
+		if (!before && text) {
+			before = GetCXStrText(text->ptr);
+		}
+		const bool observe = g_saylink_observe_count < 16 && ShouldObserveText(before);
+		if (observe) {
+			++g_saylink_observe_count;
+			Trace("saylink convert before enable=%d text=%s", enable_links ? 1 : 0, before ? before : "<null>");
+		}
+
+		reinterpret_cast<SayLinkConvertProc>(g_saylink_convert_hook.gateway)(text, enable_links);
+
+		const char *converted = GetCXStrTextSafe(text);
+		if (!converted && text) {
+			converted = GetCXStrText(text->ptr);
+		}
+		if (observe) {
+			Trace("saylink convert after text=%s", converted ? converted : "<null>");
+		}
+
+		std::string colorized;
+		std::string item_name;
+		RarityInfo rarity;
+		if (!ColorizeCachedRenderedItemName(converted, colorized, item_name, rarity)) {
+			return;
+		}
+
+		const auto ctor = reinterpret_cast<CXStrCtorCStringProc>(Rebase(kCXStrCtorCString));
+		const auto dtor = reinterpret_cast<CXStrDtorProc>(Rebase(kCXStrDtor));
+		dtor(text);
+		ctor(text, colorized.c_str());
+
+		Trace("saylink conversion recolored item name=%s tier=%d text=%s", item_name.c_str(), rarity.tier, colorized.c_str());
+	}
+
+	void __fastcall ChatManagerAddTextDetour(void *self, void *, DWORD color, CXStr value)
+	{
+		const char *text = GetCXStrTextSafe(&value);
+		if (!text) {
+			text = GetCXStrText(value.ptr);
+		}
+
+		if (g_chat_manager_observe_count < 16 && ShouldObserveText(text)) {
+			++g_chat_manager_observe_count;
+			Trace("chat manager observed color=%lu text=%s", static_cast<unsigned long>(color), text ? text : "<null>");
+		}
+
+		std::string colorized;
+		std::string item_name;
+		RarityInfo rarity;
+		if (ColorizeCachedRenderedItemName(text, colorized, item_name, rarity)) {
+			CXStr replacement {};
+			const auto ctor = reinterpret_cast<CXStrCtorCStringProc>(Rebase(kCXStrCtorCString));
+			ctor(&replacement, colorized.c_str());
+
+			Trace("chat manager recolored item name=%s tier=%d text=%s", item_name.c_str(), rarity.tier, colorized.c_str());
+			reinterpret_cast<ChatManagerAddTextProc>(g_chat_manager_hook.gateway)(self, color, replacement);
+			return;
+		}
+
+		reinterpret_cast<ChatManagerAddTextProc>(g_chat_manager_hook.gateway)(self, color, value);
+	}
+
+	void __cdecl ChatQueueCopyTextDetour(char *dest, const char *src, std::size_t count)
+	{
+		if (g_chat_queue_copy_budget > 0 && count == 0x800 && src && src[0]) {
+			const LONG remaining = InterlockedDecrement(&g_chat_queue_copy_budget);
+			const bool observe = remaining >= 0 && ShouldObserveText(src);
+			if (observe && g_chat_queue_observe_count < 24) {
+				++g_chat_queue_observe_count;
+				Trace("chat queue copy observed text=%s", src);
+			}
+
+			if (observe && !strchr(src, '\x12')) {
+				std::string colorized;
+				std::string item_name;
+				RarityInfo rarity;
+				if (ColorizeCachedRenderedItemName(src, colorized, item_name, rarity)) {
+					Trace("chat queue copy recolored item name=%s tier=%d text=%s", item_name.c_str(), rarity.tier, colorized.c_str());
+					reinterpret_cast<ChatQueueCopyTextProc>(g_chat_queue_copy_hook.gateway)(dest, colorized.c_str(), count);
+					return;
+				}
+			}
+		}
+
+		reinterpret_cast<ChatQueueCopyTextProc>(g_chat_queue_copy_hook.gateway)(dest, src, count);
 	}
 
 	int __fastcall DrawWrappedTextDetour(void *self, void *, CXStr *text, int x, int y, int width, void *clip_rect, DWORD argb, unsigned short flags, int unknown)
@@ -674,6 +998,103 @@ namespace {
 		);
 	}
 
+	int __fastcall DrawWrappedTextExDetour(void *self, void *, void *maybe_text, CXStr *text, int x, int y, int width, void *clip_rect, DWORD argb, unsigned short flags, int unknown)
+	{
+		const char *rendered_text = GetCXStrTextSafe(text);
+		if (!rendered_text) {
+			rendered_text = GetCXStrTextSafe(static_cast<CXStr *>(maybe_text));
+		}
+
+		if (g_draw_probe_count < 16 && ShouldObserveText(rendered_text)) {
+			++g_draw_probe_count;
+			Trace(
+				"draw text ex observed rendered=%s argb=0x%08X maybe_text=%p text=%p x=%d y=%d width=%d flags=0x%04X unknown=%d",
+				rendered_text ? rendered_text : "<null>",
+				argb,
+				maybe_text,
+				text,
+				x,
+				y,
+				width,
+				flags,
+				unknown
+			);
+		}
+
+		std::string item_name;
+		RarityInfo rarity;
+		if (LookupRarityForRenderedText(rendered_text, item_name, rarity)) {
+			const DWORD rarity_argb = RarityARGB(rarity);
+			if (!g_logged_draw_ex_recolor) {
+				g_logged_draw_ex_recolor = true;
+				Trace("draw text ex recolored matched=%s rendered=%s tier=%d argb=0x%08X original=0x%08X", item_name.c_str(), rendered_text, rarity.tier, rarity_argb, argb);
+			}
+
+			argb = rarity_argb;
+		}
+
+		return reinterpret_cast<DrawWrappedTextExProc>(g_draw_text_ex_hook.gateway)(
+			self,
+			maybe_text,
+			text,
+			x,
+			y,
+			width,
+			clip_rect,
+			argb,
+			flags,
+			unknown
+		);
+	}
+
+	int __cdecl DrawTextLowDetour(void *font, CXStr *text, void *rect, void *clip_rect, DWORD argb, DWORD flags, DWORD unknown)
+	{
+		const char *arg1_text = GetCXStrTextSafe(static_cast<CXStr *>(font));
+		const char *arg2_text = GetCXStrTextSafe(text);
+		if (!arg2_text && text) {
+			arg2_text = GetCXStrText(text->ptr);
+		}
+
+		const char *rendered_text = arg2_text ? arg2_text : arg1_text;
+		if (g_chat_draw_probe_budget > 0 && (arg1_text || arg2_text)) {
+			const LONG remaining = InterlockedDecrement(&g_chat_draw_probe_budget);
+			if (remaining >= 0) {
+				Trace(
+					"draw low probe arg1=%s arg2=%s rect=%p clip=%p argb=0x%08X flags=0x%08X unknown=0x%08X",
+					arg1_text ? arg1_text : "<null>",
+					arg2_text ? arg2_text : "<null>",
+					rect,
+					clip_rect,
+					argb,
+					flags,
+					unknown
+				);
+			}
+		}
+
+		std::string item_name;
+		RarityInfo rarity;
+		if (LookupRarityForRenderedText(rendered_text, item_name, rarity)) {
+			const DWORD rarity_argb = RarityARGB(rarity);
+			if (!g_logged_draw_low_recolor) {
+				g_logged_draw_low_recolor = true;
+				Trace("draw low recolored matched=%s rendered=%s tier=%d argb=0x%08X original=0x%08X", item_name.c_str(), rendered_text, rarity.tier, rarity_argb, argb);
+			}
+
+			argb = rarity_argb;
+		}
+
+		return reinterpret_cast<DrawTextLowProc>(g_draw_low_hook.gateway)(
+			font,
+			text,
+			rect,
+			clip_rect,
+			argb,
+			flags,
+			unknown
+		);
+	}
+
 	int __fastcall LabelDrawDetour(void *self, void *)
 	{
 		ApplyRarityToLabel(self, "label_draw");
@@ -695,18 +1116,30 @@ namespace {
 		Sleep(1000);
 
 		const auto chat = reinterpret_cast<void *>(Rebase(kCEverQuestDspChat));
+		const auto chat_manager = reinterpret_cast<void *>(Rebase(kChatManagerAddText));
+		const auto chat_queue_copy = reinterpret_cast<void *>(Rebase(kChatQueueCopyText));
 		const auto item_display = reinterpret_cast<void *>(Rebase(kCItemDisplayWndUpdateStrings));
 		const auto label_draw = reinterpret_cast<void *>(Rebase(kCLabelDraw));
+		const auto saylink_convert = reinterpret_cast<void *>(Rebase(kConvertSayLinks));
+		const auto stml_append = reinterpret_cast<void *>(Rebase(kCStmlWndAppendSTML));
 		const auto stml_set = reinterpret_cast<void *>(Rebase(kCStmlWndSetSTMLText));
+		const auto draw_low = reinterpret_cast<void *>(Rebase(kCTextureFontDrawLow));
 		const auto draw_text = reinterpret_cast<void *>(Rebase(kCTextureFontDrawWrappedText));
+		const auto draw_text_ex = reinterpret_cast<void *>(Rebase(kCTextureFontDrawWrappedTextEx));
 
 		const bool chat_ok = InstallHook(g_chat_hook, chat, reinterpret_cast<void *>(&DspChatDetour), 6);
+		const bool chat_manager_ok = false;
+		const bool chat_queue_copy_ok = false;
 		const bool item_ok = InstallHook(g_item_display_hook, item_display, reinterpret_cast<void *>(&ItemDisplayUpdateDetour), 6);
 		const bool label_ok = InstallHook(g_label_draw_hook, label_draw, reinterpret_cast<void *>(&LabelDrawDetour), 7);
+		const bool convert_ok = InstallHook(g_saylink_convert_hook, saylink_convert, reinterpret_cast<void *>(&SayLinkConvertDetour), 6);
+		const bool append_ok = InstallHook(g_stml_append_hook, stml_append, reinterpret_cast<void *>(&AppendSTMLDetour), 7);
 		const bool stml_ok = InstallHook(g_stml_set_hook, stml_set, reinterpret_cast<void *>(&SetSTMLTextDetour), 6);
+		const bool draw_low_ok = InstallHook(g_draw_low_hook, draw_low, reinterpret_cast<void *>(&DrawTextLowDetour), 5);
 		const bool draw_ok = InstallHook(g_draw_text_hook, draw_text, reinterpret_cast<void *>(&DrawWrappedTextDetour), 7);
+		const bool draw_ex_ok = InstallHook(g_draw_text_ex_hook, draw_text_ex, reinterpret_cast<void *>(&DrawWrappedTextExDetour), 7);
 
-		Trace("item rarity native hooks installed chat=%d item_display=%d label_draw=%d stml_set=%d draw_text=%d", chat_ok ? 1 : 0, item_ok ? 1 : 0, label_ok ? 1 : 0, stml_ok ? 1 : 0, draw_ok ? 1 : 0);
+		Trace("item rarity native hooks installed chat=%d chat_manager=%d chat_queue_copy=%d item_display=%d label_draw=%d saylink_convert=%d stml_append=%d stml_set=%d draw_low=%d draw_text=%d draw_text_ex=%d", chat_ok ? 1 : 0, chat_manager_ok ? 1 : 0, chat_queue_copy_ok ? 1 : 0, item_ok ? 1 : 0, label_ok ? 1 : 0, convert_ok ? 1 : 0, append_ok ? 1 : 0, stml_ok ? 1 : 0, draw_low_ok ? 1 : 0, draw_ok ? 1 : 0, draw_ex_ok ? 1 : 0);
 		return 0;
 	}
 
@@ -745,9 +1178,15 @@ BOOL WINAPI DllMain(HMODULE module, DWORD reason, LPVOID)
 			CreateThread(nullptr, 0, InitThread, nullptr, 0, nullptr);
 			break;
 		case DLL_PROCESS_DETACH:
+			RemoveHook(g_draw_text_ex_hook);
 			RemoveHook(g_draw_text_hook);
+			RemoveHook(g_draw_low_hook);
 			RemoveHook(g_stml_set_hook);
+			RemoveHook(g_stml_append_hook);
+			RemoveHook(g_saylink_convert_hook);
 			RemoveHook(g_label_draw_hook);
+			RemoveHook(g_chat_queue_copy_hook);
+			RemoveHook(g_chat_manager_hook);
 			RemoveHook(g_chat_hook);
 			RemoveHook(g_item_display_hook);
 			if (g_rarity_lock_ready) {

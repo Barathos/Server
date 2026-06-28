@@ -302,20 +302,20 @@ std::string ItemRarityManager::BuildItemLink(const EQ::ItemInstance *inst, const
 std::string ItemRarityManager::BuildDecoratedLink(uint32 item_id, ItemRarity rarity)
 {
 	return fmt::format(
-		"[{}] {} ({})",
+		"[{}] {} {}",
 		RarityName(rarity),
 		ItemName(item_id),
-		BuildItemLink(item_id, "inspect")
+		BuildItemLink(item_id, "(inspect)")
 	);
 }
 
 std::string ItemRarityManager::BuildDecoratedLink(const EQ::ItemInstance *inst, ItemRarity rarity)
 {
 	return fmt::format(
-		"[{}] {} ({})",
+		"[{}] {} {}",
 		RarityName(rarity),
 		ItemName(inst),
-		BuildItemLink(inst, "inspect")
+		BuildItemLink(inst, "(inspect)")
 	);
 }
 

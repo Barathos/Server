@@ -1743,6 +1743,11 @@ void Corpse::LootCorpseItem(Client *c, const EQApplicationPacket *app)
 
 		linker.GenerateLink();
 
+		ItemRarity rarity = ItemRarity::Common;
+		if (ItemRarityManager::TryGetRarity(inst->GetItem()->ID, rarity)) {
+			ItemRarityManager::SendNativeRarity(c, inst->GetItem()->ID, rarity);
+		}
+
 		c->MessageString(Chat::Loot, LOOTED_MESSAGE, linker.Link().c_str());
 		ItemRarityManager::SendLootedItemMessage(c, inst, linker.Link());
 

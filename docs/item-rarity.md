@@ -95,6 +95,61 @@ Install only this DLL to:
 D:\EQClients\EQClient-Item-Rarity\dinput8.dll
 ```
 
+## Client Patch Sync
+
+External and test-client patch syncing is owned by
+`features/item-rarity/patcher.yml`. Every client-facing file must be listed
+there with a repository `source` and a destination relative to the EQ client
+root.
+
+Do not add files directly to the local EQ client as the source of truth. The
+repo file plus `patcher.yml` entry owns the external payload.
+
+Current patcher configuration:
+
+```yaml
+version: 1
+id: item-rarity
+label: Item Rarity
+client: rof
+files:
+  - source: client_files/item_rarity/eq-core-dll/bin/dinput8.dll
+    destination: dinput8.dll
+generated:
+  eqhost: true
+  equiXml: false
+  equiIncludes: []
+```
+
+In `patcher.yml`, `source` is a path inside this repository, `destination` is a
+path inside the EverQuest client root, `generated.eqhost` writes `eqhost.txt`,
+`generated.equiXml` enables native UI XML include injection, and
+`generated.equiIncludes` must explicitly list custom `EQUI_*.xml` windows.
+
+Before regenerating, look up the patcher `-Project` value in
+`D:\Codex\Apps\EQEmu-feature-workspaces\installs.json`. It is the workspace
+install `id`; it usually matches the feature id, but do not assume that
+blindly.
+
+After committing and pushing project changes, regenerate the feed on the
+patcher host:
+
+```powershell
+cd D:\Codex\Apps\EQEmu-feature-patcher\features\patcher\eqemupatcher\service
+.\New-WorkspacePatcherDeployment.ps1 -Project <project-id> -BaseUrl http://<patch-host>:8091/patcher/
+.\Test-WorkspacePatcherDeployment.ps1 -Project <project-id> -BaseUrl http://<patch-host>:8091/patcher/
+```
+
+The feed is published at:
+
+```text
+http://<patch-host>:8091/patcher/<project-id>/
+```
+
+External testers place this project's generated `eqemupatcher.exe` into their
+EQ client root and run it. Missing files are a release blocker for real
+external syncs. Use `-AllowMissingClientFiles` only for partial local testing.
+
 ## Local Verification
 
 - Build: `.\verify-feature.ps1 item-rarity`

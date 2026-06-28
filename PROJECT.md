@@ -12,6 +12,46 @@ Native item inspect/link coloring is owned by this checkout under
 `client_files/item_rarity`. Build this feature's `dinput8.dll` and install it
 only to `D:\EQClients\EQClient-Item-Rarity`.
 
+## Client Patch Sync
+
+External and test-client patch syncing is owned by
+`features/item-rarity/patcher.yml`. Add every client-facing file there, mapping
+the repository source path to the destination path inside the EQ client root.
+Do not add files directly to the local EQ client as the source of truth.
+The current item-rarity patcher feed includes the feature-owned DLL:
+
+~~~yaml
+files:
+  - source: client_files/item_rarity/eq-core-dll/bin/dinput8.dll
+    destination: dinput8.dll
+generated:
+  eqhost: true
+  equiXml: false
+  equiIncludes: []
+~~~
+
+In `patcher.yml`, `source` is a path inside this repository, `destination` is a
+path inside the EverQuest client root, `generated.eqhost` writes `eqhost.txt`,
+`generated.equiXml` enables native UI XML include injection, and
+`generated.equiIncludes` explicitly lists custom `EQUI_*.xml` windows.
+
+Before regenerating, look up the patcher `-Project` value in
+`D:\Codex\Apps\EQEmu-feature-workspaces\installs.json`. It is the workspace
+install `id`; it usually matches the feature id, but do not assume that
+blindly.
+
+On the patcher host, regenerate and test the feed from
+`D:\Codex\Apps\EQEmu-feature-patcher\features\patcher\eqemupatcher\service`:
+
+~~~powershell
+.\New-WorkspacePatcherDeployment.ps1 -Project <project-id> -BaseUrl http://<patch-host>:8091/patcher/
+.\Test-WorkspacePatcherDeployment.ps1 -Project <project-id> -BaseUrl http://<patch-host>:8091/patcher/
+~~~
+
+The feed is published at `http://<patch-host>:8091/patcher/<project-id>/`.
+Missing files are a release blocker for real external syncs; use
+`-AllowMissingClientFiles` only for partial local testing.
+
 ## Build Checklist
 
 Run these from `D:\Codex\Apps\EQEmu-feature-workspaces` only after the user asks for implementation/build work:
