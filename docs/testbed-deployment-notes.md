@@ -3,21 +3,21 @@
 ## Project
 
 - Feature id/name: `item-rarity` / Item Rarity.
-- Repo: `D:\Codex\Apps\EQEmu-feature-item-rarity`.
+- Repo after checkout: this repository root.
 - Current branch/base checked while writing this note: `codex/feature-item-rarity` at `3b26b9dd0`.
-- Workspace install id: `item-rarity` in `D:\Codex\Apps\EQEmu-feature-workspaces\installs.json`. Verify this before patcher or publish commands; do not assume the feature id is always the patcher `-Project` value.
+- Workspace install id: `item-rarity` in `EQEmu-feature-workspaces/installs.json`, if that companion checkout is available. Verify this before patcher or publish commands; do not assume the feature id is always the patcher `-Project` value.
 - Server/client/database: `D:\EQServers\EQServer-Item-Rarity`, `D:\EQClients\EQClient-Item-Rarity`, `eqemu_item_rarity`.
 
 ## Current Status
 
 - Item-rarity server/client outputs were previously built and installed locally; `zone.exe` and the feature `dinput8.dll` matched the installed copies during prior validation.
 - No destructive deploy, DB reset, migration, or service restart was run while writing this note.
-- Public testbed promotion should be treated as pending until `.\verify-feature.ps1 item-rarity`, runtime/client install, DB update review, and `.\validate-install.ps1 item-rarity` pass from `D:\Codex\Apps\EQEmu-feature-workspaces`.
+- Public testbed promotion should be treated as pending until `.\verify-feature.ps1 item-rarity`, runtime/client install, DB update review, and `.\validate-install.ps1 item-rarity` pass from the `EQEmu-feature-workspaces` checkout.
 - The repo currently owns the external client payload through `features\item-rarity\patcher.yml`; do not use files copied directly out of the local EQ client as source of truth.
 
 ## Build
 
-- Server build command: `cd D:\Codex\Apps\EQEmu-feature-workspaces; .\verify-feature.ps1 item-rarity`.
+- Server build command from the `EQEmu-feature-workspaces` checkout: `.\verify-feature.ps1 item-rarity`.
 - CMake preset: `win-msvc`, build dir `build/win-msvc`, `Release`, targets `zone` and `world`.
 - Native DLL build: `client_files\item_rarity\eq-core-dll\item-rarity-dll.sln`, `Release|Win32`.
 - Perl is enabled and pinned for the MSVC preset:
@@ -25,7 +25,7 @@
   - `PERL_EXECUTABLE=C:\Strawberry\perl\bin\perl.exe`
   - `PERL_INCLUDE_PATH=C:\Strawberry\perl\lib\CORE`
   - `PERL_LIBRARY=C:\Strawberry\perl\lib\CORE\libperl524.a`
-- `D:\Codex\Apps\EQEmu-feature-workspaces\scripts\FeatureWorkspace.ps1` injects the same Perl args and refuses a stale CMake cache if Perl is missing or disabled.
+- `EQEmu-feature-workspaces/scripts/FeatureWorkspace.ps1` injects the same Perl args and refuses a stale CMake cache if Perl is missing or disabled.
 
 ## Fixed Gotchas
 
@@ -43,7 +43,7 @@
 
 ## Server Payload
 
-- Runtime install command: `cd D:\Codex\Apps\EQEmu-feature-workspaces; .\install-server-runtime.ps1 item-rarity`.
+- Runtime install command from the `EQEmu-feature-workspaces` checkout: `.\install-server-runtime.ps1 item-rarity`.
 - Installs feature `world.exe` and `zone.exe` into `D:\EQServers\EQServer-Item-Rarity\bin`.
 - Also copies common runtime binaries/DLLs from the server seed (`D:\server\bin` by default), plus assets/maps/default support files such as `assets`, `maps`, `utils\defaults\log.ini`, and `mime.types`.
 - Isolated install paths should remain under `D:\EQServers\EQServer-Item-Rarity`; quests/plugins/lua modules are copied from the clean PEQ seed when the workspace install layout is prepared.
@@ -51,7 +51,7 @@
 
 ## Client Patcher Payload
 
-- Client install command for local testing: `cd D:\Codex\Apps\EQEmu-feature-workspaces; .\install-client-files.ps1 item-rarity`.
+- Client install command for local testing from the `EQEmu-feature-workspaces` checkout: `.\install-client-files.ps1 item-rarity`.
 - `features\item-rarity\patcher.yml` currently publishes:
   - `client_files\item_rarity\eq-core-dll\bin\dinput8.dll` -> `dinput8.dll`
   - `generated.eqhost=true`
@@ -62,7 +62,7 @@
 
 ## Patcher Feed
 
-- Regenerate from `D:\Codex\Apps\EQEmu-feature-patcher\features\patcher\eqemupatcher\service`:
+- Regenerate from the `EQEmu-feature-patcher/features/patcher/eqemupatcher/service` checkout path:
 
 ```powershell
 .\New-WorkspacePatcherDeployment.ps1 -Project item-rarity -BaseUrl http://<patch-host>:8091/patcher/

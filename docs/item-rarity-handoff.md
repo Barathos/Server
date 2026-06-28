@@ -8,14 +8,14 @@ client/server limits.
 
 - Feature id: `item-rarity`
 - Feature name: Item Rarity
-- Repo: `D:\Codex\Apps\EQEmu-feature-item-rarity`
+- Repo after checkout: this repository root
 - Branch in this checkout: `codex/feature-item-rarity`
 - Server install: `D:\EQServers\EQServer-Item-Rarity`
 - Client install: `D:\EQClients\EQClient-Item-Rarity`
 - Database: `eqemu_item_rarity`
-- Workspace metadata:
-  - `D:\Codex\Apps\EQEmu-feature-workspaces\features.json`
-  - `D:\Codex\Apps\EQEmu-feature-workspaces\installs.json`
+- Local feature-workspaces metadata, if that companion checkout is available:
+  - `EQEmu-feature-workspaces/features.json`
+  - `EQEmu-feature-workspaces/installs.json`
 - Patcher project id currently resolves to `item-rarity`, but always verify it
   in `installs.json` before regenerating feeds.
 
@@ -38,36 +38,37 @@ and best-effort UI recoloring in the RoF2 client.
 
 Core server code:
 
-- `D:\Codex\Apps\EQEmu-feature-item-rarity\zone\item_rarity_manager.h`
-- `D:\Codex\Apps\EQEmu-feature-item-rarity\zone\item_rarity_manager.cpp`
-- `D:\Codex\Apps\EQEmu-feature-item-rarity\zone\gm_commands\itemrarity.cpp`
-- `D:\Codex\Apps\EQEmu-feature-item-rarity\zone\corpse.cpp`
-- `D:\Codex\Apps\EQEmu-feature-item-rarity\zone\command.cpp`
-- `D:\Codex\Apps\EQEmu-feature-item-rarity\zone\command.h`
-- `D:\Codex\Apps\EQEmu-feature-item-rarity\zone\CMakeLists.txt`
+- `zone/item_rarity_manager.h`
+- `zone/item_rarity_manager.cpp`
+- `zone/gm_commands/itemrarity.cpp`
+- `zone/corpse.cpp`
+- `zone/command.cpp`
+- `zone/command.h`
+- `zone/CMakeLists.txt`
 
 Schema and feature metadata:
 
-- `D:\Codex\Apps\EQEmu-feature-item-rarity\features\item-rarity\sql\001_item_rarity.sql`
-- `D:\Codex\Apps\EQEmu-feature-item-rarity\features\item-rarity\patcher.yml`
-- `D:\Codex\Apps\EQEmu-feature-item-rarity\features\item-rarity\README.md`
-- `D:\Codex\Apps\EQEmu-feature-item-rarity\features\item-rarity\MANIFEST.md`
-- `D:\Codex\Apps\EQEmu-feature-item-rarity\docs\item-rarity.md`
-- `D:\Codex\Apps\EQEmu-feature-item-rarity\docs\testbed-deployment-notes.md`
-- `D:\Codex\Apps\EQEmu-feature-item-rarity\PROJECT.md`
-- `D:\Codex\Apps\EQEmu-feature-item-rarity\AGENTS.md`
+- `features/item-rarity/sql/001_item_rarity.sql`
+- `features/item-rarity/patcher.yml`
+- `features/item-rarity/README.md`
+- `features/item-rarity/MANIFEST.md`
+- `docs/item-rarity.md`
+- `docs/testbed-deployment-notes.md`
+- `PROJECT.md`
+- `AGENTS.md`
 
 Native client code and outputs:
 
-- `D:\Codex\Apps\EQEmu-feature-item-rarity\client_files\item_rarity\README.md`
-- `D:\Codex\Apps\EQEmu-feature-item-rarity\client_files\item_rarity\eq-core-dll\item-rarity-dll.sln`
-- `D:\Codex\Apps\EQEmu-feature-item-rarity\client_files\item_rarity\eq-core-dll\src\item-rarity-dll.vcxproj`
-- `D:\Codex\Apps\EQEmu-feature-item-rarity\client_files\item_rarity\eq-core-dll\src\dinput8.def`
-- `D:\Codex\Apps\EQEmu-feature-item-rarity\client_files\item_rarity\eq-core-dll\src\item_rarity_native.cpp`
-- `D:\Codex\Apps\EQEmu-feature-item-rarity\client_files\item_rarity\eq-core-dll\bin\dinput8.dll`
+- `client_files/item_rarity/README.md`
+- `client_files/item_rarity/eq-core-dll/item-rarity-dll.sln`
+- `client_files/item_rarity/eq-core-dll/src/item-rarity-dll.vcxproj`
+- `client_files/item_rarity/eq-core-dll/src/dinput8.def`
+- `client_files/item_rarity/eq-core-dll/src/item_rarity_native.cpp`
+- `client_files/item_rarity/eq-core-dll/bin/dinput8.dll`
 - Generated local build outputs also exist under
-  `D:\Codex\Apps\EQEmu-feature-item-rarity\client_files\item_rarity\eq-core-dll\bin`
-  and `...\src\Release`; only `bin\dinput8.dll` is patcher payload today.
+  `client_files/item_rarity/eq-core-dll/bin` and
+  `client_files/item_rarity/eq-core-dll/src/Release`; only
+  `bin/dinput8.dll` is patcher payload today.
 
 ## Server Architecture
 
@@ -112,7 +113,7 @@ Loot hook:
 Schema file:
 
 ```text
-D:\Codex\Apps\EQEmu-feature-item-rarity\features\item-rarity\sql\001_item_rarity.sql
+features/item-rarity/sql/001_item_rarity.sql
 ```
 
 Table:
@@ -135,7 +136,7 @@ explicitly being reset and backed up.
 
 Useful DB/deploy command paths:
 
-- `D:\Codex\Apps\EQEmu-feature-workspaces\run-db-updates.ps1`
+- `EQEmu-feature-workspaces/run-db-updates.ps1`
 - `D:\EQServers\EQServer-Item-Rarity\bin\world.exe database:updates`
 
 `run-db-updates.ps1 item-rarity` runs `world.exe database:updates` and normally
@@ -181,19 +182,19 @@ corpses, open the corpse after adding the item.
 Native code lives only in:
 
 ```text
-D:\Codex\Apps\EQEmu-feature-item-rarity\client_files\item_rarity
+client_files/item_rarity
 ```
 
 Build:
 
 ```text
-D:\Codex\Apps\EQEmu-feature-item-rarity\client_files\item_rarity\eq-core-dll\item-rarity-dll.sln
+client_files/item_rarity/eq-core-dll/item-rarity-dll.sln
 ```
 
 Use `Release|Win32`. The output is:
 
 ```text
-D:\Codex\Apps\EQEmu-feature-item-rarity\client_files\item_rarity\eq-core-dll\bin\dinput8.dll
+client_files/item_rarity/eq-core-dll/bin/dinput8.dll
 ```
 
 Install only to:
@@ -269,7 +270,7 @@ crash-safe calling conventions.
 Run from:
 
 ```text
-D:\Codex\Apps\EQEmu-feature-workspaces
+the `EQEmu-feature-workspaces` checkout
 ```
 
 Standard local loop:
@@ -290,7 +291,7 @@ Public testbed promotion command, only when explicitly approved:
 
 Build preset details:
 
-- `D:\Codex\Apps\EQEmu-feature-item-rarity\CMakePresets.json`
+- `CMakePresets.json`
 - Preset: `win-msvc`
 - Generator: Visual Studio 17 2022
 - Binary dir: `build\win-msvc`
@@ -307,16 +308,15 @@ PERL_INCLUDE_PATH=C:\Strawberry\perl\lib\CORE
 PERL_LIBRARY=C:\Strawberry\perl\lib\CORE\libperl524.a
 ```
 
-`D:\Codex\Apps\EQEmu-feature-workspaces\scripts\FeatureWorkspace.ps1` also
-injects and validates those Perl settings. Do not promote a Perl-less CMake
-cache.
+`EQEmu-feature-workspaces/scripts/FeatureWorkspace.ps1` also injects and
+validates those Perl settings. Do not promote a Perl-less CMake cache.
 
 ## Patcher Payload
 
 Patcher source of truth:
 
 ```text
-D:\Codex\Apps\EQEmu-feature-item-rarity\features\item-rarity\patcher.yml
+features/item-rarity/patcher.yml
 ```
 
 Current payload:
@@ -341,7 +341,7 @@ in this repo, list them in `patcher.yml`, then regenerate the feed.
 Patcher host command path:
 
 ```text
-D:\Codex\Apps\EQEmu-feature-patcher\features\patcher\eqemupatcher\service
+EQEmu-feature-patcher/features/patcher/eqemupatcher/service
 ```
 
 Commands:
@@ -374,7 +374,7 @@ This project owns item-rarity behavior. Keep feature-specific code here:
 Do not edit or deploy feature-specific rarity logic from:
 
 ```text
-D:\Codex\Apps\EQEmu-native-client-runtime
+EQEmu-native-client-runtime
 ```
 
 That repo should only be treated as reference/shared base work until a proper
